@@ -2055,6 +2055,13 @@
     return name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
 
+  /** Las reservas web las puede crear cualquiera sin iniciar sesión — nunca insertar ese texto directo en HTML. */
+  function escapeHTML(texto){
+    return String(texto ?? '').replace(/[&<>"']/g, c=> ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+
   const colCounters = {1:0,2:0,3:0,4:0,5:0};
   function renderAppointment(a, idx){
     const col = document.getElementById('col'+a.col);
@@ -2077,10 +2084,10 @@
         <button class="done" title="Marcar asistencia" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></button>
       </div>
       <div class="appt-top">
-        <div class="appt-client">${a.client}</div>
+        <div class="appt-client">${escapeHTML(a.client)}</div>
         <div class="appt-time">${s}–${e}</div>
       </div>
-      <div class="appt-service">${a.service}</div>
+      <div class="appt-service">${escapeHTML(a.service)}</div>
       <div class="appt-bottom">
         <div class="appt-bottom-left"><span class="status-dot ${a.status}"></span><span class="status-txt">${statusLabel}</span></div>
         <span class="appt-price">${a.price}</span>
@@ -2969,7 +2976,7 @@
         if(res.affectedBookings?.length){
           const aviso = document.getElementById('blAviso');
           aviso.innerHTML = `<b>Atención:</b> hay ${res.affectedBookings.length} reserva(s) en ese horario:<br>` +
-            res.affectedBookings.map(b=> `• ${b.clientName} (${b.code})`).join('<br>') +
+            res.affectedBookings.map(b=> `• ${escapeHTML(b.clientName)} (${escapeHTML(b.code)})`).join('<br>') +
             '<br>Contáctalos para reagendar.';
           aviso.classList.add('show');
           btn.disabled = false; btn.textContent = 'Bloquear';
@@ -3009,7 +3016,7 @@
     if(afectadas.length){
       const aviso = document.getElementById('blAviso');
       aviso.innerHTML = `<b>Atención:</b> hay ${afectadas.length} reserva(s) en ese horario:<br>` +
-        afectadas.map(a=> `• ${a.client} (${a.svc || a.service})`).join('<br>') +
+        afectadas.map(a=> `• ${escapeHTML(a.client)} (${escapeHTML(a.svc || a.service)})`).join('<br>') +
         '<br>Contáctalos para reagendar.';
       aviso.classList.add('show');
       showToast('Bloqueo creado, pero revisa las reservas afectadas');
