@@ -6,6 +6,8 @@
 <title>Master Look — Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <style>
   :root{
     --bg:#fcfcfd;
@@ -934,11 +936,6 @@
     <div class="lg-error" id="lgError"></div>
 
     <button class="lg-btn" id="lgEntrar">Ingresar</button>
-
-    <div class="lg-demo">
-      <b>Acceso de prueba</b>
-      admin@masterlook.cl · MasterLook2026
-    </div>
   </div>
 </div>
 <div class="app">
@@ -1682,34 +1679,19 @@
 
 
   /* ==========================================================
-     INGRESO AL PANEL
-     En modo demo la clave está aquí para poder probar. Con la API
-     conectada, la sesión la valida el servidor con la cuenta real.
+     INGRESO AL PANEL — autenticación real con Firebase Auth.
+     La clave nunca se guarda ni se compara en este archivo: Firebase
+     la valida en su servidor y solo nos avisa si la sesión es válida.
      ========================================================== */
-  const DEMO_ADMIN = { usuario:'admin@masterlook.cl', clave:'MasterLook2026', nombre:'Administrador' };
-  const SESION_KEY = 'masterlook_panel_sesion';
-
-  /** La sesión se guarda en localStorage para que valga entre el sitio y el panel. */
-  function guardarSesion(nombre){
-    try{
-      localStorage.setItem(SESION_KEY, JSON.stringify({
-        nombre, expira: Date.now() + 8 * 3600 * 1000,
-      }));
-    }catch(e){}
-  }
-
-  function leerSesion(){
-    try{
-      const raw = localStorage.getItem(SESION_KEY);
-      if(!raw) return null;
-      const s = JSON.parse(raw);
-      if(!s.expira || s.expira < Date.now()){
-        localStorage.removeItem(SESION_KEY);
-        return null;
-      }
-      return s.nombre;
-    }catch(e){ return null; }
-  }
+  firebase.initializeApp({
+    apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
+    authDomain: "estudio90.firebaseapp.com",
+    projectId: "estudio90",
+    storageBucket: "estudio90.firebasestorage.app",
+    messagingSenderId: "420826163402",
+    appId: "1:420826163402:web:d5020ca2069637e193ec33",
+  });
+  const auth = firebase.auth();
 
   function entrarAlPanel(nombre){
     document.getElementById('loginScreen').classList.add('oculto');
@@ -1718,7 +1700,7 @@
   }
 
   async function intentarIngreso(){
-    const u = document.getElementById('lgUser').value.trim().toLowerCase();
+    const u = document.getElementById('lgUser').value.trim();
     const c = document.getElementById('lgPass').value;
     const err = document.getElementById('lgError');
     const btn = document.getElementById('lgEntrar');
@@ -1728,39 +1710,12 @@
 
     btn.disabled = true; btn.textContent = 'Entrando...';
 
-    // con servidor: valida la cuenta real
-    if(MODE === 'api'){
-      try{
-        const r = await fetch(API_BASE + '/auth/login', {
-          method:'POST', credentials:'include',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ email:u, password:c })
-        });
-        const data = await r.json();
-        if(!r.ok) throw new Error(data.error || 'Correo o contraseña incorrectos');
-        if(!['ADMIN','BARBER'].includes(data.user?.role)){
-          throw new Error('Esta cuenta no tiene acceso al panel');
-        }
-        accessToken = data.accessToken;
-        userRole = data.user.role;
-        guardarSesion(data.user.name);
-        entrarAlPanel(data.user.name);
-        btn.disabled = false; btn.textContent = 'Ingresar';
-        return;
-      }catch(e){
-        err.textContent = e.message; err.classList.add('show');
-        btn.disabled = false; btn.textContent = 'Ingresar';
-        return;
-      }
-    }
-
-    // modo demo
-    if(u === DEMO_ADMIN.usuario && c === DEMO_ADMIN.clave){
+    try{
+      await auth.signInWithEmailAndPassword(u, c);
       userRole = 'ADMIN';
-      guardarSesion(DEMO_ADMIN.nombre);
-      entrarAlPanel(DEMO_ADMIN.nombre);
-    } else {
-      err.textContent = 'Usuario o contraseña incorrectos.';
+      // entrarAlPanel() se llama desde onAuthStateChanged al confirmarse la sesión
+    }catch(e){
+      err.textContent = 'Correo o contraseña incorrectos.';
       err.classList.add('show');
     }
     btn.disabled = false; btn.textContent = 'Ingresar';
@@ -1773,10 +1728,12 @@
       if(e.key === 'Enter') intentarIngreso();
     }));
 
-  // si ya ingresó en esta pestaña, no volvemos a pedir la clave
+  auth.onAuthStateChanged(user=>{
+    if(user){ userRole = 'ADMIN'; entrarAlPanel(user.email); }
+  });
 
   function salirDelPanel(){
-    try{ localStorage.removeItem(SESION_KEY); }catch(e){}
+    auth.signOut();
     location.reload();
   }
 
@@ -4528,9 +4485,7 @@
 
   // primera carga + escucha en vivo
   setTimeout(async ()=>{
-    // si ya inició sesión (aquí o desde el sitio principal), entramos directo
-    const sesionActiva = leerSesion();
-    if(sesionActiva){ userRole = 'ADMIN'; entrarAlPanel(sesionActiva); }
+    // la sesión activa (si existe) la confirma Firebase vía onAuthStateChanged
 
     document.getElementById('calSub').textContent = fmtFecha(currentDate);
     pintarMiniCal();

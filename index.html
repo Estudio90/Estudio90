@@ -2843,12 +2843,6 @@
         sessionUser = data.user;
       }catch(e){ return showErr('loginErr', e.message); }
     } else {
-      // la cuenta de administrador también entra desde aquí
-      if(email === ADMIN_DEMO.correo && pass === ADMIN_DEMO.clave){
-        closeAuth();
-        mostrarAccesoPanel();
-        return;
-      }
       const user = readDB()[email];
       if(!user || user.pass !== pass) return showErr('loginErr','Correo o contraseña incorrectos.');
       localStorage.setItem(SESSION_KEY, email);
@@ -4533,19 +4527,11 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
   }
 
   /* ---------- acceso del equipo al panel interno ---------- */
-  const ADMIN_DEMO = { correo:'admin@masterlook.cl', clave:'MasterLook2026', nombre:'Administrador' };
 
-  /** Al ingresar con una cuenta del equipo, lo llevamos al panel. */
+  /** Al ingresar con una cuenta del equipo (vía API real), lo llevamos al panel. */
   function mostrarAccesoPanel(nombre){
-    try{
-      localStorage.setItem('masterlook_panel_sesion', JSON.stringify({
-        nombre: nombre || ADMIN_DEMO.nombre,
-        expira: Date.now() + 8 * 3600 * 1000,   // la sesión dura 8 horas
-      }));
-    }catch(e){}
-
     const modal = document.getElementById('panelModal');
-    document.getElementById('pmNombre').textContent = nombre || ADMIN_DEMO.nombre;
+    document.getElementById('pmNombre').textContent = nombre || 'Administrador';
     modal.classList.add('open');
   }
 
