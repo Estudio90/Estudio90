@@ -721,6 +721,22 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+  .wa-alerts{position:fixed;right:18px;bottom:26px;z-index:70;display:flex;flex-direction:column-reverse;gap:10px;}
+  .wa-alert{
+    width:300px;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:var(--shadow-lg);padding:14px 16px;display:flex;flex-direction:column;gap:8px;
+    animation:waIn .2s ease;
+  }
+  @keyframes waIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .wa-alert-row{display:flex;align-items:center;gap:8px;}
+  .wa-alert-title{font-size:12.5px;font-weight:600;color:var(--text-hi);margin:0;}
+  .wa-alert-sub{font-size:12px;color:var(--text-mid);margin:0;}
+  .wa-alert-x{background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:14px;padding:2px 4px;}
+  .wa-alert-btn{
+    background:#25D366;color:#fff;border:none;border-radius:8px;padding:9px 12px;
+    font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+
   /* ---------- Drawer: top icon row ---------- */
   .drawer-top-actions{display:flex;align-items:center;gap:8px;margin-bottom:18px;}
   .icon-btn{
@@ -1477,6 +1493,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="wa-alerts" id="waAlerts"></div>
 
 <!-- Drawer -->
 <div class="overlay" id="overlay"></div>
@@ -2382,6 +2399,40 @@
     'Diego Colina':1, 'Jhoover Peñaranda':2, 'Raúl Chourio':3,
     'Luis Barrios':4, 'Carlos Garcés':5
   };
+  const DIRECCION_NEGOCIO = 'Av. Nueva Providencia 1945, oficina 1408';
+
+  /** Mensaje de recordatorio/condiciones para WhatsApp, con los datos reales de la reserva. */
+  function construirMensajeWhatsApp(a){
+    const hora = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
+    const [y,m,d] = (a.fecha || currentDate).split('-');
+    const fechaCorta = `${d}-${m}-${y.slice(2)}`;
+    return `Hola ${a.client}!\n\nTe queremos recordar tu cita de ${a.service.toUpperCase()} en MASTER LOOK\n\n⏰¿Cuándo?: ${fechaCorta} a las ${hora}\n📌¿Dónde?: ${DIRECCION_NEGOCIO}\n👱🏼‍♀️¿Con quién?: ${a.barber}\n\n🚨 RECUERDA! SOLO ESPERAMOS 15 MINUTOS POR CLIENTE\nDE LO CONTRARIO TU HORA SERIA CANCELADA Y PERDERIAS TU ABONO😢\n\n🚨TEN PRESENTE QUE SOMOS UN ESTUDIO DE BELLEZA UBICADO EN UNA OFICINA POR LO CUAL SOLO ACEPTAMOS (1) ACOMPAÑANTE🙏\n\n¡Te esperamos!`;
+  }
+
+  /** Aviso flotante con un botón para mandar el WhatsApp de una reserva nueva, sin tener que buscarla. */
+  function mostrarAlertaWhatsApp(a){
+    const waNum = (a.phone || '').replace(/[^0-9]/g,'');
+    if(!waNum) return;
+    const cont = document.getElementById('waAlerts');
+    if(!cont) return;
+
+    const card = document.createElement('div');
+    card.className = 'wa-alert';
+    card.innerHTML = `
+      <div class="wa-alert-row" style="justify-content:space-between;">
+        <p class="wa-alert-title">Nueva reserva web</p>
+        <button class="wa-alert-x" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="wa-alert-sub">${a.client} · ${a.service}</p>
+      <button class="wa-alert-btn" type="button">Enviar WhatsApp</button>
+    `;
+    card.querySelector('.wa-alert-x').addEventListener('click', ()=> card.remove());
+    card.querySelector('.wa-alert-btn').addEventListener('click', ()=>{
+      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(construirMensajeWhatsApp(a))}`, '_blank');
+      card.remove();
+    });
+    cont.appendChild(card);
+  }
   const SERVICE_TYPE = [
     {re:/ondulaci/i,               type:'svc-onda',    mins:180},
     {re:/combo|tratamiento/i,      type:'svc-combo',   mins:60},
@@ -2418,6 +2469,7 @@
 
     const existing = new Set(appointments.map(a=> a.webId).filter(Boolean));
     let added = 0;
+    const nuevasWeb = [];
 
     incoming.forEach(r=>{
       if(existing.has(r.id)) return;
@@ -2432,7 +2484,7 @@
         : (barbers.find(b=> b.id===col) || {}).name;
 
       const appt = {
-        webId: r.id, col,
+        webId: r.id, col, fecha: r.fecha,
         client: r.client || 'Cliente web',
         service: r.svc,
         price: '$' + Number(r.price).toLocaleString('es-CL'),
@@ -2447,6 +2499,7 @@
       appointments.push(appt);
       const el = renderAppointment(appt, appointments.length - 1);
       el.classList.add('appt-web-new');
+      nuevasWeb.push(appt);
       added++;
     });
 
@@ -2457,6 +2510,7 @@
         : `${added} nuevas reservas desde la web`);
       refreshBarberCounts();
       if(typeof applyFilters === 'function') applyFilters();
+      nuevasWeb.forEach(mostrarAlertaWhatsApp);
     }
   }
 
@@ -4785,7 +4839,7 @@
         const corto = a.client.split(' ')[0];
         const hora = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
         const msg = decision === 'aprobada'
-          ? `Hola ${corto}, tu reserva en MASTERLOOK quedó CONFIRMADA.\n\nServicio: ${a.service}\nBarbero: ${a.barber}\nHora: ${hora}\nTotal: ${a.price}\n\nTe esperamos.`
+          ? construirMensajeWhatsApp(a)
           : `Hola ${corto}, lamentamos avisarte que no pudimos tomar tu reserva en MASTERLOOK.\n\nServicio: ${a.service}\nHora solicitada: ${hora}\nMotivo: ${reason}\n\nEscríbenos y te ofrecemos otro horario.`;
         window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
       }
