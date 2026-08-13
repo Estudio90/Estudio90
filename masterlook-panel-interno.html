@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg:#fcfcfd;
@@ -1692,6 +1693,7 @@
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
   });
   const auth = firebase.auth();
+  const db = firebase.firestore();
 
   function entrarAlPanel(nombre){
     document.getElementById('loginScreen').classList.add('oculto');
@@ -2277,8 +2279,8 @@
 
   /* ---------------- Puente con el sitio web ----------------
      Las reservas hechas en masterlook-sitio.html se guardan en
-     localStorage y aparecen aquí automáticamente.               */
-  const BRIDGE_KEY = 'masterlook_reservas_web';
+     Firestore y aparecen aquí en vivo, desde cualquier dispositivo. */
+  let firestoreBookings = [];
 
   const BARBER_COL = {
     'Diego Colina':1, 'Jhoover Peñaranda':2, 'Raúl Chourio':3,
@@ -2316,8 +2318,7 @@
   }
 
   function importWebBookings(){
-    let incoming = [];
-    try{ incoming = JSON.parse(localStorage.getItem(BRIDGE_KEY)) || []; }catch(e){ return; }
+    const incoming = firestoreBookings;
 
     const existing = new Set(appointments.map(a=> a.webId).filter(Boolean));
     let added = 0;
@@ -4494,14 +4495,11 @@
     if(MODE === 'api'){
       await loadAgendaFromApi();
     } else {
-      importWebBookings();
       demoAgenda[currentDate] = appointments.slice();   // agenda inicial de hoy
-      setInterval(importWebBookings, 2500);
-      window.addEventListener('storage', e=>{ if(e.key === BRIDGE_KEY) importWebBookings(); });
-      try{
-        const ch = new BroadcastChannel('masterlook');
-        ch.onmessage = e=>{ if(e.data === 'nueva-reserva') importWebBookings(); };
-      }catch(e){}
+      db.collection('bookings').onSnapshot(snap=>{
+        firestoreBookings = snap.docs.map(d=> d.data());
+        importWebBookings();
+      });
     }
 
     await pintarSemana();
@@ -4607,13 +4605,7 @@
 
   /* ---------------- Decisiones sobre reservas web ---------------- */
   function updateBridgeRecord(webId, changes){
-    let list = [];
-    try{ list = JSON.parse(localStorage.getItem(BRIDGE_KEY)) || []; }catch(e){ return; }
-    const rec = list.find(r=> r.id === webId);
-    if(!rec) return;
-    Object.assign(rec, changes);
-    try{ localStorage.setItem(BRIDGE_KEY, JSON.stringify(list)); }catch(e){}
-    try{ new BroadcastChannel('masterlook').postMessage('estado-actualizado'); }catch(e){}
+    db.collection('bookings').doc(webId).update(changes).catch(()=>{});
   }
 
   async function decideWebBooking(decision, reason){

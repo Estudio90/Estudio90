@@ -6,6 +6,8 @@
 <title>MASTERLOOK — Barbería</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   /* ==========================================================
      MASTER LOOK — barbería & spa
@@ -2619,15 +2621,26 @@
     actualizarBarra();
   }
 
-  // ===== puente hacia el panel del administrador =====
-  const BRIDGE_KEY = 'masterlook_reservas_web';
+  // ===== puente hacia el panel del administrador, vía Firestore =====
+  firebase.initializeApp({
+    apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
+    authDomain: "estudio90.firebaseapp.com",
+    projectId: "estudio90",
+    storageBucket: "estudio90.firebasestorage.app",
+    messagingSenderId: "420826163402",
+    appId: "1:420826163402:web:d5020ca2069637e193ec33",
+  });
+  const db = firebase.firestore();
+
+  /** Refleja en vivo las reservas guardadas en Firestore, visibles desde cualquier dispositivo. */
+  let bookingsCache = [];
+  db.collection('bookings').onSnapshot(snap=>{
+    bookingsCache = snap.docs.map(d=> d.data());
+    try{ renderAccount(); }catch(e){}
+  });
 
   function publishToPanel(booking){
-    let list = [];
-    try{ list = JSON.parse(localStorage.getItem(BRIDGE_KEY)) || []; }catch(e){}
-    list.push(booking);
-    try{ localStorage.setItem(BRIDGE_KEY, JSON.stringify(list)); }catch(e){}
-    try{ new BroadcastChannel('masterlook').postMessage('nueva-reserva'); }catch(e){}
+    db.collection('bookings').doc(booking.id).set(booking).catch(()=>{});
   }
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
@@ -3074,10 +3087,8 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
       return;
     }
 
-    // ---- modo demo: datos del navegador ----
-    let bridge = [];
-    try{ bridge = JSON.parse(localStorage.getItem(BRIDGE_KEY)) || []; }catch(e){}
-    const decisionOf = id => (bridge.find(r=> r.id === id) || {}).decision || 'pendiente';
+    // ---- modo demo: datos compartidos vía Firestore ----
+    const decisionOf = id => (bookingsCache.find(r=> r.id === id) || {}).decision || 'pendiente';
 
     // los puntos y visitas solo cuentan reservas confirmadas por el local
     const confirmadas = user.bookings.filter(b=> decisionOf(b.id) === 'aprobada');
@@ -3107,11 +3118,8 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
       list.innerHTML = '<div class="empty-hist">Todavía no tienes reservas. Agenda tu primera hora y aparecerá aquí.</div>';
     } else {
       // estados decididos por el panel del local
-      let bridge = [];
-      try{ bridge = JSON.parse(localStorage.getItem(BRIDGE_KEY)) || []; }catch(e){}
-
       list.innerHTML = user.bookings.slice().reverse().map(b=>{
-        const rec = bridge.find(r=> r.id === b.id) || {};
+        const rec = bookingsCache.find(r=> r.id === b.id) || {};
         const decision = rec.decision || 'pendiente';
 
         const label = {
@@ -4203,14 +4211,11 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
 
   function ocupacionDelDia(fecha){
     const mapa = {};
-    try{
-      const bridge = JSON.parse(localStorage.getItem(BRIDGE_KEY)) || [];
-      bridge.filter(r=> r.decision !== 'rechazada' && r.fecha === fecha).forEach(r=>{
-        if(typeof r.startMin !== 'number') return;
-        (mapa[r.barbero || r.barber] = mapa[r.barbero || r.barber] || [])
-          .push([r.startMin, r.startMin + (r.duracion || 45)]);
-      });
-    }catch(e){}
+    bookingsCache.filter(r=> r.decision !== 'rechazada' && r.fecha === fecha).forEach(r=>{
+      if(typeof r.startMin !== 'number') return;
+      (mapa[r.barbero || r.barber] = mapa[r.barbero || r.barber] || [])
+        .push([r.startMin, r.startMin + (r.duracion || 45)]);
+    });
 
     // horarios bloqueados desde el panel (almuerzo, vacaciones, etc.)
     try{
@@ -4796,15 +4801,8 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
       });
     }catch(e){}
 
-    // en modo demo seguimos escuchando el puente con el panel
-    if(MODE === 'demo'){
-      window.addEventListener('storage', e=>{ if(e.key === BRIDGE_KEY) renderAccount(); });
-      setInterval(()=>{ try{ if(currentUser()) renderAccount(); }catch(e){} }, 2500);
-      try{
-        const ch = new BroadcastChannel('masterlook');
-        ch.onmessage = e=>{ if(e.data === 'estado-actualizado') renderAccount(); };
-      }catch(e){}
-    } else {
+    // en modo demo, Firestore ya avisa solo cuando cambia el estado de una reserva (ver onSnapshot arriba)
+    if(MODE !== 'demo'){
       // en modo API refrescamos el estado de las reservas cada 20 segundos
       setInterval(()=>{ try{ if(currentUser()) renderAccount(); }catch(e){} }, 20000);
     }
