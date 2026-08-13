@@ -1297,6 +1297,7 @@
     <button class="mg-tab active" data-tab="servicios">Servicios y precios</button>
     <button class="mg-tab" data-tab="horarios">Horarios</button>
     <button class="mg-tab" data-tab="equipo">Equipo</button>
+    <button class="mg-tab" data-tab="local">Horario del local</button>
   </div>
 
   <!-- Servicios -->
@@ -1320,6 +1321,18 @@
       <input type="text" id="cfgNuevoBarbero" class="mg-input" placeholder="Nombre del nuevo barbero">
       <button class="mg-btn solid" id="cfgAddBarbero">Agregar</button>
     </div>
+  </div>
+
+  <!-- Horario del local (atención al público, distinto del horario por barbero) -->
+  <div class="mg-pane" data-pane="local">
+    <p class="mg-note">Este horario es el que ven los clientes en el sitio y en el chat de ayuda.</p>
+    <label class="mg-label">Lunes a viernes</label>
+    <input type="text" id="cfgHorLV" class="mg-input" placeholder="Ej: 11:00–21:00">
+    <label class="mg-label">Sábado</label>
+    <input type="text" id="cfgHorSab" class="mg-input" placeholder="Ej: 10:00–19:00">
+    <label class="mg-label">Domingo</label>
+    <input type="text" id="cfgHorDom" class="mg-input" placeholder="Ej: Cerrado">
+    <button class="mg-btn solid full" id="cfgGuardarLocal">Guardar horario del local</button>
   </div>
 </div>
 
@@ -3013,7 +3026,29 @@
     pintarConfigEquipo();
     llenarSelect(document.getElementById('cfgBarberoHorario'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
     pintarHorarioSemanal();
+    cargarHorarioLocal();
     abrirModal('modalConfig');
+  });
+
+  /* ---------- Horario del local (atención al público) ---------- */
+  async function cargarHorarioLocal(){
+    try{
+      const doc = await db.collection('settings').doc('negocio').get();
+      const d = doc.exists ? doc.data() : {};
+      document.getElementById('cfgHorLV').value = d.horarioSemana || '11:00–21:00';
+      document.getElementById('cfgHorSab').value = d.horarioSabado || '10:00–19:00';
+      document.getElementById('cfgHorDom').value = d.horarioDomingo || 'Cerrado';
+    }catch(e){}
+  }
+
+  document.getElementById('cfgGuardarLocal').addEventListener('click', async ()=>{
+    const horarioSemana = document.getElementById('cfgHorLV').value.trim();
+    const horarioSabado = document.getElementById('cfgHorSab').value.trim();
+    const horarioDomingo = document.getElementById('cfgHorDom').value.trim();
+    try{
+      await db.collection('settings').doc('negocio').set({ horarioSemana, horarioSabado, horarioDomingo }, { merge:true });
+      showToast('Horario del local actualizado');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
   document.querySelectorAll('.mg-tab').forEach(t=>

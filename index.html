@@ -1575,8 +1575,8 @@
     <a href="masterlook-panel-interno.html">Panel interno</a>
   </nav>
   <div class="menu-pie">
-    <div>Lun a Vie · 10:00–20:00</div>
-    <div>Sábado · 10:00–18:00</div>
+    <div>Lun a Vie · <span id="horLVMenu">11:00–21:00</span></div>
+    <div>Sábado · <span id="horSabMenu">10:00–19:00</span></div>
     <div class="menu-tel">+56 9 4912 4645</div>
     <div>@masterlook.cl</div>
   </div>
@@ -1819,9 +1819,9 @@
       <div>
         <h4>Horario</h4>
         <ul>
-          <li>Lun–Vie: 10:00–20:00</li>
-          <li>Sáb: 10:00–18:00</li>
-          <li>Dom: Cerrado</li>
+          <li>Lun–Vie: <span id="horLVFooter">11:00–21:00</span></li>
+          <li>Sáb: <span id="horSabFooter">10:00–19:00</span></li>
+          <li>Dom: <span id="horDomFooter">Cerrado</span></li>
         </ul>
       </div>
     </div>
@@ -2687,6 +2687,22 @@
     db.collection('bookings').doc(booking.id).set(booking).catch(()=>{});
   }
 
+  /** Horario real del local, editable desde el panel — mismo dato para el menú, el pie de página y el chat. */
+  let horarioNegocio = { horarioSemana:'11:00–21:00', horarioSabado:'10:00–19:00', horarioDomingo:'Cerrado' };
+  function pintarHorarioNegocio(){
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('horLVMenu', horarioNegocio.horarioSemana);
+    set('horSabMenu', horarioNegocio.horarioSabado);
+    set('horLVFooter', horarioNegocio.horarioSemana);
+    set('horSabFooter', horarioNegocio.horarioSabado);
+    set('horDomFooter', horarioNegocio.horarioDomingo);
+  }
+  pintarHorarioNegocio();
+  db.collection('settings').doc('negocio').onSnapshot(doc=>{
+    if(doc.exists) horarioNegocio = Object.assign({}, horarioNegocio, doc.data());
+    pintarHorarioNegocio();
+  });
+
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
@@ -3096,7 +3112,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     }
 
     if(t === 'horario' || /horario|abren|cierran|atienden|abierto|cerrado/.test(t)){
-      chatAgregar('bot', 'Atendemos Lunes a Viernes de 10:00 a 20:00, y Sábado de 10:00 a 18:00. Domingo cerrado.');
+      chatAgregar('bot', `Atendemos Lunes a Viernes de ${horarioNegocio.horarioSemana}, y Sábado de ${horarioNegocio.horarioSabado}. Domingo: ${horarioNegocio.horarioDomingo}.`);
       chatChips([
         { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
         { label:'Otra pregunta', intent:'menu' }
