@@ -1485,7 +1485,7 @@
   <!-- ============ VIEW 1: Detail ============ -->
   <div class="pay-view open" id="detailView">
     <div class="drawer-top-actions">
-      <button class="icon-btn danger" title="Eliminar">
+      <button class="icon-btn danger" id="btnEliminarCita" title="Eliminar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>
       </button>
       <button class="icon-btn" title="Editar">
@@ -4745,6 +4745,30 @@
   }
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
+
+  document.getElementById('btnEliminarCita').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a) return;
+    if(!confirm(`¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`)) return;
+
+    if(a.fromWeb && a.webId){
+      try{ await db.collection('bookings').doc(a.webId).delete(); }
+      catch(e){ showToast('No se pudo eliminar: ' + e.message); return; }
+    }
+
+    const idx = appointments.indexOf(a);
+    if(idx > -1) appointments.splice(idx, 1);
+
+    // volvemos a dibujar todo para que los data-idx de las tarjetas restantes queden correctos
+    document.querySelectorAll('.appt').forEach(el=> el.remove());
+    Object.keys(colCounters).forEach(k=> colCounters[k] = 0);
+    appointments.forEach((ap,i)=> renderAppointment(ap, i));
+    layoutAllColumns();
+    refreshBarberCounts();
+
+    closeDrawer();
+    showToast('Reserva eliminada');
+  });
 
   const tagLabels = {new:'Nuevo cliente', pend:'Pendiente', ok:'Asiste', resched:'Reagendó', no:'No show', done:'Completado'};
   const tagLabelEl = document.getElementById('tagLabel');
