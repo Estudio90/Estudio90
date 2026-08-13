@@ -2687,6 +2687,52 @@
     db.collection('bookings').doc(booking.id).set(booking).catch(()=>{});
   }
 
+  /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
+  function plantillaCorreoReserva(reserva, estado, motivo){
+    const estados = {
+      pendiente: { titulo:'Reserva recibida', color:'#B08D3E', texto:'Tu hora quedó registrada. La estamos revisando y te avisamos apenas quede confirmada.' },
+      aprobada: { titulo:'Reserva confirmada', color:'#2E7D32', texto:'Tu hora quedó confirmada. Te esperamos.' },
+      rechazada: { titulo:'Reserva no disponible', color:'#B03A2E', texto: motivo ? `No pudimos tomar esa hora. Motivo: ${motivo}` : 'No pudimos tomar esa hora.' },
+      eliminada: { titulo:'Reserva cancelada', color:'#6c6b74', texto:'Tu hora fue cancelada por el local. Si tienes dudas, contáctanos.' },
+    };
+    const e = estados[estado] || estados.pendiente;
+    const corto = (reserva.client || '').split(' ')[0];
+    const total = '$' + Number(reserva.price || 0).toLocaleString('es-CL');
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#faf8f4;">
+        <div style="background:#1A1815;padding:28px 24px;text-align:center;">
+          <div style="color:#D9B25C;font-size:20px;font-weight:bold;letter-spacing:2px;">MASTERLOOK</div>
+          <div style="color:#8a8880;font-size:11px;letter-spacing:1px;margin-top:4px;">BARBERÍA &amp; SPA</div>
+        </div>
+        <div style="padding:28px 24px;">
+          <div style="display:inline-block;background:${e.color};color:#fff;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px;">${e.titulo}</div>
+          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${corto}, ${e.texto}</p>
+          <div style="background:#fff;border:1px solid #e5e2d9;border-radius:10px;padding:16px 18px;margin-top:16px;">
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Servicio</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;margin-bottom:14px;">${reserva.svc || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Fecha y hora</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${reserva.slot || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Barbero</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${reserva.barber || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Total</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;">${total}</div>
+          </div>
+          <p style="font-size:12px;color:#6c6b74;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
+        </div>
+      </div>`;
+
+    const text = `Hola ${corto}, ${e.texto}\n\nServicio: ${reserva.svc}\nFecha y hora: ${reserva.slot}\nBarbero: ${reserva.barber}\nTotal: ${total}\n\nMASTERLOOK · +56 9 4912 4645`;
+
+    return { subject: `MASTERLOOK · ${e.titulo}`, html, text };
+  }
+
+  function enviarCorreoReserva(reserva, estado, motivo){
+    if(!reserva.email) return;
+    const { subject, html, text } = plantillaCorreoReserva(reserva, estado, motivo);
+    db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text } }).catch(()=>{});
+  }
+
   /** Horario real del local, editable desde el panel — mismo dato para el menú, el pie de página y el chat. */
   let horarioNegocio = { horarioSemana:'11:00–21:00', horarioSabado:'10:00–19:00', horarioDomingo:'Cerrado' };
   function pintarHorarioNegocio(){
@@ -2772,6 +2818,7 @@
           decision: 'pendiente', createdAt: new Date().toISOString()
         };
         publishToPanel(reserva);
+        enviarCorreoReserva(reserva, 'pendiente');
         // si hay sesión activa, la reserva también entra a su historial de cuenta
         if(user){ user.bookings.push(reserva); }
       });
