@@ -184,6 +184,13 @@
   .ctrl-btn.active{background:var(--text-hi);color:#fff;border-color:var(--text-hi);font-weight:600;}
   .ctrl-btn:hover:not(.active){border-color:var(--border-strong);color:var(--text-hi);}
 
+  .panel-nav{
+    display:flex; align-items:center; gap:6px;
+    padding:10px 32px; border-bottom:1px solid var(--border);
+    background:var(--panel-2); overflow-x:auto;
+  }
+  .panel-nav .ctrl-btn{white-space:nowrap;background:var(--panel);}
+
   .barbers-row{
     display:grid;grid-template-columns:56px repeat(5,1fr);
     border-bottom:1px solid var(--border);min-width:1080px;
@@ -957,6 +964,14 @@
     </div>
   </div>
 
+  <nav class="panel-nav">
+    <button class="ctrl-btn" id="btnRecordatorios">🔔 Recordatorios</button>
+    <button class="ctrl-btn admin-only" id="btnComisiones" style="display:none;">💰 Comisiones</button>
+    <button class="ctrl-btn admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
+    <button class="ctrl-btn admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
+    <button class="ctrl-btn" id="btnConfig">⚙ Configurar</button>
+  </nav>
+
   <div class="content">
 
     <div class="kpi-row" id="kpiRow"></div>
@@ -1136,11 +1151,6 @@
           <div class="cal-actions">
             <button class="ctrl-btn primary" id="btnNuevaReserva">+ Nueva reserva</button>
             <button class="ctrl-btn" id="btnBloquear">Bloquear día</button>
-            <button class="ctrl-btn" id="btnRecordatorios">🔔 Recordatorios</button>
-            <button class="ctrl-btn admin-only" id="btnComisiones" style="display:none;">💰 Comisiones</button>
-            <button class="ctrl-btn admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
-            <button class="ctrl-btn admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
-            <button class="ctrl-btn" id="btnConfig">⚙ Configurar</button>
           </div>
         </div>
 
