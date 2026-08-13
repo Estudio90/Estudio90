@@ -456,10 +456,36 @@
     width:52px; height:52px; border-radius:50%; background:var(--oro); color:#12100A;
     display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-md); cursor:pointer; border:none;
   }
+  .chat-panel{
+    position:fixed; right:18px; bottom:154px; z-index:99;
+    width:340px; max-width:calc(100vw - 32px); height:460px; max-height:70vh;
+    background:var(--panel); border:1px solid var(--border); border-radius:16px;
+    box-shadow:var(--shadow-md); display:none; flex-direction:column; overflow:hidden;
+  }
+  .chat-panel.open{display:flex;}
+  .chat-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--negro); flex-shrink:0;}
+  .chat-head-info{display:flex; align-items:center; gap:10px;}
+  .chat-avatar{width:32px; height:32px; border-radius:50%; background:var(--oro); color:#12100A; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0;}
+  .chat-head h4{margin:0; font-size:13.5px; color:#fff;}
+  .chat-head span{font-size:11px; color:var(--oro-claro);}
+  .chat-close{background:none; border:none; color:#fff; cursor:pointer; padding:4px; font-size:16px; line-height:1;}
+  .chat-body{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--panel-2);}
+  .chat-msg{max-width:82%; padding:9px 12px; border-radius:14px; font-size:13.5px; line-height:1.45; white-space:pre-line;}
+  .chat-msg.bot{align-self:flex-start; background:var(--panel); border:1px solid var(--border); border-bottom-left-radius:4px; color:var(--text-hi);}
+  .chat-msg.user{align-self:flex-end; background:var(--oro); color:#12100A; border-bottom-right-radius:4px;}
+  .chat-chips{display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; flex-shrink:0;}
+  .chat-chip{background:var(--panel); border:1px solid var(--linea-fuerte); color:var(--text-hi); font-size:12px; padding:6px 11px; border-radius:99px; cursor:pointer; font-family:inherit;}
+  .chat-chip:hover{border-color:var(--oro);}
+  .chat-input-row{display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); flex-shrink:0;}
+  .chat-input-row input{flex:1; border:1px solid var(--border); border-radius:99px; padding:9px 14px; font-family:inherit; font-size:13px; background:var(--bg); color:var(--text-hi); min-width:0;}
+  .chat-input-row button{width:36px; height:36px; border-radius:50%; background:var(--oro); border:none; color:#12100A; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   body{padding-bottom:88px;}
   @media (min-width:900px){
-    .bottom-nav, .chat-bubble{display:none;}
+    .bottom-nav{display:none;}
     body{padding-bottom:0;}
+  }
+  @media (max-width:480px){
+    .chat-panel{right:10px; left:10px; width:auto; bottom:132px;}
   }
 
   /* ===== auth modal ===== */
@@ -2328,9 +2354,27 @@
 
 <div class="toast" id="toast"></div>
 
-<button class="chat-bubble" aria-label="¿Necesitas ayuda?">
+<button class="chat-bubble" id="chatBubble" aria-label="¿Necesitas ayuda?">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12c0 4.4-4 8-9 8a9.7 9.7 0 0 1-3.4-.6L3 21l1.4-4.2A7.8 7.8 0 0 1 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg>
 </button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div class="chat-head-info">
+      <div class="chat-avatar">ML</div>
+      <div><h4>Asistente MASTERLOOK</h4><span>Suele responder al instante</span></div>
+    </div>
+    <button class="chat-close" id="chatClose" aria-label="Cerrar chat">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-chips" id="chatChips"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Escribe tu mensaje...">
+    <button id="chatSend" aria-label="Enviar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</div>
 
 <nav class="bottom-nav">
   <button class="bn-item" onclick="abrirReservas()">
@@ -2944,6 +2988,183 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
 
     return {whatsapp, correo, asunto};
   }
+
+  // ===== asistente del chat: respuestas por reglas, sin IA externa =====
+  let chatAbierto = false;
+  let chatIniciado = false;
+
+  function chatToggle(){
+    chatAbierto = !chatAbierto;
+    document.getElementById('chatPanel').classList.toggle('open', chatAbierto);
+    if(chatAbierto && !chatIniciado){
+      chatIniciado = true;
+      chatSaludoInicial();
+    }
+  }
+
+  function chatAgregar(rol, texto){
+    const body = document.getElementById('chatBody');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + rol;
+    div.textContent = texto;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function chatChips(lista){
+    const zona = document.getElementById('chatChips');
+    zona.innerHTML = '';
+    lista.forEach(c=>{
+      const b = document.createElement('button');
+      b.className = 'chat-chip';
+      b.type = 'button';
+      b.textContent = c.label;
+      b.addEventListener('click', ()=> chatChipClick(c));
+      zona.appendChild(b);
+    });
+  }
+
+  function chatChipClick(c){
+    if(c.accion){ c.accion(); return; }
+    chatAgregar('user', c.label);
+    document.getElementById('chatChips').innerHTML = '';
+    setTimeout(()=> chatResponder(c.intent || c.label), 450);
+  }
+
+  function chatAbrirWhatsApp(msg){
+    const num = NEGOCIO.telefono.replace(/[^0-9]/g,'');
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  /** Trae la última reserva del cliente, con el estado real que tiene guardado el local. */
+  function chatUltimaReservaDe(user){
+    if(!user || !user.bookings.length) return null;
+    const b = user.bookings[user.bookings.length - 1];
+    const rec = bookingsCache.find(r=> r.id === b.id);
+    return Object.assign({}, b, {
+      decision: (rec && rec.decision) || 'pendiente',
+      reason: rec && rec.reason
+    });
+  }
+
+  function chatListaPrecios(){
+    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    return lista.slice(0,6).map(s=> `• ${s.name} — ${money(s.priceClp)}`).join('\n');
+  }
+
+  function chatMenuPrincipal(){
+    chatChips([
+      { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+      { label:'Ver precios', intent:'precios' },
+      { label:'Horario de atención', intent:'horario' },
+      { label:'Hablar con alguien', accion: ()=> chatAbrirWhatsApp('Hola, tengo una consulta.') }
+    ]);
+  }
+
+  /** Al abrir el chat, si el cliente tiene una hora pendiente se la recordamos primero — así lo animamos a confirmarla. */
+  function chatSaludoInicial(){
+    const user = currentUser();
+    const nombre = user ? user.name.split(' ')[0] : '';
+    const ultima = chatUltimaReservaDe(user);
+
+    if(ultima && ultima.decision === 'pendiente'){
+      chatAgregar('bot', `Hola${nombre ? ' '+nombre : ''}, vi que tienes una hora pendiente por confirmar: ${ultima.svc} el ${ultima.slot}. Normalmente la confirmamos en minutos. ¿Te ayudo con algo mientras tanto?`);
+      chatChips([
+        { label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp(`Hola, quiero confirmar el estado de mi reserva (${ultima.svc}, ${ultima.slot}).`) },
+        { label:'Ver mi cuenta', accion: ()=>{ chatToggle(); onAccountChipClick(); } },
+        { label:'Otra pregunta', intent:'menu' }
+      ]);
+    } else {
+      chatAgregar('bot', `Hola${nombre ? ' '+nombre : ''} 👋 Soy el asistente de MASTERLOOK. ¿Te ayudo a reservar tu hora o tienes alguna duda?`);
+      chatMenuPrincipal();
+    }
+  }
+
+  function chatResponder(textoOriginal){
+    const t = textoOriginal.toLowerCase();
+
+    if(t === 'menu'){ chatAgregar('bot','¿En qué más te ayudo?'); chatMenuPrincipal(); return; }
+
+    if(t === 'precios' || /precio|cu[aá]nto (cuesta|vale)|valor|tarifa/.test(t)){
+      chatAgregar('bot', `Estos son algunos de nuestros precios:\n\n${chatListaPrecios()}\n\n¿Quieres reservar alguno?`);
+      chatChips([
+        { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+        { label:'Ver todos los servicios', accion: ()=>{ chatToggle(); document.getElementById('servicios')?.scrollIntoView({behavior:'smooth'}); } },
+        { label:'Otra pregunta', intent:'menu' }
+      ]);
+      return;
+    }
+
+    if(t === 'horario' || /horario|abren|cierran|atienden|abierto|cerrado/.test(t)){
+      chatAgregar('bot', 'Atendemos Lunes a Viernes de 10:00 a 20:00, y Sábado de 10:00 a 18:00. Domingo cerrado.');
+      chatChips([
+        { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+        { label:'Otra pregunta', intent:'menu' }
+      ]);
+      return;
+    }
+
+    if(/mi reserva|estado de mi|confirmad|pendiente/.test(t)){
+      const user = currentUser();
+      const ultima = chatUltimaReservaDe(user);
+      if(!ultima){
+        chatAgregar('bot','No encuentro reservas a tu nombre todavía. ¿Quieres agendar una ahora?');
+        chatChips([{ label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+      } else if(ultima.decision === 'aprobada'){
+        chatAgregar('bot', `¡Tu hora ya está confirmada! ${ultima.svc} el ${ultima.slot}. Te esperamos.`);
+        chatChips([{ label:'Gracias', intent:'gracias' }]);
+      } else if(ultima.decision === 'rechazada'){
+        chatAgregar('bot', `Esa hora no se pudo tomar${ultima.reason ? ' (' + ultima.reason + ')' : ''}. ¿Buscamos otro horario?`);
+        chatChips([{ label:'Reservar otra hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+      } else {
+        chatAgregar('bot', `Tu hora está pendiente de confirmación: ${ultima.svc} el ${ultima.slot}. Te avisamos apenas quede lista.`);
+        chatChips([{ label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp('Hola, quiero saber el estado de mi reserva.') }]);
+      }
+      return;
+    }
+
+    if(/reservar|agendar|sacar hora|una cita/.test(t)){
+      chatAgregar('bot', 'Con gusto. Te dejo abierta la reserva para que elijas servicio, barbero y horario — toma menos de un minuto.');
+      chatChips([{ label:'Ir a reservar →', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+      return;
+    }
+
+    if(/direcci[oó]n|ubicaci[oó]n|d[oó]nde (est[aá]n|queda)/.test(t)){
+      chatAgregar('bot', `Estamos en ${NEGOCIO.direccion}. Escríbenos al ${NEGOCIO.telefono} si necesitas indicaciones.`);
+      chatChips([{ label:'Otra pregunta', intent:'menu' }]);
+      return;
+    }
+
+    if(t === 'gracias' || /gracias|listo|perfecto|chao|adios|adiós/.test(t)){
+      chatAgregar('bot', '¡De nada! Cualquier cosa, aquí estoy. 🙌');
+      chatChips([{ label:'Otra pregunta', intent:'menu' }]);
+      return;
+    }
+
+    if(/hola|buenas|buenos d[ií]as|buenas tardes/.test(t)){
+      chatAgregar('bot','¡Hola! ¿Te ayudo a reservar o tienes alguna duda?');
+      chatMenuPrincipal();
+      return;
+    }
+
+    chatAgregar('bot', 'No estoy segura de entender eso, pero te puedo ayudar con esto:');
+    chatMenuPrincipal();
+  }
+
+  function chatEnviarDesdeInput(){
+    const input = document.getElementById('chatInput');
+    const texto = input.value.trim();
+    if(!texto) return;
+    chatAgregar('user', texto);
+    input.value = '';
+    document.getElementById('chatChips').innerHTML = '';
+    setTimeout(()=> chatResponder(texto), 500);
+  }
+
+  document.getElementById('chatBubble').addEventListener('click', chatToggle);
+  document.getElementById('chatClose').addEventListener('click', chatToggle);
+  document.getElementById('chatSend').addEventListener('click', chatEnviarDesdeInput);
+  document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key === 'Enter') chatEnviarDesdeInput(); });
 
   function notifyBooking(b){
     const msgs = buildMessages(b);
