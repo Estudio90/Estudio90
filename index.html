@@ -2016,6 +2016,9 @@
               <span class="field-label">Teléfono</span>
               <input type="tel" placeholder="+56 9 1234 5678" id="cPhone">
 
+              <span class="field-label">Correo electrónico <span style="text-transform:none;">(para tu confirmación)</span></span>
+              <input type="email" placeholder="tu@correo.com" id="cEmail">
+
               <span class="field-label">¿Primera vez con nosotros?</span>
               <div class="pay-opts" id="rvPrimera">
                 <div class="pay-opt selected" data-primera="no">Ya soy cliente</div>
@@ -2757,7 +2760,7 @@
     const datos = {
       name: nameInput.value.trim(),
       phone: phoneInput.value.trim(),
-      email: (currentUser() || {}).email || '',
+      email: document.getElementById('cEmail').value.trim() || (currentUser() || {}).email || '',
       svc: state.svc, servicios: state.servicios || [], plan: state.plan || null, barber: state.barber, slot: state.slotLabel || state.slot,
       price: state.price, pay: payMethod
     };
@@ -2850,7 +2853,7 @@
     state.servicios=[]; state.barberId=null; state.duracion=null;
     pintarElegidos(); marcarTarjetas();
     document.querySelectorAll('.svc-opt, .barber-opt, .slot, .pay-opt').forEach(x=>x.classList.remove('selected'));
-    nameInput.value=''; phoneInput.value='';
+    nameInput.value=''; phoneInput.value=''; document.getElementById('cEmail').value='';
     document.getElementById('toStep2').disabled = true;
     document.getElementById('toStep3').disabled = true;
     document.getElementById('confirmBtn').disabled = true;
@@ -3443,6 +3446,8 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     if(!user) return;
     if(!nameInput.value) nameInput.value = user.name;
     if(!phoneInput.value && user.phone) phoneInput.value = user.phone;
+    const emailInput = document.getElementById('cEmail');
+    if(!emailInput.value && user.email) emailInput.value = user.email;
     checkStep3();
   }
 
