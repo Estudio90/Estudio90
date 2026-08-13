@@ -2105,7 +2105,7 @@
   function layoutColumn(colId){
     const items = appointments
       .map((a, idx) => ({ a, idx, startMin: a.start[0]*60+a.start[1], endMin: a.end[0]*60+a.end[1] }))
-      .filter(x => x.a.col === colId)
+      .filter(x => x.a.col === colId && x.a.webDecision !== 'rechazada')
       .sort((p,q)=> p.startMin - q.startMin || p.endMin - q.endMin);
 
     let cluster = [];
@@ -2325,6 +2325,7 @@
 
     incoming.forEach(r=>{
       if(existing.has(r.id)) return;
+      if(r.decision === 'rechazada') return;   // las rechazadas no se muestran en el calendario
 
       const meta = serviceMeta(r.svc);
       const col = pickColumn(r.barber);
@@ -2365,7 +2366,7 @@
 
   function refreshBarberCounts(){
     barbers.forEach(b=>{
-      const count = appointments.filter(a=> a.col === b.id).length;
+      const count = appointments.filter(a=> a.col === b.id && a.webDecision !== 'rechazada').length;
       b.count = count;   // así pintarColumnas() no vuelve a mostrar un número viejo
       const head = document.querySelector(`.barber-head[data-barber="${b.id}"]`);
       if(!head) return;
@@ -4640,12 +4641,16 @@
 
     const idx = appointments.indexOf(a);
     const el = document.querySelector(`.appt[data-idx="${idx}"]`);
-    if(el){
-      el.classList.toggle('web-rejected', decision === 'rechazada');
+    if(decision === 'rechazada'){
+      // se saca del calendario para no estorbar; el registro queda guardado (el cliente lo ve en "Mis reservas")
+      if(el) el.remove();
+      layoutAllColumns();
+      refreshBarberCounts();
+    } else if(el){
       const dot = el.querySelector('.status-dot');
       const txt = el.querySelector('.status-txt');
       if(dot) dot.className = 'status-dot ' + a.status;
-      if(txt) txt.textContent = decision === 'aprobada' ? 'Confirmado' : 'No show';
+      if(txt) txt.textContent = 'Confirmado';
     }
 
     showToast(decision === 'aprobada'
