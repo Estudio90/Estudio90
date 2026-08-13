@@ -1488,7 +1488,7 @@
       <button class="icon-btn danger" id="btnEliminarCita" title="Eliminar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>
       </button>
-      <button class="icon-btn" title="Editar">
+      <button class="icon-btn" id="btnEditarCita" title="Editar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>
       </button>
       <div class="spacer"></div>
@@ -1592,6 +1592,24 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ============ VIEW 3: Editar cita ============ -->
+  <div class="pay-view" id="editView">
+    <button class="pay-back" id="editBack">← Volver</button>
+
+    <div class="pay-section">
+      <div class="field-label">Servicio</div>
+      <select id="editServicio" class="mg-input"></select>
+
+      <div class="field-label" style="margin-top:14px;">Barbero</div>
+      <select id="editBarbero" class="mg-input"></select>
+
+      <div class="field-label" style="margin-top:14px;">Hora</div>
+      <input type="time" id="editHora" class="mg-input">
+    </div>
+
+    <button class="mg-btn solid full" id="editGuardar" style="margin-top:20px;">Guardar cambios</button>
   </div>
 
   <!-- ============ VIEW 2: Método de pago ============ -->
@@ -4588,6 +4606,7 @@
   const drawer = document.getElementById('drawer');
   const detailView = document.getElementById('detailView');
   const payView = document.getElementById('payView');
+  const editView = document.getElementById('editView');
   const paymentMenu = document.getElementById('paymentMenu');
   const paymentBtn = document.getElementById('paymentBtn');
   let currentAppt = null;
@@ -4768,6 +4787,82 @@
 
     closeDrawer();
     showToast('Reserva eliminada');
+  });
+
+  document.getElementById('btnEditarCita').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a) return;
+    await cargarCatalogo();
+    llenarSelect(document.getElementById('editServicio'), cfgServicios.filter(s=> s.active), 'id',
+      s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
+    llenarSelect(document.getElementById('editBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
+
+    const svcActual = cfgServicios.find(s=> s.name === a.service);
+    if(svcActual) document.getElementById('editServicio').value = svcActual.id;
+    const barberoActual = cfgBarberos.find(b=> b.name === a.barber);
+    if(barberoActual) document.getElementById('editBarbero').value = barberoActual.id;
+    document.getElementById('editHora').value =
+      String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
+
+    detailView.classList.remove('open');
+    editView.classList.add('open');
+  });
+
+  document.getElementById('editBack').addEventListener('click', ()=>{
+    editView.classList.remove('open');
+    detailView.classList.add('open');
+  });
+
+  document.getElementById('editGuardar').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a) return;
+    const btn = document.getElementById('editGuardar');
+    const servicio = cfgServicios.find(s=> s.id === document.getElementById('editServicio').value);
+    const barbero = cfgBarberos.find(b=> b.id === document.getElementById('editBarbero').value);
+    const hora = document.getElementById('editHora').value;
+    if(!servicio || !barbero || !hora){ showToast('Completa servicio, barbero y hora'); return; }
+
+    btn.disabled = true; btn.textContent = 'Guardando...';
+
+    const [h,m] = hora.split(':').map(Number);
+    const finMin = h*60 + m + servicio.minutes;
+
+    if(a.fromWeb && a.webId){
+      try{
+        const docRef = db.collection('bookings').doc(a.webId);
+        const snap = await docRef.get();
+        const actual = snap.exists ? snap.data() : {};
+        const horaTexto = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+        const slotNuevo = actual.slot ? actual.slot.replace(/\d{1,2}:\d{2}/, horaTexto) : horaTexto;
+        await docRef.update({
+          svc: servicio.name, price: servicio.priceClp, barber: barbero.name,
+          startMin: h*60+m, duracion: servicio.minutes, slot: slotNuevo
+        });
+      }catch(e){
+        btn.disabled = false; btn.textContent = 'Guardar cambios';
+        showToast('No se pudo guardar: ' + e.message);
+        return;
+      }
+    }
+
+    a.service = servicio.name;
+    a.price = '$' + servicio.priceClp.toLocaleString('es-CL');
+    a.type = serviceMeta(servicio.name).type;
+    a.barber = barbero.name;
+    a.col = barbero.calId;
+    a.start = [h, m];
+    a.end = [Math.floor(finMin/60), finMin%60];
+
+    document.querySelectorAll('.appt').forEach(el=> el.remove());
+    Object.keys(colCounters).forEach(k=> colCounters[k] = 0);
+    appointments.forEach((ap,i)=> renderAppointment(ap, i));
+    layoutAllColumns();
+    refreshBarberCounts();
+
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+    showToast('Reserva actualizada');
+    editView.classList.remove('open');
+    closeDrawer();
   });
 
   const tagLabels = {new:'Nuevo cliente', pend:'Pendiente', ok:'Asiste', resched:'Reagendó', no:'No show', done:'Completado'};
