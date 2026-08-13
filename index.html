@@ -2043,8 +2043,7 @@
             <div class="confirm-msg" id="confirmMsg">
               <div class="check">✓</div>
               <h3 class="display" style="margin-bottom:8px;">Reserva confirmada</h3>
-              <p style="color:var(--text-mid); font-size:0.9rem;">Tu hora quedó registrada. El local la revisará y te confirmaremos en breve.</p>
-              <div class="notify-box" id="notifyBox"></div>
+              <p style="color:var(--text-mid); font-size:0.9rem;">Tu hora quedó registrada. El local la revisará y te confirmaremos en breve. Si dejaste tu correo, te enviamos los detalles ahí.</p>
               <button class="btn-ghost" style="margin-top:20px;" id="newBooking">Hacer otra reserva</button>
             </div>
           </div>
@@ -2683,7 +2682,7 @@
   let bookingsCache = [];
   db.collection('bookings').onSnapshot(snap=>{
     bookingsCache = snap.docs.map(d=> d.data());
-    try{ renderAccount(); }catch(e){}
+    renderAccount().catch(()=>{});
   });
 
   function publishToPanel(booking){
@@ -2832,7 +2831,6 @@
     document.getElementById('formZone').style.display = 'none';
     document.getElementById('confirmMsg').classList.add('show');
     await renderAccount();
-    notifyBooking(datos);
   });
 
   /** Transbank exige que el token viaje por POST en un formulario. */
@@ -3012,49 +3010,6 @@
     instagram: '@masterlook.cl'
   };
 
-  function buildMessages(b){
-    const monto = '$' + Number(b.price).toLocaleString('es-CL');
-    const corto = b.name.split(' ')[0];
-
-    const whatsapp =
-`Hola ${corto}, recibimos tu reserva en ${NEGOCIO.nombre}.
-
-Servicio: ${b.svc}
-Barbero: ${b.barber}
-Fecha y hora: ${b.slot}
-Total: ${monto}
-Pago: ${b.pay}
-
-Tu hora queda POR CONFIRMAR. Te avisamos apenas el local la apruebe.
-Si necesitas cambiarla, responde este mensaje.
-
-${NEGOCIO.direccion}`;
-
-    const asunto = `Tu reserva en ${NEGOCIO.nombre} — ${b.slot}`;
-    const correo =
-`Hola ${corto},
-
-Recibimos tu reserva en ${NEGOCIO.nombre}. Estos son los detalles:
-
-  Servicio ....... ${b.svc}
-  Barbero ........ ${b.barber}
-  Fecha y hora ... ${b.slot}
-  Total .......... ${monto}
-  Medio de pago .. ${b.pay}
-
-Estado actual: POR CONFIRMAR
-El local revisará la disponibilidad y te avisaremos apenas quede confirmada.
-Puedes seguir el estado desde tu cuenta en el sitio.
-
-Para reagendar o cancelar, responde este correo o escríbenos al ${NEGOCIO.telefono}.
-
-Te esperamos,
-Equipo ${NEGOCIO.nombre}
-${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
-
-    return {whatsapp, correo, asunto};
-  }
-
   // ===== asistente del chat: respuestas por reglas, sin IA externa =====
   let chatAbierto = false;
   let chatIniciado = false;
@@ -3232,41 +3187,6 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
   document.getElementById('chatSend').addEventListener('click', chatEnviarDesdeInput);
   document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key === 'Enter') chatEnviarDesdeInput(); });
 
-  function notifyBooking(b){
-    const msgs = buildMessages(b);
-    const waNum = (b.phone || '').replace(/[^0-9]/g,'');
-    const box = document.getElementById('notifyBox');
-    if(!box) return;
-
-    const auto = MODE === 'api';
-
-    box.innerHTML = `
-      <div class="notify-title">${auto ? 'Confirmación enviada' : 'Confirmación lista'}</div>
-      ${b.code ? `<div class="notify-row"><span class="notify-ic code">#</span>
-        <div class="notify-txt"><b>Código</b> ${b.code}</div></div>` : ''}
-      <div class="notify-row">
-        <span class="notify-ic wa">W</span>
-        <div class="notify-txt"><b>WhatsApp</b> a ${b.phone || '—'}
-          ${auto ? '<span class="notify-state">Enviado automáticamente</span>' : ''}</div>
-        ${!auto && waNum ? `<a class="notify-btn" href="https://wa.me/${waNum}?text=${encodeURIComponent(msgs.whatsapp)}" target="_blank" rel="noopener">Abrir</a>` : ''}
-      </div>
-      <div class="notify-row">
-        <span class="notify-ic mail">@</span>
-        <div class="notify-txt"><b>Correo</b> a ${b.email || 'tu correo registrado'}
-          ${auto ? '<span class="notify-state">Enviado automáticamente</span>' : ''}</div>
-        ${!auto && b.email ? `<a class="notify-btn" href="mailto:${b.email}?subject=${encodeURIComponent(msgs.asunto)}&body=${encodeURIComponent(msgs.correo)}">Abrir</a>` : ''}
-      </div>
-      <button class="notify-preview-btn" id="notifyToggle">Ver el mensaje ▾</button>
-      <pre class="notify-preview" id="notifyPreview"></pre>
-      ${auto ? '' : '<p class="notify-demo-note">Modo demo: sin servidor, los mensajes se abren en tu app para que veas el contenido exacto.</p>'}
-    `;
-    document.getElementById('notifyPreview').textContent = msgs.whatsapp;
-    document.getElementById('notifyToggle').addEventListener('click', ()=>{
-      document.getElementById('notifyPreview').classList.toggle('open');
-    });
-    box.classList.add('show');
-  }
-
   const STATUS_LABEL = {
     PENDING:'Por confirmar', CONFIRMED:'Confirmada', REJECTED:'Rechazada',
     CANCELLED:'Cancelada', COMPLETED:'Completada', NO_SHOW:'No asististe'
@@ -3358,7 +3278,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
           </div>
           <div style="display:flex; align-items:center; gap:12px;">
             <span class="hi-status ${STATUS_CLASS[b.status]}">${STATUS_LABEL[b.status]}</span>
-            <span class="mono">$${b.price.toLocaleString('es-CL')}</span>
+            <span class="mono">${money(Number(b.price) || 0)}</span>
           </div>
         </div>`;
       }).join('');
@@ -3433,7 +3353,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
           </div>
           <div style="display:flex; align-items:center; gap:12px;">
             <span class="hi-status ${cls}">${label}</span>
-            <span class="mono">$${b.price.toLocaleString('es-CL')}</span>
+            <span class="mono">${money(Number(b.price) || 0)}</span>
           </div>
         </div>`;
       }).join('');
@@ -5093,7 +5013,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     // en modo demo, Firestore ya avisa solo cuando cambia el estado de una reserva (ver onSnapshot arriba)
     if(MODE !== 'demo'){
       // en modo API refrescamos el estado de las reservas cada 20 segundos
-      setInterval(()=>{ try{ if(currentUser()) renderAccount(); }catch(e){} }, 20000);
+      setInterval(()=>{ if(currentUser()) renderAccount().catch(()=>{}); }, 20000);
     }
   })();
 </script>
