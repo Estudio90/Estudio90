@@ -1801,6 +1801,60 @@
     db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text } }).catch(()=>{});
   }
 
+  /** Comprobante de pago: mismo diseño que los otros correos, con el detalle del cobro. */
+  function enviarCorreoComprobante(a, metodoLabel, total){
+    if(!a.email) return;
+    const corto = (a.client || '').split(' ')[0];
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#faf8f4;">
+        <div style="background:#1A1815;padding:28px 24px;text-align:center;">
+          <div style="color:#D9B25C;font-size:20px;font-weight:bold;letter-spacing:2px;">MASTERLOOK</div>
+          <div style="color:#8a8880;font-size:11px;letter-spacing:1px;margin-top:4px;">BARBERÍA &amp; SPA</div>
+        </div>
+        <div style="padding:28px 24px;">
+          <div style="display:inline-block;background:#2E7D32;color:#fff;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px;">Pago recibido</div>
+          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${corto}, este es tu comprobante de pago.</p>
+          <div style="background:#fff;border:1px solid #e5e2d9;border-radius:10px;padding:16px 18px;margin-top:16px;">
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Servicio</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;margin-bottom:14px;">${a.service || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Método de pago</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${metodoLabel}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Total pagado</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;">${total}</div>
+          </div>
+          <p style="font-size:12px;color:#6c6b74;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
+        </div>
+      </div>`;
+    const text = `Hola ${corto}, este es tu comprobante de pago.\n\nServicio: ${a.service}\nMétodo de pago: ${metodoLabel}\nTotal pagado: ${total}\n\nMASTERLOOK · +56 9 4912 4645`;
+    db.collection('mail').add({ to:[a.email], message:{ subject:'MASTERLOOK · Comprobante de pago', html, text } }).catch(()=>{});
+  }
+
+  /** Aviso flotante con botón para mandar el comprobante por WhatsApp con un toque. */
+  function mostrarAlertaComprobante(a, metodoLabel, total){
+    const waNum = (a.phone || '').replace(/[^0-9]/g,'');
+    if(!waNum) return;
+    const cont = document.getElementById('waAlerts');
+    if(!cont) return;
+    const msg = `Hola ${a.client}!\n\nAquí tienes tu comprobante de pago en MASTER LOOK ✅\n\nServicio: ${a.service}\nMétodo de pago: ${metodoLabel}\nTotal pagado: ${total}\n\n¡Gracias por tu visita!`;
+
+    const card = document.createElement('div');
+    card.className = 'wa-alert';
+    card.innerHTML = `
+      <div class="wa-alert-row" style="justify-content:space-between;">
+        <p class="wa-alert-title">Comprobante de pago</p>
+        <button class="wa-alert-x" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="wa-alert-sub">${a.client} · ${total}</p>
+      <button class="wa-alert-btn" type="button">Enviar comprobante</button>
+    `;
+    card.querySelector('.wa-alert-x').addEventListener('click', ()=> card.remove());
+    card.querySelector('.wa-alert-btn').addEventListener('click', ()=>{
+      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+      card.remove();
+    });
+    cont.appendChild(card);
+  }
+
   function entrarAlPanel(nombre){
     document.getElementById('loginScreen').classList.add('oculto');
     const who = document.querySelector('.topbar .who, #who');
@@ -5025,10 +5079,16 @@
     detailView.classList.add('open');
   });
 
+  const METODOS_PAGO = {
+    pos:'POS', online:'Online', transfer:'Transferencia',
+    gift:'Giftcard', debit:'Tarjeta de débito', credit:'Tarjeta de crédito', cash:'Efectivo'
+  };
+  let metodoPagoSeleccionado = 'cash';
   document.querySelectorAll('.pay-method').forEach(m=>{
     m.addEventListener('click', ()=>{
       document.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('selected'));
       m.classList.add('selected');
+      metodoPagoSeleccionado = m.dataset.m;
     });
   });
 
@@ -5038,12 +5098,17 @@
   });
 
   document.getElementById('payContinue').addEventListener('click', ()=>{
+    const totalTxt = document.getElementById('payTotal').textContent;
     if(currentAppt){
       currentAppt.pagado = true;
+      currentAppt.metodoPago = metodoPagoSeleccionado;
       paymentBtn.classList.add('paid');
       document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
+
+      const metodoLabel = METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado;
+      enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt);
+      mostrarAlertaComprobante(currentAppt, metodoLabel, totalTxt);
     }
-    const totalTxt = document.getElementById('payTotal').textContent;
     showToast(`Cobro registrado · ${totalTxt}`);
     payView.classList.remove('open');
     detailView.classList.add('open');
