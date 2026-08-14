@@ -245,7 +245,7 @@
   .grid-body{display:grid;grid-template-columns:56px repeat(5,1fr);min-width:1080px;position:relative;}
   .time-col{border-right:1px solid var(--border);}
   .time-slot{
-    height:74px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-low);
+    height:50px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-low);
     padding:4px 10px 0 0;text-align:right;border-bottom:1px solid var(--border);
   }
   .col{
@@ -253,8 +253,8 @@
     background-image:
       linear-gradient(var(--border) 1px, transparent 1px),
       linear-gradient(rgba(15,15,20,0.045) 1px, transparent 1px);
-    background-size:100% 74px, 100% 74px;
-    background-position:0 0, 0 37px;
+    background-size:100% 50px, 100% 50px;
+    background-position:0 0, 0 25px;
     transition:opacity .2s ease, background-color .12s ease;
   }
   .col:hover{background-color:rgba(74,92,240,0.02);}
@@ -627,7 +627,7 @@
   .appt{
     position:absolute;left:5px;right:5px;background:var(--panel);z-index:2;
     border:1px solid var(--border);border-radius:var(--radius-sm);
-    padding:9px 11px;min-height:48px;cursor:pointer;overflow:hidden;
+    padding:4px 9px;min-height:36px;cursor:pointer;overflow:hidden;
     box-shadow:var(--shadow-sm);
     transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
     animation:apptIn .32s cubic-bezier(.2,.8,.2,1) both;
@@ -640,10 +640,10 @@
   .appt.svc-peinado{background:var(--peinado-tint);} .appt.svc-peinado::before{background:var(--peinado);}
   .appt:hover{transform:translateY(-1px);box-shadow:var(--shadow-hover);border-color:var(--border-strong);z-index:8;}
   .appt-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
-  .appt-client{font-size:12.5px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .appt-time{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text-mid);flex:0 0 auto;}
-  .appt-service{font-size:10.5px;color:var(--text-mid);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .appt-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:5px;}
+  .appt-client{font-size:11.5px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appt-time{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-mid);flex:0 0 auto;}
+  .appt-service{font-size:10px;color:var(--text-mid);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appt-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:2px;}
   .appt-bottom-left{display:flex;align-items:center;gap:5px;min-width:0;}
   .status-dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;}
   .status-dot.ok{background:var(--ok);} .status-dot.pend{background:var(--pend);}
@@ -754,20 +754,21 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  .wa-alerts{position:fixed;right:18px;bottom:26px;z-index:70;display:flex;flex-direction:column-reverse;gap:10px;}
+  .wa-alerts{position:fixed;right:14px;bottom:14px;z-index:70;display:flex;flex-direction:column-reverse;gap:6px;max-height:60vh;overflow:hidden;pointer-events:none;}
   .wa-alert{
-    width:300px;background:var(--panel);border:1px solid var(--border);border-radius:12px;
-    box-shadow:var(--shadow-lg);padding:14px 16px;display:flex;flex-direction:column;gap:8px;
-    animation:waIn .2s ease;
+    width:190px;background:var(--panel);border:1px solid var(--border);border-radius:9px;
+    box-shadow:var(--shadow-lg);padding:8px 10px;display:flex;flex-direction:column;gap:4px;
+    animation:waIn .2s ease;pointer-events:auto;opacity:.94;transition:opacity .15s ease;
   }
-  @keyframes waIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .wa-alert:hover{opacity:1;}
+  @keyframes waIn{from{opacity:0;transform:translateY(10px);}to{opacity:.94;transform:translateY(0);}}
   .wa-alert-row{display:flex;align-items:center;gap:8px;}
-  .wa-alert-title{font-size:12.5px;font-weight:600;color:var(--text-hi);margin:0;}
-  .wa-alert-sub{font-size:12px;color:var(--text-mid);margin:0;}
-  .wa-alert-x{background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:14px;padding:2px 4px;}
+  .wa-alert-title{font-size:10.5px;font-weight:600;color:var(--text-hi);margin:0;}
+  .wa-alert-sub{font-size:10px;color:var(--text-mid);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wa-alert-x{background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:12px;padding:2px 4px;}
   .wa-alert-btn{
-    background:#25D366;color:#fff;border:none;border-radius:8px;padding:9px 12px;
-    font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;
+    background:#25D366;color:#fff;border:none;border-radius:6px;padding:6px 10px;
+    font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;
   }
 
   /* ---------- Drawer: top icon row ---------- */
@@ -2124,6 +2125,19 @@
     db.collection('mail').add({ to:[a.email], message:{ subject:'MASTERLOOK · Comprobante de pago', html, text } }).catch(()=>{});
   }
 
+  /** Agrega una tarjeta flotante al contenedor de avisos: se cierra sola a
+      los 15s (pausa si el mouse está encima) y nunca deja más de 3 a la vez,
+      para que no tapen el calendario cuando llegan varias reservas seguidas. */
+  function agregarAlertaFlotante(cont, card){
+    const MAX_VISIBLES = 3;
+    while(cont.children.length >= MAX_VISIBLES) cont.removeChild(cont.firstElementChild);
+    cont.appendChild(card);
+
+    let timer = setTimeout(()=> card.remove(), 15000);
+    card.addEventListener('mouseenter', ()=> clearTimeout(timer));
+    card.addEventListener('mouseleave', ()=> { timer = setTimeout(()=> card.remove(), 15000); });
+  }
+
   /** Aviso flotante con botón para mandar el comprobante por WhatsApp con un toque. */
   function mostrarAlertaComprobante(a, metodoLabel, total){
     const waNum = (a.phone || '').replace(/[^0-9]/g,'');
@@ -2147,7 +2161,7 @@
       window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
       card.remove();
     });
-    cont.appendChild(card);
+    agregarAlertaFlotante(cont, card);
   }
 
   function entrarAlPanel(nombre){
@@ -2344,15 +2358,15 @@
     c.dataset.barber = id;
     c.id = 'col' + id;
     grid.appendChild(c);
-    const alto = (21 - 10) * 74;
+    const alto = (END_HOUR - START_HOUR) * SLOT_H;
     c.style.height = alto + 'px';
-    c.style.backgroundSize = '100% 74px, 100% 74px';
-    c.style.backgroundPosition = '0 0, 0 37px';
+    c.style.backgroundSize = `100% ${SLOT_H}px, 100% ${SLOT_H}px`;
+    c.style.backgroundPosition = `0 0, 0 ${SLOT_H/2}px`;
   }
 
   pintarColumnas();
 
-  const START_HOUR=10, END_HOUR=21, SLOT_H=74;
+  const START_HOUR=10, END_HOUR=21, SLOT_H=50;
   const timeCol = document.getElementById('timeCol');
   for(let h=START_HOUR; h<=END_HOUR; h++){
     const div=document.createElement('div');
@@ -2604,7 +2618,7 @@
     // la tarjeta siempre ocupa el bloque de hora completo (se redondea hacia
     // arriba), porque el local trabaja por rango de hora, no por minuto exacto
     const bottomBloque = Math.ceil(bottom / SLOT_H) * SLOT_H;
-    const h = Math.max(bottomBloque - top, 48);
+    const h = Math.max(bottomBloque - top, 36);
     const s = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
     const e = String(a.end[0]).padStart(2,'0')+':'+String(a.end[1]).padStart(2,'0');
 
@@ -2888,7 +2902,7 @@
       window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(construirMensajeWhatsApp(a))}`, '_blank');
       card.remove();
     });
-    cont.appendChild(card);
+    agregarAlertaFlotante(cont, card);
   }
   const SERVICE_TYPE = [
     {re:/ondulaci/i,               type:'svc-onda',    mins:180},
