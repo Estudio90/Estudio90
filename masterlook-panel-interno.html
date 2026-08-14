@@ -1367,8 +1367,9 @@
     <button class="mg-close" data-close>✕</button>
   </div>
   <p class="mg-note">
-    Salen solos a las <b>18:00</b> del día anterior, a las reservas confirmadas.
-    Aquí puedes revisar el estado o enviarlos antes.
+    Reservas <b>confirmadas para mañana</b>. El correo se manda solo al presionar
+    "Enviar ahora"; el WhatsApp hay que abrirlo uno por uno (el navegador no deja
+    abrirlos todos automáticamente).
   </p>
 
   <div class="rc-summary" id="rcResumen">
@@ -1773,6 +1774,7 @@
       aprobada: { titulo:'Reserva confirmada', color:'#2E7D32', texto:'Tu hora quedó confirmada. Te esperamos.' },
       rechazada: { titulo:'Reserva no disponible', color:'#B03A2E', texto: motivo ? `No pudimos tomar esa hora. Motivo: ${motivo}` : 'No pudimos tomar esa hora.' },
       eliminada: { titulo:'Reserva cancelada', color:'#6c6b74', texto:'Tu hora fue cancelada por el local. Si tienes dudas, contáctanos.' },
+      recordatorio: { titulo:'Recordatorio de tu cita', color:'#D9B25C', texto:'Te recordamos tu cita de mañana. ¡Te esperamos!' },
     };
     const e = estados[estado] || estados.eliminada;
     const corto = (reserva.client || '').split(' ')[0];
@@ -4730,59 +4732,126 @@
     await cargarRecordatorios();
   });
 
+  /** Reservas confirmadas para mañana (usa la misma data en vivo del calendario). */
+  function reservasDeManana(){
+    const manana = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
+    return firestoreBookings
+      .filter(r=> r.fecha === manana && r.decision === 'aprobada')
+      .sort((a,b)=> (a.startMin||0) - (b.startMin||0));
+  }
+
+  /** Adapta un documento crudo de Firestore al formato que usan las plantillas de correo/WhatsApp. */
+  function bookingParaAviso(r){
+    return {
+      client: r.client, service: r.svc, price: r.price,
+      start: [Math.floor((r.startMin||0)/60), (r.startMin||0)%60],
+      fecha: r.fecha, barber: r.barber, phone: r.phone, email: r.email, id: r.id,
+    };
+  }
+
   async function cargarRecordatorios(){
     const lista = document.getElementById('rcLista');
+    lista.innerHTML = '<div class="rc-empty">Cargando...</div>';
 
-    if(MODE !== 'api'){
-      document.getElementById('rcTotal').textContent = '—';
-      document.getElementById('rcEnviados').textContent = '—';
-      document.getElementById('rcPend').textContent = '—';
-      lista.innerHTML = '<div class="rc-empty">Los recordatorios necesitan servidor para funcionar.</div>';
-      document.getElementById('rcEnviar').disabled = true;
+    if(MODE === 'api'){
+      try{
+        const d = await api('/admin/reminders/status');
+        document.getElementById('rcTotal').textContent = d.total;
+        document.getElementById('rcEnviados').textContent = d.sent;
+        document.getElementById('rcPend').textContent = d.pending;
+        document.getElementById('rcEnviar').disabled = d.pending === 0;
+        if(!d.bookings.length){
+          lista.innerHTML = '<div class="rc-empty">No hay reservas confirmadas para mañana.</div>';
+          return;
+        }
+        lista.innerHTML = d.bookings.map(b=>{
+          const hora = new Date(b.startsAt).toLocaleTimeString('es-CL',
+            { hour:'2-digit', minute:'2-digit', hour12:false });
+          const sinContacto = !b.clientPhone && !b.clientEmail;
+          const chip = sinContacto
+            ? '<span class="rc-chip none">Sin contacto</span>'
+            : b.reminderSentAt
+              ? '<span class="rc-chip sent">Avisado</span>'
+              : '<span class="rc-chip wait">Por avisar</span>';
+          return `<div class="rc-item">
+            <div><b>${b.clientName}</b> <span class="rc-h">${hora} · ${b.code}</span></div>
+            ${chip}
+          </div>`;
+        }).join('');
+      }catch(e){
+        lista.innerHTML = `<div class="rc-empty">${e.message}</div>`;
+      }
       return;
     }
 
-    lista.innerHTML = '<div class="rc-empty">Cargando...</div>';
-    try{
-      const d = await api('/admin/reminders/status');
-      document.getElementById('rcTotal').textContent = d.total;
-      document.getElementById('rcEnviados').textContent = d.sent;
-      document.getElementById('rcPend').textContent = d.pending;
-      document.getElementById('rcEnviar').disabled = d.pending === 0;
+    const reservas = reservasDeManana();
+    const enviados = reservas.filter(r=> r.recordatorioEnviado).length;
+    document.getElementById('rcTotal').textContent = reservas.length;
+    document.getElementById('rcEnviados').textContent = enviados;
+    document.getElementById('rcPend').textContent = reservas.length - enviados;
+    document.getElementById('rcEnviar').disabled = (reservas.length - enviados) === 0;
 
-      if(!d.bookings.length){
-        lista.innerHTML = '<div class="rc-empty">No hay reservas confirmadas para mañana.</div>';
-        return;
-      }
-
-      lista.innerHTML = d.bookings.map(b=>{
-        const hora = new Date(b.startsAt).toLocaleTimeString('es-CL',
-          { hour:'2-digit', minute:'2-digit', hour12:false });
-        const sinContacto = !b.clientPhone && !b.clientEmail;
-        const chip = sinContacto
-          ? '<span class="rc-chip none">Sin contacto</span>'
-          : b.reminderSentAt
-            ? '<span class="rc-chip sent">Avisado</span>'
-            : '<span class="rc-chip wait">Por avisar</span>';
-        return `<div class="rc-item">
-          <div><b>${b.clientName}</b> <span class="rc-h">${hora} · ${b.code}</span></div>
-          ${chip}
-        </div>`;
-      }).join('');
-    }catch(e){
-      lista.innerHTML = `<div class="rc-empty">${e.message}</div>`;
+    if(!reservas.length){
+      lista.innerHTML = '<div class="rc-empty">No hay reservas confirmadas para mañana.</div>';
+      return;
     }
+
+    lista.innerHTML = reservas.map(r=>{
+      const hora = String(Math.floor((r.startMin||0)/60)).padStart(2,'0')+':'+String((r.startMin||0)%60).padStart(2,'0');
+      const waNum = (r.phone || '').replace(/[^0-9]/g,'');
+      const chip = !waNum && !r.email
+        ? '<span class="rc-chip none">Sin contacto</span>'
+        : r.recordatorioEnviado
+          ? '<span class="rc-chip sent">Avisado</span>'
+          : '<span class="rc-chip wait">Por avisar</span>';
+      return `<div class="rc-item">
+        <div><b>${escapeHTML(r.client)}</b> <span class="rc-h">${hora} · ${escapeHTML(r.svc)}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${chip}
+          ${waNum ? `<button data-wa="${r.id}" class="mg-btn ghost" style="padding:5px 10px;font-size:11px;" type="button">WhatsApp</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    lista.querySelectorAll('[data-wa]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const r = reservas.find(x=> x.id === btn.dataset.wa);
+        if(!r) return;
+        const waNum = (r.phone || '').replace(/[^0-9]/g,'');
+        window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(construirMensajeWhatsApp(bookingParaAviso(r)))}`, '_blank');
+      });
+    });
   }
 
   document.getElementById('rcEnviar').addEventListener('click', async ()=>{
     const btn = document.getElementById('rcEnviar');
+
+    if(MODE === 'api'){
+      btn.disabled = true; btn.textContent = 'Enviando...';
+      try{
+        const r = await api('/admin/reminders/send', { method:'POST', body: JSON.stringify({}) });
+        showToast(r.message);
+        await cargarRecordatorios();
+      }catch(e){ showToast(e.message); }
+      btn.textContent = 'Enviar ahora';
+      return;
+    }
+
+    const pendientes = reservasDeManana().filter(r=> !r.recordatorioEnviado);
+    if(!pendientes.length) return;
+
     btn.disabled = true; btn.textContent = 'Enviando...';
-    try{
-      const r = await api('/admin/reminders/send', { method:'POST', body: JSON.stringify({}) });
-      showToast(r.message);
-      await cargarRecordatorios();
-    }catch(e){ showToast(e.message); }
+    let conCorreo = 0;
+    for(const r of pendientes){
+      if(r.email){
+        const { subject, html, text } = plantillaCorreoReserva(bookingParaAviso(r), 'recordatorio');
+        try{ await db.collection('mail').add({ to:[r.email], message:{ subject, html, text } }); conCorreo++; }catch(e){}
+      }
+      try{ await db.collection('bookings').doc(r.id).update({ recordatorioEnviado: true }); }catch(e){}
+    }
     btn.textContent = 'Enviar ahora';
+    showToast(`Recordatorio enviado por correo a ${conCorreo} de ${pendientes.length} reserva(s)`);
+    await cargarRecordatorios();
   });
 
   /* ---------- Historial del cliente en la ficha ---------- */
