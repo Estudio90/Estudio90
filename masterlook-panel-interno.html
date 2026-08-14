@@ -2775,23 +2775,7 @@
   document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', cerrarModales));
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarModales(); });
 
-  const CATALOGO_KEY = 'masterlook_catalogo';
-
-  /** Publica servicios y barberos para que el sitio del cliente los use. */
-  function publicarCatalogo(){
-    if(MODE === 'api') return;   // con servidor, el sitio los pide a la API
-    try{
-      localStorage.setItem(CATALOGO_KEY, JSON.stringify({
-        servicios: cfgServicios.filter(x=> x.active !== false),
-        barberos: cfgBarberos.filter(x=> x.active !== false)
-          .map(b=> ({ id:b.id, name:b.name, initials:b.initials })),
-        actualizado: Date.now(),
-      }));
-      new BroadcastChannel('masterlook').postMessage('catalogo-actualizado');
-    }catch(e){}
-  }
-
-  /** Carga servicios y barberos desde la API, o usa los de la demo. */
+  /** Carga servicios y barberos desde Firestore. La primera vez que está vacío, lo siembra con los valores por defecto. */
   async function cargarCatalogo(){
     if(MODE === 'api'){
       try{
@@ -2799,21 +2783,39 @@
         cfgServicios = s.services;
         cfgBarberos = b.barbers;
         return;
-      }catch(e){ /* sin permisos o sin API: caemos a la demo */ }
+      }catch(e){ /* sin permisos o sin API: caemos a Firestore */ }
     }
-    cfgServicios = [
-      {id:'d1', name:'Corte de cabello', priceClp:14000, minutes:45, active:true, featured:true},
-      {id:'d2', name:'Corte + perfilado de cejas', priceClp:18000, minutes:60, active:true, featured:true},
-      {id:'d3', name:'Corte + barba', priceClp:19000, minutes:60, active:true, featured:true},
-      {id:'d4', name:'Peinado especial', priceClp:22000, minutes:45, active:true, featured:false},
-      {id:'d5', name:'Combo recomendado', priceClp:28000, minutes:60, active:true, featured:true},
-      {id:'d6', name:'Ondulación permanente', priceClp:45000, minutes:180, active:true, featured:false},
-    ];
-    // referencia directa: editar aquí cambia el calendario
-    cfgBarberos = barbers.map(b=> ({
-      id:'d'+b.id, calId:b.id, name:b.name, initials:b.initials,
-      active: b.active !== false, schedules:[],
-    }));
+
+    try{
+      const [svcSnap, barSnap] = await Promise.all([
+        db.collection('services').get(),
+        db.collection('barbers').get()
+      ]);
+
+      if(!svcSnap.empty){
+        cfgServicios = svcSnap.docs.map(d=> d.data());
+      } else {
+        cfgServicios = [
+          {id:'d1', name:'Corte de cabello', priceClp:14000, minutes:45, active:true, featured:true},
+          {id:'d2', name:'Corte + perfilado de cejas', priceClp:18000, minutes:60, active:true, featured:true},
+          {id:'d3', name:'Corte + barba', priceClp:19000, minutes:60, active:true, featured:true},
+          {id:'d4', name:'Peinado especial', priceClp:22000, minutes:45, active:true, featured:false},
+          {id:'d5', name:'Combo recomendado', priceClp:28000, minutes:60, active:true, featured:true},
+          {id:'d6', name:'Ondulación permanente', priceClp:45000, minutes:180, active:true, featured:false},
+        ];
+        cfgServicios.forEach(s=> db.collection('services').doc(s.id).set(s).catch(()=>{}));
+      }
+
+      if(!barSnap.empty){
+        cfgBarberos = barSnap.docs.map(d=> d.data());
+      } else {
+        cfgBarberos = barbers.map(b=> ({
+          id:'d'+b.id, calId:b.id, name:b.name, initials:b.initials,
+          active: b.active !== false, schedules:[],
+        }));
+        cfgBarberos.forEach(b=> db.collection('barbers').doc(b.id).set(b).catch(()=>{}));
+      }
+    }catch(e){}
   }
 
   function llenarSelect(sel, items, valueKey, labelFn){
@@ -3278,18 +3280,19 @@
       body[i.dataset.f] = i.type === 'number' ? Number(i.value) : i.value.trim();
     });
 
-    if(MODE !== 'api'){
-      const s = cfgServicios.find(x=> x.id === id);
-      Object.assign(s, body);
-      publicarCatalogo();
-      showToast('Guardado');
+    if(MODE === 'api'){
+      try{
+        await api('/manage/services/' + id, { method:'PATCH', body: JSON.stringify(body) });
+        showToast('Servicio actualizado');
+      }catch(e){ showToast(e.message); }
       return;
     }
+    const s = cfgServicios.find(x=> x.id === id);
+    Object.assign(s, body);
     try{
-      await api('/manage/services/' + id, { method:'PATCH', body: JSON.stringify(body) });
-      publicarCatalogo();
-      showToast('Servicio actualizado');
-    }catch(e){ showToast(e.message); }
+      await db.collection('services').doc(id).set(s);
+      showToast('Guardado');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   }
 
   async function desactivarServicio(row){
@@ -3304,7 +3307,9 @@
     const s = cfgServicios.find(x=> x.id === id);
     if(s) s.active = false;
     row.classList.add('off');
-    publicarCatalogo();
+    if(MODE !== 'api'){
+      try{ await db.collection('services').doc(id).set(s); }catch(e){}
+    }
     showToast('Servicio desactivado');
   }
 
@@ -3324,10 +3329,11 @@
         cfgServicios.push({ ...r.service, barberIds:[] });
       }catch(e){ return showToast(e.message); }
     } else {
-      cfgServicios.push({ id:'d'+Date.now(), name:nombre, priceClp:precio, minutes:mins, active:true, featured:false });
+      const nuevo = { id:'d'+Date.now(), name:nombre, priceClp:precio, minutes:mins, active:true, featured:false };
+      cfgServicios.push(nuevo);
+      try{ await db.collection('services').doc(nuevo.id).set(nuevo); }catch(e){}
     }
     pintarConfigServicios();
-    publicarCatalogo();
     showToast('Servicio agregado');
   });
 
@@ -3357,6 +3363,9 @@
         }
 
         b.active = !b.active;
+        if(MODE !== 'api'){
+          try{ await db.collection('barbers').doc(b.id).set(b); }catch(e){}
+        }
 
         // reflejamos el cambio en el calendario
         const enCal = barbers.find(x=> x.id === b.calId);
@@ -3367,7 +3376,6 @@
         }
 
         pintarConfigEquipo();
-        publicarCatalogo();
         showToast(b.active ? `${b.name} vuelve a aparecer` : `${b.name} ya no aparece en la agenda`);
       });
     });
@@ -3386,15 +3394,16 @@
     } else {
       const nuevoId = Math.max(0, ...barbers.map(b=> b.id)) + 1;
       const ini = nombre.split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
+      const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:nombre, initials:ini, active:true, schedules:[] };
       barbers.push({ id:nuevoId, name:nombre, initials:ini, count:0, active:true });
-      cfgBarberos.push({ id:'d'+nuevoId, calId:nuevoId, name:nombre, initials:ini, active:true, schedules:[] });
+      cfgBarberos.push(nuevo);
+      try{ await db.collection('barbers').doc(nuevo.id).set(nuevo); }catch(e){}
       crearColumna(nuevoId);
       pintarColumnas();
       renderBlocks();
     }
     input.value = '';
     pintarConfigEquipo();
-    publicarCatalogo();
     showToast('Barbero agregado con horario estándar');
   });
 
@@ -3439,16 +3448,25 @@
 
     if(error) return showToast(error);
 
-    if(MODE !== 'api') return showToast('Modo demo: el horario necesita servidor para guardarse');
+    if(MODE === 'api'){
+      try{
+        const r = await api(`/manage/barbers/${barberoId}/schedule`, {
+          method:'PUT', body: JSON.stringify({ blocks })
+        });
+        const b = cfgBarberos.find(x=> x.id === barberoId);
+        if(b) b.schedules = r.schedules;
+        showToast('Horario guardado');
+      }catch(e){ showToast(e.message); }
+      return;
+    }
 
+    const b = cfgBarberos.find(x=> x.id === barberoId);
+    if(!b) return;
+    b.schedules = blocks;
     try{
-      const r = await api(`/manage/barbers/${barberoId}/schedule`, {
-        method:'PUT', body: JSON.stringify({ blocks })
-      });
-      const b = cfgBarberos.find(x=> x.id === barberoId);
-      if(b) b.schedules = r.schedules;
+      await db.collection('barbers').doc(barberoId).set(b);
       showToast('Horario guardado');
-    }catch(e){ showToast(e.message); }
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
   /* ==========================================================
@@ -4560,13 +4578,14 @@
         }catch(e){ return showToast(e.message); }
       } else {
         datos.barberId = 'd' + nuevoId;
+        const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:datos.name, initials:ini, active:true, schedules:[] };
         barbers.push({ id:nuevoId, name:datos.name, initials:ini, count:0, active:true });
-        cfgBarberos.push({ id:'d'+nuevoId, calId:nuevoId, name:datos.name, initials:ini, active:true, schedules:[] });
+        cfgBarberos.push(nuevo);
+        try{ await db.collection('barbers').doc(nuevo.id).set(nuevo); }catch(e){}
         crearColumna(nuevoId);
       }
 
       pintarColumnas();
-      publicarCatalogo();
       showToast(`${datos.name} ya tiene su columna en la agenda`);
     }
     if(!/^\S+@\S+\.\S+$/.test(datos.email)) return showToast('El correo no es válido');
@@ -4719,6 +4738,13 @@
   // primera carga + escucha en vivo
   setTimeout(async ()=>{
     // la sesión activa (si existe) la confirma Firebase vía onAuthStateChanged
+
+    await cargarCatalogo();
+    cfgBarberos.forEach(cb=>{
+      const enCal = barbers.find(x=> x.id === cb.calId);
+      if(enCal) enCal.active = cb.active;
+    });
+    pintarColumnas();
 
     document.getElementById('calSub').textContent = fmtFecha(currentDate);
     pintarMiniCal();

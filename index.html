@@ -2747,6 +2747,11 @@
     pintarHorarioNegocio();
   });
 
+  /** Catálogo de servicios y barberos: se actualiza solo cuando el panel edita algo. */
+  let catalogoListo = false;
+  db.collection('services').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
+  db.collection('barbers').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
+
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
@@ -4700,7 +4705,6 @@
   document.getElementById('menuOverlay')?.addEventListener('click', cerrarMenu);
 
   /* ---------- catálogo (servicios y barberos) ---------- */
-  const CATALOGO_KEY = 'masterlook_catalogo';
   const CURSOS_KEY = 'masterlook_cursos';
 
   async function loadCatalog(){
@@ -4711,11 +4715,14 @@
         catalog.barbers = ba.barbers;
       }catch(e){}
     } else {
-      // sin servidor, tomamos lo que el panel haya configurado
+      // sin servidor propio, leemos directo de Firestore
       try{
-        const guardado = JSON.parse(localStorage.getItem(CATALOGO_KEY));
-        if(guardado?.servicios?.length){
-          catalog.services = guardado.servicios.map(x=>{
+        const [svcSnap, barSnap] = await Promise.all([
+          db.collection('services').get(),
+          db.collection('barbers').get()
+        ]);
+        if(!svcSnap.empty){
+          catalog.services = svcSnap.docs.map(d=> d.data()).filter(x=> x.active !== false).map(x=>{
             // si el panel no guardó descripción, usamos la del catálogo base
             const base = SVC_DEMO.find(d=> d.name === x.name);
             return {
@@ -4727,7 +4734,9 @@
             };
           });
         }
-        if(guardado?.barberos?.length) catalog.barbers = guardado.barberos;
+        if(!barSnap.empty){
+          catalog.barbers = barSnap.docs.map(d=> d.data()).filter(x=> x.active !== false);
+        }
       }catch(e){}
     }
     paintServices();
@@ -4979,6 +4988,7 @@
     }
 
     await etapa('catálogo', loadCatalog);
+    catalogoListo = true;
     await etapa('carrito', ()=>{ carrito = leerCarrito(); });
     await etapa('cuenta', renderAccount);
     await etapa('tienda', cargarTienda);
@@ -4988,7 +4998,6 @@
     if(hashActual() === '#academia') abrirAcademia(true);
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }
-      if(e.key === CATALOGO_KEY) loadCatalog();
       if(e.key === CURSOS_KEY){
         cargarTienda();
         if(document.getElementById('vistaAcademia').classList.contains('open')) pintarCursosAcademia();
@@ -4998,7 +5007,6 @@
     try{
       const ch = new BroadcastChannel('masterlook');
       ch.addEventListener('message', e=>{
-        if(e.data === 'catalogo-actualizado') loadCatalog();
         if(e.data === 'cursos-actualizados'){
           cargarTienda();
           if(document.getElementById('vistaAcademia').classList.contains('open')) pintarCursosAcademia();
