@@ -1506,6 +1506,15 @@
   </div>
 </div>
 
+<!-- Ficha del cliente -->
+<div class="mg-modal wide" id="modalFicha">
+  <div class="mg-head">
+    <h3>Ficha del cliente</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <div id="fichaContenido"><div class="us-vacio">Cargando...</div></div>
+</div>
+
 <!-- Ajustar stock de un producto -->
 <div class="mg-modal" id="modalStock">
   <div class="mg-head">
@@ -5599,6 +5608,7 @@
     const waNumber = (a.phone || '').replace(/[^0-9]/g,'');
     document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
     document.getElementById('dWhatsapp').style.display = verContacto ? '' : 'none';
+    document.getElementById('btnFicha').style.display = verContacto ? '' : 'none';
 
     const puedeGestionarCita = userRole === 'ADMIN' || userRole === 'RECEPTION';
     document.getElementById('btnEliminarCita').style.display = puedeGestionarCita ? '' : 'none';
@@ -5897,8 +5907,60 @@
     toastTimer = setTimeout(()=> toast.classList.remove('show'), 2200);
   }
   document.getElementById('btnFicha').addEventListener('click', ()=>{
-    showToast('Ficha del cliente — próximamente');
+    if(!currentAppt) return;
+    abrirFichaCliente(currentAppt);
   });
+
+  /**
+   * Historial del cliente por su nombre (así reservó, tenga o no cuenta en el
+   * sitio). Solo se abre para Admin/Recepción, igual que el resto de sus datos.
+   */
+  async function abrirFichaCliente(a){
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')) return showToast('No tienes permiso para ver esto');
+    document.getElementById('fichaContenido').innerHTML = '<div class="us-vacio">Cargando...</div>';
+    abrirModal('modalFicha');
+
+    let reservas = [];
+    try{
+      const snap = await db.collection('bookings').where('client', '==', a.client).get();
+      reservas = snap.docs.map(d=> d.data()).sort((x,y)=> (y.createdAt||'').localeCompare(x.createdAt||''));
+    }catch(e){
+      document.getElementById('fichaContenido').innerHTML = `<div class="us-vacio">No se pudo cargar: ${e.message}</div>`;
+      return;
+    }
+
+    const completadas = reservas.filter(r=> r.estado === 'done');
+    const totalGastado = completadas.reduce((s,r)=> s + (Number(r.price)||0), 0);
+    const primeraFecha = reservas.length ? reservas[reservas.length - 1].fecha : '—';
+
+    const ESTADOS = { pendiente:'Por confirmar', aprobada:'Confirmada', rechazada:'Rechazada' };
+    const filas = reservas.map(r=>{
+      const estadoTxt = ESTADOS[r.decision] || r.decision || '—';
+      const cls = r.decision === 'aprobada' ? 'sent' : (r.decision === 'rechazada' ? 'none' : 'wait');
+      return `<div class="rc-item" style="flex-direction:column;align-items:stretch;gap:4px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <b>${escapeHTML(r.fecha || '')} · ${escapeHTML(r.svc || '')}</b>
+          <span class="rc-chip ${cls}">${estadoTxt}</span>
+        </div>
+        <span style="color:#6c6b74;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(r.price)}${r.estado === 'done' ? ' · Completado' : ''}</span>
+      </div>`;
+    }).join('');
+
+    document.getElementById('fichaContenido').innerHTML = `
+      <div class="cx-kpis" style="margin-bottom:16px;">
+        <div class="cx-kpi"><div class="k">Visitas completadas</div><div class="v">${completadas.length}</div></div>
+        <div class="cx-kpi pay"><div class="k">Total gastado</div><div class="v">${cxClp(totalGastado)}</div></div>
+        <div class="cx-kpi"><div class="k">Primera reserva</div><div class="v" style="font-size:14px;">${escapeHTML(primeraFecha)}</div></div>
+      </div>
+      <p style="font-size:12.5px;color:#6c6b74;margin-bottom:10px;">
+        📞 ${escapeHTML(a.phone || 'Sin teléfono')}${a.email ? ' · ✉ ' + escapeHTML(a.email) : ''}
+      </p>
+      <h4 style="font-size:13px;font-weight:600;margin:14px 0 8px;">Historial (${reservas.length})</h4>
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;">
+        ${filas || '<div class="cx-empty">Sin más reservas registradas con este nombre.</div>'}
+      </div>
+    `;
+  }
 
   /* ---- Payment menu popover ---- */
   paymentBtn.addEventListener('click', (e)=>{
