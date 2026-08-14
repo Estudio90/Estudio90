@@ -1757,16 +1757,42 @@
      La clave nunca se guarda ni se compara en este archivo: Firebase
      la valida en su servidor y solo nos avisa si la sesión es válida.
      ========================================================== */
-  firebase.initializeApp({
+  const firebaseConfig = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",
     projectId: "estudio90",
     storageBucket: "estudio90.firebasestorage.app",
     messagingSenderId: "420826163402",
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
-  });
+  };
+  firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
+
+  /**
+   * Crea una cuenta real de acceso (Firebase Auth) para un miembro del equipo,
+   * sin cerrar la sesión del administrador que la está creando. Usa una app
+   * secundaria de Firebase solo para ese momento y la descarta después.
+   * Le manda un correo para que la persona defina su propia contraseña.
+   */
+  async function crearCuentaDeAcceso(email){
+    const secApp = firebase.initializeApp(firebaseConfig, 'crearAcceso-' + Date.now());
+    try{
+      const tempPass = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + 'Aa1!';
+      const cred = await secApp.auth().createUserWithEmailAndPassword(email, tempPass);
+      const uid = cred.user.uid;
+      await secApp.auth().sendPasswordResetEmail(email);
+      await secApp.auth().signOut();
+      return { ok:true, uid };
+    }catch(e){
+      let msg = e.message;
+      if(e.code === 'auth/email-already-in-use') msg = 'Ese correo ya tiene una cuenta de acceso creada.';
+      if(e.code === 'auth/invalid-email') msg = 'Ese correo no es válido.';
+      return { ok:false, error: msg };
+    }finally{
+      try{ await secApp.delete(); }catch(_){}
+    }
+  }
 
   /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
   function plantillaCorreoReserva(reserva, estado, motivo){
@@ -1890,8 +1916,7 @@
 
     try{
       await auth.signInWithEmailAndPassword(u, c);
-      userRole = 'ADMIN';
-      // entrarAlPanel() se llama desde onAuthStateChanged al confirmarse la sesión
+      // el rol real y entrarAlPanel() los resuelve onAuthStateChanged
     }catch(e){
       err.textContent = 'Correo o contraseña incorrectos.';
       err.classList.add('show');
@@ -1906,8 +1931,28 @@
       if(e.key === 'Enter') intentarIngreso();
     }));
 
-  auth.onAuthStateChanged(user=>{
-    if(user){ userRole = 'ADMIN'; entrarAlPanel(user.email); }
+  let userBarberName = null;
+
+  auth.onAuthStateChanged(async user=>{
+    if(!user) return;
+    try{
+      const doc = await db.collection('staff').doc(user.uid).get();
+      if(doc.exists){
+        if(doc.data().active === false){
+          await auth.signOut();
+          const err = document.getElementById('lgError');
+          if(err){ err.textContent = 'Tu acceso fue desactivado. Habla con un administrador.'; err.classList.add('show'); }
+          return;
+        }
+        userRole = doc.data().role || 'BARBER';
+        userBarberName = doc.data().barber?.name || null;
+      } else {
+        // cuenta sin ficha en "staff" (p.ej. el admin original creado antes de este sistema)
+        userRole = 'ADMIN';
+      }
+    }catch(e){ userRole = 'ADMIN'; }
+    mostrarControlesAdmin();
+    entrarAlPanel(user.email);
   });
 
   function salirDelPanel(){
@@ -2388,7 +2433,7 @@
   /* Las opciones sensibles solo las ve el administrador. El servidor también
      lo valida: ocultar el botón no es la única protección. */
   function mostrarControlesAdmin(){
-    const soloAdmin = (MODE === 'demo' || userRole === 'ADMIN') ? '' : 'none';
+    const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = soloAdmin);
   }
 
@@ -4405,18 +4450,6 @@
   let usLista = [];
   let usEditando = null;
 
-  /* Equipo de demostración */
-  const US_DEMO = [
-    { id:'u1', name:'Carlos Garcés', email:'admin@masterlook.cl', phone:'+56 9 0000 0000',
-      role:'ADMIN', permissions:[], managedBarberIds:[], active:true, barber:null },
-    { id:'u2', name:'Jhoover Peñaranda', email:'jhooverop17@gmail.com', phone:'',
-      role:'BARBER', permissions:[], managedBarberIds:[], active:true, barber:{id:'d2', name:'Jhoover Peñaranda'} },
-    { id:'u3', name:'Diego Colina', email:'colinadiego87@gmail.com', phone:'',
-      role:'BARBER', permissions:['CLIENTES_VER'], managedBarberIds:[], active:true, barber:{id:'d1', name:'Diego Colina'} },
-    { id:'u4', name:'Darling Quevedo', email:'darlingquevedo02@gmail.com', phone:'',
-      role:'RECEPTION', permissions:[], managedBarberIds:[], active:true, barber:null },
-  ];
-
   function permisosEfectivos(u){
     if(u.role === 'ADMIN') return PERMISOS_ROL.ADMIN;
     return [...new Set([...(PERMISOS_ROL[u.role] || []), ...(u.permissions || [])])];
@@ -4457,7 +4490,13 @@
         return;
       }
     } else {
-      if(!usLista.length) usLista = JSON.parse(JSON.stringify(US_DEMO));
+      try{
+        const snap = await db.collection('staff').get();
+        usLista = snap.docs.map(d=> d.data());
+      }catch(e){
+        cont.innerHTML = `<div class="us-vacio">No se pudo cargar: ${e.message}</div>`;
+        return;
+      }
     }
     usPintar();
   }
@@ -4671,15 +4710,26 @@
         return showToast(e.message);
       }
     } else {
+      const barber = datos.barberId ? cfgBarberos.find(b=> b.id === datos.barberId) : null;
+
       if(usEditando){
-        Object.assign(usEditando, datos,
-          { barber: datos.barberId ? cfgBarberos.find(b=> b.id === datos.barberId) : null });
+        const actualizado = { ...usEditando, ...datos, email: usEditando.email, barber };
+        try{ await db.collection('staff').doc(usEditando.id).set(actualizado); }
+        catch(e){ btn.disabled = false; btn.textContent = 'Guardar'; return showToast('No se pudo guardar: ' + e.message); }
+        Object.assign(usEditando, actualizado);
         showToast('Acceso actualizado');
       } else {
-        const clave = Math.random().toString(36).slice(2,10);
-        usLista.push({ id:'u'+Date.now(), ...datos, active:true,
-          barber: datos.barberId ? cfgBarberos.find(b=> b.id === datos.barberId) : null });
-        showToast('Acceso creado · clave temporal: ' + clave);
+        btn.textContent = 'Creando cuenta de acceso...';
+        const cuenta = await crearCuentaDeAcceso(datos.email);
+        if(!cuenta.ok){
+          btn.disabled = false; btn.textContent = 'Guardar';
+          return showToast(cuenta.error);
+        }
+        const nuevo = { id: cuenta.uid, ...datos, active:true, barber };
+        try{ await db.collection('staff').doc(cuenta.uid).set(nuevo); }
+        catch(e){ btn.disabled = false; btn.textContent = 'Guardar'; return showToast('Cuenta creada, pero no se pudo guardar la ficha: ' + e.message); }
+        usLista.push(nuevo);
+        showToast(`Acceso creado · le llegó un correo a ${datos.email} para que defina su contraseña`);
       }
       usPintar();
     }
@@ -4706,13 +4756,16 @@
     if(activo && u.role === 'ADMIN' && usLista.filter(x=> x.role === 'ADMIN' && x.active !== false).length <= 1){
       return showToast('Debe quedar al menos un administrador activo');
     }
-    u.active = !activo;
+    const nuevoActivo = !activo;
+    try{ await db.collection('staff').doc(u.id).update({ active: nuevoActivo }); }
+    catch(e){ return showToast('No se pudo guardar: ' + e.message); }
+    u.active = nuevoActivo;
     usPintar();
     showToast(u.active ? `${u.name} puede volver a entrar` : `${u.name} ya no tiene acceso`);
   }
 
   async function usNuevaClave(u){
-    if(!confirm(`¿Generar una contraseña nueva para ${u.name}?\n\nLa anterior dejará de servir.`)) return;
+    if(!confirm(`¿Enviarle a ${u.name} un correo para definir una contraseña nueva?`)) return;
 
     if(MODE === 'api'){
       try{
@@ -4721,8 +4774,10 @@
       }catch(e){ showToast(e.message); }
       return;
     }
-    const clave = Math.random().toString(36).slice(2,10);
-    alert(`Nueva contraseña de ${u.name}:\n\n${clave}\n\n(modo demo: no se envía correo)`);
+    try{
+      await auth.sendPasswordResetEmail(u.email);
+      showToast(`Le enviamos un correo a ${u.email} para definir su nueva contraseña`);
+    }catch(e){ showToast('No se pudo enviar: ' + e.message); }
   }
 
 
