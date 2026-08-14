@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Master Look — Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -3925,21 +3928,19 @@
   let cuCursos = [];
   let cuActual = null;      // { curso, clases }
 
-  /* Publica los cursos visibles (con sus precios y clases) para que
-     masterlook-sitio.html los muestre en la Academy. */
-  const CURSOS_KEY = 'masterlook_cursos';
-  function publicarCursos(){
+  /* Publica los cursos (con sus precios y clases) en Firestore para que
+     masterlook-sitio.html los muestre en la Academy, en cualquier dispositivo. */
+  async function publicarCursos(){
     if(MODE === 'api') return;
     try{
-      const publicados = cuCursos.filter(c=> c.active !== false).map(c=> ({
+      await Promise.all(cuCursos.map(c=> db.collection('courses').doc(c.id).set({
         id: c.id, kind:'COURSE', name: c.name,
         description: c.description || '',
         priceClp: c.priceClp, priceUsd: c.priceUsd || null,
-        featured: true,
-        lessons: (c.lessons || []).filter(l=> l.active !== false),
-      }));
-      localStorage.setItem(CURSOS_KEY, JSON.stringify(publicados));
-      new BroadcastChannel('masterlook').postMessage('cursos-actualizados');
+        featured: true, active: c.active !== false,
+        accessUrl: c.accessUrl || '',
+        lessons: c.lessons || [],
+      })));
     }catch(e){}
   }
 
@@ -4004,11 +4005,20 @@
         cont.innerHTML = `<div class="cx-empty">${e.message}</div>`;
         return;
       }
-    } else {
-      if(!cuCursos.length) cuCursos = JSON.parse(JSON.stringify(CU_DEMO));
+    } else if(!cuCursos.length){
+      try{
+        const snap = await db.collection('courses').get();
+        if(!snap.empty){
+          cuCursos = snap.docs.map(d=> d.data());
+        } else {
+          cuCursos = JSON.parse(JSON.stringify(CU_DEMO));
+        }
+      }catch(e){
+        cuCursos = JSON.parse(JSON.stringify(CU_DEMO));
+      }
     }
 
-    publicarCursos();
+    await publicarCursos();
 
     if(!cuCursos.length){
       cont.innerHTML = '<div class="cx-empty">Todavía no hay cursos. Crea el primero.</div>';

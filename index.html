@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>MASTERLOOK — Barbería</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -2758,6 +2761,17 @@
     bloqueosCache = snap.docs.map(d=> d.data());
   });
 
+  /** Cursos de la Academy, editados desde el panel, en vivo. */
+  let cursosCache = [];
+  let cursosListos = false;
+  db.collection('courses').onSnapshot(snap=>{
+    cursosCache = snap.docs.map(d=> d.data()).filter(c=> c.active !== false).map(c=>
+      ({ ...c, lessons: (c.lessons || []).filter(l=> l.active !== false) }));
+    if(!cursosListos) return;
+    cargarTienda();
+    if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarCursosAcademia();
+  });
+
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
@@ -3730,12 +3744,7 @@
     const productos = items.filter(i=> i.kind === 'PRODUCT');
 
     // en modo demo, los cursos y precios los maneja el panel interno
-    if(MODE !== 'api'){
-      try{
-        const publicados = JSON.parse(localStorage.getItem(CURSOS_KEY));
-        if(publicados?.length) cursos = publicados;
-      }catch(e){}
-    }
+    if(MODE !== 'api' && cursosCache.length) cursos = cursosCache;
 
     const cg = document.getElementById('courseGrid');
     if(cg && cursos.length){
@@ -3799,10 +3808,7 @@
   function pintarCursosAcademia(){
     let cursos = CATALOGO_DEMO.filter(i=> i.kind === 'COURSE');
     if(MODE !== 'api'){
-      try{
-        const publicados = JSON.parse(localStorage.getItem(CURSOS_KEY));
-        if(publicados?.length) cursos = publicados;
-      }catch(e){}
+      if(cursosCache.length) cursos = cursosCache;
     } else if(tvProductos.length){
       cursos = tvProductos.filter(i=> i.kind === 'COURSE') || cursos;
     }
@@ -4705,8 +4711,6 @@
   document.getElementById('menuOverlay')?.addEventListener('click', cerrarMenu);
 
   /* ---------- catálogo (servicios y barberos) ---------- */
-  const CURSOS_KEY = 'masterlook_cursos';
-
   async function loadCatalog(){
     if(MODE === 'api'){
       try{
@@ -4992,27 +4996,14 @@
     await etapa('carrito', ()=>{ carrito = leerCarrito(); });
     await etapa('cuenta', renderAccount);
     await etapa('tienda', cargarTienda);
+    cursosListos = true;
     await etapa('retorno de pago', revisarRetornoPago);
     if(hashActual() === '#tienda') abrirTienda(true);
     if(hashActual() === '#reservas') abrirReservas(true);
     if(hashActual() === '#academia') abrirAcademia(true);
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }
-      if(e.key === CURSOS_KEY){
-        cargarTienda();
-        if(document.getElementById('vistaAcademia').classList.contains('open')) pintarCursosAcademia();
-      }
     });
-
-    try{
-      const ch = new BroadcastChannel('masterlook');
-      ch.addEventListener('message', e=>{
-        if(e.data === 'cursos-actualizados'){
-          cargarTienda();
-          if(document.getElementById('vistaAcademia').classList.contains('open')) pintarCursosAcademia();
-        }
-      });
-    }catch(e){}
 
     // en modo demo, Firestore ya avisa solo cuando cambia el estado de una reserva (ver onSnapshot arriba)
     if(MODE !== 'demo'){
