@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   /* ==========================================================
@@ -2675,6 +2676,7 @@
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
   });
   const db = firebase.firestore();
+  const auth = firebase.auth();
 
   /** Refleja en vivo las reservas guardadas en Firestore, visibles desde cualquier dispositivo. */
   let bookingsCache = [];
@@ -2857,9 +2859,13 @@
         publishToPanel(reserva);
         enviarCorreoReserva(reserva, 'pendiente');
         // si hay sesión activa, la reserva también entra a su historial de cuenta
-        if(user){ user.bookings.push(reserva); }
+        if(user){
+          db.collection('customers').doc(user.uid).update({
+            bookingIds: firebase.firestore.FieldValue.arrayUnion(reserva.id)
+          }).catch(()=>{});
+          user.bookingIds = [...(user.bookingIds || []), reserva.id];
+        }
       });
-      if(user){ saveUser(user); }
     }
 
     btn.textContent = 'Confirmar reserva';
@@ -2894,30 +2900,26 @@
     document.getElementById('confirmMsg').classList.remove('show');
     updateSummary(); goToStep(1);
   });
-  // ===== cuentas de usuario (demo, guardado en el navegador) =====
-  const DB_KEY = 'masterlook_users';
-  const SESSION_KEY = 'masterlook_session';
+  // ===== cuentas de cliente: cuenta real (Firebase Auth), no solo del navegador =====
+  let customerProfile = null;
 
-  function readDB(){
-    try{ return JSON.parse(localStorage.getItem(DB_KEY)) || {}; }catch(e){ return {}; }
-  }
-  function writeDB(db){
-    try{ localStorage.setItem(DB_KEY, JSON.stringify(db)); }catch(e){}
-  }
   function currentUser(){
     if(MODE === 'api') return sessionUser;
+    return customerProfile;
+  }
+
+  auth.onAuthStateChanged(async user=>{
+    if(MODE === 'api') return; // ese modo maneja su propia sesión por token
+    if(!user){ customerProfile = null; await renderAccount(); return; }
     try{
-      const email = localStorage.getItem(SESSION_KEY);
-      if(!email) return null;
-      const db = readDB();
-      return db[email] || null;
-    }catch(e){ return null; }
-  }
-  function saveUser(user){
-    const db = readDB();
-    db[user.email] = user;
-    writeDB(db);
-  }
+      const doc = await db.collection('customers').doc(user.uid).get();
+      customerProfile = doc.exists
+        ? { uid:user.uid, ...doc.data() }
+        : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
+    }catch(e){ customerProfile = null; }
+    await renderAccount();
+  });
+
   function initials(name){
     return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
@@ -2970,14 +2972,18 @@
         sessionUser = data.user;
       }catch(e){ return showErr('regErr', e.message); }
     } else {
-      if(readDB()[email]) return showErr('regErr','Ya existe una cuenta con ese correo. Inicia sesión.');
-      const user = {
-        name, email, phone, pass,
-        since: new Date().toLocaleDateString('es-CL',{month:'long', year:'numeric'}),
-        bookings: [], points: 0
-      };
-      saveUser(user);
-      localStorage.setItem(SESSION_KEY, email);
+      try{
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('customers').doc(cred.user.uid).set({
+          name, email, phone, since: new Date().toISOString(), bookingIds: [],
+        });
+      }catch(e){
+        let msg = 'No se pudo crear la cuenta.';
+        if(e.code === 'auth/email-already-in-use') msg = 'Ya existe una cuenta con ese correo. Inicia sesión.';
+        else if(e.code === 'auth/invalid-email') msg = 'Ingresa un correo válido.';
+        else if(e.code === 'auth/weak-password') msg = 'La contraseña debe tener al menos 6 caracteres.';
+        return showErr('regErr', msg);
+      }
     }
 
     closeAuth();
@@ -3000,9 +3006,9 @@
         sessionUser = data.user;
       }catch(e){ return showErr('loginErr', e.message); }
     } else {
-      const user = readDB()[email];
-      if(!user || user.pass !== pass) return showErr('loginErr','Correo o contraseña incorrectos.');
-      localStorage.setItem(SESSION_KEY, email);
+      try{
+        await auth.signInWithEmailAndPassword(email, pass);
+      }catch(e){ return showErr('loginErr', 'Correo o contraseña incorrectos.'); }
     }
 
     // si la cuenta es del equipo, ofrecemos ir al panel
@@ -3014,7 +3020,7 @@
 
     closeAuth();
     await renderAccount();
-    const nombre = (sessionUser?.name || readDB()[email]?.name || '').split(' ')[0];
+    const nombre = (sessionUser?.name || currentUser()?.name || '').split(' ')[0];
     toast('Hola de nuevo, ' + nombre);
     document.getElementById('cuenta').scrollIntoView({behavior:'smooth'});
   }
@@ -3024,7 +3030,7 @@
       try{ await api('/auth/logout', { method:'POST' }); }catch(e){}
       accessToken = null; sessionUser = null;
     } else {
-      localStorage.removeItem(SESSION_KEY);
+      await auth.signOut();
     }
     await renderAccount();
     toast('Sesión cerrada');
@@ -3094,12 +3100,13 @@
 
   /** Trae la última reserva del cliente, con el estado real que tiene guardado el local. */
   function chatUltimaReservaDe(user){
-    if(!user || !user.bookings.length) return null;
-    const b = user.bookings[user.bookings.length - 1];
-    const rec = bookingsCache.find(r=> r.id === b.id);
-    return Object.assign({}, b, {
-      decision: (rec && rec.decision) || 'pendiente',
-      reason: rec && rec.reason
+    if(!user || !(user.bookingIds || []).length) return null;
+    const ultimoId = user.bookingIds[user.bookingIds.length - 1];
+    const rec = bookingsCache.find(r=> r.id === ultimoId);
+    if(!rec) return null;
+    return Object.assign({}, rec, {
+      decision: rec.decision || 'pendiente',
+      reason: rec.reason
     });
   }
 
@@ -3330,13 +3337,22 @@
     }
 
     // ---- modo demo: datos compartidos vía Firestore ----
+    // las reservas del cliente son las que su cuenta tiene enlazadas por id;
+    // el detalle y el estado siempre se leen en vivo desde bookingsCache
+    const misReservas = (user.bookingIds || [])
+      .map(id=> bookingsCache.find(r=> r.id === id))
+      .filter(Boolean);
     const decisionOf = id => (bookingsCache.find(r=> r.id === id) || {}).decision || 'pendiente';
 
     // los puntos y visitas solo cuentan reservas confirmadas por el local
-    const confirmadas = user.bookings.filter(b=> decisionOf(b.id) === 'aprobada');
-    const pendientes  = user.bookings.filter(b=> decisionOf(b.id) === 'pendiente');
+    const confirmadas = misReservas.filter(b=> decisionOf(b.id) === 'aprobada');
+    const pendientes  = misReservas.filter(b=> decisionOf(b.id) === 'pendiente');
     const puntos = confirmadas.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
     const puntosPend = pendientes.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
+
+    const desde = user.since
+      ? new Date(user.since).toLocaleDateString('es-CL',{month:'long', year:'numeric'})
+      : '';
 
     section.classList.add('show');
     label.textContent = user.name.split(' ')[0];
@@ -3344,7 +3360,7 @@
     document.getElementById('bigAvatar').textContent = initials(user.name);
     document.getElementById('accName').textContent = user.name;
     document.getElementById('accEmail').textContent = user.email;
-    document.getElementById('accSince').textContent = 'Cliente desde ' + user.since;
+    document.getElementById('accSince').textContent = 'Cliente desde ' + desde;
     document.getElementById('accPoints').textContent = puntos;
     document.getElementById('accVisits').textContent = confirmadas.length;
     const pendNote = document.getElementById('pointsPending');
@@ -3356,11 +3372,11 @@
     }
 
     const list = document.getElementById('historyList');
-    if(!user.bookings.length){
+    if(!misReservas.length){
       list.innerHTML = '<div class="empty-hist">Todavía no tienes reservas. Agenda tu primera hora y aparecerá aquí.</div>';
     } else {
       // estados decididos por el panel del local
-      list.innerHTML = user.bookings.slice().reverse().map(b=>{
+      list.innerHTML = misReservas.slice().reverse().map(b=>{
         const rec = bookingsCache.find(r=> r.id === b.id) || {};
         const decision = rec.decision || 'pendiente';
 
