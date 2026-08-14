@@ -1935,10 +1935,24 @@
     </div>
 
     <div class="pay-options">
-      <div class="pay-opt-row"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m0 6v4a2 2 0 002 2h4m6 0h4a2 2 0 002-2v-4m0-6V5a2 2 0 00-2-2h-4"/></svg>Múltiples métodos de pago</div><span>›</span></div>
+      <div class="pay-opt-row" id="rowMultiPago" style="cursor:pointer;"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m0 6v4a2 2 0 002 2h4m6 0h4a2 2 0 002-2v-4m0-6V5a2 2 0 00-2-2h-4"/></svg>Múltiples métodos de pago</div><span id="multiPagoChevron">›</span></div>
+      <div class="pay-subpanel" id="multiPagoPanel" style="display:none;padding:10px 2px 12px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <select id="multiMetodo1" class="mg-input" style="flex:1;"></select>
+          <input type="number" id="multiMonto1" class="mg-input" style="flex:1;" placeholder="Monto" min="0" step="500">
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <select id="multiMetodo2" class="mg-input" style="flex:1;"></select>
+          <input type="number" id="multiMonto2" class="mg-input" style="flex:1;" placeholder="Monto" min="0" step="500">
+        </div>
+        <p id="multiPagoRestante" style="font-size:12px;color:var(--text-mid);margin:0;">Restante: $0</p>
+      </div>
       <div class="pay-opt-row" id="rowAbono" style="cursor:pointer;"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Abono</div><span>›</span></div>
       <div class="pay-opt-row" id="rowEnviarCarro"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Enviar carro</div><div class="toggle on" id="toggleEnviar"></div></div>
-      <div class="pay-opt-row"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1.5-1.5"/></svg>Asociar transacción</div><span>›</span></div>
+      <div class="pay-opt-row" id="rowTransaccion" style="cursor:pointer;"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1.5-1.5"/></svg>Asociar transacción</div><span id="transaccionChevron">›</span></div>
+      <div class="pay-subpanel" id="transaccionPanel" style="display:none;padding:10px 2px 12px;border-bottom:1px solid var(--border);">
+        <input type="text" id="numeroTransaccionInput" class="mg-input" placeholder="N° de comprobante / referencia">
+      </div>
     </div>
 
     <div class="pay-footer">
@@ -2516,6 +2530,7 @@
     document.getElementById('paySubProductos').textContent = formatCLP(prod);
     document.getElementById('paySubPropina').textContent = formatCLP(tip);
     document.getElementById('payTotal').textContent = formatCLP(base + prod + tip);
+    if(multiPagoActivo) actualizarRestanteMultiPago();
   }
 
   document.querySelectorAll('.tip-btn').forEach(btn=>{
@@ -2555,6 +2570,18 @@
     customInput.style.display = 'none';
     customInput.value = '';
     renderCart();
+
+    multiPagoActivo = false;
+    document.getElementById('multiPagoPanel').style.display = 'none';
+    document.getElementById('multiPagoChevron').textContent = '›';
+    document.getElementById('multiMonto1').value = '';
+    document.getElementById('multiMonto2').value = '';
+    document.getElementById('payMethods').style.opacity = '';
+    document.getElementById('payMethods').style.pointerEvents = '';
+
+    document.getElementById('transaccionPanel').style.display = 'none';
+    document.getElementById('transaccionChevron').textContent = '›';
+    document.getElementById('numeroTransaccionInput').value = '';
   }
 
   function initials(name){
@@ -5575,21 +5602,6 @@
     await cargarRecordatorios();
   });
 
-  /* ---------- Historial del cliente en la ficha ---------- */
-  document.getElementById('btnFicha').addEventListener('click', async ()=>{
-    const a = currentAppt;
-    if(!a) return;
-    if(MODE !== 'api') return showToast('El historial necesita servidor');
-
-    try{
-      const p = new URLSearchParams();
-      if(a.phone) p.set('phone', a.phone);
-      if(a.email) p.set('email', a.email);
-      const h = await api('/admin/clients/history?' + p.toString());
-      showToast(`${a.client}: ${h.totalVisits} visitas · $${h.totalSpent.toLocaleString('es-CL')} gastados${h.noShows ? ` · ${h.noShows} no show` : ''}`);
-    }catch(e){ showToast(e.message); }
-  });
-
   // primera carga + escucha en vivo
   setTimeout(async ()=>{
     // la sesión activa (si existe) la confirma Firebase vía onAuthStateChanged
@@ -5673,6 +5685,7 @@
     document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
     document.getElementById('dWhatsapp').style.display = verContacto ? '' : 'none';
     document.getElementById('btnFicha').style.display = verContacto ? '' : 'none';
+    document.getElementById('menuWa').style.display = verContacto ? '' : 'none';
 
     const puedeGestionarCita = userRole === 'ADMIN' || userRole === 'RECEPTION';
     document.getElementById('btnEliminarCita').style.display = puedeGestionarCita ? '' : 'none';
@@ -6081,7 +6094,7 @@
           <b>${escapeHTML(r.fecha || '')} · ${escapeHTML(r.svc || '')}</b>
           <span class="rc-chip ${cls}">${estadoTxt}</span>
         </div>
-        <span style="color:#6c6b74;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(r.price)}${r.estado === 'done' ? ' · Completado' : ''}</span>
+        <span style="color:#6c6b74;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(r.price)}${r.estado === 'done' ? ' · Completado' : ''}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
       </div>`;
     }).join('');
 
@@ -6355,10 +6368,15 @@
 
   document.getElementById('menuWa').addEventListener('click', ()=>{
     paymentMenu.classList.remove('open');
-    if(currentAppt){
-      const waNumber = (currentAppt.phone || '').replace(/[^0-9]/g,'');
-      if(waNumber) window.open(`https://wa.me/${waNumber}`,'_blank');
-    }
+    if(!currentAppt) return;
+    const waNumber = (currentAppt.phone || '').replace(/[^0-9]/g,'');
+    if(!waNumber) return showToast('Este cliente no tiene teléfono registrado');
+    const pendiente = baseServicePrice();
+    const primerNombre = (currentAppt.client || '').split(' ')[0];
+    const msg = `Hola ${primerNombre}! Te escribimos de MASTER LOOK para coordinar el pago de tu ${currentAppt.service}.\n\n`
+      + `Monto pendiente: ${formatCLP(pendiente)}\n\n`
+      + `¿Cómo prefieres pagar — efectivo, transferencia o tarjeta al llegar? 🙂`;
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`,'_blank');
   });
 
   document.getElementById('payBack').addEventListener('click', ()=>{
@@ -6384,11 +6402,76 @@
     toggleEnviar.classList.toggle('on');
   });
 
+  /* ---- Múltiples métodos de pago (dividir el cobro en dos) ---- */
+  let multiPagoActivo = false;
+
+  function actualizarRestanteMultiPago(){
+    const total = parsePrice(document.getElementById('payTotal').textContent);
+    const m1 = parseInt(document.getElementById('multiMonto1').value, 10) || 0;
+    const m2 = parseInt(document.getElementById('multiMonto2').value, 10) || 0;
+    const restante = total - m1 - m2;
+    const el = document.getElementById('multiPagoRestante');
+    if(restante === 0){
+      el.textContent = 'Los montos cuadran con el total ✓';
+      el.style.color = 'var(--ok)';
+    } else {
+      el.textContent = `Restante por asignar: ${formatCLP(Math.abs(restante))}` + (restante < 0 ? ' de más' : '');
+      el.style.color = 'var(--text-mid)';
+    }
+  }
+
+  document.getElementById('rowMultiPago').addEventListener('click', ()=>{
+    multiPagoActivo = !multiPagoActivo;
+    const panel = document.getElementById('multiPagoPanel');
+    panel.style.display = multiPagoActivo ? 'block' : 'none';
+    document.getElementById('multiPagoChevron').textContent = multiPagoActivo ? '⌄' : '›';
+    document.getElementById('payMethods').style.opacity = multiPagoActivo ? '0.4' : '';
+    document.getElementById('payMethods').style.pointerEvents = multiPagoActivo ? 'none' : '';
+    if(multiPagoActivo){
+      llenarSelect(document.getElementById('multiMetodo1'), Object.entries(METODOS_PAGO).map(([id,name])=>({id,name})), 'id', m=> m.name);
+      llenarSelect(document.getElementById('multiMetodo2'), Object.entries(METODOS_PAGO).map(([id,name])=>({id,name})), 'id', m=> m.name);
+      document.getElementById('multiMetodo2').value = 'credit';
+      document.getElementById('multiMonto1').value = parsePrice(document.getElementById('payTotal').textContent) || '';
+      actualizarRestanteMultiPago();
+    }
+  });
+  document.getElementById('multiMonto1').addEventListener('input', actualizarRestanteMultiPago);
+  document.getElementById('multiMonto2').addEventListener('input', actualizarRestanteMultiPago);
+
+  /* ---- Asociar transacción (n° de comprobante/referencia) ---- */
+  document.getElementById('rowTransaccion').addEventListener('click', ()=>{
+    const panel = document.getElementById('transaccionPanel');
+    const abierto = panel.style.display === 'block';
+    panel.style.display = abierto ? 'none' : 'block';
+    document.getElementById('transaccionChevron').textContent = abierto ? '›' : '⌄';
+    if(!abierto) document.getElementById('numeroTransaccionInput').focus();
+  });
+
   document.getElementById('payContinue').addEventListener('click', async ()=>{
     const btn = document.getElementById('payContinue');
     const totalTxt = document.getElementById('payTotal').textContent;
+
+    let pagos = null;
+    if(multiPagoActivo){
+      const total = parsePrice(totalTxt);
+      const m1 = parseInt(document.getElementById('multiMonto1').value, 10) || 0;
+      const m2 = parseInt(document.getElementById('multiMonto2').value, 10) || 0;
+      if(m1 + m2 !== total) return showToast('Los montos de "Múltiples métodos de pago" deben sumar el total');
+      if(!m1 || !m2) return showToast('Ingresa un monto para cada método de pago');
+      const metodo1 = document.getElementById('multiMetodo1').value;
+      const metodo2 = document.getElementById('multiMetodo2').value;
+      pagos = [
+        { metodo: METODOS_PAGO[metodo1] || metodo1, monto: m1 },
+        { metodo: METODOS_PAGO[metodo2] || metodo2, monto: m2 },
+      ];
+    }
+
+    const numeroTransaccion = document.getElementById('numeroTransaccionInput').value.trim();
+
     if(currentAppt){
-      const metodoLabel = METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado;
+      const metodoLabel = pagos
+        ? pagos.map(p=> p.metodo).join(' + ')
+        : (METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado);
       const productos = Object.keys(cart).filter(id=> cart[id] > 0).map(id=>{
         const p = productsCache.find(x=> x.id === id);
         return { id, name:p.name, qty:cart[id], price:p.price, subtotal:p.price*cart[id] };
@@ -6420,6 +6503,8 @@
             propina: tipAmount(),
             productosVendidos: productos,
             fechaPago: new Date().toISOString(),
+            ...(pagos ? { pagos } : {}),
+            ...(numeroTransaccion ? { numeroTransaccion } : {}),
           });
         }catch(e){
           btn.disabled = false; btn.textContent = 'Continuar';
@@ -6429,7 +6514,9 @@
       }
 
       currentAppt.pagado = true;
-      currentAppt.metodoPago = metodoPagoSeleccionado;
+      currentAppt.metodoPago = metodoLabel;
+      if(pagos) currentAppt.pagos = pagos;
+      if(numeroTransaccion) currentAppt.numeroTransaccion = numeroTransaccion;
       paymentBtn.classList.add('paid');
       document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
 
