@@ -82,7 +82,25 @@
     width:32px;height:32px;border-radius:50%;background:var(--text-hi);color:#fff;
     display:flex;align-items:center;justify-content:center;
     font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;
+    cursor:pointer;user-select:none;
   }
+  .user-menu-wrap{position:relative;}
+  .user-menu{
+    position:absolute;top:calc(100% + 10px);right:0;min-width:210px;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    box-shadow:var(--shadow-hover);padding:6px;z-index:60;
+    display:none;flex-direction:column;gap:1px;
+  }
+  .user-menu.open{display:flex;}
+  .user-menu-item{
+    display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+    padding:9px 11px;border:none;background:none;border-radius:8px;
+    font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-hi);cursor:pointer;
+  }
+  .user-menu-item:hover{background:var(--panel-2);}
+  .user-menu-item.danger{color:#c0392b;}
+  .user-menu-item.danger:hover{background:#fbeceb;}
+  .user-menu-sep{height:1px;background:var(--border);margin:6px 4px;}
 
   .content{padding:22px 32px 0;}
 
@@ -984,18 +1002,20 @@
     </div>
     <div class="topbar-right">
       <div class="period-pill">Ago 2026</div>
-      <button class="lg-salir" id="btnSalir" title="Cerrar sesión">Salir</button>
-      <div class="avatar-round" id="who">AD</div>
+      <div class="user-menu-wrap">
+        <div class="avatar-round" id="who" title="Menú">AD</div>
+        <div class="user-menu" id="userMenu">
+          <button class="user-menu-item" id="btnRecordatorios">🔔 Recordatorios</button>
+          <button class="user-menu-item" id="btnComisiones" style="display:none;">💰 Comisiones</button>
+          <button class="user-menu-item admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
+          <button class="user-menu-item admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
+          <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
+          <div class="user-menu-sep"></div>
+          <button class="user-menu-item danger" id="btnSalir">🚪 Cerrar sesión</button>
+        </div>
+      </div>
     </div>
   </div>
-
-  <nav class="panel-nav">
-    <button class="ctrl-btn" id="btnRecordatorios">🔔 Recordatorios</button>
-    <button class="ctrl-btn" id="btnComisiones" style="display:none;">💰 Comisiones</button>
-    <button class="ctrl-btn admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
-    <button class="ctrl-btn admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
-    <button class="ctrl-btn" id="btnConfig">⚙ Configurar</button>
-  </nav>
 
   <div class="content">
 
@@ -1967,6 +1987,18 @@
 
   document.getElementById('lgEntrar').addEventListener('click', intentarIngreso);
   document.getElementById('btnSalir')?.addEventListener('click', salirDelPanel);
+
+  // menú desplegable del avatar (arriba a la derecha)
+  const userMenu = document.getElementById('userMenu');
+  document.getElementById('who').addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    userMenu.classList.toggle('open');
+  });
+  userMenu.querySelectorAll('.user-menu-item').forEach(btn=>
+    btn.addEventListener('click', ()=> userMenu.classList.remove('open')));
+  document.addEventListener('click', (ev)=>{
+    if(!userMenu.contains(ev.target) && ev.target.id !== 'who') userMenu.classList.remove('open');
+  });
   ['lgUser','lgPass'].forEach(id=>
     document.getElementById(id).addEventListener('keydown', e=>{
       if(e.key === 'Enter') intentarIngreso();
