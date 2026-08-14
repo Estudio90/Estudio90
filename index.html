@@ -4437,8 +4437,10 @@
 
     // horarios bloqueados desde el panel (almuerzo, vacaciones, etc.)
     const todosLosBarberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO).map(b=> b.name);
+    const diaSemana = new Date(fecha + 'T12:00:00').getDay();
     bloqueosCache.forEach(bl=>{
-      if(!(bl.recurring || bl.date === fecha)) return;
+      const aplicaHoy = bl.recurring ? (!bl.days || bl.days.includes(diaSemana)) : bl.date === fecha;
+      if(!aplicaHoy) return;
       const ini = bl.allDay ? 0 : minsOfHHMM(bl.start);
       const fin = bl.allDay ? 24*60 : minsOfHHMM(bl.end);
       const nombres = bl.scope === 'all' ? todosLosBarberos : [bl.barberName];

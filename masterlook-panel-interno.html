@@ -544,6 +544,12 @@
   .mg-slot.sel{background:#1A1815; color:#fff; border-color:#1A1815;}
   .mg-msg{grid-column:1/-1; font-size:12px; color:#a3a2ab; padding:10px 0; text-align:center;}
   .mg-check{display:flex; align-items:center; gap:8px; font-size:13px; margin-top:14px; cursor:pointer;}
+  .dia-toggles{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
+  .dia-toggle{
+    padding:7px 12px; border-radius:999px; border:1px solid var(--border-strong);
+    background:var(--panel-2); font-size:12.5px; cursor:pointer; user-select:none; color:var(--text, inherit);
+  }
+  .dia-toggle.on{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
   .mg-warn{font-size:12px; color:#a3562a; background:#fdf3ea; border-radius:8px; padding:10px; margin-top:12px; display:none; line-height:1.5;}
   .mg-warn.show{display:block;}
   .mg-actions{display:flex; gap:9px; margin-top:22px;}
@@ -1260,8 +1266,13 @@
   <select id="blBarbero" class="mg-input"></select>
 
   <label class="mg-check">
-    <input type="checkbox" id="blFijo"> Repetir todos los días <span class="mg-opt">(bloqueo fijo, ej. almuerzo)</span>
+    <input type="checkbox" id="blFijo"> Repetir <span class="mg-opt">(bloqueo fijo, ej. almuerzo)</span>
   </label>
+
+  <div id="blDiasZona" style="display:none;">
+    <label class="mg-label">¿Qué días? <span class="mg-opt">(elige uno o varios)</span></label>
+    <div class="dia-toggles" id="blDias"></div>
+  </div>
 
   <div id="blFechaZona">
     <label class="mg-label">Fecha</label>
@@ -3036,7 +3047,13 @@
 
   function minsOf(hhmm){ const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
 
-  function blockAppliesToday(bl){ return bl.recurring || bl.date === currentDate; }
+  function blockAppliesToday(bl){
+    if(bl.recurring){
+      const dow = new Date(currentDate+'T12:00:00').getDay();
+      return !bl.days || bl.days.includes(dow);
+    }
+    return bl.date === currentDate;
+  }
 
   function activeBarbersFor(bl){
     if(bl.scope === 'all') return barbers.filter(b=> b.active !== false);
@@ -3094,7 +3111,9 @@
     }
     cont.innerHTML = demoBlocks.map(bl=>{
       const quien = bl.scope === 'all' ? 'Todos los barberos' : bl.barberName;
-      const cuando = bl.recurring ? 'Todos los días' : fmtFecha(bl.date).split(',')[0] + ' ' + bl.date.slice(8,10)+'/'+bl.date.slice(5,7);
+      const cuando = bl.recurring
+        ? (!bl.days || bl.days.length === 7 ? 'Todos los días' : 'Todas las semanas: ' + bl.days.map(d=> DIAS_CORTOS[d]).join(', '))
+        : fmtFecha(bl.date).split(',')[0] + ' ' + bl.date.slice(8,10)+'/'+bl.date.slice(5,7);
       const hora = bl.allDay ? 'Día completo' : `${bl.start}–${bl.end}`;
       return `<div class="bl-item">
         <span>${quien} · ${cuando} · ${hora}${bl.reason ? ' · '+bl.reason : ''}</span>
@@ -3105,6 +3124,20 @@
       btn.addEventListener('click', ()=> quitarBloqueo(btn.dataset.quitar)));
   }
 
+  const DIAS_CORTOS = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+
+  function pintarDiasBloqueo(seleccionados){
+    const cont = document.getElementById('blDias');
+    cont.innerHTML = DIAS_CORTOS.map((nombre, i)=>
+      `<span class="dia-toggle${seleccionados.includes(i) ? ' on' : ''}" data-dia="${i}">${nombre}</span>`).join('');
+    cont.querySelectorAll('.dia-toggle').forEach(chip=>
+      chip.addEventListener('click', ()=> chip.classList.toggle('on')));
+  }
+
+  function diasSeleccionadosBloqueo(){
+    return [...document.querySelectorAll('#blDias .dia-toggle.on')].map(el=> Number(el.dataset.dia));
+  }
+
   document.getElementById('btnBloquear').addEventListener('click', async ()=>{
     await cargarCatalogo();
     const sel = document.getElementById('blBarbero');
@@ -3112,6 +3145,8 @@
       cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${b.name}</option>`).join('');
     document.getElementById('blFecha').value = currentDate;
     document.getElementById('blFijo').checked = false;
+    document.getElementById('blDiasZona').style.display = 'none';
+    pintarDiasBloqueo([1,2,3,4,5,6]); // lunes a sábado por defecto (el local abre esos días)
     document.getElementById('blFechaZona').style.display = '';
     document.getElementById('blTodoDia').checked = true;
     document.getElementById('blHoras').style.display = 'none';
@@ -3126,7 +3161,9 @@
   });
 
   document.getElementById('blFijo').addEventListener('change', e=>{
-    document.getElementById('blFechaZona').style.display = e.target.checked ? 'none' : '';
+    const fijo = e.target.checked;
+    document.getElementById('blFechaZona').style.display = fijo ? 'none' : '';
+    document.getElementById('blDiasZona').style.display = fijo ? '' : 'none';
   });
 
   document.getElementById('blGuardar').addEventListener('click', async ()=>{
@@ -3141,7 +3178,11 @@
       return showToast('La hora "Hasta" debe ser después de "Desde"');
     }
     if(!fijo && !document.getElementById('blFecha').value){
-      return showToast('Elige una fecha, o marca "Repetir todos los días"');
+      return showToast('Elige una fecha, o marca "Repetir"');
+    }
+    const dias = diasSeleccionadosBloqueo();
+    if(fijo && !dias.length){
+      return showToast('Elige al menos un día de la semana');
     }
 
     if(MODE === 'api'){
@@ -3186,6 +3227,7 @@
       barberName: barberoSel === 'ALL' ? null : cfgBarberos.find(b=> b.id === barberoSel)?.name,
       date: document.getElementById('blFecha').value || currentDate,
       recurring: fijo,
+      days: fijo ? dias : null,
       allDay: todoDia,
       start: todoDia ? '00:00' : desde,
       end: todoDia ? '23:59' : hasta,
