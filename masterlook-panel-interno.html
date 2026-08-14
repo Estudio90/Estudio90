@@ -73,6 +73,9 @@
     border-radius:999px;padding:5px 11px;white-space:nowrap;
   }
   .stock-chip .qty{font-family:'IBM Plex Mono',monospace;color:var(--amber);font-size:11px;font-weight:500;}
+  .stock-chip{cursor:pointer;}
+  .stock-chip.low{background:#fbeceb;border-color:#e3a8a1;color:#b03a2e;}
+  .stock-chip.low .qty{color:#b03a2e;}
   .topbar-right{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
   .period-pill{
     font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-mid);
@@ -993,13 +996,7 @@
 
   <div class="topbar">
     <div class="wordmark"><span class="dot"></span>Master Look</div>
-    <div class="stock-chips">
-      <div class="stock-chip">Cera mate <span class="qty">· 3</span></div>
-      <div class="stock-chip">Polvo de textura <span class="qty">· 2</span></div>
-      <div class="stock-chip">Gel dominante <span class="qty">· 4</span></div>
-      <div class="stock-chip">Tónico profesional 7en1 <span class="qty">· 1</span></div>
-      <div class="stock-chip">Loción post-afeitado <span class="qty">· 5</span></div>
-    </div>
+    <div class="stock-chips" id="stockChips"></div>
     <div class="topbar-right">
       <div class="period-pill">Ago 2026</div>
       <div class="user-menu-wrap">
@@ -1418,6 +1415,20 @@
     <label class="mg-label">Domingo</label>
     <input type="text" id="cfgHorDom" class="mg-input" placeholder="Ej: Cerrado">
     <button class="mg-btn solid full" id="cfgGuardarLocal">Guardar horario del local</button>
+  </div>
+</div>
+
+<!-- Ajustar stock de un producto -->
+<div class="mg-modal" id="modalStock">
+  <div class="mg-head">
+    <h3>Ajustar stock — <span id="stkNombre"></span></h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <label class="mg-label">Unidades disponibles</label>
+  <input type="number" min="0" id="stkCantidad" class="mg-input">
+  <div class="mg-actions">
+    <button class="mg-btn ghost" data-close>Cancelar</button>
+    <button class="mg-btn solid" id="stkGuardar">Guardar</button>
   </div>
 </div>
 
@@ -2180,14 +2191,8 @@
 
   const appointments = [];
 
-  /* ---------------- Productos & propina ---------------- */
-  const products = [
-    {id:'cera', name:'Cera mate', price:6000},
-    {id:'polvo', name:'Polvo de textura', price:7000},
-    {id:'gel', name:'Gel dominante', price:5000},
-    {id:'tonico', name:'Tónico profesional 7en1', price:12000},
-    {id:'locion', name:'Loción post-afeitado', price:9000},
-  ];
+  /* ---------------- Productos, stock y propina ---------------- */
+  let productsCache = [];
   let cart = {};
   let tipMode = 'percent';
   let tipPercent = 0;
@@ -2196,18 +2201,86 @@
   function parsePrice(str){ return parseInt(String(str).replace(/[^0-9]/g,''),10) || 0; }
   function formatCLP(n){ return '$' + Math.round(n).toLocaleString('es-CL'); }
 
-  const productChipsEl = document.getElementById('productChips');
-  products.forEach(p=>{
-    const chip = document.createElement('div');
-    chip.className = 'product-chip';
-    chip.innerHTML = `<span>${p.name}</span><span class="p-price">${formatCLP(p.price)}</span><span class="p-add">+</span>`;
-    chip.addEventListener('click', ()=>{
-      cart[p.id] = (cart[p.id]||0) + 1;
-      renderCart();
-      updateTotals();
-    });
-    productChipsEl.appendChild(chip);
+  const STOCK_MINIMO = 4;
+  let productosAlertados = new Set();
+
+  db.collection('products').onSnapshot(snap=>{
+    if(snap.empty){
+      // primera vez: sembramos con los productos y cantidades que ya existían
+      const seed = [
+        {id:'cera', name:'Cera mate', price:6000, stock:3},
+        {id:'polvo', name:'Polvo de textura', price:7000, stock:2},
+        {id:'gel', name:'Gel dominante', price:5000, stock:4},
+        {id:'tonico', name:'Tónico profesional 7en1', price:12000, stock:1},
+        {id:'locion', name:'Loción post-afeitado', price:9000, stock:5},
+      ];
+      seed.forEach(p=> db.collection('products').doc(p.id).set(p).catch(()=>{}));
+      return; // el propio listener se vuelve a disparar cuando ya estén guardados
+    }
+    productsCache = snap.docs.map(d=> d.data());
+    pintarStockChips();
+    pintarProductChips();
   });
+
+  /** Chips del encabezado: en rojo y con aviso cuando a un producto le queda poco stock. */
+  function pintarStockChips(){
+    const cont = document.getElementById('stockChips');
+    if(!cont) return;
+    cont.innerHTML = productsCache.map(p=>{
+      const stock = p.stock ?? 0;
+      const bajo = stock < STOCK_MINIMO;
+      return `<div class="stock-chip${bajo ? ' low' : ''}" data-id="${p.id}" title="Clic para ajustar el stock">
+        ${escapeHTML(p.name)} <span class="qty">· ${stock}</span>
+      </div>`;
+    }).join('');
+    cont.querySelectorAll('.stock-chip').forEach(el=>
+      el.addEventListener('click', ()=> abrirEditarStock(el.dataset.id)));
+
+    const bajos = productsCache.filter(p=> (p.stock ?? 0) < STOCK_MINIMO);
+    const idsBajos = new Set(bajos.map(p=> p.id));
+    const nuevos = bajos.filter(p=> !productosAlertados.has(p.id));
+    if(nuevos.length){
+      showToast(nuevos.length === 1
+        ? `⚠ Stock bajo: ${nuevos[0].name} (${nuevos[0].stock} und.)`
+        : `⚠ Stock bajo en ${nuevos.length} productos`);
+    }
+    productosAlertados = idsBajos;
+  }
+
+  let stkEditando = null;
+  function abrirEditarStock(id){
+    const p = productsCache.find(x=> x.id === id);
+    if(!p) return;
+    stkEditando = id;
+    document.getElementById('stkNombre').textContent = p.name;
+    document.getElementById('stkCantidad').value = p.stock ?? 0;
+    abrirModal('modalStock');
+  }
+  document.getElementById('stkGuardar').addEventListener('click', async ()=>{
+    const val = parseInt(document.getElementById('stkCantidad').value, 10);
+    if(isNaN(val) || val < 0) return showToast('Ingresa una cantidad válida');
+    try{ await db.collection('products').doc(stkEditando).update({ stock: val }); }
+    catch(e){ return showToast('No se pudo guardar: ' + e.message); }
+    showToast('Stock actualizado');
+    cerrarModales();
+  });
+
+  function pintarProductChips(){
+    const productChipsEl = document.getElementById('productChips');
+    if(!productChipsEl) return;
+    productChipsEl.innerHTML = '';
+    productsCache.forEach(p=>{
+      const chip = document.createElement('div');
+      chip.className = 'product-chip';
+      chip.innerHTML = `<span>${escapeHTML(p.name)}</span><span class="p-price">${formatCLP(p.price)}</span><span class="p-add">+</span>`;
+      chip.addEventListener('click', ()=>{
+        cart[p.id] = (cart[p.id]||0) + 1;
+        renderCart();
+        updateTotals();
+      });
+      productChipsEl.appendChild(chip);
+    });
+  }
 
   function renderCart(){
     const list = document.getElementById('cartList');
@@ -2218,7 +2291,7 @@
       return;
     }
     ids.forEach(id=>{
-      const p = products.find(x=>x.id===id);
+      const p = productsCache.find(x=>x.id===id);
       const qty = cart[id];
       const row = document.createElement('div');
       row.className = 'cart-row';
@@ -2245,7 +2318,7 @@
 
   function productsSubtotal(){
     return Object.keys(cart).reduce((sum,id)=>{
-      const p = products.find(x=>x.id===id);
+      const p = productsCache.find(x=>x.id===id);
       return sum + (p ? p.price * cart[id] : 0);
     }, 0);
   }
@@ -5673,8 +5746,15 @@
     if(currentAppt){
       const metodoLabel = METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado;
       const productos = Object.keys(cart).filter(id=> cart[id] > 0).map(id=>{
-        const p = products.find(x=> x.id === id);
+        const p = productsCache.find(x=> x.id === id);
         return { id, name:p.name, qty:cart[id], price:p.price, subtotal:p.price*cart[id] };
+      });
+
+      // descontamos del stock lo que se acaba de vender
+      productos.forEach(item=>{
+        const p = productsCache.find(x=> x.id === item.id);
+        const nuevoStock = Math.max(0, (p?.stock ?? 0) - item.qty);
+        db.collection('products').doc(item.id).update({ stock: nuevoStock }).catch(()=>{});
       });
 
       if(currentAppt.fromWeb && currentAppt.webId){
