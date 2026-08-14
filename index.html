@@ -552,6 +552,39 @@
   }
   .mode-badge:empty{display:none;}
 
+  /* ---------- Reseñas de clientes ---------- */
+  .reviews-section{padding:60px 0;}
+  .reviews-eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:.7rem; font-weight:600; letter-spacing:.24em;
+    color:var(--text-hi); text-transform:uppercase; display:block; margin-bottom:22px;
+  }
+  .reviews-layout{display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start;}
+  .review-form-card h3{font-size:1rem; margin-bottom:16px;}
+  .rv-input, .rv-textarea{
+    width:100%; padding:12px 15px; background:var(--bg); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:0.85rem; margin-bottom:12px;
+  }
+  .rv-textarea{min-height:88px; resize:vertical;}
+  .rv-rating-box{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 15px; margin-bottom:14px;}
+  .rv-rating-label{font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.12em; color:var(--text-mid); display:block; margin-bottom:6px;}
+  .rv-stars-input{display:flex; align-items:center; gap:2px;}
+  .rv-stars-input span[data-v]{font-size:1.2rem; color:var(--border-strong); cursor:pointer; transition:color .12s ease; line-height:1;}
+  .rv-stars-input span[data-v].on{color:var(--oro);}
+  .rv-rating-num{margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:.8rem; color:var(--text-mid);}
+  .reviews-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-content:start;}
+  .review-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; display:flex; flex-direction:column; gap:10px; min-height:100%;
+  }
+  .review-stars{color:var(--oro); font-size:.9rem; letter-spacing:2px;}
+  .review-quote{font-size:.85rem; color:var(--text-hi); font-style:italic; line-height:1.5; flex:1;}
+  .review-foot{display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:10px; border-top:1px solid var(--border); font-size:.78rem;}
+  .review-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .review-verified{font-family:'IBM Plex Mono',monospace; font-size:.6rem; letter-spacing:.06em; color:var(--text-mid); text-transform:uppercase; flex:0 0 auto;}
+  .review-empty{color:var(--text-mid); font-size:.86rem; grid-column:1/-1;}
+  @media (max-width:900px){ .reviews-layout{grid-template-columns:1fr;} .reviews-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:600px){ .reviews-grid{grid-template-columns:1fr;} }
+
   .course-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
   .course-card{
     background:var(--panel); border:1px solid var(--border); border-radius:14px;
@@ -1794,6 +1827,29 @@
   </div>
 </section>
 
+<section id="resenas" class="reviews-section">
+  <div class="wrap">
+    <span class="reviews-eyebrow">Experiencia de clientes</span>
+    <div class="reviews-layout">
+      <div class="panel-card review-form-card">
+        <h3 class="display">Deja tu evaluación</h3>
+        <input type="text" id="resName" class="rv-input" placeholder="Tu nombre (opcional)" maxlength="60">
+        <div class="rv-rating-box">
+          <span class="rv-rating-label">CALIFICACIÓN</span>
+          <div class="rv-stars-input" id="resStarsInput">
+            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+            <span class="rv-rating-num" id="resRatingNum">5.0</span>
+          </div>
+        </div>
+        <textarea id="resComment" class="rv-textarea" placeholder="¿Qué te pareció el servicio?" maxlength="500"></textarea>
+        <button class="btn-full" id="resEnviar">Enviar Reseña</button>
+      </div>
+      <div class="reviews-grid" id="reviewsGrid"></div>
+    </div>
+    <button class="see-all" id="verTodasResenas" style="display:none;">Ver todas las reseñas ›</button>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="foot-grid">
@@ -2786,6 +2842,78 @@
          priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0 }));
     if(!cursosListos) return;
     cargarTienda();
+  });
+
+  function escapeHTML(texto){
+    return String(texto ?? '').replace(/[&<>"']/g, c=> ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+
+  /* ---------- Reseñas de clientes: se guardan sin verificar y solo se
+     muestran las que el equipo aprueba desde el panel. ---------- */
+  let resRatingSeleccionado = 5;
+  function pintarEstrellasInput(){
+    document.querySelectorAll('#resStarsInput span[data-v]').forEach(s=>{
+      s.classList.toggle('on', Number(s.dataset.v) <= resRatingSeleccionado);
+    });
+    document.getElementById('resRatingNum').textContent = resRatingSeleccionado.toFixed(1);
+  }
+  document.querySelectorAll('#resStarsInput span[data-v]').forEach(s=>{
+    s.addEventListener('click', ()=>{ resRatingSeleccionado = Number(s.dataset.v); pintarEstrellasInput(); });
+  });
+  pintarEstrellasInput();
+
+  document.getElementById('resEnviar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('resEnviar');
+    const nombre = document.getElementById('resName').value.trim() || 'Anónimo';
+    const comentario = document.getElementById('resComment').value.trim();
+    if(!comentario) return toast('Cuéntanos qué te pareció el servicio');
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{
+      await db.collection('reviews').add({
+        name: nombre, rating: resRatingSeleccionado, comment: comentario,
+        verified: false, createdAt: new Date().toISOString(),
+      });
+      toast('¡Gracias por tu reseña! La publicaremos luego de revisarla.');
+      document.getElementById('resName').value = '';
+      document.getElementById('resComment').value = '';
+      resRatingSeleccionado = 5; pintarEstrellasInput();
+    }catch(e){
+      toast('No se pudo enviar: ' + e.message);
+    }
+    btn.disabled = false; btn.textContent = 'Enviar Reseña';
+  });
+
+  let reviewsCache = [];
+  let resenasExpandido = false;
+  function pintarResenas(){
+    const grid = document.getElementById('reviewsGrid');
+    const lista = resenasExpandido ? reviewsCache : reviewsCache.slice(0, 3);
+    grid.innerHTML = lista.map(r=> `
+      <div class="review-card">
+        <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+        <p class="review-quote">"${escapeHTML(r.comment)}"</p>
+        <div class="review-foot">
+          <span class="review-name">${escapeHTML(r.name || 'Anónimo')}</span>
+          <span class="review-verified">Verificado</span>
+        </div>
+      </div>
+    `).join('') || '<p class="review-empty">Todavía no hay reseñas publicadas. ¡Sé el primero en dejar una!</p>';
+
+    const btnVerTodas = document.getElementById('verTodasResenas');
+    btnVerTodas.style.display = reviewsCache.length > 3 ? '' : 'none';
+    btnVerTodas.textContent = resenasExpandido ? 'Ver menos ‹' : 'Ver todas las reseñas ›';
+  }
+  document.getElementById('verTodasResenas').addEventListener('click', ()=>{
+    resenasExpandido = !resenasExpandido;
+    pintarResenas();
+  });
+  db.collection('reviews').where('verified', '==', true).onSnapshot(snap=>{
+    reviewsCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
+    pintarResenas();
   });
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{

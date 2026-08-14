@@ -1012,6 +1012,7 @@
           <button class="user-menu-item admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
           <button class="user-menu-item admin-only" id="btnProductos" style="display:none;">📦 Productos</button>
           <button class="user-menu-item" id="btnClientes" style="display:none;">📇 Clientes</button>
+          <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
           <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
           <div class="user-menu-sep"></div>
           <button class="user-menu-item danger" id="btnSalir">🚪 Cerrar sesión</button>
@@ -1622,6 +1623,28 @@
   <div class="mg-actions">
     <button class="mg-btn ghost" data-close>Cerrar</button>
     <button class="mg-btn solid" id="rcEnviar">Enviar ahora</button>
+  </div>
+</div>
+
+<!-- Reseñas de clientes: moderación -->
+<div class="mg-modal wide" id="modalResenas">
+  <div class="mg-head">
+    <h3>Reseñas de clientes</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note">
+    Las reseñas nuevas quedan <b>pendientes de aprobación</b> — recién se ven en el
+    sitio cuando las apruebas aquí.
+  </p>
+
+  <h4 style="font-size:13px;font-weight:600;margin:14px 0 8px;">Pendientes de aprobación</h4>
+  <div id="resPendientesLista" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:18px;"></div>
+
+  <h4 style="font-size:13px;font-weight:600;margin:14px 0 8px;">Publicadas en el sitio</h4>
+  <div id="resPublicadasLista" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;"></div>
+
+  <div class="mg-actions">
+    <button class="mg-btn ghost" data-close>Cerrar</button>
   </div>
 </div>
 
@@ -2809,6 +2832,9 @@
     // Clientes: administrador y recepción sí, barbero no (mismo criterio que el contacto)
     const btnCli = document.getElementById('btnClientes');
     if(btnCli) btnCli.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
+    // Reseñas: mismo criterio que Clientes
+    const btnRes = document.getElementById('btnResenas');
+    if(btnRes) btnRes.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
   }
 
   /** Trae la agenda del día desde el servidor y la dibuja en el calendario. */
@@ -5493,6 +5519,81 @@
   document.getElementById('btnRecordatorios').addEventListener('click', async ()=>{
     abrirModal('modalRecordatorios');
     await cargarRecordatorios();
+  });
+
+  /* ---------- Reseñas de clientes: moderación ---------- */
+  let resenasCache = [];
+
+  async function cargarResenas(){
+    document.getElementById('resPendientesLista').innerHTML = '<div class="cx-empty">Cargando...</div>';
+    document.getElementById('resPublicadasLista').innerHTML = '';
+    try{
+      const snap = await db.collection('reviews').get();
+      resenasCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+        .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
+    }catch(e){
+      document.getElementById('resPendientesLista').innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+      return;
+    }
+    pintarResenasPanel();
+  }
+
+  function pintarResenasPanel(){
+    const estrellas = r => `${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}`;
+    const pendientes = resenasCache.filter(r=> !r.verified);
+    const publicadas = resenasCache.filter(r=> r.verified);
+
+    document.getElementById('resPendientesLista').innerHTML = pendientes.length ? pendientes.map(r=> `
+      <div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <b>${escapeHTML(r.name || 'Anónimo')}</b>
+          <span style="color:#c9a76a;">${estrellas(r)}</span>
+        </div>
+        <p style="font-size:12px;color:#6c6b74;margin:0;">${escapeHTML(r.comment)}</p>
+        <div style="display:flex;gap:8px;">
+          <button class="mg-btn solid" data-approve="${r.id}" style="flex:1;padding:7px;">Aprobar</button>
+          <button class="mg-btn ghost" data-reject="${r.id}" style="flex:1;padding:7px;">Rechazar</button>
+        </div>
+      </div>`).join('') : '<div class="cx-empty">No hay reseñas pendientes.</div>';
+
+    document.getElementById('resPublicadasLista').innerHTML = publicadas.length ? publicadas.map(r=> `
+      <div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <b>${escapeHTML(r.name || 'Anónimo')}</b>
+          <span style="color:#c9a76a;">${estrellas(r)}</span>
+        </div>
+        <p style="font-size:12px;color:#6c6b74;margin:0;">${escapeHTML(r.comment)}</p>
+        <button class="mg-btn ghost" data-remove="${r.id}" style="align-self:flex-start;padding:6px 12px;">Quitar del sitio</button>
+      </div>`).join('') : '<div class="cx-empty">Todavía no hay reseñas publicadas.</div>';
+
+    document.querySelectorAll('#resPendientesLista [data-approve]').forEach(b=>
+      b.addEventListener('click', ()=> moderarResena(b.dataset.approve, true)));
+    document.querySelectorAll('#resPendientesLista [data-reject]').forEach(b=>
+      b.addEventListener('click', ()=> moderarResena(b.dataset.reject, false)));
+    document.querySelectorAll('#resPublicadasLista [data-remove]').forEach(b=>
+      b.addEventListener('click', ()=> moderarResena(b.dataset.remove, false)));
+  }
+
+  async function moderarResena(id, aprobar){
+    try{
+      if(aprobar){
+        await db.collection('reviews').doc(id).update({ verified: true });
+        showToast('Reseña publicada en el sitio');
+      } else {
+        await db.collection('reviews').doc(id).delete();
+        showToast('Reseña eliminada');
+      }
+    }catch(e){
+      showToast('No se pudo actualizar: ' + e.message);
+      return;
+    }
+    resenasCache = resenasCache.filter(r=> r.id !== id);
+    pintarResenasPanel();
+  }
+
+  document.getElementById('btnResenas').addEventListener('click', async ()=>{
+    abrirModal('modalResenas');
+    await cargarResenas();
   });
 
   /** Reservas confirmadas para mañana (usa la misma data en vivo del calendario). */

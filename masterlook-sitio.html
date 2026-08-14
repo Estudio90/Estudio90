@@ -3,10 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>MASTERLOOK — Barbería</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   /* ==========================================================
@@ -456,10 +460,36 @@
     width:52px; height:52px; border-radius:50%; background:var(--oro); color:#12100A;
     display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-md); cursor:pointer; border:none;
   }
+  .chat-panel{
+    position:fixed; right:18px; bottom:154px; z-index:99;
+    width:340px; max-width:calc(100vw - 32px); height:460px; max-height:70vh;
+    background:var(--panel); border:1px solid var(--border); border-radius:16px;
+    box-shadow:var(--shadow-md); display:none; flex-direction:column; overflow:hidden;
+  }
+  .chat-panel.open{display:flex;}
+  .chat-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--negro); flex-shrink:0;}
+  .chat-head-info{display:flex; align-items:center; gap:10px;}
+  .chat-avatar{width:32px; height:32px; border-radius:50%; background:var(--oro); color:#12100A; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0;}
+  .chat-head h4{margin:0; font-size:13.5px; color:#fff;}
+  .chat-head span{font-size:11px; color:var(--oro-claro);}
+  .chat-close{background:none; border:none; color:#fff; cursor:pointer; padding:4px; font-size:16px; line-height:1;}
+  .chat-body{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--panel-2);}
+  .chat-msg{max-width:82%; padding:9px 12px; border-radius:14px; font-size:13.5px; line-height:1.45; white-space:pre-line;}
+  .chat-msg.bot{align-self:flex-start; background:var(--panel); border:1px solid var(--border); border-bottom-left-radius:4px; color:var(--text-hi);}
+  .chat-msg.user{align-self:flex-end; background:var(--oro); color:#12100A; border-bottom-right-radius:4px;}
+  .chat-chips{display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; flex-shrink:0;}
+  .chat-chip{background:var(--panel); border:1px solid var(--linea-fuerte); color:var(--text-hi); font-size:12px; padding:6px 11px; border-radius:99px; cursor:pointer; font-family:inherit;}
+  .chat-chip:hover{border-color:var(--oro);}
+  .chat-input-row{display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); flex-shrink:0;}
+  .chat-input-row input{flex:1; border:1px solid var(--border); border-radius:99px; padding:9px 14px; font-family:inherit; font-size:13px; background:var(--bg); color:var(--text-hi); min-width:0;}
+  .chat-input-row button{width:36px; height:36px; border-radius:50%; background:var(--oro); border:none; color:#12100A; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   body{padding-bottom:88px;}
   @media (min-width:900px){
-    .bottom-nav, .chat-bubble{display:none;}
+    .bottom-nav{display:none;}
     body{padding-bottom:0;}
+  }
+  @media (max-width:480px){
+    .chat-panel{right:10px; left:10px; width:auto; bottom:132px;}
   }
 
   /* ===== auth modal ===== */
@@ -521,6 +551,39 @@
     color:var(--text-low); border:1px solid var(--border); padding:3px 9px; border-radius:99px;
   }
   .mode-badge:empty{display:none;}
+
+  /* ---------- Reseñas de clientes ---------- */
+  .reviews-section{padding:60px 0;}
+  .reviews-eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:.7rem; font-weight:600; letter-spacing:.24em;
+    color:var(--text-hi); text-transform:uppercase; display:block; margin-bottom:22px;
+  }
+  .reviews-layout{display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start;}
+  .review-form-card h3{font-size:1rem; margin-bottom:16px;}
+  .rv-input, .rv-textarea{
+    width:100%; padding:12px 15px; background:var(--bg); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text-hi); font-family:inherit; font-size:0.85rem; margin-bottom:12px;
+  }
+  .rv-textarea{min-height:88px; resize:vertical;}
+  .rv-rating-box{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 15px; margin-bottom:14px;}
+  .rv-rating-label{font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.12em; color:var(--text-mid); display:block; margin-bottom:6px;}
+  .rv-stars-input{display:flex; align-items:center; gap:2px;}
+  .rv-stars-input span[data-v]{font-size:1.2rem; color:var(--border-strong); cursor:pointer; transition:color .12s ease; line-height:1;}
+  .rv-stars-input span[data-v].on{color:var(--oro);}
+  .rv-rating-num{margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:.8rem; color:var(--text-mid);}
+  .reviews-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-content:start;}
+  .review-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; display:flex; flex-direction:column; gap:10px; min-height:100%;
+  }
+  .review-stars{color:var(--oro); font-size:.9rem; letter-spacing:2px;}
+  .review-quote{font-size:.85rem; color:var(--text-hi); font-style:italic; line-height:1.5; flex:1;}
+  .review-foot{display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:10px; border-top:1px solid var(--border); font-size:.78rem;}
+  .review-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .review-verified{font-family:'IBM Plex Mono',monospace; font-size:.6rem; letter-spacing:.06em; color:var(--text-mid); text-transform:uppercase; flex:0 0 auto;}
+  .review-empty{color:var(--text-mid); font-size:.86rem; grid-column:1/-1;}
+  @media (max-width:900px){ .reviews-layout{grid-template-columns:1fr;} .reviews-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:600px){ .reviews-grid{grid-template-columns:1fr;} }
 
   .course-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
   .course-card{
@@ -1503,7 +1566,6 @@
     </div>
 
     <div class="nav-right">
-      <span class="mode-badge" id="modeBadge"></span>
       <button class="icon-btn" id="themeToggle" aria-label="Cambiar a tema claro">
         <svg id="themeIconSol" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:none;">
           <circle cx="12" cy="12" r="4"/>
@@ -1549,8 +1611,8 @@
     <a href="masterlook-panel-interno.html">Panel interno</a>
   </nav>
   <div class="menu-pie">
-    <div>Lun a Vie · 10:00–20:00</div>
-    <div>Sábado · 10:00–18:00</div>
+    <div>Lun a Vie · <span id="horLVMenu">11:00–21:00</span></div>
+    <div>Sábado · <span id="horSabMenu">10:00–19:00</span></div>
     <div class="menu-tel">+56 9 4912 4645</div>
     <div>@masterlook.cl</div>
   </div>
@@ -1765,6 +1827,29 @@
   </div>
 </section>
 
+<section id="resenas" class="reviews-section">
+  <div class="wrap">
+    <span class="reviews-eyebrow">Experiencia de clientes</span>
+    <div class="reviews-layout">
+      <div class="panel-card review-form-card">
+        <h3 class="display">Deja tu evaluación</h3>
+        <input type="text" id="resName" class="rv-input" placeholder="Tu nombre (opcional)" maxlength="60">
+        <div class="rv-rating-box">
+          <span class="rv-rating-label">CALIFICACIÓN</span>
+          <div class="rv-stars-input" id="resStarsInput">
+            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+            <span class="rv-rating-num" id="resRatingNum">5.0</span>
+          </div>
+        </div>
+        <textarea id="resComment" class="rv-textarea" placeholder="¿Qué te pareció el servicio?" maxlength="500"></textarea>
+        <button class="btn-full" id="resEnviar">Enviar Reseña</button>
+      </div>
+      <div class="reviews-grid" id="reviewsGrid"></div>
+    </div>
+    <button class="see-all" id="verTodasResenas" style="display:none;">Ver todas las reseñas ›</button>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="foot-grid">
@@ -1793,15 +1878,14 @@
       <div>
         <h4>Horario</h4>
         <ul>
-          <li>Lun–Vie: 10:00–20:00</li>
-          <li>Sáb: 10:00–18:00</li>
-          <li>Dom: Cerrado</li>
+          <li>Lun–Vie: <span id="horLVFooter">11:00–21:00</span></li>
+          <li>Sáb: <span id="horSabFooter">10:00–19:00</span></li>
+          <li>Dom: <span id="horDomFooter">Cerrado</span></li>
         </ul>
       </div>
     </div>
     <div class="foot-bottom">
       <span>© 2026 MASTERLOOK. Todos los derechos reservados.</span>
-      <span>Sitio de demostración</span>
     </div>
   </div>
 </footer>
@@ -1990,6 +2074,9 @@
               <span class="field-label">Teléfono</span>
               <input type="tel" placeholder="+56 9 1234 5678" id="cPhone">
 
+              <span class="field-label">Correo electrónico <span style="text-transform:none;">(para tu confirmación)</span></span>
+              <input type="email" placeholder="tu@correo.com" id="cEmail">
+
               <span class="field-label">¿Primera vez con nosotros?</span>
               <div class="pay-opts" id="rvPrimera">
                 <div class="pay-opt selected" data-primera="no">Ya soy cliente</div>
@@ -2014,8 +2101,7 @@
             <div class="confirm-msg" id="confirmMsg">
               <div class="check">✓</div>
               <h3 class="display" style="margin-bottom:8px;">Reserva confirmada</h3>
-              <p style="color:var(--text-mid); font-size:0.9rem;">Tu hora quedó registrada. El local la revisará y te confirmaremos en breve.</p>
-              <div class="notify-box" id="notifyBox"></div>
+              <p style="color:var(--text-mid); font-size:0.9rem;">Tu hora quedó registrada. El local la revisará y te confirmaremos en breve. Si dejaste tu correo, te enviamos los detalles ahí.</p>
               <button class="btn-ghost" style="margin-top:20px;" id="newBooking">Hacer otra reserva</button>
             </div>
           </div>
@@ -2328,9 +2414,27 @@
 
 <div class="toast" id="toast"></div>
 
-<button class="chat-bubble" aria-label="¿Necesitas ayuda?">
+<button class="chat-bubble" id="chatBubble" aria-label="¿Necesitas ayuda?">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12c0 4.4-4 8-9 8a9.7 9.7 0 0 1-3.4-.6L3 21l1.4-4.2A7.8 7.8 0 0 1 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg>
 </button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div class="chat-head-info">
+      <div class="chat-avatar">ML</div>
+      <div><h4>Asistente MASTERLOOK</h4><span>Suele responder al instante</span></div>
+    </div>
+    <button class="chat-close" id="chatClose" aria-label="Cerrar chat">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-chips" id="chatChips"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Escribe tu mensaje...">
+    <button id="chatSend" aria-label="Enviar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</div>
 
 <nav class="bottom-nav">
   <button class="bn-item" onclick="abrirReservas()">
@@ -2404,7 +2508,6 @@
     const esLocal = ['localhost','127.0.0.1',''].includes(location.hostname);
     if(!window.MASTERLOOK_API && !esLocal){
       MODE = 'demo';
-      document.getElementById('modeBadge').textContent = 'Modo demo · sin servidor';
       return;
     }
 
@@ -2418,8 +2521,6 @@
     }catch(e){
       MODE = 'demo';
     }
-    document.getElementById('modeBadge').textContent =
-      MODE === 'api' ? '' : 'Modo demo · sin servidor';
   }
 
   const revealEls = document.querySelectorAll('.reveal');
@@ -2631,17 +2732,189 @@
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
   });
   const db = firebase.firestore();
+  const auth = firebase.auth();
 
   /** Refleja en vivo las reservas guardadas en Firestore, visibles desde cualquier dispositivo. */
   let bookingsCache = [];
   db.collection('bookings').onSnapshot(snap=>{
     bookingsCache = snap.docs.map(d=> d.data());
-    try{ renderAccount(); }catch(e){}
+    renderAccount().catch(()=>{});
   });
 
   function publishToPanel(booking){
-    db.collection('bookings').doc(booking.id).set(booking).catch(()=>{});
+    const { phone, email, ...publico } = booking;
+    db.collection('bookings').doc(booking.id).set(publico).catch(()=>{});
+    // el teléfono y el correo quedan aparte, con su propio candado: solo
+    // el panel (Admin/Recepción) puede leerlos, nunca es público.
+    db.collection('bookings').doc(booking.id).collection('private').doc('contact')
+      .set({ phone: phone || '', email: email || '' }).catch(()=>{});
   }
+
+  /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
+  function plantillaCorreoReserva(reserva, estado, motivo){
+    const estados = {
+      pendiente: { titulo:'Reserva recibida', color:'#B08D3E', texto:'Tu hora quedó registrada. La estamos revisando y te avisamos apenas quede confirmada.' },
+      aprobada: { titulo:'Reserva confirmada', color:'#2E7D32', texto:'Tu hora quedó confirmada. Te esperamos.' },
+      rechazada: { titulo:'Reserva no disponible', color:'#B03A2E', texto: motivo ? `No pudimos tomar esa hora. Motivo: ${motivo}` : 'No pudimos tomar esa hora.' },
+      eliminada: { titulo:'Reserva cancelada', color:'#6c6b74', texto:'Tu hora fue cancelada por el local. Si tienes dudas, contáctanos.' },
+    };
+    const e = estados[estado] || estados.pendiente;
+    const corto = (reserva.client || '').split(' ')[0];
+    const total = '$' + Number(reserva.price || 0).toLocaleString('es-CL');
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#faf8f4;">
+        <div style="background:#1A1815;padding:28px 24px;text-align:center;">
+          <div style="color:#D9B25C;font-size:20px;font-weight:bold;letter-spacing:2px;">MASTERLOOK</div>
+          <div style="color:#8a8880;font-size:11px;letter-spacing:1px;margin-top:4px;">BARBERÍA &amp; SPA</div>
+        </div>
+        <div style="padding:28px 24px;">
+          <div style="display:inline-block;background:${e.color};color:#fff;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px;">${e.titulo}</div>
+          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${corto}, ${e.texto}</p>
+          <div style="background:#fff;border:1px solid #e5e2d9;border-radius:10px;padding:16px 18px;margin-top:16px;">
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Servicio</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;margin-bottom:14px;">${reserva.svc || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Fecha y hora</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${reserva.slot || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Barbero</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${reserva.barber || ''}</div>
+            <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Total</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;">${total}</div>
+          </div>
+          <p style="font-size:12px;color:#6c6b74;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
+        </div>
+      </div>`;
+
+    const text = `Hola ${corto}, ${e.texto}\n\nServicio: ${reserva.svc}\nFecha y hora: ${reserva.slot}\nBarbero: ${reserva.barber}\nTotal: ${total}\n\nMASTERLOOK · +56 9 4912 4645`;
+
+    return { subject: `MASTERLOOK · ${e.titulo}`, html, text };
+  }
+
+  function enviarCorreoReserva(reserva, estado, motivo){
+    if(!reserva.email) return;
+    const { subject, html, text } = plantillaCorreoReserva(reserva, estado, motivo);
+    db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text } }).catch(()=>{});
+  }
+
+  /** Horario real del local, editable desde el panel — mismo dato para el menú, el pie de página y el chat. */
+  let horarioNegocio = { horarioSemana:'11:00–21:00', horarioSabado:'10:00–19:00', horarioDomingo:'Cerrado' };
+  function pintarHorarioNegocio(){
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('horLVMenu', horarioNegocio.horarioSemana);
+    set('horSabMenu', horarioNegocio.horarioSabado);
+    set('horLVFooter', horarioNegocio.horarioSemana);
+    set('horSabFooter', horarioNegocio.horarioSabado);
+    set('horDomFooter', horarioNegocio.horarioDomingo);
+  }
+  pintarHorarioNegocio();
+  db.collection('settings').doc('negocio').onSnapshot(doc=>{
+    if(doc.exists) horarioNegocio = Object.assign({}, horarioNegocio, doc.data());
+    pintarHorarioNegocio();
+  });
+
+  /** Catálogo de servicios y barberos: se actualiza solo cuando el panel edita algo. */
+  let catalogoListo = false;
+  db.collection('services').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
+  db.collection('barbers').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
+
+  /** Horarios bloqueados desde el panel (almuerzo, día libre, etc.), en vivo. */
+  let bloqueosCache = [];
+  db.collection('blocks').onSnapshot(snap=>{
+    bloqueosCache = snap.docs.map(d=> d.data());
+  });
+
+  /** Cursos de la Academy, editados desde el panel, en vivo. */
+  let cursosCache = [];
+  let cursosListos = false;
+  db.collection('courses').onSnapshot(snap=>{
+    cursosCache = snap.docs.map(d=> d.data()).filter(c=> c.active !== false).map(c=>
+      ({ ...c, lessons: (c.lessons || []).filter(l=> l.active !== false) }));
+    if(!cursosListos) return;
+    cargarTienda();
+    if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarCursosAcademia();
+  });
+
+  /** Catálogo de productos físicos (cera, gel, etc.), editado desde el panel. */
+  let productosSiteCache = [];
+  db.collection('products').onSnapshot(snap=>{
+    productosSiteCache = snap.docs.map(d=> d.data()).filter(p=> p.active !== false).map(p=>
+      ({ id:p.id, kind:'PRODUCT', name:p.name, description:p.description || '',
+         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0 }));
+    if(!cursosListos) return;
+    cargarTienda();
+  });
+
+  function escapeHTML(texto){
+    return String(texto ?? '').replace(/[&<>"']/g, c=> ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+
+  /* ---------- Reseñas de clientes: se guardan sin verificar y solo se
+     muestran las que el equipo aprueba desde el panel. ---------- */
+  let resRatingSeleccionado = 5;
+  function pintarEstrellasInput(){
+    document.querySelectorAll('#resStarsInput span[data-v]').forEach(s=>{
+      s.classList.toggle('on', Number(s.dataset.v) <= resRatingSeleccionado);
+    });
+    document.getElementById('resRatingNum').textContent = resRatingSeleccionado.toFixed(1);
+  }
+  document.querySelectorAll('#resStarsInput span[data-v]').forEach(s=>{
+    s.addEventListener('click', ()=>{ resRatingSeleccionado = Number(s.dataset.v); pintarEstrellasInput(); });
+  });
+  pintarEstrellasInput();
+
+  document.getElementById('resEnviar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('resEnviar');
+    const nombre = document.getElementById('resName').value.trim() || 'Anónimo';
+    const comentario = document.getElementById('resComment').value.trim();
+    if(!comentario) return toast('Cuéntanos qué te pareció el servicio');
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{
+      await db.collection('reviews').add({
+        name: nombre, rating: resRatingSeleccionado, comment: comentario,
+        verified: false, createdAt: new Date().toISOString(),
+      });
+      toast('¡Gracias por tu reseña! La publicaremos luego de revisarla.');
+      document.getElementById('resName').value = '';
+      document.getElementById('resComment').value = '';
+      resRatingSeleccionado = 5; pintarEstrellasInput();
+    }catch(e){
+      toast('No se pudo enviar: ' + e.message);
+    }
+    btn.disabled = false; btn.textContent = 'Enviar Reseña';
+  });
+
+  let reviewsCache = [];
+  let resenasExpandido = false;
+  function pintarResenas(){
+    const grid = document.getElementById('reviewsGrid');
+    const lista = resenasExpandido ? reviewsCache : reviewsCache.slice(0, 3);
+    grid.innerHTML = lista.map(r=> `
+      <div class="review-card">
+        <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+        <p class="review-quote">"${escapeHTML(r.comment)}"</p>
+        <div class="review-foot">
+          <span class="review-name">${escapeHTML(r.name || 'Anónimo')}</span>
+          <span class="review-verified">Verificado</span>
+        </div>
+      </div>
+    `).join('') || '<p class="review-empty">Todavía no hay reseñas publicadas. ¡Sé el primero en dejar una!</p>';
+
+    const btnVerTodas = document.getElementById('verTodasResenas');
+    btnVerTodas.style.display = reviewsCache.length > 3 ? '' : 'none';
+    btnVerTodas.textContent = resenasExpandido ? 'Ver menos ‹' : 'Ver todas las reseñas ›';
+  }
+  document.getElementById('verTodasResenas').addEventListener('click', ()=>{
+    resenasExpandido = !resenasExpandido;
+    pintarResenas();
+  });
+  db.collection('reviews').where('verified', '==', true).onSnapshot(snap=>{
+    reviewsCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
+    pintarResenas();
+  });
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('confirmBtn');
@@ -2651,7 +2924,7 @@
     const datos = {
       name: nameInput.value.trim(),
       phone: phoneInput.value.trim(),
-      email: (currentUser() || {}).email || '',
+      email: document.getElementById('cEmail').value.trim() || (currentUser() || {}).email || '',
       svc: state.svc, servicios: state.servicios || [], plan: state.plan || null, barber: state.barber, slot: state.slotLabel || state.slot,
       price: state.price, pay: payMethod
     };
@@ -2712,17 +2985,21 @@
           decision: 'pendiente', createdAt: new Date().toISOString()
         };
         publishToPanel(reserva);
+        enviarCorreoReserva(reserva, 'pendiente');
         // si hay sesión activa, la reserva también entra a su historial de cuenta
-        if(user){ user.bookings.push(reserva); }
+        if(user){
+          db.collection('customers').doc(user.uid).update({
+            bookingIds: firebase.firestore.FieldValue.arrayUnion(reserva.id)
+          }).catch(()=>{});
+          user.bookingIds = [...(user.bookingIds || []), reserva.id];
+        }
       });
-      if(user){ saveUser(user); }
     }
 
     btn.textContent = 'Confirmar reserva';
     document.getElementById('formZone').style.display = 'none';
     document.getElementById('confirmMsg').classList.add('show');
     await renderAccount();
-    notifyBooking(datos);
   });
 
   /** Transbank exige que el token viaje por POST en un formulario. */
@@ -2743,7 +3020,7 @@
     state.servicios=[]; state.barberId=null; state.duracion=null;
     pintarElegidos(); marcarTarjetas();
     document.querySelectorAll('.svc-opt, .barber-opt, .slot, .pay-opt').forEach(x=>x.classList.remove('selected'));
-    nameInput.value=''; phoneInput.value='';
+    nameInput.value=''; phoneInput.value=''; document.getElementById('cEmail').value='';
     document.getElementById('toStep2').disabled = true;
     document.getElementById('toStep3').disabled = true;
     document.getElementById('confirmBtn').disabled = true;
@@ -2751,30 +3028,26 @@
     document.getElementById('confirmMsg').classList.remove('show');
     updateSummary(); goToStep(1);
   });
-  // ===== cuentas de usuario (demo, guardado en el navegador) =====
-  const DB_KEY = 'masterlook_users';
-  const SESSION_KEY = 'masterlook_session';
+  // ===== cuentas de cliente: cuenta real (Firebase Auth), no solo del navegador =====
+  let customerProfile = null;
 
-  function readDB(){
-    try{ return JSON.parse(localStorage.getItem(DB_KEY)) || {}; }catch(e){ return {}; }
-  }
-  function writeDB(db){
-    try{ localStorage.setItem(DB_KEY, JSON.stringify(db)); }catch(e){}
-  }
   function currentUser(){
     if(MODE === 'api') return sessionUser;
+    return customerProfile;
+  }
+
+  auth.onAuthStateChanged(async user=>{
+    if(MODE === 'api') return; // ese modo maneja su propia sesión por token
+    if(!user){ customerProfile = null; await renderAccount(); return; }
     try{
-      const email = localStorage.getItem(SESSION_KEY);
-      if(!email) return null;
-      const db = readDB();
-      return db[email] || null;
-    }catch(e){ return null; }
-  }
-  function saveUser(user){
-    const db = readDB();
-    db[user.email] = user;
-    writeDB(db);
-  }
+      const doc = await db.collection('customers').doc(user.uid).get();
+      customerProfile = doc.exists
+        ? { uid:user.uid, ...doc.data() }
+        : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
+    }catch(e){ customerProfile = null; }
+    await renderAccount();
+  });
+
   function initials(name){
     return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
@@ -2827,14 +3100,18 @@
         sessionUser = data.user;
       }catch(e){ return showErr('regErr', e.message); }
     } else {
-      if(readDB()[email]) return showErr('regErr','Ya existe una cuenta con ese correo. Inicia sesión.');
-      const user = {
-        name, email, phone, pass,
-        since: new Date().toLocaleDateString('es-CL',{month:'long', year:'numeric'}),
-        bookings: [], points: 0
-      };
-      saveUser(user);
-      localStorage.setItem(SESSION_KEY, email);
+      try{
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('customers').doc(cred.user.uid).set({
+          name, email, phone, since: new Date().toISOString(), bookingIds: [],
+        });
+      }catch(e){
+        let msg = 'No se pudo crear la cuenta.';
+        if(e.code === 'auth/email-already-in-use') msg = 'Ya existe una cuenta con ese correo. Inicia sesión.';
+        else if(e.code === 'auth/invalid-email') msg = 'Ingresa un correo válido.';
+        else if(e.code === 'auth/weak-password') msg = 'La contraseña debe tener al menos 6 caracteres.';
+        return showErr('regErr', msg);
+      }
     }
 
     closeAuth();
@@ -2857,9 +3134,9 @@
         sessionUser = data.user;
       }catch(e){ return showErr('loginErr', e.message); }
     } else {
-      const user = readDB()[email];
-      if(!user || user.pass !== pass) return showErr('loginErr','Correo o contraseña incorrectos.');
-      localStorage.setItem(SESSION_KEY, email);
+      try{
+        await auth.signInWithEmailAndPassword(email, pass);
+      }catch(e){ return showErr('loginErr', 'Correo o contraseña incorrectos.'); }
     }
 
     // si la cuenta es del equipo, ofrecemos ir al panel
@@ -2871,7 +3148,7 @@
 
     closeAuth();
     await renderAccount();
-    const nombre = (sessionUser?.name || readDB()[email]?.name || '').split(' ')[0];
+    const nombre = (sessionUser?.name || currentUser()?.name || '').split(' ')[0];
     toast('Hola de nuevo, ' + nombre);
     document.getElementById('cuenta').scrollIntoView({behavior:'smooth'});
   }
@@ -2881,7 +3158,7 @@
       try{ await api('/auth/logout', { method:'POST' }); }catch(e){}
       accessToken = null; sessionUser = null;
     } else {
-      localStorage.removeItem(SESSION_KEY);
+      await auth.signOut();
     }
     await renderAccount();
     toast('Sesión cerrada');
@@ -2902,83 +3179,183 @@
     instagram: '@masterlook.cl'
   };
 
-  function buildMessages(b){
-    const monto = '$' + Number(b.price).toLocaleString('es-CL');
-    const corto = b.name.split(' ')[0];
+  // ===== asistente del chat: respuestas por reglas, sin IA externa =====
+  let chatAbierto = false;
+  let chatIniciado = false;
 
-    const whatsapp =
-`Hola ${corto}, recibimos tu reserva en ${NEGOCIO.nombre}.
-
-Servicio: ${b.svc}
-Barbero: ${b.barber}
-Fecha y hora: ${b.slot}
-Total: ${monto}
-Pago: ${b.pay}
-
-Tu hora queda POR CONFIRMAR. Te avisamos apenas el local la apruebe.
-Si necesitas cambiarla, responde este mensaje.
-
-${NEGOCIO.direccion}`;
-
-    const asunto = `Tu reserva en ${NEGOCIO.nombre} — ${b.slot}`;
-    const correo =
-`Hola ${corto},
-
-Recibimos tu reserva en ${NEGOCIO.nombre}. Estos son los detalles:
-
-  Servicio ....... ${b.svc}
-  Barbero ........ ${b.barber}
-  Fecha y hora ... ${b.slot}
-  Total .......... ${monto}
-  Medio de pago .. ${b.pay}
-
-Estado actual: POR CONFIRMAR
-El local revisará la disponibilidad y te avisaremos apenas quede confirmada.
-Puedes seguir el estado desde tu cuenta en el sitio.
-
-Para reagendar o cancelar, responde este correo o escríbenos al ${NEGOCIO.telefono}.
-
-Te esperamos,
-Equipo ${NEGOCIO.nombre}
-${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
-
-    return {whatsapp, correo, asunto};
+  function chatToggle(){
+    chatAbierto = !chatAbierto;
+    document.getElementById('chatPanel').classList.toggle('open', chatAbierto);
+    if(chatAbierto && !chatIniciado){
+      chatIniciado = true;
+      chatSaludoInicial();
+    }
   }
 
-  function notifyBooking(b){
-    const msgs = buildMessages(b);
-    const waNum = (b.phone || '').replace(/[^0-9]/g,'');
-    const box = document.getElementById('notifyBox');
-    if(!box) return;
+  function chatAgregar(rol, texto){
+    const body = document.getElementById('chatBody');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + rol;
+    div.textContent = texto;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  }
 
-    const auto = MODE === 'api';
-
-    box.innerHTML = `
-      <div class="notify-title">${auto ? 'Confirmación enviada' : 'Confirmación lista'}</div>
-      ${b.code ? `<div class="notify-row"><span class="notify-ic code">#</span>
-        <div class="notify-txt"><b>Código</b> ${b.code}</div></div>` : ''}
-      <div class="notify-row">
-        <span class="notify-ic wa">W</span>
-        <div class="notify-txt"><b>WhatsApp</b> a ${b.phone || '—'}
-          ${auto ? '<span class="notify-state">Enviado automáticamente</span>' : ''}</div>
-        ${!auto && waNum ? `<a class="notify-btn" href="https://wa.me/${waNum}?text=${encodeURIComponent(msgs.whatsapp)}" target="_blank" rel="noopener">Abrir</a>` : ''}
-      </div>
-      <div class="notify-row">
-        <span class="notify-ic mail">@</span>
-        <div class="notify-txt"><b>Correo</b> a ${b.email || 'tu correo registrado'}
-          ${auto ? '<span class="notify-state">Enviado automáticamente</span>' : ''}</div>
-        ${!auto && b.email ? `<a class="notify-btn" href="mailto:${b.email}?subject=${encodeURIComponent(msgs.asunto)}&body=${encodeURIComponent(msgs.correo)}">Abrir</a>` : ''}
-      </div>
-      <button class="notify-preview-btn" id="notifyToggle">Ver el mensaje ▾</button>
-      <pre class="notify-preview" id="notifyPreview"></pre>
-      ${auto ? '' : '<p class="notify-demo-note">Modo demo: sin servidor, los mensajes se abren en tu app para que veas el contenido exacto.</p>'}
-    `;
-    document.getElementById('notifyPreview').textContent = msgs.whatsapp;
-    document.getElementById('notifyToggle').addEventListener('click', ()=>{
-      document.getElementById('notifyPreview').classList.toggle('open');
+  function chatChips(lista){
+    const zona = document.getElementById('chatChips');
+    zona.innerHTML = '';
+    lista.forEach(c=>{
+      const b = document.createElement('button');
+      b.className = 'chat-chip';
+      b.type = 'button';
+      b.textContent = c.label;
+      b.addEventListener('click', ()=> chatChipClick(c));
+      zona.appendChild(b);
     });
-    box.classList.add('show');
   }
+
+  function chatChipClick(c){
+    if(c.accion){ c.accion(); return; }
+    chatAgregar('user', c.label);
+    document.getElementById('chatChips').innerHTML = '';
+    setTimeout(()=> chatResponder(c.intent || c.label), 450);
+  }
+
+  function chatAbrirWhatsApp(msg){
+    const num = NEGOCIO.telefono.replace(/[^0-9]/g,'');
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  /** Trae la última reserva del cliente, con el estado real que tiene guardado el local. */
+  function chatUltimaReservaDe(user){
+    if(!user || !(user.bookingIds || []).length) return null;
+    const ultimoId = user.bookingIds[user.bookingIds.length - 1];
+    const rec = bookingsCache.find(r=> r.id === ultimoId);
+    if(!rec) return null;
+    return Object.assign({}, rec, {
+      decision: rec.decision || 'pendiente',
+      reason: rec.reason
+    });
+  }
+
+  function chatListaPrecios(){
+    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    return lista.slice(0,6).map(s=> `• ${s.name} — ${money(s.priceClp)}`).join('\n');
+  }
+
+  function chatMenuPrincipal(){
+    chatChips([
+      { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+      { label:'Ver precios', intent:'precios' },
+      { label:'Horario de atención', intent:'horario' },
+      { label:'Hablar con alguien', accion: ()=> chatAbrirWhatsApp('Hola, tengo una consulta.') }
+    ]);
+  }
+
+  /** Al abrir el chat, si el cliente tiene una hora pendiente se la recordamos primero — así lo animamos a confirmarla. */
+  function chatSaludoInicial(){
+    const user = currentUser();
+    const nombre = user ? user.name.split(' ')[0] : '';
+    const ultima = chatUltimaReservaDe(user);
+
+    if(ultima && ultima.decision === 'pendiente'){
+      chatAgregar('bot', `Hola${nombre ? ' '+nombre : ''}, vi que tienes una hora pendiente por confirmar: ${ultima.svc} el ${ultima.slot}. Normalmente la confirmamos en minutos. ¿Te ayudo con algo mientras tanto?`);
+      chatChips([
+        { label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp(`Hola, quiero confirmar el estado de mi reserva (${ultima.svc}, ${ultima.slot}).`) },
+        { label:'Ver mi cuenta', accion: ()=>{ chatToggle(); onAccountChipClick(); } },
+        { label:'Otra pregunta', intent:'menu' }
+      ]);
+    } else {
+      chatAgregar('bot', `Hola${nombre ? ' '+nombre : ''} 👋 Soy el asistente de MASTERLOOK. ¿Te ayudo a reservar tu hora o tienes alguna duda?`);
+      chatMenuPrincipal();
+    }
+  }
+
+  function chatResponder(textoOriginal){
+    const t = textoOriginal.toLowerCase();
+
+    if(t === 'menu'){ chatAgregar('bot','¿En qué más te ayudo?'); chatMenuPrincipal(); return; }
+
+    if(t === 'precios' || /precio|cu[aá]nto (cuesta|vale)|valor|tarifa/.test(t)){
+      chatAgregar('bot', `Estos son algunos de nuestros precios:\n\n${chatListaPrecios()}\n\n¿Quieres reservar alguno?`);
+      chatChips([
+        { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+        { label:'Ver todos los servicios', accion: ()=>{ chatToggle(); document.getElementById('servicios')?.scrollIntoView({behavior:'smooth'}); } },
+        { label:'Otra pregunta', intent:'menu' }
+      ]);
+      return;
+    }
+
+    if(t === 'horario' || /horario|abren|cierran|atienden|abierto|cerrado/.test(t)){
+      chatAgregar('bot', `Atendemos Lunes a Viernes de ${horarioNegocio.horarioSemana}, y Sábado de ${horarioNegocio.horarioSabado}. Domingo: ${horarioNegocio.horarioDomingo}.`);
+      chatChips([
+        { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+        { label:'Otra pregunta', intent:'menu' }
+      ]);
+      return;
+    }
+
+    if(/mi reserva|estado de mi|confirmad|pendiente/.test(t)){
+      const user = currentUser();
+      const ultima = chatUltimaReservaDe(user);
+      if(!ultima){
+        chatAgregar('bot','No encuentro reservas a tu nombre todavía. ¿Quieres agendar una ahora?');
+        chatChips([{ label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+      } else if(ultima.decision === 'aprobada'){
+        chatAgregar('bot', `¡Tu hora ya está confirmada! ${ultima.svc} el ${ultima.slot}. Te esperamos.`);
+        chatChips([{ label:'Gracias', intent:'gracias' }]);
+      } else if(ultima.decision === 'rechazada'){
+        chatAgregar('bot', `Esa hora no se pudo tomar${ultima.reason ? ' (' + ultima.reason + ')' : ''}. ¿Buscamos otro horario?`);
+        chatChips([{ label:'Reservar otra hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+      } else {
+        chatAgregar('bot', `Tu hora está pendiente de confirmación: ${ultima.svc} el ${ultima.slot}. Te avisamos apenas quede lista.`);
+        chatChips([{ label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp('Hola, quiero saber el estado de mi reserva.') }]);
+      }
+      return;
+    }
+
+    if(/reservar|agendar|sacar hora|una cita/.test(t)){
+      chatAgregar('bot', 'Con gusto. Te dejo abierta la reserva para que elijas servicio, barbero y horario — toma menos de un minuto.');
+      chatChips([{ label:'Ir a reservar →', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+      return;
+    }
+
+    if(/direcci[oó]n|ubicaci[oó]n|d[oó]nde (est[aá]n|queda)/.test(t)){
+      chatAgregar('bot', `Estamos en ${NEGOCIO.direccion}. Escríbenos al ${NEGOCIO.telefono} si necesitas indicaciones.`);
+      chatChips([{ label:'Otra pregunta', intent:'menu' }]);
+      return;
+    }
+
+    if(t === 'gracias' || /gracias|listo|perfecto|chao|adios|adiós/.test(t)){
+      chatAgregar('bot', '¡De nada! Cualquier cosa, aquí estoy. 🙌');
+      chatChips([{ label:'Otra pregunta', intent:'menu' }]);
+      return;
+    }
+
+    if(/hola|buenas|buenos d[ií]as|buenas tardes/.test(t)){
+      chatAgregar('bot','¡Hola! ¿Te ayudo a reservar o tienes alguna duda?');
+      chatMenuPrincipal();
+      return;
+    }
+
+    chatAgregar('bot', 'No estoy segura de entender eso, pero te puedo ayudar con esto:');
+    chatMenuPrincipal();
+  }
+
+  function chatEnviarDesdeInput(){
+    const input = document.getElementById('chatInput');
+    const texto = input.value.trim();
+    if(!texto) return;
+    chatAgregar('user', texto);
+    input.value = '';
+    document.getElementById('chatChips').innerHTML = '';
+    setTimeout(()=> chatResponder(texto), 500);
+  }
+
+  document.getElementById('chatBubble').addEventListener('click', chatToggle);
+  document.getElementById('chatClose').addEventListener('click', chatToggle);
+  document.getElementById('chatSend').addEventListener('click', chatEnviarDesdeInput);
+  document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key === 'Enter') chatEnviarDesdeInput(); });
 
   const STATUS_LABEL = {
     PENDING:'Por confirmar', CONFIRMED:'Confirmada', REJECTED:'Rechazada',
@@ -3071,7 +3448,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
           </div>
           <div style="display:flex; align-items:center; gap:12px;">
             <span class="hi-status ${STATUS_CLASS[b.status]}">${STATUS_LABEL[b.status]}</span>
-            <span class="mono">$${b.price.toLocaleString('es-CL')}</span>
+            <span class="mono">${money(Number(b.price) || 0)}</span>
           </div>
         </div>`;
       }).join('');
@@ -3088,13 +3465,22 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     }
 
     // ---- modo demo: datos compartidos vía Firestore ----
+    // las reservas del cliente son las que su cuenta tiene enlazadas por id;
+    // el detalle y el estado siempre se leen en vivo desde bookingsCache
+    const misReservas = (user.bookingIds || [])
+      .map(id=> bookingsCache.find(r=> r.id === id))
+      .filter(Boolean);
     const decisionOf = id => (bookingsCache.find(r=> r.id === id) || {}).decision || 'pendiente';
 
     // los puntos y visitas solo cuentan reservas confirmadas por el local
-    const confirmadas = user.bookings.filter(b=> decisionOf(b.id) === 'aprobada');
-    const pendientes  = user.bookings.filter(b=> decisionOf(b.id) === 'pendiente');
+    const confirmadas = misReservas.filter(b=> decisionOf(b.id) === 'aprobada');
+    const pendientes  = misReservas.filter(b=> decisionOf(b.id) === 'pendiente');
     const puntos = confirmadas.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
     const puntosPend = pendientes.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
+
+    const desde = user.since
+      ? new Date(user.since).toLocaleDateString('es-CL',{month:'long', year:'numeric'})
+      : '';
 
     section.classList.add('show');
     label.textContent = user.name.split(' ')[0];
@@ -3102,7 +3488,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     document.getElementById('bigAvatar').textContent = initials(user.name);
     document.getElementById('accName').textContent = user.name;
     document.getElementById('accEmail').textContent = user.email;
-    document.getElementById('accSince').textContent = 'Cliente desde ' + user.since;
+    document.getElementById('accSince').textContent = 'Cliente desde ' + desde;
     document.getElementById('accPoints').textContent = puntos;
     document.getElementById('accVisits').textContent = confirmadas.length;
     const pendNote = document.getElementById('pointsPending');
@@ -3114,11 +3500,11 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     }
 
     const list = document.getElementById('historyList');
-    if(!user.bookings.length){
+    if(!misReservas.length){
       list.innerHTML = '<div class="empty-hist">Todavía no tienes reservas. Agenda tu primera hora y aparecerá aquí.</div>';
     } else {
       // estados decididos por el panel del local
-      list.innerHTML = user.bookings.slice().reverse().map(b=>{
+      list.innerHTML = misReservas.slice().reverse().map(b=>{
         const rec = bookingsCache.find(r=> r.id === b.id) || {};
         const decision = rec.decision || 'pendiente';
 
@@ -3146,7 +3532,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
           </div>
           <div style="display:flex; align-items:center; gap:12px;">
             <span class="hi-status ${cls}">${label}</span>
-            <span class="mono">$${b.price.toLocaleString('es-CL')}</span>
+            <span class="mono">${money(Number(b.price) || 0)}</span>
           </div>
         </div>`;
       }).join('');
@@ -3159,6 +3545,8 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     if(!user) return;
     if(!nameInput.value) nameInput.value = user.name;
     if(!phoneInput.value && user.phone) phoneInput.value = user.phone;
+    const emailInput = document.getElementById('cEmail');
+    if(!emailInput.value && user.email) emailInput.value = user.email;
     checkStep3();
   }
 
@@ -3472,9 +3860,42 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
 
     const sub = carrito.reduce((s,i)=> s + i.price * i.qty, 0);
     const codigo = 'ML-C-' + Math.random().toString(36).slice(2,7).toUpperCase();
+    registrarVentaProductosOnline(carrito, nombre, correo);
     mostrarCompraLista(codigo, correo, sub + costoEnvio());
     btn.disabled = false; btn.textContent = 'Pagar';
   });
+
+  /**
+   * Deja registrada en el panel cada venta de PRODUCTO (no cursos) hecha por el
+   * sitio, para que aparezca sola en Productos. Busca el producto por nombre en
+   * el inventario real del panel; si existe, también descuenta su stock.
+   */
+  async function registrarVentaProductosOnline(items, nombreCliente, correoCliente){
+    const productos = items.filter(i=> i.kind === 'PRODUCT');
+    for(const item of productos){
+      try{
+        // el carrito ya trae el id real de Firestore cuando el catálogo viene
+        // del panel; si no coincide (catálogo de respaldo), buscamos por nombre
+        let match = null;
+        const porId = await db.collection('products').doc(item.id).get();
+        if(porId.exists) match = porId;
+        else {
+          const snap = await db.collection('products').where('name', '==', item.name).limit(1).get();
+          match = snap.empty ? null : snap.docs[0];
+        }
+        await db.collection('productSales').add({
+          productId: match ? match.id : item.id, productName: item.name,
+          qty: item.qty, price: item.price, subtotal: item.price * item.qty,
+          origen: 'online', cliente: { nombre: nombreCliente, correo: correoCliente },
+          fecha: new Date().toISOString().slice(0,10), createdAt: new Date().toISOString(),
+        });
+        if(match){
+          const nuevoStock = Math.max(0, (match.data().stock ?? 0) - item.qty);
+          await db.collection('products').doc(match.id).update({ stock: nuevoStock });
+        }
+      }catch(e){}
+    }
+  }
 
   function mostrarCompraLista(codigo, correo, total){
     const cursos = carrito.filter(i=> i.kind === 'COURSE');
@@ -3511,15 +3932,11 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     }
 
     let cursos = items.filter(i=> i.kind === 'COURSE');
-    const productos = items.filter(i=> i.kind === 'PRODUCT');
+    let productos = items.filter(i=> i.kind === 'PRODUCT');
 
-    // en modo demo, los cursos y precios los maneja el panel interno
-    if(MODE !== 'api'){
-      try{
-        const publicados = JSON.parse(localStorage.getItem(CURSOS_KEY));
-        if(publicados?.length) cursos = publicados;
-      }catch(e){}
-    }
+    // en modo demo, los cursos y productos los maneja el panel interno
+    if(MODE !== 'api' && cursosCache.length) cursos = cursosCache;
+    if(MODE !== 'api' && productosSiteCache.length) productos = productosSiteCache;
 
     const cg = document.getElementById('courseGrid');
     if(cg && cursos.length){
@@ -3583,10 +4000,7 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
   function pintarCursosAcademia(){
     let cursos = CATALOGO_DEMO.filter(i=> i.kind === 'COURSE');
     if(MODE !== 'api'){
-      try{
-        const publicados = JSON.parse(localStorage.getItem(CURSOS_KEY));
-        if(publicados?.length) cursos = publicados;
-      }catch(e){}
+      if(cursosCache.length) cursos = cursosCache;
     } else if(tvProductos.length){
       cursos = tvProductos.filter(i=> i.kind === 'COURSE') || cursos;
     }
@@ -4203,9 +4617,6 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
      bloque disponible.
      ========================================================== */
 
-  /** Reservas ya tomadas ese día, por barbero (modo demo). */
-  const BLOQUEOS_KEY = 'masterlook_bloqueos';
-
   /** Convierte "HH:MM" a minutos desde medianoche. */
   function minsOfHHMM(hhmm){ const [h,m] = String(hhmm).split(':').map(Number); return h*60+m; }
 
@@ -4218,20 +4629,19 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     });
 
     // horarios bloqueados desde el panel (almuerzo, vacaciones, etc.)
-    try{
-      const bloqueos = JSON.parse(localStorage.getItem(BLOQUEOS_KEY)) || [];
-      const todosLosBarberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO).map(b=> b.name);
-      bloqueos.forEach(bl=>{
-        if(!(bl.recurring || bl.date === fecha)) return;
-        const ini = bl.allDay ? 0 : minsOfHHMM(bl.start);
-        const fin = bl.allDay ? 24*60 : minsOfHHMM(bl.end);
-        const nombres = bl.scope === 'all' ? todosLosBarberos : [bl.barberName];
-        nombres.forEach(nombre=>{
-          if(!nombre) return;
-          (mapa[nombre] = mapa[nombre] || []).push([ini, fin]);
-        });
+    const todosLosBarberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO).map(b=> b.name);
+    const diaSemana = new Date(fecha + 'T12:00:00').getDay();
+    bloqueosCache.forEach(bl=>{
+      const aplicaHoy = bl.recurring ? (!bl.days || bl.days.includes(diaSemana)) : bl.date === fecha;
+      if(!aplicaHoy) return;
+      const ini = bl.allDay ? 0 : minsOfHHMM(bl.start);
+      const fin = bl.allDay ? 24*60 : minsOfHHMM(bl.end);
+      const nombres = bl.scope === 'all' ? todosLosBarberos : [bl.barberName];
+      nombres.forEach(nombre=>{
+        if(!nombre) return;
+        (mapa[nombre] = mapa[nombre] || []).push([ini, fin]);
       });
-    }catch(e){}
+    });
 
     return mapa;
   }
@@ -4495,9 +4905,6 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
   document.getElementById('menuOverlay')?.addEventListener('click', cerrarMenu);
 
   /* ---------- catálogo (servicios y barberos) ---------- */
-  const CATALOGO_KEY = 'masterlook_catalogo';
-  const CURSOS_KEY = 'masterlook_cursos';
-
   async function loadCatalog(){
     if(MODE === 'api'){
       try{
@@ -4506,11 +4913,14 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
         catalog.barbers = ba.barbers;
       }catch(e){}
     } else {
-      // sin servidor, tomamos lo que el panel haya configurado
+      // sin servidor propio, leemos directo de Firestore
       try{
-        const guardado = JSON.parse(localStorage.getItem(CATALOGO_KEY));
-        if(guardado?.servicios?.length){
-          catalog.services = guardado.servicios.map(x=>{
+        const [svcSnap, barSnap] = await Promise.all([
+          db.collection('services').get(),
+          db.collection('barbers').get()
+        ]);
+        if(!svcSnap.empty){
+          catalog.services = svcSnap.docs.map(d=> d.data()).filter(x=> x.active !== false).map(x=>{
             // si el panel no guardó descripción, usamos la del catálogo base
             const base = SVC_DEMO.find(d=> d.name === x.name);
             return {
@@ -4522,7 +4932,9 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
             };
           });
         }
-        if(guardado?.barberos?.length) catalog.barbers = guardado.barberos;
+        if(!barSnap.empty){
+          catalog.barbers = barSnap.docs.map(d=> d.data()).filter(x=> x.active !== false);
+        }
       }catch(e){}
     }
     paintServices();
@@ -4774,37 +5186,23 @@ ${NEGOCIO.direccion} · ${NEGOCIO.correo}`;
     }
 
     await etapa('catálogo', loadCatalog);
+    catalogoListo = true;
     await etapa('carrito', ()=>{ carrito = leerCarrito(); });
     await etapa('cuenta', renderAccount);
     await etapa('tienda', cargarTienda);
+    cursosListos = true;
     await etapa('retorno de pago', revisarRetornoPago);
     if(hashActual() === '#tienda') abrirTienda(true);
     if(hashActual() === '#reservas') abrirReservas(true);
     if(hashActual() === '#academia') abrirAcademia(true);
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }
-      if(e.key === CATALOGO_KEY) loadCatalog();
-      if(e.key === CURSOS_KEY){
-        cargarTienda();
-        if(document.getElementById('vistaAcademia').classList.contains('open')) pintarCursosAcademia();
-      }
     });
-
-    try{
-      const ch = new BroadcastChannel('masterlook');
-      ch.addEventListener('message', e=>{
-        if(e.data === 'catalogo-actualizado') loadCatalog();
-        if(e.data === 'cursos-actualizados'){
-          cargarTienda();
-          if(document.getElementById('vistaAcademia').classList.contains('open')) pintarCursosAcademia();
-        }
-      });
-    }catch(e){}
 
     // en modo demo, Firestore ya avisa solo cuando cambia el estado de una reserva (ver onSnapshot arriba)
     if(MODE !== 'demo'){
       // en modo API refrescamos el estado de las reservas cada 20 segundos
-      setInterval(()=>{ try{ if(currentUser()) renderAccount(); }catch(e){} }, 20000);
+      setInterval(()=>{ if(currentUser()) renderAccount().catch(()=>{}); }, 20000);
     }
   })();
 </script>
