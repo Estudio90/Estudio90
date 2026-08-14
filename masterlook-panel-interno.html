@@ -991,7 +991,7 @@
 
   <nav class="panel-nav">
     <button class="ctrl-btn" id="btnRecordatorios">🔔 Recordatorios</button>
-    <button class="ctrl-btn admin-only" id="btnComisiones" style="display:none;">💰 Comisiones</button>
+    <button class="ctrl-btn" id="btnComisiones" style="display:none;">💰 Comisiones</button>
     <button class="ctrl-btn admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
     <button class="ctrl-btn admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
     <button class="ctrl-btn" id="btnConfig">⚙ Configurar</button>
@@ -1060,6 +1060,26 @@
         </div>
 
         <button class="ctrl-btn" id="cxExportar" style="width:100%;margin-top:12px;padding:11px;">Descargar planilla (CSV)</button>
+      </div>
+
+      <!-- Resumen personal para cuentas de barbero: solo ven lo suyo -->
+      <div class="cx-panel" id="cxBarbero" style="display:none;">
+        <div class="cx-regla">
+          Resumen de <b>hoy</b>. Solo cuentan los servicios que ya marcaste como realizados.
+        </div>
+        <div class="cx-kpis">
+          <div class="cx-kpi"><div class="k">Servicios realizados</div><div class="v" id="cbServicios">0</div></div>
+          <div class="cx-kpi pay"><div class="k">Tu comisión</div><div class="v" id="cbComision">$0</div></div>
+          <div class="cx-kpi"><div class="k">Propinas recibidas</div><div class="v" id="cbPropinas">$0</div></div>
+          <div class="cx-kpi"><div class="k">Comisión por productos</div><div class="v" id="cbComisionProductos">$0</div></div>
+          <div class="cx-kpi net"><div class="k">Total para ti hoy</div><div class="v" id="cbTotal">$0</div></div>
+        </div>
+        <div class="cx-tablebox">
+          <table class="cx-table">
+            <thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th class="r">Tu comisión</th></tr></thead>
+            <tbody id="cbTabla"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1679,7 +1699,7 @@
       </div>
     </div>
 
-    <div class="pay-section">
+    <div class="pay-section" id="paySeccionProductos">
       <div class="field-label">Añadir productos</div>
       <div class="product-chips" id="productChips"></div>
       <div class="cart-list" id="cartList"></div>
@@ -2439,6 +2459,9 @@
   function mostrarControlesAdmin(){
     const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = soloAdmin);
+    // Comisiones: administrador ve todo, barbero ve su propio resumen, recepción no ve nada
+    const btnCom = document.getElementById('btnComisiones');
+    if(btnCom) btnCom.style.display = (userRole === 'ADMIN' || userRole === 'BARBER') ? '' : 'none';
   }
 
   /** Trae la agenda del día desde el servidor y la dibuja en el calendario. */
@@ -3606,9 +3629,28 @@
   const cxClp = (n)=> '$' + Math.round(n||0).toLocaleString('es-CL');
   let cxPros = [], cxEdit = null, cxRep = null;
 
-  // Comisiones en modo demo: por defecto 42%, con overrides por servicio
-  const cxDemoDefault = {};
-  const cxDemoOverride = {};
+  // Comisiones: por defecto 42%, con overrides por servicio. Se guardan en Firestore
+  // para que no se reseteen al recargar ni queden distintas en cada dispositivo.
+  let cxDemoDefault = {};
+  let cxDemoOverride = {};
+  let cxTarifasCargadas = false;
+
+  async function cxCargarTarifas(){
+    if(cxTarifasCargadas) return;
+    try{
+      const doc = await db.collection('settings').doc('comisiones').get();
+      if(doc.exists){
+        cxDemoDefault = doc.data().default || {};
+        cxDemoOverride = doc.data().overrides || {};
+      }
+    }catch(e){}
+    cxTarifasCargadas = true;
+  }
+
+  async function cxGuardarTarifas(){
+    try{ await db.collection('settings').doc('comisiones').set({ default: cxDemoDefault, overrides: cxDemoOverride }); }
+    catch(e){ showToast('No se pudo guardar la tarifa en el servidor: ' + e.message); }
+  }
 
   function cxPrecioServicio(nombre){
     const s = (cfgServicios || []).find(x=> x.name === nombre);
@@ -3632,7 +3674,52 @@
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
     ocultarFlotante(true);
-    cxIrA(ver || 'config');
+
+    document.querySelectorAll('.cx-navbtn').forEach(b=> b.style.display = userRole === 'BARBER' ? 'none' : '');
+
+    if(userRole === 'BARBER'){
+      document.getElementById('cxTitulo').textContent = 'Mis comisiones';
+      document.getElementById('cxSub').textContent = 'Tu propio resumen de ganancias.';
+      document.getElementById('cxConfig').style.display = 'none';
+      document.getElementById('cxReporte').style.display = 'none';
+      document.getElementById('cxBarbero').style.display = '';
+      pintarResumenBarbero();
+    } else {
+      document.getElementById('cxBarbero').style.display = 'none';
+      document.getElementById('cxTitulo').textContent = 'Comisiones';
+      document.getElementById('cxSub').textContent = 'Define cuánto gana cada profesional por servicio.';
+      cxIrA(ver || 'config');
+    }
+  }
+
+  /** Resumen de ganancias de hoy, solo para la cuenta del propio barbero. */
+  async function pintarResumenBarbero(){
+    await cargarCatalogo();
+    await cxCargarTarifas();
+
+    const yo = cfgBarberos.find(b=> b.name === userBarberName);
+    const items = appointments.filter(a=> a.status === 'done' && a.barber === userBarberName);
+
+    let comisionServicios = 0, propinas = 0, comisionProductos = 0;
+    const filas = items.map(a=>{
+      const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
+      const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
+      comisionServicios += c.amount;
+      propinas += Number(a.propina) || 0;
+      const subProductos = (a.productosVendidos || []).reduce((s,p)=> s + (p.subtotal||0), 0);
+      comisionProductos += Math.round(subProductos * 0.10);
+      const hora = String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
+      return `<tr><td>${hora}</td><td>${escapeHTML(a.client)}</td><td>${escapeHTML(a.service)}</td><td class="r">${cxClp(c.amount)}</td></tr>`;
+    });
+
+    document.getElementById('cbServicios').textContent = items.length;
+    document.getElementById('cbComision').textContent = cxClp(comisionServicios);
+    document.getElementById('cbPropinas').textContent = cxClp(propinas);
+    document.getElementById('cbComisionProductos').textContent = cxClp(comisionProductos);
+    document.getElementById('cbTotal').textContent = cxClp(comisionServicios + propinas + comisionProductos);
+    document.getElementById('cbTabla').innerHTML = filas.length
+      ? filas.join('')
+      : '<tr><td colspan="4" class="cx-empty">Todavía no hay servicios marcados como realizados hoy.</td></tr>';
   }
 
   function volverAgenda(){
@@ -3665,6 +3752,7 @@
     const grid = document.getElementById('cxPros');
     grid.innerHTML = '<div class="cx-empty">Cargando...</div>';
     await cargarCatalogo();
+    await cxCargarTarifas();
 
     if(MODE === 'api'){
       try{
@@ -3815,6 +3903,7 @@
         if(s.custom) overrides[s.name] = { value:s.value, type:s.type };
       });
       cxDemoOverride[cxEdit.barberId] = overrides;
+      await cxGuardarTarifas();
       showToast('Comisiones guardadas');
     }
 
@@ -3849,6 +3938,7 @@
     } else {
       cxDemoDefault[cxEdit.barberId] = v;
       if(todos) delete cxDemoOverride[cxEdit.barberId];
+      await cxGuardarTarifas();
       showToast('Comisión por defecto actualizada');
     }
     cerrarModales();
@@ -5024,11 +5114,17 @@
     const e = String(a.end[0]).padStart(2,'0')+':'+String(a.end[1]).padStart(2,'0');
     document.getElementById('dTime').textContent = s+' – '+e;
     document.getElementById('dPrice').textContent = a.price;
-    document.getElementById('dPhone').textContent = a.phone || '—';
-    document.getElementById('dEmail').textContent = a.email || '—';
+    const verContacto = userRole !== 'BARBER';
+    document.getElementById('dPhone').textContent = verContacto ? (a.phone || '—') : 'No visible para tu cuenta';
+    document.getElementById('dEmail').textContent = verContacto ? (a.email || '—') : 'No visible para tu cuenta';
     document.getElementById('dNotes').textContent = a.notes || 'Sin información';
     const waNumber = (a.phone || '').replace(/[^0-9]/g,'');
     document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
+    document.getElementById('dWhatsapp').style.display = verContacto ? '' : 'none';
+
+    const puedeGestionarCita = userRole === 'ADMIN' || userRole === 'RECEPTION';
+    document.getElementById('btnEliminarCita').style.display = puedeGestionarCita ? '' : 'none';
+    document.getElementById('btnEditarCita').style.display = puedeGestionarCita ? '' : 'none';
 
     document.querySelectorAll('.tag-dot').forEach(d=>{
       d.classList.toggle('selected', d.dataset.s === a.status);
@@ -5068,7 +5164,7 @@
       } else {
         webState.textContent = 'Pendiente de aprobación';
         webNote.textContent = 'El cliente reservó desde el sitio web. Confirma o rechaza para notificarle en su cuenta.';
-        webBtns.style.display = 'flex';
+        webBtns.style.display = puedeGestionarCita ? 'flex' : 'none';
       }
     } else {
       webBox.classList.remove('show');
@@ -5310,6 +5406,7 @@
     paymentMenu.classList.remove('open');
     detailView.classList.remove('open');
     payView.classList.add('open');
+    document.getElementById('paySeccionProductos').style.display = userRole === 'BARBER' ? 'none' : '';
     updateTotals();
   }
   document.getElementById('menuComplete').addEventListener('click', goToPayView);
