@@ -1947,10 +1947,11 @@
         userRole = doc.data().role || 'BARBER';
         userBarberName = doc.data().barber?.name || null;
       } else {
-        // cuenta sin ficha en "staff" (p.ej. el admin original creado antes de este sistema)
-        userRole = 'ADMIN';
+        // cuenta sin ficha en "staff": solo el dueño original de la cuenta
+        // sigue siendo administrador por defecto, igual que en las reglas del servidor.
+        userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null;
       }
-    }catch(e){ userRole = 'ADMIN'; }
+    }catch(e){ userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null; }
     mostrarControlesAdmin();
     entrarAlPanel(user.email);
   });
