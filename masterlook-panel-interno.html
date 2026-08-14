@@ -3092,11 +3092,16 @@
       const hora = bl.allDay ? 'Día completo' : `${bl.start}–${bl.end}`;
       return `<div class="bl-item">
         <span>${quien} · ${cuando} · ${hora}${bl.reason ? ' · '+bl.reason : ''}</span>
-        <button data-quitar="${bl.id}">Quitar</button>
+        <span style="display:flex;gap:8px;flex:0 0 auto;">
+          <button data-editar="${bl.id}" style="color:var(--accent);">Editar</button>
+          <button data-quitar="${bl.id}">Quitar</button>
+        </span>
       </div>`;
     }).join('');
     cont.querySelectorAll('[data-quitar]').forEach(btn=>
       btn.addEventListener('click', ()=> quitarBloqueo(btn.dataset.quitar)));
+    cont.querySelectorAll('[data-editar]').forEach(btn=>
+      btn.addEventListener('click', ()=> editarBloqueo(btn.dataset.editar)));
   }
 
   const DIAS_CORTOS = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
@@ -3113,8 +3118,12 @@
     return [...document.querySelectorAll('#blDias .dia-toggle.on')].map(el=> Number(el.dataset.dia));
   }
 
+  let bloqueoEditando = null;
+
   document.getElementById('btnBloquear').addEventListener('click', async ()=>{
     await cargarCatalogo();
+    bloqueoEditando = null;
+    document.getElementById('blGuardar').textContent = 'Bloquear';
     const sel = document.getElementById('blBarbero');
     sel.innerHTML = '<option value="ALL">🍽️ Todos los barberos (ej. almuerzo)</option>' +
       cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${b.name}</option>`).join('');
@@ -3125,11 +3134,38 @@
     document.getElementById('blFechaZona').style.display = '';
     document.getElementById('blTodoDia').checked = true;
     document.getElementById('blHoras').style.display = 'none';
+    document.getElementById('blDesde').value = '13:00';
+    document.getElementById('blHasta').value = '15:00';
     document.getElementById('blMotivo').value = '';
     document.getElementById('blAviso').classList.remove('show');
     renderBlockList();
     abrirModal('modalBloqueo');
   });
+
+  async function editarBloqueo(id){
+    const bl = demoBlocks.find(b=> b.id === id);
+    if(!bl) return;
+    await cargarCatalogo();
+    bloqueoEditando = id;
+    document.getElementById('blGuardar').textContent = 'Guardar cambios';
+    const sel = document.getElementById('blBarbero');
+    sel.innerHTML = '<option value="ALL">🍽️ Todos los barberos (ej. almuerzo)</option>' +
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${b.name}</option>`).join('');
+    sel.value = bl.scope === 'all' ? 'ALL' : (cfgBarberos.find(b=> b.name === bl.barberName)?.id || 'ALL');
+    document.getElementById('blFijo').checked = !!bl.recurring;
+    document.getElementById('blDiasZona').style.display = bl.recurring ? '' : 'none';
+    pintarDiasBloqueo(bl.recurring ? (bl.days || [0,1,2,3,4,5,6]) : [1,2,3,4,5,6]);
+    document.getElementById('blFecha').value = bl.date || currentDate;
+    document.getElementById('blFechaZona').style.display = bl.recurring ? 'none' : '';
+    document.getElementById('blTodoDia').checked = !!bl.allDay;
+    document.getElementById('blHoras').style.display = bl.allDay ? 'none' : 'grid';
+    document.getElementById('blDesde').value = bl.allDay ? '13:00' : bl.start;
+    document.getElementById('blHasta').value = bl.allDay ? '15:00' : bl.end;
+    document.getElementById('blMotivo').value = bl.reason || '';
+    document.getElementById('blAviso').classList.remove('show');
+    renderBlockList();
+    abrirModal('modalBloqueo');
+  }
 
   document.getElementById('blTodoDia').addEventListener('change', e=>{
     document.getElementById('blHoras').style.display = e.target.checked ? 'none' : 'grid';
@@ -3211,11 +3247,18 @@
 
     const afectadas = affectedBookings(bl);
     try{
-      await db.collection('blocks').add(bl);
+      if(bloqueoEditando){
+        await db.collection('blocks').doc(bloqueoEditando).set(bl);
+      } else {
+        await db.collection('blocks').add(bl);
+      }
     }catch(e){
       showToast('No se pudo guardar: ' + e.message);
       return;
     }
+    const editando = !!bloqueoEditando;
+    bloqueoEditando = null;
+    document.getElementById('blGuardar').textContent = 'Bloquear';
     document.getElementById('blMotivo').value = '';
 
     if(afectadas.length){
@@ -3224,10 +3267,10 @@
         afectadas.map(a=> `• ${escapeHTML(a.client)} (${escapeHTML(a.svc || a.service)})`).join('<br>') +
         '<br>Contáctalos para reagendar.';
       aviso.classList.add('show');
-      showToast('Bloqueo creado, pero revisa las reservas afectadas');
+      showToast((editando ? 'Bloqueo actualizado' : 'Bloqueo creado') + ', pero revisa las reservas afectadas');
     }else{
       document.getElementById('blAviso').classList.remove('show');
-      showToast(bl.scope === 'all' ? 'Bloqueado para todos los barberos' : `Bloqueado para ${bl.barberName}`);
+      showToast(editando ? 'Bloqueo actualizado' : (bl.scope === 'all' ? 'Bloqueado para todos los barberos' : `Bloqueado para ${bl.barberName}`));
     }
   });
 
