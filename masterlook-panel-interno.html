@@ -1006,6 +1006,7 @@
           <button class="user-menu-item" id="btnComisiones" style="display:none;">💰 Comisiones</button>
           <button class="user-menu-item admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
           <button class="user-menu-item admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
+          <button class="user-menu-item admin-only" id="btnProductos" style="display:none;">📦 Productos</button>
           <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
           <div class="user-menu-sep"></div>
           <button class="user-menu-item danger" id="btnSalir">🚪 Cerrar sesión</button>
@@ -1126,6 +1127,53 @@
     </div>
 
     <!-- ===== VISTA: USUARIOS Y PERMISOS ===== -->
+    <!-- ===== VISTA: PRODUCTOS (ventas y comisiones) ===== -->
+    <div id="vistaProductos" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Productos</h2>
+          <p class="cx-sub">Qué se ha vendido, quién lo vendió y su comisión.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="pvVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="cx-kpis">
+        <div class="cx-kpi"><div class="k">Productos vendidos</div><div class="v" id="pvCantidad">0</div></div>
+        <div class="cx-kpi pay"><div class="k">Total en ventas</div><div class="v" id="pvTotal">$0</div></div>
+        <div class="cx-kpi net"><div class="k">Comisiones a profesionales</div><div class="v" id="pvComisiones">$0</div></div>
+      </div>
+
+      <div class="cx-panel">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Vendido en local</h3>
+        <p class="mg-note" style="margin-bottom:12px;">
+          Para ventas de mostrador que no están ligadas a la cita de un barbero.
+        </p>
+        <div class="mg-two">
+          <div>
+            <label class="mg-label">Producto</label>
+            <select id="pvProducto" class="mg-input"></select>
+          </div>
+          <div>
+            <label class="mg-label">Cantidad</label>
+            <input type="number" id="pvCantidadInput" class="mg-input" min="1" value="1">
+          </div>
+        </div>
+        <button class="mg-btn solid" id="pvAgregar" style="margin-top:12px;">+ Agregar venta</button>
+
+        <h3 style="font-size:14px;font-weight:600;margin:22px 0 12px;">Historial de ventas</h3>
+        <div class="cx-tablebox">
+          <table class="cx-table">
+            <thead><tr>
+              <th>Fecha</th><th>Producto</th><th class="r">Cant.</th><th>Origen</th><th class="r">Total</th><th class="r">Comisión</th>
+            </tr></thead>
+            <tbody id="pvTabla"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div id="vistaUsuarios" style="display:none;">
       <div class="cx-head">
         <div>
@@ -3824,6 +3872,7 @@
     document.getElementById('vistaAgenda').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
     ocultarFlotante(true);
@@ -4419,6 +4468,7 @@
     document.getElementById('vistaAgenda').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
     ocultarFlotante(true);
@@ -4790,7 +4840,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaCursos'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4810,6 +4860,92 @@
 
   document.getElementById('btnUsuarios').addEventListener('click', mostrarUsuarios);
   document.getElementById('usVolver').addEventListener('click', usVolverAgenda);
+
+  /* ---------- Productos: ventas y comisiones ---------- */
+  function mostrarProductos(){
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = '';
+    ocultarFlotante(true);
+    pvCargar();
+  }
+
+  function pvVolverAgenda(){
+    document.getElementById('vistaProductos').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  document.getElementById('btnProductos').addEventListener('click', mostrarProductos);
+  document.getElementById('pvVolver').addEventListener('click', pvVolverAgenda);
+
+  async function pvCargar(){
+    const tbody = document.getElementById('pvTabla');
+    tbody.innerHTML = '<tr><td colspan="6" class="cx-empty">Cargando...</td></tr>';
+
+    const sel = document.getElementById('pvProducto');
+    sel.innerHTML = productsCache.map(p=>
+      `<option value="${p.id}">${escapeHTML(p.name)} — ${cxClp(p.price)}</option>`).join('');
+
+    let ventas = [];
+    try{
+      const snap = await db.collection('productSales').orderBy('createdAt','desc').limit(100).get();
+      ventas = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+    }catch(e){
+      tbody.innerHTML = `<tr><td colspan="6" class="cx-empty">No se pudo cargar: ${e.message}</td></tr>`;
+      return;
+    }
+
+    const cantidad = ventas.reduce((s,v)=> s + (v.qty||0), 0);
+    const total = ventas.reduce((s,v)=> s + (v.subtotal||0), 0);
+    const comisiones = ventas.reduce((s,v)=> s + (v.comision||0), 0);
+    document.getElementById('pvCantidad').textContent = cantidad;
+    document.getElementById('pvTotal').textContent = cxClp(total);
+    document.getElementById('pvComisiones').textContent = cxClp(comisiones);
+
+    const ORIGEN_LABEL = { local: '🏪 Vendido en local', online: '🌐 Sitio web' };
+    tbody.innerHTML = ventas.length ? ventas.map(v=>{
+      const fecha = v.fecha || (v.createdAt ? v.createdAt.slice(0,10) : '—');
+      const origenTxt = v.origen === 'barbero'
+        ? `👤 ${escapeHTML(v.barberName || 'Barbero')}`
+        : (ORIGEN_LABEL[v.origen] || v.origen);
+      return `<tr>
+        <td>${fecha}</td>
+        <td>${escapeHTML(v.productName)}</td>
+        <td class="r">${v.qty}</td>
+        <td>${origenTxt}</td>
+        <td class="r">${cxClp(v.subtotal)}</td>
+        <td class="r">${v.comision ? cxClp(v.comision) : '—'}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" class="cx-empty">Todavía no hay ventas registradas.</td></tr>';
+  }
+
+  document.getElementById('pvAgregar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('pvAgregar');
+    const id = document.getElementById('pvProducto').value;
+    const qty = parseInt(document.getElementById('pvCantidadInput').value, 10);
+    const p = productsCache.find(x=> x.id === id);
+    if(!p) return showToast('Elige un producto');
+    if(!qty || qty < 1) return showToast('Ingresa una cantidad válida');
+
+    btn.disabled = true; btn.textContent = 'Agregando...';
+    try{
+      await db.collection('productSales').add({
+        productId: p.id, productName: p.name, qty, price: p.price, subtotal: p.price * qty,
+        origen: 'local', fecha: new Date().toISOString().slice(0,10), createdAt: new Date().toISOString(),
+      });
+      const nuevoStock = Math.max(0, (p.stock ?? 0) - qty);
+      await db.collection('products').doc(p.id).update({ stock: nuevoStock });
+      showToast('Venta agregada');
+      document.getElementById('pvCantidadInput').value = 1;
+      await pvCargar();
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    btn.disabled = false; btn.textContent = '+ Agregar venta';
+  });
 
   async function usCargar(){
     const cont = document.getElementById('usTabla');
@@ -5750,11 +5886,20 @@
         return { id, name:p.name, qty:cart[id], price:p.price, subtotal:p.price*cart[id] };
       });
 
-      // descontamos del stock lo que se acaba de vender
+      // descontamos del stock lo que se acaba de vender, y lo dejamos
+      // anotado en el registro de Productos con la comisión del barbero
       productos.forEach(item=>{
         const p = productsCache.find(x=> x.id === item.id);
         const nuevoStock = Math.max(0, (p?.stock ?? 0) - item.qty);
         db.collection('products').doc(item.id).update({ stock: nuevoStock }).catch(()=>{});
+        db.collection('productSales').add({
+          productId: item.id, productName: item.name, qty: item.qty,
+          price: item.price, subtotal: item.subtotal,
+          origen: 'barbero', barberName: currentAppt.barber, bookingId: currentAppt.webId || null,
+          comision: Math.round(item.subtotal * 0.10),
+          fecha: currentAppt.fecha || new Date().toISOString().slice(0,10),
+          createdAt: new Date().toISOString(),
+        }).catch(()=>{});
       });
 
       if(currentAppt.fromWeb && currentAppt.webId){

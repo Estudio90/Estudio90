@@ -3706,9 +3706,35 @@
 
     const sub = carrito.reduce((s,i)=> s + i.price * i.qty, 0);
     const codigo = 'ML-C-' + Math.random().toString(36).slice(2,7).toUpperCase();
+    registrarVentaProductosOnline(carrito, nombre, correo);
     mostrarCompraLista(codigo, correo, sub + costoEnvio());
     btn.disabled = false; btn.textContent = 'Pagar';
   });
+
+  /**
+   * Deja registrada en el panel cada venta de PRODUCTO (no cursos) hecha por el
+   * sitio, para que aparezca sola en Productos. Busca el producto por nombre en
+   * el inventario real del panel; si existe, también descuenta su stock.
+   */
+  async function registrarVentaProductosOnline(items, nombreCliente, correoCliente){
+    const productos = items.filter(i=> i.kind === 'PRODUCT');
+    for(const item of productos){
+      try{
+        const snap = await db.collection('products').where('name', '==', item.name).limit(1).get();
+        const match = snap.empty ? null : snap.docs[0];
+        await db.collection('productSales').add({
+          productId: match ? match.id : item.id, productName: item.name,
+          qty: item.qty, price: item.price, subtotal: item.price * item.qty,
+          origen: 'online', cliente: { nombre: nombreCliente, correo: correoCliente },
+          fecha: new Date().toISOString().slice(0,10), createdAt: new Date().toISOString(),
+        });
+        if(match){
+          const nuevoStock = Math.max(0, (match.data().stock ?? 0) - item.qty);
+          await db.collection('products').doc(match.id).update({ stock: nuevoStock });
+        }
+      }catch(e){}
+    }
+  }
 
   function mostrarCompraLista(codigo, correo, total){
     const cursos = carrito.filter(i=> i.kind === 'COURSE');
