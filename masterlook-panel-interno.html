@@ -1700,7 +1700,7 @@
 
     <div class="pay-options">
       <div class="pay-opt-row"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m0 6v4a2 2 0 002 2h4m6 0h4a2 2 0 002-2v-4m0-6V5a2 2 0 00-2-2h-4"/></svg>Múltiples métodos de pago</div><span>›</span></div>
-      <div class="pay-opt-row"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Abono</div><span>›</span></div>
+      <div class="pay-opt-row" id="rowAbono" style="cursor:pointer;"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Abono</div><span>›</span></div>
       <div class="pay-opt-row" id="rowEnviarCarro"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Enviar carro</div><div class="toggle on" id="toggleEnviar"></div></div>
       <div class="pay-opt-row"><div class="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1.5-1.5"/></svg>Asociar transacción</div><span>›</span></div>
     </div>
@@ -5099,12 +5099,15 @@
     document.getElementById('abonoMonto').value = '';
   }
 
-  document.getElementById('menuAbono').addEventListener('click', ()=>{
+  function abrirAbonoView(){
     paymentMenu.classList.remove('open');
     pintarAbonoView();
     detailView.classList.remove('open');
+    payView.classList.remove('open');
     abonoView.classList.add('open');
-  });
+  }
+  document.getElementById('menuAbono').addEventListener('click', abrirAbonoView);
+  document.getElementById('rowAbono').addEventListener('click', abrirAbonoView);
 
   document.getElementById('abonoBack').addEventListener('click', ()=>{
     abonoView.classList.remove('open');
