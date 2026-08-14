@@ -2776,6 +2776,16 @@
     if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarCursosAcademia();
   });
 
+  /** Catálogo de productos físicos (cera, gel, etc.), editado desde el panel. */
+  let productosSiteCache = [];
+  db.collection('products').onSnapshot(snap=>{
+    productosSiteCache = snap.docs.map(d=> d.data()).filter(p=> p.active !== false).map(p=>
+      ({ id:p.id, kind:'PRODUCT', name:p.name, description:p.description || '',
+         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0 }));
+    if(!cursosListos) return;
+    cargarTienda();
+  });
+
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
@@ -3720,8 +3730,15 @@
     const productos = items.filter(i=> i.kind === 'PRODUCT');
     for(const item of productos){
       try{
-        const snap = await db.collection('products').where('name', '==', item.name).limit(1).get();
-        const match = snap.empty ? null : snap.docs[0];
+        // el carrito ya trae el id real de Firestore cuando el catálogo viene
+        // del panel; si no coincide (catálogo de respaldo), buscamos por nombre
+        let match = null;
+        const porId = await db.collection('products').doc(item.id).get();
+        if(porId.exists) match = porId;
+        else {
+          const snap = await db.collection('products').where('name', '==', item.name).limit(1).get();
+          match = snap.empty ? null : snap.docs[0];
+        }
         await db.collection('productSales').add({
           productId: match ? match.id : item.id, productName: item.name,
           qty: item.qty, price: item.price, subtotal: item.price * item.qty,
@@ -3771,10 +3788,11 @@
     }
 
     let cursos = items.filter(i=> i.kind === 'COURSE');
-    const productos = items.filter(i=> i.kind === 'PRODUCT');
+    let productos = items.filter(i=> i.kind === 'PRODUCT');
 
-    // en modo demo, los cursos y precios los maneja el panel interno
+    // en modo demo, los cursos y productos los maneja el panel interno
     if(MODE !== 'api' && cursosCache.length) cursos = cursosCache;
+    if(MODE !== 'api' && productosSiteCache.length) productos = productosSiteCache;
 
     const cg = document.getElementById('courseGrid');
     if(cg && cursos.length){

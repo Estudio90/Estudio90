@@ -449,6 +449,7 @@
   .cx-sub{color:#6c6b74;font-size:13px;margin-top:3px;}
   .cx-nav{display:flex;gap:7px;flex-wrap:wrap;}
   .cx-navbtn.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
+  .cx-navbtn2.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
   .cx-panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(20,19,17,.05);}
   .cx-search{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:13.5px;margin-bottom:16px;font-family:inherit;}
   .cx-pros{display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));gap:12px;}
@@ -1135,41 +1136,80 @@
           <p class="cx-sub">Qué se ha vendido, quién lo vendió y su comisión.</p>
         </div>
         <div class="cx-nav">
+          <button class="ctrl-btn cx-navbtn2 on" data-pvv="ventas">Ventas</button>
+          <button class="ctrl-btn cx-navbtn2" data-pvv="catalogo">Catálogo</button>
           <button class="ctrl-btn" id="pvVolver">← Volver a la agenda</button>
         </div>
       </div>
 
-      <div class="cx-kpis">
-        <div class="cx-kpi"><div class="k">Productos vendidos</div><div class="v" id="pvCantidad">0</div></div>
-        <div class="cx-kpi pay"><div class="k">Total en ventas</div><div class="v" id="pvTotal">$0</div></div>
-        <div class="cx-kpi net"><div class="k">Comisiones a profesionales</div><div class="v" id="pvComisiones">$0</div></div>
-      </div>
+      <!-- Panel: Ventas -->
+      <div id="pvVentas">
+        <div class="cx-kpis">
+          <div class="cx-kpi"><div class="k">Productos vendidos</div><div class="v" id="pvCantidad">0</div></div>
+          <div class="cx-kpi pay"><div class="k">Total en ventas</div><div class="v" id="pvTotal">$0</div></div>
+          <div class="cx-kpi net"><div class="k">Comisiones a profesionales</div><div class="v" id="pvComisiones">$0</div></div>
+        </div>
 
-      <div class="cx-panel">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Vendido en local</h3>
-        <p class="mg-note" style="margin-bottom:12px;">
-          Para ventas de mostrador que no están ligadas a la cita de un barbero.
-        </p>
-        <div class="mg-two">
-          <div>
-            <label class="mg-label">Producto</label>
-            <select id="pvProducto" class="mg-input"></select>
+        <div class="cx-panel">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Vendido en local</h3>
+          <p class="mg-note" style="margin-bottom:12px;">
+            Para ventas de mostrador que no están ligadas a la cita de un barbero.
+          </p>
+          <div class="mg-two">
+            <div>
+              <label class="mg-label">Producto</label>
+              <select id="pvProducto" class="mg-input"></select>
+            </div>
+            <div>
+              <label class="mg-label">Cantidad</label>
+              <input type="number" id="pvCantidadInput" class="mg-input" min="1" value="1">
+            </div>
           </div>
-          <div>
-            <label class="mg-label">Cantidad</label>
-            <input type="number" id="pvCantidadInput" class="mg-input" min="1" value="1">
+          <button class="mg-btn solid" id="pvAgregar" style="margin-top:12px;">+ Agregar venta</button>
+
+          <h3 style="font-size:14px;font-weight:600;margin:22px 0 12px;">Historial de ventas</h3>
+          <div class="cx-tablebox">
+            <table class="cx-table">
+              <thead><tr>
+                <th>Fecha</th><th>Producto</th><th class="r">Cant.</th><th>Origen</th><th class="r">Total</th><th class="r">Comisión</th>
+              </tr></thead>
+              <tbody id="pvTabla"></tbody>
+            </table>
           </div>
         </div>
-        <button class="mg-btn solid" id="pvAgregar" style="margin-top:12px;">+ Agregar venta</button>
+      </div>
 
-        <h3 style="font-size:14px;font-weight:600;margin:22px 0 12px;">Historial de ventas</h3>
-        <div class="cx-tablebox">
-          <table class="cx-table">
-            <thead><tr>
-              <th>Fecha</th><th>Producto</th><th class="r">Cant.</th><th>Origen</th><th class="r">Total</th><th class="r">Comisión</th>
-            </tr></thead>
-            <tbody id="pvTabla"></tbody>
-          </table>
+      <!-- Panel: Catálogo -->
+      <div id="pvCatalogo" style="display:none;">
+        <div class="cx-panel">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;">Agregar producto</h3>
+          <p class="mg-note" style="margin-bottom:12px;">
+            El nombre, precio y descripción se actualizan al instante en el sitio web y en el panel.
+          </p>
+          <div class="mg-two">
+            <div>
+              <label class="mg-label">Nombre</label>
+              <input type="text" id="pcNombre" class="mg-input" placeholder="Ej: Cera mate">
+            </div>
+            <div>
+              <label class="mg-label">Precio</label>
+              <input type="number" id="pcPrecio" class="mg-input" min="0">
+            </div>
+          </div>
+          <div class="mg-two" style="margin-top:12px;">
+            <div>
+              <label class="mg-label">Stock inicial</label>
+              <input type="number" id="pcStock" class="mg-input" min="0" value="0">
+            </div>
+            <div>
+              <label class="mg-label">Descripción <span class="mg-opt">(se muestra en el sitio)</span></label>
+              <input type="text" id="pcDescripcion" class="mg-input" placeholder="Opcional">
+            </div>
+          </div>
+          <button class="mg-btn solid" id="pcAgregar" style="margin-top:12px;">+ Agregar producto</button>
+
+          <h3 style="font-size:14px;font-weight:600;margin:22px 0 12px;">Catálogo actual</h3>
+          <div id="pcLista"></div>
         </div>
       </div>
     </div>
@@ -2274,7 +2314,8 @@
   function pintarStockChips(){
     const cont = document.getElementById('stockChips');
     if(!cont) return;
-    cont.innerHTML = productsCache.map(p=>{
+    const activos = productsCache.filter(p=> p.active !== false);
+    cont.innerHTML = activos.map(p=>{
       const stock = p.stock ?? 0;
       const bajo = stock < STOCK_MINIMO;
       return `<div class="stock-chip${bajo ? ' low' : ''}" data-id="${p.id}" title="Clic para ajustar el stock">
@@ -2284,7 +2325,12 @@
     cont.querySelectorAll('.stock-chip').forEach(el=>
       el.addEventListener('click', ()=> abrirEditarStock(el.dataset.id)));
 
-    const bajos = productsCache.filter(p=> (p.stock ?? 0) < STOCK_MINIMO);
+    if(document.getElementById('pvCatalogo')?.style.display !== 'none' &&
+       document.getElementById('vistaProductos')?.style.display !== 'none'){
+      pintarCatalogoProductos();
+    }
+
+    const bajos = activos.filter(p=> (p.stock ?? 0) < STOCK_MINIMO);
     const idsBajos = new Set(bajos.map(p=> p.id));
     const nuevos = bajos.filter(p=> !productosAlertados.has(p.id));
     if(nuevos.length){
@@ -2317,7 +2363,7 @@
     const productChipsEl = document.getElementById('productChips');
     if(!productChipsEl) return;
     productChipsEl.innerHTML = '';
-    productsCache.forEach(p=>{
+    productsCache.filter(p=> p.active !== false).forEach(p=>{
       const chip = document.createElement('div');
       chip.className = 'product-chip';
       chip.innerHTML = `<span>${escapeHTML(p.name)}</span><span class="p-price">${formatCLP(p.price)}</span><span class="p-add">+</span>`;
@@ -4888,7 +4934,7 @@
     tbody.innerHTML = '<tr><td colspan="6" class="cx-empty">Cargando...</td></tr>';
 
     const sel = document.getElementById('pvProducto');
-    sel.innerHTML = productsCache.map(p=>
+    sel.innerHTML = productsCache.filter(p=> p.active !== false).map(p=>
       `<option value="${p.id}">${escapeHTML(p.name)} — ${cxClp(p.price)}</option>`).join('');
 
     let ventas = [];
@@ -4945,6 +4991,83 @@
       await pvCargar();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
     btn.disabled = false; btn.textContent = '+ Agregar venta';
+  });
+
+  /* ---------- Catálogo de productos: alta, edición y baja ---------- */
+  document.querySelectorAll('.cx-navbtn2').forEach(b=>
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.cx-navbtn2').forEach(x=> x.classList.toggle('on', x===b));
+      const v = b.dataset.pvv;
+      document.getElementById('pvVentas').style.display = v === 'ventas' ? '' : 'none';
+      document.getElementById('pvCatalogo').style.display = v === 'catalogo' ? '' : 'none';
+      if(v === 'catalogo') pintarCatalogoProductos();
+    }));
+
+  function pintarCatalogoProductos(){
+    const cont = document.getElementById('pcLista');
+    if(!productsCache.length){ cont.innerHTML = '<div class="us-vacio">Todavía no hay productos.</div>'; return; }
+    cont.innerHTML = productsCache.map(p=> `
+      <div class="mg-row ${p.active === false ? 'off' : ''}" data-id="${p.id}">
+        <input type="text" value="${escapeHTML(p.name)}" data-f="name" placeholder="Nombre">
+        <input type="number" value="${p.price}" data-f="price" min="0" step="500">
+        <input type="text" value="${escapeHTML(p.description || '')}" data-f="description" placeholder="Descripción (sitio web)">
+        <button class="mg-del" title="${p.active === false ? 'Reactivar' : 'Desactivar'}">${p.active === false ? '↺' : '✕'}</button>
+      </div>`).join('');
+
+    cont.querySelectorAll('.mg-row').forEach(row=>{
+      row.querySelectorAll('input').forEach(inp=>
+        inp.addEventListener('change', ()=> guardarProductoCatalogo(row)));
+      row.querySelector('.mg-del').addEventListener('click', ()=> alternarActivoProducto(row));
+    });
+  }
+
+  async function guardarProductoCatalogo(row){
+    const id = row.dataset.id;
+    const p = productsCache.find(x=> x.id === id);
+    if(!p) return;
+    row.querySelectorAll('input').forEach(inp=>{
+      p[inp.dataset.f] = inp.type === 'number' ? Number(inp.value) : inp.value.trim();
+    });
+    try{
+      await db.collection('products').doc(id).set(p);
+      showToast('Producto actualizado — ya se ve así en todo el sistema');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  }
+
+  async function alternarActivoProducto(row){
+    const id = row.dataset.id;
+    const p = productsCache.find(x=> x.id === id);
+    if(!p) return;
+    const activo = p.active !== false;
+    if(activo && !confirm(`¿Desactivar "${p.name}"?\n\nDeja de ofrecerse en el sitio y en el panel, pero el historial de ventas se conserva.`)) return;
+    p.active = !activo;
+    try{
+      await db.collection('products').doc(id).set(p);
+      showToast(p.active ? 'Producto reactivado' : 'Producto desactivado');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  }
+
+  document.getElementById('pcAgregar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('pcAgregar');
+    const nombre = document.getElementById('pcNombre').value.trim();
+    const precio = Number(document.getElementById('pcPrecio').value);
+    const stock = Number(document.getElementById('pcStock').value) || 0;
+    const descripcion = document.getElementById('pcDescripcion').value.trim();
+    if(!nombre) return showToast('Escribe el nombre del producto');
+    if(!precio || precio <= 0) return showToast('Ingresa un precio válido');
+
+    const id = 'p' + Date.now();
+    const nuevo = { id, name:nombre, price:precio, stock, description:descripcion, active:true };
+    btn.disabled = true; btn.textContent = 'Agregando...';
+    try{
+      await db.collection('products').doc(id).set(nuevo);
+      showToast('Producto agregado');
+      document.getElementById('pcNombre').value = '';
+      document.getElementById('pcPrecio').value = '';
+      document.getElementById('pcStock').value = '0';
+      document.getElementById('pcDescripcion').value = '';
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    btn.disabled = false; btn.textContent = '+ Agregar producto';
   });
 
   async function usCargar(){
