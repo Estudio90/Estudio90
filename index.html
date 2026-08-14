@@ -2684,7 +2684,12 @@
   });
 
   function publishToPanel(booking){
-    db.collection('bookings').doc(booking.id).set(booking).catch(()=>{});
+    const { phone, email, ...publico } = booking;
+    db.collection('bookings').doc(booking.id).set(publico).catch(()=>{});
+    // el teléfono y el correo quedan aparte, con su propio candado: solo
+    // el panel (Admin/Recepción) puede leerlos, nunca es público.
+    db.collection('bookings').doc(booking.id).collection('private').doc('contact')
+      .set({ phone: phone || '', email: email || '' }).catch(()=>{});
   }
 
   /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */

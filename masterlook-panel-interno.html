@@ -2531,7 +2531,10 @@
   }
 
   /** Aviso flotante con un botón para mandar el WhatsApp de una reserva nueva, sin tener que buscarla. */
-  function mostrarAlertaWhatsApp(a){
+  async function mostrarAlertaWhatsApp(a){
+    // el teléfono vive aparte y solo lo puede leer Admin/Recepción: si esta
+    // cuenta no tiene permiso, la carga no trae nada y el aviso no aparece.
+    await cargarContactoPrivado(a);
     const waNum = (a.phone || '').replace(/[^0-9]/g,'');
     if(!waNum) return;
     const cont = document.getElementById('waAlerts');
@@ -2565,6 +2568,23 @@
 
   function serviceMeta(name){
     return SERVICE_TYPE.find(s=> s.re.test(name)) || SERVICE_TYPE[SERVICE_TYPE.length-1];
+  }
+
+  /**
+   * El teléfono y el correo del cliente viven aparte, en un subdocumento
+   * con su propio candado (solo Admin/Recepción pueden leerlo). Esta función
+   * lo trae y lo deja puesto sobre el mismo objeto de la cita, para que el
+   * resto del código (WhatsApp, comprobantes, etc.) siga funcionando igual.
+   * Si la cuenta no tiene permiso, Firestore la rechaza y el contacto queda vacío.
+   */
+  async function cargarContactoPrivado(a){
+    if(!a || !a.fromWeb || !a.webId || a.contactoCargado) return a;
+    try{
+      const doc = await db.collection('bookings').doc(a.webId).collection('private').doc('contact').get();
+      if(doc.exists){ a.phone = doc.data().phone || ''; a.email = doc.data().email || ''; }
+      a.contactoCargado = true;
+    }catch(e){ /* sin permiso para ver el contacto: se queda como está */ }
+    return a;
   }
 
   function pickColumn(barberName){
@@ -3054,11 +3074,13 @@
       try{
         await db.collection('bookings').doc(bookingId).set({
           id: bookingId, client: nombre, svc: servicio.name, barber: barbero.name,
-          phone: fono, email: '', fecha, startMin: h*60+m, duracion: servicio.minutes,
+          fecha, startMin: h*60+m, duracion: servicio.minutes,
           price: servicio.priceClp, decision: 'aprobada',
           slot: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
           pay: '', notes: notas, createdAt: new Date().toISOString(),
         });
+        await db.collection('bookings').doc(bookingId).collection('private').doc('contact')
+          .set({ phone: fono, email: '' });
       }catch(e){
         btn.disabled = false; btn.textContent = 'Agendar';
         showToast('No se pudo guardar: ' + e.message);
@@ -3071,7 +3093,7 @@
         start:[h,m], end:[Math.floor(finMin/60), finMin%60],
         type: serviceMeta(servicio.name).type, status:'ok',
         barber:barbero.name, phone: fono,
-        email:'', notes: notas, fromWeb:true, webId:bookingId, fecha,
+        email:'', notes: notas, fromWeb:true, webId:bookingId, fecha, contactoCargado:true,
       };
 
       if(fecha === currentDate){
@@ -5104,7 +5126,7 @@
   const paymentBtn = document.getElementById('paymentBtn');
   let currentAppt = null;
 
-  function openDrawer(a){
+  async function openDrawer(a){
     currentAppt = a;
     document.getElementById('dAvatar').textContent = initials(a.client);
     document.getElementById('dClient').textContent = a.client;
@@ -5115,8 +5137,9 @@
     document.getElementById('dTime').textContent = s+' – '+e;
     document.getElementById('dPrice').textContent = a.price;
     const verContacto = userRole !== 'BARBER';
-    document.getElementById('dPhone').textContent = verContacto ? (a.phone || '—') : 'No visible para tu cuenta';
-    document.getElementById('dEmail').textContent = verContacto ? (a.email || '—') : 'No visible para tu cuenta';
+    const faltaCargar = a.fromWeb && !a.contactoCargado;
+    document.getElementById('dPhone').textContent = !verContacto ? 'No visible para tu cuenta' : (faltaCargar ? 'Cargando...' : (a.phone || '—'));
+    document.getElementById('dEmail').textContent = !verContacto ? 'No visible para tu cuenta' : (faltaCargar ? 'Cargando...' : (a.email || '—'));
     document.getElementById('dNotes').textContent = a.notes || 'Sin información';
     const waNumber = (a.phone || '').replace(/[^0-9]/g,'');
     document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
@@ -5172,6 +5195,16 @@
 
     overlay.classList.add('open');
     drawer.classList.add('open');
+
+    if(verContacto && faltaCargar){
+      await cargarContactoPrivado(a);
+      if(currentAppt === a){ // el admin no cambió a otra reserva mientras cargaba
+        document.getElementById('dPhone').textContent = a.phone || '—';
+        document.getElementById('dEmail').textContent = a.email || '—';
+        const nuevoWaNumber = (a.phone || '').replace(/[^0-9]/g,'');
+        document.getElementById('dWhatsapp').href = nuevoWaNumber ? `https://wa.me/${nuevoWaNumber}` : '#';
+      }
+    }
   }
 
   /* ---------------- Decisiones sobre reservas web ---------------- */
