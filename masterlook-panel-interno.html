@@ -253,7 +253,7 @@
   }
   .now-dot{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:var(--onda);animation:pulse 2s ease-in-out infinite;}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,90,67,0.35);}50%{box-shadow:0 0 0 6px rgba(216,90,67,0);}}
-  .now-badge{position:absolute;left:6px;top:-9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#fff;background:var(--onda);padding:1px 6px;border-radius:3px;font-weight:600;}
+  .now-badge{position:absolute;left:8px;top:-9px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#fff;background:var(--onda);padding:1px 6px;border-radius:3px;font-weight:600;z-index:6;}
 
   /* ---------- Appointment cards ---------- */
   .web-actions{
@@ -602,9 +602,9 @@
     background:#4a5cf0; color:#fff; padding:2px 5px; border-radius:4px;
   }
   .appt{
-    position:absolute;left:5px;right:5px;background:var(--panel);
+    position:absolute;left:5px;right:5px;background:var(--panel);z-index:2;
     border:1px solid var(--border);border-radius:var(--radius-sm);
-    padding:8px 10px;min-height:48px;cursor:pointer;overflow:hidden;
+    padding:9px 11px;min-height:48px;cursor:pointer;overflow:hidden;
     box-shadow:var(--shadow-sm);
     transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
     animation:apptIn .32s cubic-bezier(.2,.8,.2,1) both;
@@ -2305,19 +2305,20 @@
   appointments.forEach((a,idx)=> renderAppointment(a, idx));
   layoutAllColumns();
 
-  // now line
-  const nowHour=13, nowMin=11;
-  [1,2,3,4,5].forEach(id=>{
-    const col = document.getElementById('col'+id);
-    const line=document.createElement('div');
-    line.className='now-line'; line.style.top=timeToTop(nowHour,nowMin)+'px';
-    const dot=document.createElement('div'); dot.className='now-dot';
-    line.appendChild(dot); col.appendChild(line);
-  });
-  const badge=document.createElement('div');
-  badge.className='now-badge'; badge.textContent='13:11';
-  badge.style.top=timeToTop(nowHour,nowMin)+'px';
-  document.getElementById('col1').appendChild(badge);
+  // now line — una sola línea continua sobre toda la grilla, no una por columna
+  const ahora = new Date();
+  const nowHour = ahora.getHours(), nowMin = ahora.getMinutes();
+  const gridBody = document.getElementById('gridBody');
+  const line = document.createElement('div');
+  line.className = 'now-line'; line.style.top = timeToTop(nowHour, nowMin) + 'px';
+  const dot = document.createElement('div'); dot.className = 'now-dot';
+  line.appendChild(dot);
+  gridBody.appendChild(line);
+  const badge = document.createElement('div');
+  badge.className = 'now-badge';
+  badge.textContent = String(nowHour).padStart(2,'0') + ':' + String(nowMin).padStart(2,'0');
+  badge.style.top = timeToTop(nowHour, nowMin) + 'px';
+  gridBody.appendChild(badge);
 
   /* ==========================================================
      CONEXIÓN CON LA API
