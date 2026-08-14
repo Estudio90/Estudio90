@@ -2295,6 +2295,9 @@
             method:'POST', body: JSON.stringify({ status:'COMPLETED' })
           });
         }catch(e){ return showToast(e.message); }
+      } else if(a.fromWeb && a.webId){
+        try{ await db.collection('bookings').doc(a.webId).update({ estado: 'done' }); }
+        catch(e){ return showToast('No se pudo guardar: ' + e.message); }
       }
 
       a.status = 'done';
@@ -2583,14 +2586,17 @@
         client: r.client || 'Cliente web',
         service: r.svc,
         price: '$' + Number(r.price).toLocaleString('es-CL'),
-        start, end, type: meta.type, status:'pend',
+        start, end, type: meta.type,
+        status: r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'ok' : 'pend'),
         barber: barberName,
         phone: r.phone || '',
         email: r.email || '',
         notes: 'Reserva online' + (r.pay ? ' · Pago: ' + r.pay : ''),
         fromWeb: true,
         abono: r.abono ? '$' + Number(r.abono).toLocaleString('es-CL') : undefined,
-        abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha
+        abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha,
+        pagado: r.pagado || false, metodoPago: r.metodoPago,
+        montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
       };
 
       appointments.push(appt);
@@ -3012,18 +3018,37 @@
         return;
       }
     } else {
-      // modo demo: la guardamos en la fecha elegida
+      // guardamos en Firestore, igual que las reservas web, para que el cobro
+      // y las comisiones de esta cita también queden registrados de verdad.
       const fecha = document.getElementById('nrFecha').value;
       const [h,m] = nrSeleccion.hora.split(':').map(Number);
       const finMin = h*60 + m + servicio.minutes;
       const col = cfgBarberos.filter(b=> b.active).findIndex(b=> b.id === barbero.id) + 1 || 1;
+      const fono = document.getElementById('nrFono').value.trim();
+      const notas = document.getElementById('nrNota').value.trim() || 'Reserva tomada en el local';
+      const bookingId = 'panel-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+
+      try{
+        await db.collection('bookings').doc(bookingId).set({
+          id: bookingId, client: nombre, svc: servicio.name, barber: barbero.name,
+          phone: fono, email: '', fecha, startMin: h*60+m, duracion: servicio.minutes,
+          price: servicio.priceClp, decision: 'aprobada',
+          slot: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
+          pay: '', notes: notas, createdAt: new Date().toISOString(),
+        });
+      }catch(e){
+        btn.disabled = false; btn.textContent = 'Agendar';
+        showToast('No se pudo guardar: ' + e.message);
+        return;
+      }
+
       const appt = {
         col, client:nombre, service:servicio.name,
         price:'$' + servicio.priceClp.toLocaleString('es-CL'),
         start:[h,m], end:[Math.floor(finMin/60), finMin%60],
         type: serviceMeta(servicio.name).type, status:'ok',
-        barber:barbero.name, phone:document.getElementById('nrFono').value.trim(),
-        email:'', notes:document.getElementById('nrNota').value.trim() || 'Reserva tomada en el local'
+        barber:barbero.name, phone: fono,
+        email:'', notes: notas, fromWeb:true, webId:bookingId, fecha,
       };
 
       if(fecha === currentDate){
@@ -5371,17 +5396,43 @@
     toggleEnviar.classList.toggle('on');
   });
 
-  document.getElementById('payContinue').addEventListener('click', ()=>{
+  document.getElementById('payContinue').addEventListener('click', async ()=>{
+    const btn = document.getElementById('payContinue');
     const totalTxt = document.getElementById('payTotal').textContent;
     if(currentAppt){
+      const metodoLabel = METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado;
+      const productos = Object.keys(cart).filter(id=> cart[id] > 0).map(id=>{
+        const p = products.find(x=> x.id === id);
+        return { id, name:p.name, qty:cart[id], price:p.price, subtotal:p.price*cart[id] };
+      });
+
+      if(currentAppt.fromWeb && currentAppt.webId){
+        btn.disabled = true; btn.textContent = 'Guardando...';
+        try{
+          await db.collection('bookings').doc(currentAppt.webId).update({
+            pagado: true,
+            metodoPago: metodoLabel,
+            montoPagado: parsePrice(totalTxt),
+            propina: tipAmount(),
+            productosVendidos: productos,
+            fechaPago: new Date().toISOString(),
+          });
+        }catch(e){
+          btn.disabled = false; btn.textContent = 'Continuar';
+          return showToast('No se pudo guardar el cobro: ' + e.message);
+        }
+        btn.disabled = false; btn.textContent = 'Continuar';
+      }
+
       currentAppt.pagado = true;
       currentAppt.metodoPago = metodoPagoSeleccionado;
       paymentBtn.classList.add('paid');
       document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
 
-      const metodoLabel = METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado;
       enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt);
       mostrarAlertaComprobante(currentAppt, metodoLabel, totalTxt);
+
+      cart = {};
     }
     showToast(`Cobro registrado · ${totalTxt}`);
     payView.classList.remove('open');
