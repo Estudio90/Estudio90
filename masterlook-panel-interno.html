@@ -2573,7 +2573,10 @@
     const col = document.getElementById('col'+a.col);
     const top = timeToTop(a.start[0], a.start[1]);
     const bottom = timeToTop(a.end[0], a.end[1]);
-    const h = Math.max(bottom-top, 48);
+    // la tarjeta siempre ocupa el bloque de hora completo (se redondea hacia
+    // arriba), porque el local trabaja por rango de hora, no por minuto exacto
+    const bottomBloque = Math.ceil(bottom / SLOT_H) * SLOT_H;
+    const h = Math.max(bottomBloque - top, 48);
     const s = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
     const e = String(a.end[0]).padStart(2,'0')+':'+String(a.end[1]).padStart(2,'0');
 
