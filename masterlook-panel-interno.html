@@ -3393,26 +3393,10 @@
         return;
       }
 
-      const appt = {
-        col, client:nombre, service:servicio.name,
-        price:'$' + servicio.priceClp.toLocaleString('es-CL'),
-        start:[h,m], end:[Math.floor(finMin/60), finMin%60],
-        type: serviceMeta(servicio.name).type, status:'ok',
-        barber:barbero.name, phone: fono,
-        email:'', notes: notas, fromWeb:true, webId:bookingId, fecha, contactoCargado:true,
-      };
-
-      if(fecha === currentDate){
-        appointments.push(appt);
-        renderAppointment(appt, appointments.length - 1);
-        layoutColumn(col);
-        refreshBarberCounts();
-        actualizarStats();
-      } else {
-        // otro día: la dejamos guardada para cuando se navegue a esa fecha
-        demoAgenda[fecha] = demoAgenda[fecha] || [];
-        demoAgenda[fecha].push(appt);
-      }
+      // No la dibujamos a mano acá: el listener en vivo de "bookings" (el mismo
+      // que usan las reservas del sitio) la va a traer y pintar solo en cuanto
+      // Firestore confirme el guardado. Pintarla también aquí duplicaba la
+      // tarjeta, porque ambos caminos corrían casi al mismo tiempo.
       await pintarSemana();
 
       cerrarModales();
