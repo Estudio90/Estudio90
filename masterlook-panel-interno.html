@@ -2056,32 +2056,7 @@
   timeCol.style.height=totalHeight+'px';
   function timeToTop(hh,mm){ return ((hh-START_HOUR)+mm/60)*SLOT_H; }
 
-  const appointments = [
-    {col:1, client:'Raúl Ospino', service:'Corte de cabello', price:'$14.000', start:[11,45], end:[12,30], type:'svc-corte', status:'ok', barber:'Diego Colina', phone:'+56 9 6123 4455', email:'raul.ospino@gmail.com', notes:'Sin información'},
-    {col:1, client:'Guillermo Soto', service:'Corte de cabello + perfilado de cejas', price:'$18.000', start:[18,0], end:[18,45], type:'svc-cejas', status:'pend', barber:'Diego Colina', phone:'+56 9 8877 1122', email:'g.soto@hotmail.com', notes:'Prefiere máquina, no tijera'},
-    {col:1, client:'José Gómez', service:'Corte de cabello', price:'$14.000', start:[19,15], end:[20,0], type:'svc-corte', status:'ok', barber:'Diego Colina', phone:'+56 9 5544 3322', email:'jgomez@gmail.com', notes:'Sin información'},
-
-    {col:2, client:'Gonzalo Delgado', service:'Corte de cabello + barba', price:'$19.000', start:[13,30], end:[14,15], type:'svc-corte', status:'ok', barber:'Jhoover Peñaranda', phone:'+56 9 7788 9900', email:'gonzalo.delgado@gmail.com', notes:'Sin información'},
-    {col:2, client:'Jhon Chacón', service:'Corte de cabello', price:'$14.000', start:[11,0], end:[11,45], type:'svc-corte', status:'done', barber:'Jhoover Peñaranda', phone:'+56 9 6611 2233', email:'jhon.chacon@gmail.com', notes:'Cliente frecuente'},
-    {col:2, client:'Vicente Lagos', service:'Corte de cabello + perfilado de cejas', price:'$18.000', start:[12,0], end:[12,45], type:'svc-cejas', status:'pend', barber:'Jhoover Peñaranda', phone:'+56 9 4433 2211', email:'vicente.lagos@gmail.com', notes:'Sin información'},
-    {col:2, client:'Salvador Simón', service:'Peinado especial', price:'$22.000', start:[10,0], end:[10,45], type:'svc-peinado', status:'ok', barber:'Jhoover Peñaranda', phone:'+56 9 3322 1100', email:'salvador.simon@gmail.com', notes:'Evento — pidió llegar 10 min antes'},
-    {col:2, client:'Vicente Aranguá', service:'Corte de cabello', price:'$14.000', start:[18,0], end:[18,45], type:'svc-corte', status:'ok', barber:'Jhoover Peñaranda', phone:'+56 9 2211 0099', email:'v.arangua@gmail.com', notes:'Sin información'},
-
-    {col:3, client:'Carlos Garcés', service:'Combo recomendado — corte + barba + tratamiento', price:'$28.000', start:[10,0], end:[11,0], type:'svc-combo', status:'ok', barber:'Raúl Chourio', phone:'+56 9 7177 3324', email:'carlos.garces@gmail.com', notes:'Sin información'},
-    {col:3, client:'Cristian Cáceres', service:'Corte de cabello', price:'$14.000', start:[13,0], end:[13,45], type:'svc-corte', status:'done', barber:'Raúl Chourio', phone:'+56 9 8899 7766', email:'cristian.caceres@gmail.com', notes:'Sin información'},
-    {col:3, client:'Juan Cortez', service:'Corte de cabello', price:'$14.000', start:[11,15], end:[12,0], type:'svc-corte', status:'ok', barber:'Raúl Chourio', phone:'+56 9 1122 3344', email:'juan.cortez@gmail.com', notes:'Sin información'},
-    {col:3, client:'Rafael Maraña', service:'Corte de cabello + perfilado de cejas', price:'$18.000', start:[12,0], end:[12,45], type:'svc-cejas', status:'pend', barber:'Raúl Chourio', phone:'+56 9 5566 7788', email:'rafael.marana@gmail.com', notes:'Sin información'},
-    {col:3, client:'Jonathan Ortiz', service:'Ondulación permanente zona superior, posterior y laterales + corte de cabello + perfilado de cejas', price:'$86.990', start:[18,0], end:[21,0], type:'svc-onda', status:'ok', barber:'Raúl Chourio', phone:'+56 9 7177 3324', email:'jonathan.ortiz.leiva@gmail.com', notes:'Sin información', abono:'$20.000', pagado:false},
-
-    {col:4, client:'Bryan Aldana', service:'Corte de cabello', price:'$14.000', start:[10,0], end:[10,45], type:'svc-corte', status:'ok', barber:'Luis Barrios', phone:'+56 9 9988 7766', email:'bryan.aldana@gmail.com', notes:'Sin información'},
-    {col:4, client:'Cristian Cáceres', service:'Corte de cabello', price:'$14.000', start:[13,0], end:[13,45], type:'svc-corte', status:'done', barber:'Luis Barrios', phone:'+56 9 8899 7766', email:'cristian.caceres@gmail.com', notes:'Sin información'},
-    {col:4, client:'Jhon Chacón', service:'Peinado especial', price:'$22.000', start:[11,30], end:[12,15], type:'svc-peinado', status:'pend', barber:'Luis Barrios', phone:'+56 9 6611 2233', email:'jhon.chacon@gmail.com', notes:'Sin información'},
-
-    {col:5, client:'Sebastián Miranda', service:'Corte de cabello + perfilado de cejas', price:'$18.000', start:[10,15], end:[11,0], type:'svc-cejas', status:'ok', barber:'Carlos Garcés', phone:'+56 9 4455 6677', email:'sebastian.miranda@gmail.com', notes:'Sin información'},
-    {col:5, client:'Pablo Morales', service:'Ondulación permanente zona superior', price:'$45.000', start:[15,0], end:[18,0], type:'svc-onda', status:'ok', barber:'Carlos Garcés', phone:'+56 9 3344 5566', email:'pablo.morales@gmail.com', notes:'Segunda sesión de tratamiento'},
-    {col:5, client:'Jesús Rivero', service:'Ondulación permanente zona superior', price:'$45.000', start:[18,15], end:[19,0], type:'svc-onda', status:'no', barber:'Carlos Garcés', phone:'+56 9 2233 4455', email:'jesus.rivero@gmail.com', notes:'Sin información'},
-    {col:5, client:'Yoandry Reyes', service:'Corte de cabello + barba premium', price:'$26.000', start:[19,0], end:[21,0], type:'svc-combo', status:'ok', barber:'Carlos Garcés', phone:'+56 9 1122 3344', email:'yoandry.reyes@gmail.com', notes:'Sin información'},
-  ];
+  const appointments = [];
 
   /* ---------------- Productos & propina ---------------- */
   const products = [
