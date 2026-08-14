@@ -3021,21 +3021,15 @@
   });
 
   /* ---------- Bloquear horario ----------
-     En modo demo no hay servidor, así que los bloqueos se guardan en
-     localStorage: el propio panel los pinta en el calendario, y el
-     sitio del cliente (masterlook-sitio.html) los lee para no ofrecer
-     esos horarios en las reservas online. */
-  const BLOQUEOS_KEY = 'masterlook_bloqueos';
+     Los bloqueos viven en Firestore: el propio panel los pinta en el
+     calendario, y el sitio del cliente (masterlook-sitio.html) los lee
+     en vivo para no ofrecer esos horarios en las reservas online. */
   let demoBlocks = [];
-  let blkSeq = 1;
-  try{
-    demoBlocks = JSON.parse(localStorage.getItem(BLOQUEOS_KEY)) || [];
-    blkSeq = Math.max(0, ...demoBlocks.map(b=> b.id)) + 1;
-  }catch(e){}
-
-  function guardarBloqueos(){
-    try{ localStorage.setItem(BLOQUEOS_KEY, JSON.stringify(demoBlocks)); }catch(e){}
-  }
+  db.collection('blocks').onSnapshot(snap=>{
+    demoBlocks = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+    renderBlocks();
+    renderBlockList();
+  });
 
   function minsOf(hhmm){ const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
 
@@ -3080,13 +3074,12 @@
     });
   }
 
-  function quitarBloqueo(id){
+  async function quitarBloqueo(id){
     if(!confirm('¿Quitar este bloqueo?')) return;
-    demoBlocks = demoBlocks.filter(b=> b.id !== id);
-    guardarBloqueos();
-    renderBlocks();
-    renderBlockList();
-    showToast('Bloqueo eliminado');
+    try{
+      await db.collection('blocks').doc(id).delete();
+      showToast('Bloqueo eliminado');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
   }
 
   function renderBlockList(){
@@ -3106,7 +3099,7 @@
       </div>`;
     }).join('');
     cont.querySelectorAll('[data-quitar]').forEach(btn=>
-      btn.addEventListener('click', ()=> quitarBloqueo(Number(btn.dataset.quitar))));
+      btn.addEventListener('click', ()=> quitarBloqueo(btn.dataset.quitar)));
   }
 
   document.getElementById('btnBloquear').addEventListener('click', async ()=>{
@@ -3183,9 +3176,8 @@
       return;
     }
 
-    // ---- modo demo: guardamos el bloqueo en memoria y lo pintamos ----
+    // ---- guardamos el bloqueo en Firestore; el listener en vivo lo pinta solo ----
     const bl = {
-      id: blkSeq++,
       scope: barberoSel === 'ALL' ? 'all' : 'barber',
       calId: barberoSel === 'ALL' ? null : cfgBarberos.find(b=> b.id === barberoSel)?.calId,
       barberName: barberoSel === 'ALL' ? null : cfgBarberos.find(b=> b.id === barberoSel)?.name,
@@ -3198,10 +3190,12 @@
     };
 
     const afectadas = affectedBookings(bl);
-    demoBlocks.push(bl);
-    guardarBloqueos();
-    renderBlocks();
-    renderBlockList();
+    try{
+      await db.collection('blocks').add(bl);
+    }catch(e){
+      showToast('No se pudo guardar: ' + e.message);
+      return;
+    }
     document.getElementById('blMotivo').value = '';
 
     if(afectadas.length){

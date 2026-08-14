@@ -2752,6 +2752,12 @@
   db.collection('services').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
   db.collection('barbers').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
 
+  /** Horarios bloqueados desde el panel (almuerzo, día libre, etc.), en vivo. */
+  let bloqueosCache = [];
+  db.collection('blocks').onSnapshot(snap=>{
+    bloqueosCache = snap.docs.map(d=> d.data());
+  });
+
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
@@ -4413,9 +4419,6 @@
      bloque disponible.
      ========================================================== */
 
-  /** Reservas ya tomadas ese día, por barbero (modo demo). */
-  const BLOQUEOS_KEY = 'masterlook_bloqueos';
-
   /** Convierte "HH:MM" a minutos desde medianoche. */
   function minsOfHHMM(hhmm){ const [h,m] = String(hhmm).split(':').map(Number); return h*60+m; }
 
@@ -4428,20 +4431,17 @@
     });
 
     // horarios bloqueados desde el panel (almuerzo, vacaciones, etc.)
-    try{
-      const bloqueos = JSON.parse(localStorage.getItem(BLOQUEOS_KEY)) || [];
-      const todosLosBarberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO).map(b=> b.name);
-      bloqueos.forEach(bl=>{
-        if(!(bl.recurring || bl.date === fecha)) return;
-        const ini = bl.allDay ? 0 : minsOfHHMM(bl.start);
-        const fin = bl.allDay ? 24*60 : minsOfHHMM(bl.end);
-        const nombres = bl.scope === 'all' ? todosLosBarberos : [bl.barberName];
-        nombres.forEach(nombre=>{
-          if(!nombre) return;
-          (mapa[nombre] = mapa[nombre] || []).push([ini, fin]);
-        });
+    const todosLosBarberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO).map(b=> b.name);
+    bloqueosCache.forEach(bl=>{
+      if(!(bl.recurring || bl.date === fecha)) return;
+      const ini = bl.allDay ? 0 : minsOfHHMM(bl.start);
+      const fin = bl.allDay ? 24*60 : minsOfHHMM(bl.end);
+      const nombres = bl.scope === 'all' ? todosLosBarberos : [bl.barberName];
+      nombres.forEach(nombre=>{
+        if(!nombre) return;
+        (mapa[nombre] = mapa[nombre] || []).push([ini, fin]);
       });
-    }catch(e){}
+    });
 
     return mapa;
   }
