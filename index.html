@@ -1529,7 +1529,6 @@
     </div>
 
     <div class="nav-right">
-      <span class="mode-badge" id="modeBadge"></span>
       <button class="icon-btn" id="themeToggle" aria-label="Cambiar a tema claro">
         <svg id="themeIconSol" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:none;">
           <circle cx="12" cy="12" r="4"/>
@@ -2450,7 +2449,6 @@
     const esLocal = ['localhost','127.0.0.1',''].includes(location.hostname);
     if(!window.MASTERLOOK_API && !esLocal){
       MODE = 'demo';
-      document.getElementById('modeBadge').textContent = 'Modo demo · sin servidor';
       return;
     }
 
@@ -2464,8 +2462,6 @@
     }catch(e){
       MODE = 'demo';
     }
-    document.getElementById('modeBadge').textContent =
-      MODE === 'api' ? '' : 'Modo demo · sin servidor';
   }
 
   const revealEls = document.querySelectorAll('.reveal');
