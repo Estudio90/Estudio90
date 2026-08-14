@@ -1196,22 +1196,6 @@
   </div>
 </div>
 
-<!-- Next appointment floating card -->
-<div class="next-card" id="nextCard">
-  <button class="next-close" id="nextClose">✕</button>
-  <div class="next-label">Próxima cita</div>
-  <div class="next-body">
-    <div class="next-avatar" id="nextAvatar">GD</div>
-    <div>
-      <div class="next-name" id="nextName">Gonzalo Delgado</div>
-      <div class="next-service" id="nextService">Corte + barba</div>
-    </div>
-  </div>
-  <div class="next-foot">
-    <span>Barbero</span>
-    <span><b id="nextBarber">Jhoover</b> · 92%</span>
-  </div>
-</div>
 
 <!-- Toast -->
 <!-- ============ Modales de gestión ============ -->
@@ -5188,18 +5172,6 @@
     detailView.classList.add('open');
   });
 
-  /* ---------------- Next appointment card ---------------- */
-  document.getElementById('nextClose').addEventListener('click', (e)=>{
-    e.stopPropagation();
-    const card = document.getElementById('nextCard');
-    card.dataset.closedByUser = '1';
-    card.style.display = 'none';
-  });
-  document.getElementById('nextCard').addEventListener('click', (e)=>{
-    if(e.target.id === 'nextClose') return;
-    if(nextCardAppt) openDrawer(nextCardAppt);
-  });
-  updateNextCard();
   renderBlocks();
 
   applyFilters();
