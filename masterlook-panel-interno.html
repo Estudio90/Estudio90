@@ -1135,6 +1135,27 @@
       </div>
     </div>
 
+    <!-- ===== VISTA: PÁGINA DEL BARBERO (simple, solo lo suyo) ===== -->
+    <div id="vistaBarbero" style="display:none; padding:24px 32px;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Hola, <span id="vbNombre"></span></h2>
+          <p class="cx-sub" id="vbFecha"></p>
+        </div>
+      </div>
+
+      <div class="cx-kpis">
+        <div class="cx-kpi"><div class="k">Servicios realizados</div><div class="v" id="vbServicios">0</div></div>
+        <div class="cx-kpi pay"><div class="k">Tu comisión</div><div class="v" id="vbComision">$0</div></div>
+        <div class="cx-kpi"><div class="k">Propinas recibidas</div><div class="v" id="vbPropinas">$0</div></div>
+        <div class="cx-kpi"><div class="k">Comisión por productos</div><div class="v" id="vbComisionProductos">$0</div></div>
+        <div class="cx-kpi net"><div class="k">Total para ti hoy</div><div class="v" id="vbTotal">$0</div></div>
+      </div>
+
+      <h3 style="font-size:15px;font-weight:600;margin:22px 0 12px;">Tus horas de hoy</h3>
+      <div id="vbLista" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
     <div class="layout" id="vistaAgenda">
 
       <!-- Sidebar -->
@@ -1577,7 +1598,7 @@
     </div>
 
     <div class="field-label">Nota del barbero</div>
-    <textarea class="note-box" placeholder="Sin notas todavía…"></textarea>
+    <textarea class="note-box" id="dNota" placeholder="Sin notas todavía…"></textarea>
 
     <div class="drawer-actions">
       <div class="payment-wrap" style="margin-top:0;flex:1;">
@@ -1974,6 +1995,7 @@
     }catch(e){ userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null; }
     mostrarControlesAdmin();
     entrarAlPanel(user.email);
+    if(userRole === 'BARBER') mostrarVistaBarbero();
   });
 
   function salirDelPanel(){
@@ -2640,6 +2662,7 @@
         abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha,
         pagado: r.pagado || false, metodoPago: r.metodoPago,
         montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
+        notaAdmin: r.notaAdmin || '',
       };
 
       appointments.push(appt);
@@ -2657,6 +2680,9 @@
       refreshBarberCounts();
       if(typeof applyFilters === 'function') applyFilters();
       nuevasWeb.forEach(mostrarAlertaWhatsApp);
+      if(userRole === 'BARBER' && document.getElementById('vistaBarbero').style.display !== 'none'){
+        pintarVistaBarbero();
+      }
     }
   }
 
@@ -3742,6 +3768,71 @@
     document.getElementById('cbTabla').innerHTML = filas.length
       ? filas.join('')
       : '<tr><td colspan="4" class="cx-empty">Todavía no hay servicios marcados como realizados hoy.</td></tr>';
+  }
+
+  /**
+   * Página propia y simple para las cuentas de barbero: reemplaza por completo
+   * el calendario. Solo ve sus propias horas de hoy, su comisión y las notas
+   * que le haya dejado el administrador — nunca las reservas de otros barberos.
+   */
+  function mostrarVistaBarbero(){
+    document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaUsuarios').style.display = 'none';
+    document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('kpiRow').style.display = 'none';
+    const nav = document.querySelector('.panel-nav');
+    if(nav) nav.style.display = 'none';
+    document.getElementById('vistaBarbero').style.display = '';
+    pintarVistaBarbero();
+  }
+
+  async function pintarVistaBarbero(){
+    document.getElementById('vbNombre').textContent = userBarberName || '';
+    document.getElementById('vbFecha').textContent = fmtFecha(currentDate);
+
+    await cargarCatalogo();
+    await cxCargarTarifas();
+
+    const yo = cfgBarberos.find(b=> b.name === userBarberName);
+    const misCitas = appointments
+      .filter(a=> a.barber === userBarberName)
+      .sort((a,b)=> (a.start[0]*60+a.start[1]) - (b.start[0]*60+b.start[1]));
+
+    let comisionServicios = 0, propinas = 0, comisionProductos = 0, realizados = 0;
+    const ESTADOS = {ok:'Confirmada', pend:'Pendiente', done:'Completado', no:'No show'};
+
+    const filas = misCitas.map(a=>{
+      const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
+      let comisionTxt = '';
+      if(a.status === 'done'){
+        const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
+        comisionServicios += c.amount;
+        propinas += Number(a.propina) || 0;
+        const subProductos = (a.productosVendidos || []).reduce((s,p)=> s + (p.subtotal||0), 0);
+        comisionProductos += Math.round(subProductos * 0.10);
+        realizados++;
+        comisionTxt = ' · ' + cxClp(c.amount);
+      }
+      const hora = String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
+      return `<div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <b>${hora} · ${escapeHTML(a.client)}</b>
+          <span class="rc-chip ${a.status === 'done' ? 'sent' : (a.status === 'no' ? 'none' : 'wait')}">${ESTADOS[a.status] || a.status}</span>
+        </div>
+        <span style="color:#6c6b74;font-size:12.5px;">${escapeHTML(a.service)}${comisionTxt}</span>
+        ${a.notaAdmin ? `<div style="background:#fdf6e8;border-radius:8px;padding:8px 10px;font-size:12px;color:#8a6d1f;">📌 ${escapeHTML(a.notaAdmin)}</div>` : ''}
+      </div>`;
+    });
+
+    document.getElementById('vbServicios').textContent = realizados;
+    document.getElementById('vbComision').textContent = cxClp(comisionServicios);
+    document.getElementById('vbPropinas').textContent = cxClp(propinas);
+    document.getElementById('vbComisionProductos').textContent = cxClp(comisionProductos);
+    document.getElementById('vbTotal').textContent = cxClp(comisionServicios + propinas + comisionProductos);
+    document.getElementById('vbLista').innerHTML = filas.length
+      ? filas.join('')
+      : '<div class="cx-empty">No tienes horas agendadas hoy.</div>';
   }
 
   function volverAgenda(){
@@ -5149,6 +5240,11 @@
     document.getElementById('btnEliminarCita').style.display = puedeGestionarCita ? '' : 'none';
     document.getElementById('btnEditarCita').style.display = puedeGestionarCita ? '' : 'none';
 
+    document.getElementById('dNota').value = a.notaAdmin || '';
+    document.getElementById('dNota').readOnly = !puedeGestionarCita;
+    document.getElementById('dNota').placeholder = puedeGestionarCita
+      ? 'Sin notas todavía…' : 'El administrador no ha dejado notas';
+
     document.querySelectorAll('.tag-dot').forEach(d=>{
       d.classList.toggle('selected', d.dataset.s === a.status);
     });
@@ -5297,6 +5393,19 @@
   }
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
+
+  document.getElementById('dNota').addEventListener('blur', async (ev)=>{
+    const a = currentAppt;
+    if(!a || !a.fromWeb || !a.webId) return;
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')) return;
+    const nota = ev.target.value.trim();
+    if(nota === (a.notaAdmin || '')) return;
+    try{
+      await db.collection('bookings').doc(a.webId).update({ notaAdmin: nota });
+      a.notaAdmin = nota;
+      showToast('Nota guardada');
+    }catch(e){ showToast('No se pudo guardar la nota: ' + e.message); }
+  });
 
   document.getElementById('btnEliminarCita').addEventListener('click', async ()=>{
     const a = currentAppt;
