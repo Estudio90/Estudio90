@@ -1629,6 +1629,22 @@
     <button class="mg-btn solid full" id="editGuardar" style="margin-top:20px;">Guardar cambios</button>
   </div>
 
+  <!-- ============ VIEW 4: Abono ============ -->
+  <div class="pay-view" id="abonoView">
+    <button class="pay-back" id="abonoBack">← Volver</button>
+
+    <div class="pay-section">
+      <div class="field-label">Estado actual</div>
+      <p id="abonoEstado" style="font-size:13px;color:var(--text-mid);margin:6px 0 16px;">Sin abonos registrados</p>
+
+      <div class="field-label">Registrar nuevo abono</div>
+      <input type="number" id="abonoMonto" class="mg-input" placeholder="Monto, ej: 10000" style="margin-bottom:10px;">
+      <select id="abonoMetodo" class="mg-input"></select>
+    </div>
+
+    <button class="mg-btn solid full" id="abonoGuardar" style="margin-top:20px;">Registrar abono</button>
+  </div>
+
   <!-- ============ VIEW 2: Método de pago ============ -->
   <div class="pay-view" id="payView">
     <button class="pay-back" id="payBack">← Método de pago</button>
@@ -2140,7 +2156,10 @@
   }
 
   function baseServicePrice(){
-    return currentAppt ? parsePrice(currentAppt.price) : 0;
+    if(!currentAppt) return 0;
+    const total = parsePrice(currentAppt.price);
+    const abono = currentAppt.abono ? parsePrice(currentAppt.abono) : 0;
+    return Math.max(0, total - abono);
   }
 
   function tipAmount(){
@@ -2547,7 +2566,9 @@
         phone: r.phone || '',
         email: r.email || '',
         notes: 'Reserva online' + (r.pay ? ' · Pago: ' + r.pay : ''),
-        fromWeb: true
+        fromWeb: true,
+        abono: r.abono ? '$' + Number(r.abono).toLocaleString('es-CL') : undefined,
+        abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha
       };
 
       appointments.push(appt);
@@ -4763,6 +4784,7 @@
   const detailView = document.getElementById('detailView');
   const payView = document.getElementById('payView');
   const editView = document.getElementById('editView');
+  const abonoView = document.getElementById('abonoView');
   const paymentMenu = document.getElementById('paymentMenu');
   const paymentBtn = document.getElementById('paymentBtn');
   let currentAppt = null;
@@ -5063,9 +5085,58 @@
     paymentMenu.classList.remove('open');
     detailView.classList.remove('open');
     payView.classList.add('open');
+    updateTotals();
   }
   document.getElementById('menuComplete').addEventListener('click', goToPayView);
-  document.getElementById('menuAbono').addEventListener('click', goToPayView);
+
+  function pintarAbonoView(){
+    const est = document.getElementById('abonoEstado');
+    est.textContent = currentAppt?.abono
+      ? `${currentAppt.abono} · ${currentAppt.abonoMetodo || ''} · ${currentAppt.abonoFecha || ''}`
+      : 'Sin abonos registrados';
+    llenarSelect(document.getElementById('abonoMetodo'),
+      Object.entries(METODOS_PAGO).map(([id,name])=> ({id,name})), 'id', m=> m.name);
+    document.getElementById('abonoMonto').value = '';
+  }
+
+  document.getElementById('menuAbono').addEventListener('click', ()=>{
+    paymentMenu.classList.remove('open');
+    pintarAbonoView();
+    detailView.classList.remove('open');
+    abonoView.classList.add('open');
+  });
+
+  document.getElementById('abonoBack').addEventListener('click', ()=>{
+    abonoView.classList.remove('open');
+    detailView.classList.add('open');
+  });
+
+  document.getElementById('abonoGuardar').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a) return;
+    const monto = parseInt(document.getElementById('abonoMonto').value, 10);
+    if(!monto || monto <= 0){ showToast('Ingresa un monto válido'); return; }
+    const metodoKey = document.getElementById('abonoMetodo').value;
+    const metodoLabel = METODOS_PAGO[metodoKey] || metodoKey;
+    const fecha = new Date().toLocaleDateString('es-CL');
+
+    if(a.fromWeb && a.webId){
+      try{
+        await db.collection('bookings').doc(a.webId).update({
+          abono: monto, abonoMetodo: metodoLabel, abonoFecha: fecha
+        });
+      }catch(e){ showToast('No se pudo guardar: ' + e.message); return; }
+    }
+
+    a.abono = formatCLP(monto);
+    a.abonoMetodo = metodoLabel;
+    a.abonoFecha = fecha;
+    document.getElementById('payLast').textContent = `Último abono: ${fecha}, ${metodoLabel}, ${a.abono}`;
+
+    showToast(`Abono registrado · ${a.abono}`);
+    pintarAbonoView();
+  });
+
   document.getElementById('menuWa').addEventListener('click', ()=>{
     paymentMenu.classList.remove('open');
     if(currentAppt){
