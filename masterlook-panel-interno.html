@@ -1611,6 +1611,7 @@
     <button class="mg-tab" data-tab="horarios">Horarios</button>
     <button class="mg-tab" data-tab="equipo">Equipo</button>
     <button class="mg-tab" data-tab="local">Horario del local</button>
+    <button class="mg-tab" data-tab="portada">Portada del sitio</button>
   </div>
 
   <!-- Servicios -->
@@ -1646,6 +1647,15 @@
     <label class="mg-label">Domingo</label>
     <input type="text" id="cfgHorDom" class="mg-input" placeholder="Ej: Cerrado">
     <button class="mg-btn solid full" id="cfgGuardarLocal">Guardar horario del local</button>
+  </div>
+
+  <!-- Portada del sitio (foto de fondo del hero externo) -->
+  <div class="mg-pane" data-pane="portada">
+    <p class="mg-note">Foto de fondo de la portada del sitio (arriba de "Reservar hora"). Si no subes una, se muestra el diseño por defecto.</p>
+    <div class="svc-thumb" id="cfgPortadaThumb" title="Subir foto de portada"
+         style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
+           background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:26px;">📷</div>
+    <button class="mg-btn ghost full" id="cfgQuitarPortada" style="margin-top:10px;">Quitar foto (volver al diseño por defecto)</button>
   </div>
 </div>
 
@@ -3981,6 +3991,7 @@
       document.getElementById('cfgHorLV').value = d.horarioSemana || '11:00–21:00';
       document.getElementById('cfgHorSab').value = d.horarioSabado || '10:00–19:00';
       document.getElementById('cfgHorDom').value = d.horarioDomingo || 'Cerrado';
+      pintarPortadaThumb(d.portadaUrl || '');
     }catch(e){}
   }
 
@@ -3992,6 +4003,47 @@
       await db.collection('settings').doc('negocio').set({ horarioSemana, horarioSabado, horarioDomingo }, { merge:true });
       showToast('Horario del local actualizado');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  /* ---------- Portada del sitio (foto de fondo del hero externo) ---------- */
+  function pintarPortadaThumb(url){
+    const thumb = document.getElementById('cfgPortadaThumb');
+    if(!thumb) return;
+    thumb.style.backgroundImage = url ? `url('${url}')` : '';
+    thumb.textContent = url ? '' : '📷';
+  }
+
+  document.getElementById('cfgPortadaThumb').addEventListener('click', ()=>{
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('cfgPortadaThumb');
+      thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file);
+        const ref = storage.ref(`heroPhotos/${Date.now()}.jpg`);
+        await ref.put(blob, { contentType:'image/jpeg' });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ portadaUrl: url }, { merge:true });
+        pintarPortadaThumb(url);
+        showToast('Portada del sitio actualizada');
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pintarPortadaThumb('');
+      }
+    });
+    input.click();
+  });
+
+  document.getElementById('cfgQuitarPortada').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({ portadaUrl: '' }, { merge:true });
+      pintarPortadaThumb('');
+      showToast('Portada del sitio restablecida al diseño por defecto');
+    }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
   });
 
   document.querySelectorAll('.mg-tab').forEach(t=>
