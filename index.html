@@ -571,6 +571,13 @@
   .rv-stars-input span[data-v]{font-size:1.2rem; color:var(--border-strong); cursor:pointer; transition:color .12s ease; line-height:1;}
   .rv-stars-input span[data-v].on{color:var(--oro);}
   .rv-rating-num{margin-left:8px; font-family:'IBM Plex Mono',monospace; font-size:.8rem; color:var(--text-mid);}
+  .rv-gracias{margin-top:14px; padding:14px 16px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); text-align:center;}
+  .rv-gracias p{font-size:.8rem; color:var(--text-mid); margin-bottom:11px; line-height:1.4;}
+  .rv-google-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px; padding:11px;
+    background:var(--oro); color:#1A1815; border-radius:var(--radius-sm);
+    font-size:.83rem; font-weight:600; text-decoration:none;
+  }
   .reviews-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-content:start;}
   .review-card{
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
@@ -1843,6 +1850,13 @@
         </div>
         <textarea id="resComment" class="rv-textarea" placeholder="¿Qué te pareció el servicio?" maxlength="500"></textarea>
         <button class="btn-full" id="resEnviar">Enviar Reseña</button>
+        <div class="rv-gracias" id="resGracias" style="display:none;">
+          <p>¡Gracias por tu reseña! La revisaremos antes de publicarla aquí.</p>
+          <a href="https://g.page/r/Ccmw9wZNuKapEBE/review" target="_blank" rel="noopener" class="rv-google-btn">
+            Publícala también en Google
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>
+          </a>
+        </div>
       </div>
       <div class="reviews-grid" id="reviewsGrid"></div>
     </div>
@@ -2871,15 +2885,18 @@
     if(!comentario) return toast('Cuéntanos qué te pareció el servicio');
 
     btn.disabled = true; btn.textContent = 'Enviando...';
+    const ratingEnviado = resRatingSeleccionado;
     try{
       await db.collection('reviews').add({
-        name: nombre, rating: resRatingSeleccionado, comment: comentario,
+        name: nombre, rating: ratingEnviado, comment: comentario,
         verified: false, createdAt: new Date().toISOString(),
       });
       toast('¡Gracias por tu reseña! La publicaremos luego de revisarla.');
       document.getElementById('resName').value = '';
       document.getElementById('resComment').value = '';
       resRatingSeleccionado = 5; pintarEstrellasInput();
+      // solo invitamos a publicar en Google a quienes califican bien
+      if(ratingEnviado >= 4) document.getElementById('resGracias').style.display = 'block';
     }catch(e){
       toast('No se pudo enviar: ' + e.message);
     }
