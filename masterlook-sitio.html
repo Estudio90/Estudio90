@@ -1652,8 +1652,8 @@
   <div class="menu-pie">
     <div>Lun a Vie · <span id="horLVMenu">11:00–21:00</span></div>
     <div>Sábado · <span id="horSabMenu">10:00–19:00</span></div>
-    <div class="menu-tel">+56 9 4912 4645</div>
-    <div>@masterlook.cl</div>
+    <div class="menu-tel" id="menuTelPie">+56 9 4912 4645</div>
+    <div id="menuInstaPie">@masterlook.cl</div>
   </div>
 </aside>
 
@@ -1884,8 +1884,8 @@
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <div class="wordmark"><span class="dot"></span>MASTERLOOK</div>
-        <p class="desc">Barbería y grooming studio. Reservas simples, resultados de maestro.</p>
+        <div class="wordmark"><span class="dot"></span><span id="footNombre">MASTERLOOK</span></div>
+        <p class="desc" id="footDesc">Barbería y grooming studio. Reservas simples, resultados de maestro.</p>
       </div>
       <div>
         <h4>Navegación</h4>
@@ -1899,10 +1899,10 @@
       <div>
         <h4>Contacto</h4>
         <ul>
-          <li>Santiago, Chile</li>
-          <li>+56 9 4912 4645</li>
-          <li>hola@masterlook.cl</li>
-          <li><a href="https://instagram.com/masterlook.cl" target="_blank" rel="noopener">@masterlook.cl</a></li>
+          <li id="footDireccion">Santiago, Chile</li>
+          <li id="footTelefono">+56 9 4912 4645</li>
+          <li id="footCorreo">hola@masterlook.cl</li>
+          <li><a id="footInstagram" href="https://instagram.com/masterlook.cl" target="_blank" rel="noopener">@masterlook.cl</a></li>
         </ul>
       </div>
       <div>
@@ -2884,13 +2884,13 @@
             <div style="font-size:13px;color:#6c6b74;margin-bottom:6px;">Total</div>
             <div style="font-size:15px;color:#1A1815;font-weight:bold;">${total}</div>
           </div>
-          <p style="font-size:12px;color:#6c6b74;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
+          <p style="font-size:12px;color:#6c6b74;margin-top:20px;">${horarioNegocio.nombre} · ${horarioNegocio.telefono}</p>
         </div>
       </div>`;
 
-    const text = `Hola ${corto}, ${e.texto}\n\nServicio: ${reserva.svc}\nFecha y hora: ${reserva.slot}\nBarbero: ${reserva.barber}\nTotal: ${total}\n\nMASTERLOOK · +56 9 4912 4645`;
+    const text = `Hola ${corto}, ${e.texto}\n\nServicio: ${reserva.svc}\nFecha y hora: ${reserva.slot}\nBarbero: ${reserva.barber}\nTotal: ${total}\n\n${horarioNegocio.nombre} · ${horarioNegocio.telefono}`;
 
-    return { subject: `MASTERLOOK · ${e.titulo}`, html, text };
+    return { subject: `${horarioNegocio.nombre} · ${e.titulo}`, html, text };
   }
 
   function enviarCorreoReserva(reserva, estado, motivo){
@@ -2899,8 +2899,12 @@
     db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text }, bookingId: reserva.id }).catch(()=>{});
   }
 
-  /** Horario real del local, editable desde el panel — mismo dato para el menú, el pie de página y el chat. */
-  let horarioNegocio = { horarioSemana:'11:00–21:00', horarioSabado:'10:00–19:00', horarioDomingo:'Cerrado' };
+  /** Datos reales del negocio, editables desde el panel — mismo dato para el menú, el pie de página y el chat. */
+  let horarioNegocio = {
+    horarioSemana:'11:00–21:00', horarioSabado:'10:00–19:00', horarioDomingo:'Cerrado',
+    nombre:'MASTERLOOK', descripcion:'Barbería y grooming studio. Reservas simples, resultados de maestro.',
+    direccion:'Santiago, Chile', telefono:'+56 9 4912 4645', correo:'hola@masterlook.cl', instagram:'@masterlook.cl'
+  };
   function pintarHorarioNegocio(){
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('horLVMenu', horarioNegocio.horarioSemana);
@@ -2908,6 +2912,16 @@
     set('horLVFooter', horarioNegocio.horarioSemana);
     set('horSabFooter', horarioNegocio.horarioSabado);
     set('horDomFooter', horarioNegocio.horarioDomingo);
+    set('footNombre', horarioNegocio.nombre);
+    set('footDesc', horarioNegocio.descripcion);
+    set('footDireccion', horarioNegocio.direccion);
+    set('footTelefono', horarioNegocio.telefono);
+    set('footCorreo', horarioNegocio.correo);
+    set('footInstagram', horarioNegocio.instagram);
+    set('menuTelPie', horarioNegocio.telefono);
+    set('menuInstaPie', horarioNegocio.instagram);
+    const insta = document.getElementById('footInstagram');
+    if(insta) insta.href = 'https://instagram.com/' + horarioNegocio.instagram.replace(/^@/,'');
   }
   pintarHorarioNegocio();
   /** Foto de fondo del hero principal, subida desde el panel; si no hay, se ve el diseño por defecto. */
@@ -3406,13 +3420,7 @@
   }
 
   // ===== notificaciones al cliente (correo + WhatsApp) =====
-  const NEGOCIO = {
-    nombre: 'MASTERLOOK',
-    direccion: 'Santiago, Chile',
-    telefono: '+56 9 4912 4645',
-    correo: 'hola@masterlook.cl',
-    instagram: '@masterlook.cl'
-  };
+  // datos reales del negocio: usar siempre horarioNegocio (editable desde el panel), no valores fijos aca
 
   // ===== asistente del chat: respuestas por reglas, sin IA externa =====
   let chatAbierto = false;
@@ -3457,7 +3465,7 @@
   }
 
   function chatAbrirWhatsApp(msg){
-    const num = NEGOCIO.telefono.replace(/[^0-9]/g,'');
+    const num = horarioNegocio.telefono.replace(/[^0-9]/g,'');
     window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
@@ -3556,7 +3564,7 @@
     }
 
     if(/direcci[oó]n|ubicaci[oó]n|d[oó]nde (est[aá]n|queda)/.test(t)){
-      chatAgregar('bot', `Estamos en ${NEGOCIO.direccion}. Escríbenos al ${NEGOCIO.telefono} si necesitas indicaciones.`);
+      chatAgregar('bot', `Estamos en ${horarioNegocio.direccion}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
       chatChips([{ label:'Otra pregunta', intent:'menu' }]);
       return;
     }

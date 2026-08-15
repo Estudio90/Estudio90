@@ -1610,7 +1610,7 @@
     <button class="mg-tab active" data-tab="servicios">Servicios y precios</button>
     <button class="mg-tab" data-tab="horarios">Horarios</button>
     <button class="mg-tab" data-tab="equipo">Equipo</button>
-    <button class="mg-tab" data-tab="local">Horario del local</button>
+    <button class="mg-tab" data-tab="local">Negocio y contacto</button>
     <button class="mg-tab" data-tab="portada">Portada del sitio</button>
   </div>
 
@@ -1637,9 +1637,26 @@
     </div>
   </div>
 
-  <!-- Horario del local (atención al público, distinto del horario por barbero) -->
+  <!-- Negocio y contacto: lo que se ve en el pie de página del sitio (nombre, direccion, telefono, correo, instagram) y el horario de atencion -->
   <div class="mg-pane" data-pane="local">
-    <p class="mg-note">Este horario es el que ven los clientes en el sitio y en el chat de ayuda.</p>
+    <p class="mg-note">Esta información se ve en el pie de página del sitio, en el menú lateral y en el chat de ayuda.</p>
+    <label class="mg-label">Nombre del negocio</label>
+    <input type="text" id="cfgNombreNegocio" class="mg-input" placeholder="Ej: MASTERLOOK">
+    <label class="mg-label">Descripción corta (pie de página)</label>
+    <input type="text" id="cfgDescNegocio" class="mg-input" placeholder="Ej: Barbería y grooming studio. Reservas simples, resultados de maestro.">
+    <label class="mg-label">Dirección</label>
+    <input type="text" id="cfgDireccion" class="mg-input" placeholder="Ej: Santiago, Chile">
+    <label class="mg-label">Teléfono (WhatsApp)</label>
+    <input type="text" id="cfgTelefono" class="mg-input" placeholder="Ej: +56 9 4912 4645">
+    <label class="mg-label">Correo</label>
+    <input type="text" id="cfgCorreo" class="mg-input" placeholder="Ej: hola@masterlook.cl">
+    <label class="mg-label">Instagram</label>
+    <input type="text" id="cfgInstagram" class="mg-input" placeholder="Ej: @masterlook.cl">
+    <button class="mg-btn solid full" id="cfgGuardarContacto">Guardar datos de contacto</button>
+
+    <div class="mg-tab-sep" style="height:1px;background:#eee;margin:22px 0;"></div>
+
+    <p class="mg-note">Horario de atención al público (el que ven los clientes en el sitio y en el chat de ayuda).</p>
     <label class="mg-label">Lunes a viernes</label>
     <input type="text" id="cfgHorLV" class="mg-input" placeholder="Ej: 11:00–21:00">
     <label class="mg-label">Sábado</label>
@@ -3992,6 +4009,12 @@
       document.getElementById('cfgHorSab').value = d.horarioSabado || '10:00–19:00';
       document.getElementById('cfgHorDom').value = d.horarioDomingo || 'Cerrado';
       pintarPortadaThumb(d.portadaUrl || '');
+      document.getElementById('cfgNombreNegocio').value = d.nombre || 'MASTERLOOK';
+      document.getElementById('cfgDescNegocio').value = d.descripcion || 'Barbería y grooming studio. Reservas simples, resultados de maestro.';
+      document.getElementById('cfgDireccion').value = d.direccion || 'Santiago, Chile';
+      document.getElementById('cfgTelefono').value = d.telefono || '+56 9 4912 4645';
+      document.getElementById('cfgCorreo').value = d.correo || 'hola@masterlook.cl';
+      document.getElementById('cfgInstagram').value = d.instagram || '@masterlook.cl';
     }catch(e){}
   }
 
@@ -4002,6 +4025,19 @@
     try{
       await db.collection('settings').doc('negocio').set({ horarioSemana, horarioSabado, horarioDomingo }, { merge:true });
       showToast('Horario del local actualizado');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  document.getElementById('cfgGuardarContacto').addEventListener('click', async ()=>{
+    const nombre = document.getElementById('cfgNombreNegocio').value.trim();
+    const descripcion = document.getElementById('cfgDescNegocio').value.trim();
+    const direccion = document.getElementById('cfgDireccion').value.trim();
+    const telefono = document.getElementById('cfgTelefono').value.trim();
+    const correo = document.getElementById('cfgCorreo').value.trim();
+    const instagram = document.getElementById('cfgInstagram').value.trim();
+    try{
+      await db.collection('settings').doc('negocio').set({ nombre, descripcion, direccion, telefono, correo, instagram }, { merge:true });
+      showToast('Datos de contacto actualizados');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
