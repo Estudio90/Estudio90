@@ -1048,6 +1048,7 @@
           <button class="user-menu-item admin-only" id="btnProductos" style="display:none;">📦 Productos</button>
           <button class="user-menu-item" id="btnClientes" style="display:none;">📇 Clientes</button>
           <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
+          <button class="user-menu-item" id="btnArco" style="display:none;">📩 Derechos ARCO</button>
           <button class="user-menu-item admin-only" id="btnPromos" style="display:none;">🏷️ Promociones</button>
           <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
           <div class="user-menu-sep"></div>
@@ -1678,6 +1679,25 @@
 
   <h4 style="font-size:13px;font-weight:600;margin:14px 0 8px;">Publicadas en el sitio</h4>
   <div id="resPublicadasLista" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;"></div>
+
+  <div class="mg-actions">
+    <button class="mg-btn ghost" data-close>Cerrar</button>
+  </div>
+</div>
+
+<!-- Solicitudes de Derechos ARCO -->
+<div class="mg-modal wide" id="modalArco">
+  <div class="mg-head">
+    <h3>Derechos ARCO</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note">
+    Solicitudes que los clientes mandan desde "Derechos ARCO" en el sitio
+    (acceder, corregir, eliminar u oponerse al uso de sus datos). Márcalas
+    como atendidas cuando les respondas.
+  </p>
+
+  <div id="arcoLista" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;"></div>
 
   <div class="mg-actions">
     <button class="mg-btn ghost" data-close>Cerrar</button>
@@ -2927,6 +2947,9 @@
     // Reseñas: mismo criterio que Clientes
     const btnRes = document.getElementById('btnResenas');
     if(btnRes) btnRes.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
+    // Derechos ARCO: mismo criterio que Clientes (trae teléfono y correo)
+    const btnArc = document.getElementById('btnArco');
+    if(btnArc) btnArc.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
   }
 
   /** Trae la agenda del día desde el servidor y la dibuja en el calendario. */
@@ -5722,6 +5745,70 @@
   document.getElementById('btnResenas').addEventListener('click', async ()=>{
     abrirModal('modalResenas');
     await cargarResenas();
+  });
+
+  /* ---------- Derechos ARCO ---------- */
+  let arcoCache = [];
+
+  async function cargarArco(){
+    document.getElementById('arcoLista').innerHTML = '<div class="cx-empty">Cargando...</div>';
+    try{
+      const snap = await db.collection('arcoRequests').get();
+      arcoCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+        .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
+    }catch(e){
+      document.getElementById('arcoLista').innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+      return;
+    }
+    pintarArcoLista();
+  }
+
+  function pintarArcoLista(){
+    const cont = document.getElementById('arcoLista');
+    cont.innerHTML = arcoCache.length ? arcoCache.map(r=> `
+      <div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;${r.atendida ? 'opacity:.55;' : ''}">
+        <div style="display:flex;justify-content:space-between;gap:10px;">
+          <b>${escapeHTML(r.name || '')}</b>
+          <span style="font-size:11px;color:#6c6b74;">${(r.createdAt || '').slice(0,10)}</span>
+        </div>
+        <span style="font-size:12px;color:#6c6b74;">📞 ${escapeHTML(r.phone || '')} · ✉ ${escapeHTML(r.email || '')}</span>
+        <p style="font-size:12.5px;margin:0;">${escapeHTML(r.message || '')}</p>
+        <div style="display:flex;gap:8px;">
+          <button class="mg-btn ${r.atendida ? 'ghost' : 'solid'}" data-toggle="${r.id}" style="flex:1;padding:7px;">${r.atendida ? 'Marcar pendiente' : 'Marcar atendida'}</button>
+          <button class="mg-btn ghost" data-del="${r.id}" style="padding:7px 12px;">Eliminar</button>
+        </div>
+      </div>`).join('') : '<div class="cx-empty">No hay solicitudes.</div>';
+
+    cont.querySelectorAll('[data-toggle]').forEach(b=>
+      b.addEventListener('click', ()=> toggleArco(b.dataset.toggle)));
+    cont.querySelectorAll('[data-del]').forEach(b=>
+      b.addEventListener('click', ()=> eliminarArco(b.dataset.del)));
+  }
+
+  async function toggleArco(id){
+    const r = arcoCache.find(x=> x.id === id);
+    if(!r) return;
+    try{
+      await db.collection('arcoRequests').doc(id).update({ atendida: !r.atendida });
+      r.atendida = !r.atendida;
+      pintarArcoLista();
+      showToast(r.atendida ? 'Marcada como atendida' : 'Marcada como pendiente');
+    }catch(e){ showToast('No se pudo actualizar: ' + e.message); }
+  }
+
+  async function eliminarArco(id){
+    if(!confirm('¿Eliminar esta solicitud?')) return;
+    try{
+      await db.collection('arcoRequests').doc(id).delete();
+      arcoCache = arcoCache.filter(r=> r.id !== id);
+      pintarArcoLista();
+      showToast('Solicitud eliminada');
+    }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+  }
+
+  document.getElementById('btnArco').addEventListener('click', async ()=>{
+    abrirModal('modalArco');
+    await cargarArco();
   });
 
   /* ---------- Promociones del sitio ---------- */

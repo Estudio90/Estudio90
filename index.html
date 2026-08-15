@@ -448,6 +448,19 @@
   footer .wordmark{margin-bottom:14px;}
   footer p.desc{font-size:0.86rem; max-width:280px; line-height:1.6; color:var(--text-mid);}
   .foot-bottom{border-top:1px solid var(--border); padding-top:22px; display:flex; justify-content:space-between; font-size:0.78rem; color:var(--text-low); flex-wrap:wrap; gap:10px;}
+  .foot-legal{display:flex; gap:16px; flex-wrap:wrap;}
+  .foot-legal span{
+    font-size:0.7rem; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-low);
+    cursor:pointer; transition:color .15s ease;
+  }
+  .foot-legal span:hover{color:var(--oro);}
+  .legal-texto p{font-size:0.84rem; line-height:1.6; color:var(--text-mid); margin-bottom:12px;}
+  .legal-texto b{color:var(--text-hi);}
+  .legal-link-inline{color:var(--oro); cursor:pointer; text-decoration:underline;}
+  textarea{
+    width:100%; padding:12px 14px; border:1px solid var(--border-strong); border-radius:var(--radius-sm);
+    font-family:inherit; font-size:0.9rem; margin-bottom:16px; background:var(--panel); color:var(--text-hi); resize:vertical;
+  }
 
   /* ===== mobile bottom nav + chat bubble ===== */
   .bottom-nav{
@@ -1887,9 +1900,62 @@
     </div>
     <div class="foot-bottom">
       <span>© 2026 MASTERLOOK. Todos los derechos reservados.</span>
+      <div class="foot-legal">
+        <span onclick="abrirModalLegal('terminosModal')">Términos</span>
+        <span onclick="abrirModalLegal('privacidadModal')">Privacidad</span>
+        <span onclick="abrirModalLegal('arcoModal')">Derechos ARCO</span>
+      </div>
     </div>
   </div>
 </footer>
+
+<div class="modal-overlay" id="terminosModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="cerrarModalLegal('terminosModal')" aria-label="Cerrar">×</button>
+    <h2>Términos y condiciones</h2>
+    <div class="legal-texto">
+      <p><b>Reservas.</b> Al reservar una hora en MASTERLOOK aceptas presentarte con un máximo de 15 minutos de tolerancia; pasado ese tiempo, la hora puede cancelarse.</p>
+      <p><b>Precios y servicios.</b> Los precios, servicios y promociones pueden cambiar sin aviso previo. El precio vigente es el que se muestra al momento de reservar.</p>
+      <p><b>Datos de contacto.</b> Para confirmar una reserva debes entregar un nombre, teléfono y correo válidos, que usaremos para contactarte sobre tu hora.</p>
+      <p><b>Cuenta de cliente.</b> Si creas una cuenta en el sitio, eres responsable de mantener tu contraseña en secreto y de la actividad que ocurra en ella.</p>
+      <p><b>Tienda.</b> Los productos de la tienda están sujetos a stock disponible; una compra puede anularse si el producto se agota antes de confirmarse.</p>
+      <p style="margin-top:16px;font-size:.72rem;color:var(--text-low);">Este es un texto base — MASTERLOOK debería revisarlo con un abogado antes de considerarlo definitivo.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="privacidadModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="cerrarModalLegal('privacidadModal')" aria-label="Cerrar">×</button>
+    <h2>Política de privacidad</h2>
+    <div class="legal-texto">
+      <p><b>Qué datos guardamos.</b> Tu nombre, teléfono, correo, y tu historial de reservas y compras en MASTERLOOK.</p>
+      <p><b>Para qué los usamos.</b> Para confirmar y recordarte tus horas, contactarte por WhatsApp o correo sobre tu reserva, y llevar tu historial de visitas.</p>
+      <p><b>Con quién los compartimos.</b> Con nadie fuera de MASTERLOOK, salvo los proveedores tecnológicos que alojan el sistema (Google Firebase), necesarios para que la plataforma funcione.</p>
+      <p><b>Cómo los protegemos.</b> Tu teléfono y correo solo los puede ver el personal autorizado de MASTERLOOK — nunca son públicos ni visibles para otros clientes.</p>
+      <p><b>Tus derechos.</b> Puedes pedir ver, corregir o eliminar tus datos cuando quieras, desde <span class="legal-link-inline" onclick="cerrarModalLegal('privacidadModal');abrirModalLegal('arcoModal');">Derechos ARCO</span>.</p>
+      <p style="margin-top:16px;font-size:.72rem;color:var(--text-low);">Este es un texto base — MASTERLOOK debería revisarlo con un abogado antes de considerarlo definitivo.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="arcoModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="cerrarModalLegal('arcoModal')" aria-label="Cerrar">×</button>
+    <h2>Derechos ARCO</h2>
+    <p class="modal-sub">La ley te da derecho a Acceder, Rectificar, Cancelar u Oponerte al uso de tus datos personales. Cuéntanos qué necesitas y te respondemos.</p>
+    <span class="field-label">Nombre completo</span>
+    <input type="text" id="arcoNombre" placeholder="Tu nombre completo">
+    <span class="field-label">Número de celular</span>
+    <input type="tel" id="arcoTelefono" placeholder="+56 9 1234 5678">
+    <span class="field-label">Correo</span>
+    <input type="email" id="arcoCorreo" placeholder="tu@correo.cl">
+    <span class="field-label">¿Qué deseas solicitar?</span>
+    <textarea id="arcoMensaje" rows="4" placeholder="Ej: Quiero saber qué datos tienen de mí / Quiero que eliminen mis datos..."></textarea>
+    <div class="field-err" id="arcoErr"></div>
+    <button class="btn-full" id="arcoEnviar">Enviar solicitud</button>
+  </div>
+</div>
 
 <div class="modal-overlay" id="authModal">
   <div class="modal-card">
@@ -3134,6 +3200,47 @@
     if(e.target.id === 'authModal') closeAuth();
   });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAuth(); });
+
+  /* ---------- Pie legal: Términos, Privacidad, Derechos ARCO ---------- */
+  function abrirModalLegal(id){ document.getElementById(id).classList.add('open'); }
+  function cerrarModalLegal(id){ document.getElementById(id).classList.remove('open'); }
+  ['terminosModal','privacidadModal','arcoModal'].forEach(id=>{
+    document.getElementById(id).addEventListener('click', e=>{
+      if(e.target.id === id) cerrarModalLegal(id);
+    });
+  });
+
+  document.getElementById('arcoEnviar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('arcoEnviar');
+    const err = document.getElementById('arcoErr');
+    const nombre = document.getElementById('arcoNombre').value.trim();
+    const telefono = document.getElementById('arcoTelefono').value.trim();
+    const correo = document.getElementById('arcoCorreo').value.trim();
+    const mensaje = document.getElementById('arcoMensaje').value.trim();
+    err.textContent = '';
+
+    if(!nombre || !telefono || !correo || !mensaje){
+      err.textContent = 'Completa todos los campos para enviar tu solicitud.';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{
+      await db.collection('arcoRequests').add({
+        name: nombre, phone: telefono, email: correo, message: mensaje,
+        atendida: false, createdAt: new Date().toISOString(),
+      });
+      cerrarModalLegal('arcoModal');
+      toast('Tu solicitud fue enviada, te responderemos pronto.');
+      document.getElementById('arcoNombre').value = '';
+      document.getElementById('arcoTelefono').value = '';
+      document.getElementById('arcoCorreo').value = '';
+      document.getElementById('arcoMensaje').value = '';
+    }catch(e){
+      err.textContent = 'No se pudo enviar: ' + e.message;
+    }
+    btn.disabled = false; btn.textContent = 'Enviar solicitud';
+  });
 
   function switchTab(tab){
     document.querySelectorAll('.auth-tab').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
