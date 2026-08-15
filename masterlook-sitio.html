@@ -161,10 +161,17 @@
     -webkit-mask-image:radial-gradient(ellipse 55% 85% at 92% 22%, black, transparent 70%);
     mask-image:radial-gradient(ellipse 55% 85% at 92% 22%, black, transparent 70%);}
   /* portada con foto subida desde el panel: reemplaza el fondo por la foto
-     real, con un degradado oscuro encima para que el texto siga legible */
-  .hero-bg.tiene-foto{background-size:cover; background-position:center;}
+     real, con un degradado oscuro encima para que el texto siga legible.
+     El hero es angosto y muy ancho en escritorio (todo el viewport, sin
+     tope de 1180px), así que "cover" recorta bastante el alto de la foto;
+     por eso subimos el alto mínimo y sesgamos el recorte hacia arriba
+     (donde suele ir el logo/encabezado de la foto que suban). */
+  .hero-bg.tiene-foto{background-size:cover; background-position:center 20%;}
   .hero-bg.tiene-foto::before{content:""; position:absolute; inset:0;
-    background:linear-gradient(100deg, rgba(10,10,11,.93) 0%, rgba(10,10,11,.74) 42%, rgba(10,10,11,.4) 100%);}
+    background:linear-gradient(100deg, rgba(10,10,11,.97) 0%, rgba(10,10,11,.9) 38%, rgba(10,10,11,.55) 62%, rgba(10,10,11,.28) 100%);}
+  @media (min-width:901px){
+    .hero.tiene-foto{min-height:400px;}
+  }
   .hero-in{position:relative; z-index:2; max-width:1180px; margin:0 auto; width:100%;
     padding:38px 20px; display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:center;}
   .hero-eyebrow{font-family:'IBM Plex Mono',monospace; font-size:.66rem; letter-spacing:.3em;
@@ -2905,10 +2912,12 @@
   pintarHorarioNegocio();
   /** Foto de fondo del hero principal, subida desde el panel; si no hay, se ve el diseño por defecto. */
   function pintarFondoHero(){
+    const hero = document.querySelector('.hero');
     const bg = document.querySelector('.hero-bg');
     const productos = document.querySelector('.hero-productos');
     if(!bg) return;
     const url = horarioNegocio.portadaUrl;
+    if(hero) hero.classList.toggle('tiene-foto', !!url);
     bg.classList.toggle('tiene-foto', !!url);
     bg.style.backgroundImage = url ? `url('${url}')` : '';
     if(productos) productos.style.display = url ? 'none' : '';
