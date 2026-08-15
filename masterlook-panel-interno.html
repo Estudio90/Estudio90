@@ -1075,6 +1075,7 @@
           <button class="user-menu-item admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
           <button class="user-menu-item admin-only" id="btnProductos" style="display:none;">📦 Productos</button>
           <button class="user-menu-item" id="btnClientes" style="display:none;">📇 Clientes</button>
+          <button class="user-menu-item" id="btnHorarios" style="display:none;">🕐 Horarios</button>
           <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
           <button class="user-menu-item" id="btnArco" style="display:none;">📩 Derechos ARCO</button>
           <button class="user-menu-item admin-only" id="btnPromos" style="display:none;">🏷️ Promociones</button>
@@ -1099,6 +1100,7 @@
       <button class="menu-panel-item admin-only" data-target="btnUsuarios" style="display:none;">👥 Usuarios</button>
       <button class="menu-panel-item admin-only" data-target="btnProductos" style="display:none;">📦 Productos</button>
       <button class="menu-panel-item" data-target="btnClientes" style="display:none;">📇 Clientes</button>
+      <button class="menu-panel-item" data-target="btnHorarios" style="display:none;">🕐 Horarios</button>
       <button class="menu-panel-item" data-target="btnResenas" style="display:none;">⭐ Reseñas</button>
       <button class="menu-panel-item" data-target="btnArco" style="display:none;">📩 Derechos ARCO</button>
       <button class="menu-panel-item admin-only" data-target="btnPromos" style="display:none;">🏷️ Promociones</button>
@@ -1268,6 +1270,40 @@
       <div class="mg-actions">
         <button class="mg-btn ghost" data-close>Cancelar</button>
         <button class="mg-btn solid" id="clGuardar">Guardar</button>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: HORARIOS (horario del local + horario semanal por barbero) ===== -->
+    <div id="vistaHorarios" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Horarios</h2>
+          <p class="cx-sub">Horario de atención al público y horario semanal de cada barbero.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="hrVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="cx-panel">
+        <h3 style="font-size:14px;margin:0 0 4px;">Horario del local</h3>
+        <p class="mg-note">El que ven los clientes en el sitio y en el chat de ayuda.</p>
+        <label class="mg-label">Lunes a viernes</label>
+        <input type="text" id="cfgHorLV" class="mg-input" placeholder="Ej: 11:00–21:00">
+        <label class="mg-label">Sábado</label>
+        <input type="text" id="cfgHorSab" class="mg-input" placeholder="Ej: 10:00–19:00">
+        <label class="mg-label">Domingo</label>
+        <input type="text" id="cfgHorDom" class="mg-input" placeholder="Ej: Cerrado">
+        <button class="mg-btn solid full" id="cfgGuardarLocal">Guardar horario del local</button>
+      </div>
+
+      <div class="cx-panel" style="margin-top:16px;">
+        <h3 style="font-size:14px;margin:0 0 4px;">Horario por barbero</h3>
+        <p class="mg-note">Define las horas de trabajo de cada barbero, para calcular las horas disponibles al reservar.</p>
+        <label class="mg-label">Barbero</label>
+        <select id="cfgBarberoHorario" class="mg-input"></select>
+        <div class="mg-week" id="cfgHorario"></div>
+        <button class="mg-btn solid full" id="cfgGuardarHorario">Guardar horario</button>
       </div>
     </div>
 
@@ -1608,7 +1644,6 @@
 
   <div class="mg-tabs">
     <button class="mg-tab active" data-tab="servicios">Servicios y precios</button>
-    <button class="mg-tab" data-tab="horarios">Horarios</button>
     <button class="mg-tab" data-tab="equipo">Equipo</button>
     <button class="mg-tab" data-tab="local">Negocio y contacto</button>
     <button class="mg-tab" data-tab="portada">Portada del sitio</button>
@@ -1618,14 +1653,6 @@
   <div class="mg-pane active" data-pane="servicios">
     <div class="mg-list" id="cfgServicios"></div>
     <button class="mg-btn ghost full" id="cfgAddServicio">+ Agregar servicio</button>
-  </div>
-
-  <!-- Horarios -->
-  <div class="mg-pane" data-pane="horarios">
-    <label class="mg-label">Barbero</label>
-    <select id="cfgBarberoHorario" class="mg-input"></select>
-    <div class="mg-week" id="cfgHorario"></div>
-    <button class="mg-btn solid full" id="cfgGuardarHorario">Guardar horario</button>
   </div>
 
   <!-- Equipo -->
@@ -1653,17 +1680,6 @@
     <label class="mg-label">Instagram</label>
     <input type="text" id="cfgInstagram" class="mg-input" placeholder="Ej: @masterlook.cl">
     <button class="mg-btn solid full" id="cfgGuardarContacto">Guardar datos de contacto</button>
-
-    <div class="mg-tab-sep" style="height:1px;background:#eee;margin:22px 0;"></div>
-
-    <p class="mg-note">Horario de atención al público (el que ven los clientes en el sitio y en el chat de ayuda).</p>
-    <label class="mg-label">Lunes a viernes</label>
-    <input type="text" id="cfgHorLV" class="mg-input" placeholder="Ej: 11:00–21:00">
-    <label class="mg-label">Sábado</label>
-    <input type="text" id="cfgHorSab" class="mg-input" placeholder="Ej: 10:00–19:00">
-    <label class="mg-label">Domingo</label>
-    <input type="text" id="cfgHorDom" class="mg-input" placeholder="Ej: Cerrado">
-    <button class="mg-btn solid full" id="cfgGuardarLocal">Guardar horario del local</button>
   </div>
 
   <!-- Portada del sitio (foto de fondo del hero externo) -->
@@ -3066,6 +3082,8 @@
     // Clientes: administrador y recepción sí, barbero no (mismo criterio que el contacto)
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
     document.querySelectorAll('#btnClientes, [data-target="btnClientes"]').forEach(el=> el.style.display = cliOn);
+    // Horarios: mismo criterio que Clientes
+    document.querySelectorAll('#btnHorarios, [data-target="btnHorarios"]').forEach(el=> el.style.display = cliOn);
     // Reseñas: mismo criterio que Clientes
     document.querySelectorAll('#btnResenas, [data-target="btnResenas"]').forEach(el=> el.style.display = cliOn);
     // Derechos ARCO: mismo criterio que Clientes (trae teléfono y correo)
@@ -3483,7 +3501,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios'].forEach(id=>{
+      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -4015,8 +4033,6 @@
     await cargarCatalogo();
     pintarConfigServicios();
     pintarConfigEquipo();
-    llenarSelect(document.getElementById('cfgBarberoHorario'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
-    pintarHorarioSemanal();
     cargarHorarioLocal();
     abrirModal('modalConfig');
   });
@@ -4048,6 +4064,31 @@
       showToast('Horario del local actualizado');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
+
+  /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
+  async function mostrarHorariosPage(){
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = '';
+    ocultarFlotante(true);
+    await cargarCatalogo();
+    llenarSelect(document.getElementById('cfgBarberoHorario'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
+    pintarHorarioSemanal();
+    cargarHorarioLocal();
+  }
+
+  function hrVolverAgenda(){
+    document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  document.getElementById('btnHorarios').addEventListener('click', mostrarHorariosPage);
+  document.getElementById('hrVolver').addEventListener('click', hrVolverAgenda);
 
   document.getElementById('cfgGuardarContacto').addEventListener('click', async ()=>{
     const nombre = document.getElementById('cfgNombreNegocio').value.trim();
@@ -4409,6 +4450,7 @@
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
     ocultarFlotante(true);
@@ -4470,6 +4512,7 @@
     document.getElementById('vistaComisiones').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
     if(nav) nav.style.display = 'none';
@@ -5010,6 +5053,7 @@
     document.getElementById('vistaComisiones').style.display = 'none';
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
     ocultarFlotante(true);
@@ -5424,7 +5468,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5447,7 +5491,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6846,7 +6890,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
