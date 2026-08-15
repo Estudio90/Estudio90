@@ -626,6 +626,15 @@
   .mg-row .mg-unit{font-size:11px; color:#a3a2ab; text-align:center;}
   .mg-del{background:none; border:none; cursor:pointer; color:#c0392b; font-size:15px; padding:4px 6px;}
 
+  /* ---------- Vista semanal de un barbero ---------- */
+  .sb-titulo{display:flex;align-items:center;gap:10px;}
+  .sb-rango{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-mid);margin-top:2px;}
+  .sb-day-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:10px 6px;border-right:1px solid var(--border);text-align:center;}
+  .sb-day-head:last-child{border-right:none;}
+  .sb-day-head.today{background:var(--accent-tint);}
+  .sb-day-head .sb-dname{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-low);}
+  .sb-day-head .sb-dnum{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--text-hi);}
+
   .mg-week{display:flex; flex-direction:column; gap:7px; margin:14px 0;}
   .mg-wrow{display:grid; grid-template-columns:96px 1fr 1fr; gap:9px; align-items:center;}
   .mg-wrow label{font-size:13px; display:flex; align-items:center; gap:7px;}
@@ -1304,6 +1313,34 @@
         <select id="cfgBarberoHorario" class="mg-input"></select>
         <div class="mg-week" id="cfgHorario"></div>
         <button class="mg-btn solid full" id="cfgGuardarHorario">Guardar horario</button>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: SEMANA DE UN BARBERO (clic en su nombre en la agenda) ===== -->
+    <div id="vistaSemanaBarbero" style="display:none;">
+      <div class="cx-head">
+        <div class="sb-titulo">
+          <div class="avatar-round" id="sbAvatar"></div>
+          <div>
+            <h2 class="cx-title" id="sbNombre" style="margin:0;"></h2>
+            <p class="cx-sub sb-rango" id="sbRango" style="margin:0;"></p>
+          </div>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="sbPrev">‹</button>
+          <button class="ctrl-btn" id="sbHoy">Esta semana</button>
+          <button class="ctrl-btn" id="sbNext">›</button>
+          <button class="ctrl-btn" id="sbVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="cx-panel">
+        <div class="grid-wrap">
+          <div class="barbers-row" id="sbHeaderRow"></div>
+          <div class="grid-body" id="sbGridBody">
+            <div class="time-col" id="sbTimeCol"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2607,6 +2644,8 @@
           <div class="b-name">${b.name}</div>
           <div class="b-count">${b.count} reservas <span class="b-pct">· ${pct}%</span></div>
         </div>`;
+      el.title = 'Ver la semana de ' + b.name;
+      el.addEventListener('click', ()=> abrirSemanaBarbero(b.id));
       barbersRow.appendChild(el);
     });
 
@@ -3501,7 +3540,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios'].forEach(id=>{
+      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -4067,7 +4106,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaSemanaBarbero'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4089,6 +4128,161 @@
 
   document.getElementById('btnHorarios').addEventListener('click', mostrarHorariosPage);
   document.getElementById('hrVolver').addEventListener('click', hrVolverAgenda);
+
+  /* ---------- Vista semanal de un barbero (clic en su nombre en la agenda) ---------- */
+  let sbCalId = null;
+  let sbWeekStart = null; // Date, lunes de la semana que se está mostrando
+
+  function lunesDe(d){
+    const l = new Date(d);
+    l.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return l;
+  }
+
+  function abrirSemanaBarbero(calId){
+    sbCalId = calId;
+    sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaSemanaBarbero').style.display = '';
+    ocultarFlotante(true);
+    sbPintarSemana();
+  }
+
+  function sbVolverAgenda(){
+    document.getElementById('vistaSemanaBarbero').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  function sbMoverSemana(n){
+    sbWeekStart.setDate(sbWeekStart.getDate() + n*7);
+    sbPintarSemana();
+  }
+
+  function sbCitasDelDia(iso, barberName){
+    return firestoreBookings.filter(r=>
+      r.decision !== 'rechazada' && r.fecha === iso && r.barber === barberName);
+  }
+
+  function sbPintarSemana(){
+    const b = barbers.find(x=> x.id === sbCalId);
+    if(!b) return;
+    const cb = cfgBarberos.find(x=> x.name === b.name);
+
+    document.getElementById('sbAvatar').textContent = b.initials;
+    document.getElementById('sbNombre').textContent = b.name;
+
+    const fin = new Date(sbWeekStart);
+    fin.setDate(fin.getDate() + 6);
+    document.getElementById('sbRango').textContent =
+      `${sbWeekStart.getDate()} ${MESES[sbWeekStart.getMonth()].slice(0,3)} – ${fin.getDate()} ${MESES[fin.getMonth()].slice(0,3)}`;
+
+    const headerRow = document.getElementById('sbHeaderRow');
+    const gridBody = document.getElementById('sbGridBody');
+    headerRow.innerHTML = '<div style="border-right:1px solid var(--border);"></div>';
+    gridBody.querySelectorAll('.sb-col').forEach(c=> c.remove());
+
+    const cols = '56px repeat(7, minmax(140px,1fr))';
+    headerRow.style.gridTemplateColumns = cols;
+    gridBody.style.gridTemplateColumns = cols;
+
+    if(!document.getElementById('sbTimeCol').children.length){
+      for(let h=START_HOUR; h<=END_HOUR; h++){
+        const div = document.createElement('div');
+        div.className = 'time-slot'; div.style.height = SLOT_H+'px';
+        div.textContent = (h<10?'0'+h:h)+':00';
+        document.getElementById('sbTimeCol').appendChild(div);
+      }
+    }
+    const totalHeight = (END_HOUR - START_HOUR) * SLOT_H;
+    document.getElementById('sbTimeCol').style.height = totalHeight+'px';
+
+    for(let i=0; i<7; i++){
+      const d = new Date(sbWeekStart);
+      d.setDate(d.getDate() + i);
+      const iso = d.toISOString().slice(0,10);
+      const weekday = d.getDay();
+
+      const head = document.createElement('div');
+      head.className = 'sb-day-head' + (iso === HOY_ISO ? ' today' : '');
+      head.innerHTML = `<div class="sb-dname">${DIAS_CORTOS[weekday]}</div><div class="sb-dnum">${d.getDate()}</div>`;
+      headerRow.appendChild(head);
+
+      const col = document.createElement('div');
+      col.className = 'col sb-col';
+      col.style.height = totalHeight + 'px';
+      col.style.backgroundSize = `100% ${SLOT_H}px, 100% ${SLOT_H}px`;
+      col.style.backgroundPosition = `0 0, 0 ${SLOT_H/2}px`;
+      gridBody.appendChild(col);
+
+      // horas fuera del turno de este barbero ese día
+      const bloque = (cb?.schedules || []).find(s=> s.weekday === weekday);
+      if(!bloque){
+        const el = document.createElement('div');
+        el.className = 'block-overlay';
+        el.style.top = '0px';
+        el.style.height = totalHeight + 'px';
+        el.innerHTML = '<div class="bo-label">Profesional no disponible</div>';
+        col.appendChild(el);
+      }else{
+        if(bloque.startMin > START_HOUR*60){
+          const h = Math.floor(bloque.startMin/60), m = bloque.startMin%60;
+          const el = document.createElement('div');
+          el.className = 'block-overlay';
+          el.style.top = '0px';
+          el.style.height = timeToTop(h,m) + 'px';
+          el.innerHTML = '<div class="bo-label">Profesional no disponible</div>';
+          col.appendChild(el);
+        }
+        if(bloque.endMin < END_HOUR*60){
+          const h = Math.floor(bloque.endMin/60), m = bloque.endMin%60;
+          const top = timeToTop(h,m);
+          const el = document.createElement('div');
+          el.className = 'block-overlay';
+          el.style.top = top + 'px';
+          el.style.height = (totalHeight - top) + 'px';
+          el.innerHTML = '<div class="bo-label">Profesional no disponible</div>';
+          col.appendChild(el);
+        }
+      }
+
+      // citas reales de ese día
+      sbCitasDelDia(iso, b.name).forEach(r=>{
+        const meta = serviceMeta(r.svc);
+        const start = parseSlot(r.slot);
+        const end = addMinutes(start[0], start[1], meta.mins);
+        const top = timeToTop(start[0], start[1]);
+        const bottom = timeToTop(end[0], end[1]);
+        const status = r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'ok' : 'pend'));
+
+        const el = document.createElement('div');
+        el.className = `appt ${meta.type}`;
+        el.style.top = top + 'px';
+        el.style.height = Math.max(bottom-top, 34) + 'px';
+        el.innerHTML = `
+          <div class="appt-top">
+            <span class="appt-client">${r.client || 'Cliente web'}</span>
+            <span class="appt-time">${String(start[0]).padStart(2,'0')}:${String(start[1]).padStart(2,'0')}</span>
+          </div>
+          <div class="appt-service">${r.svc || ''}</div>
+          <div class="appt-bottom"><div class="appt-bottom-left"><span class="status-dot ${status}"></span></div></div>`;
+        col.appendChild(el);
+      });
+    }
+  }
+
+  document.getElementById('sbPrev').addEventListener('click', ()=> sbMoverSemana(-1));
+  document.getElementById('sbNext').addEventListener('click', ()=> sbMoverSemana(1));
+  document.getElementById('sbHoy').addEventListener('click', ()=>{
+    sbWeekStart = lunesDe(new Date());
+    sbPintarSemana();
+  });
+  document.getElementById('sbVolver').addEventListener('click', sbVolverAgenda);
 
   document.getElementById('cfgGuardarContacto').addEventListener('click', async ()=>{
     const nombre = document.getElementById('cfgNombreNegocio').value.trim();
@@ -4451,6 +4645,7 @@
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaSemanaBarbero').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
     ocultarFlotante(true);
@@ -4513,6 +4708,7 @@
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaSemanaBarbero').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
     if(nav) nav.style.display = 'none';
@@ -5054,6 +5250,7 @@
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaSemanaBarbero').style.display = 'none';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
     ocultarFlotante(true);
@@ -5468,7 +5665,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5491,7 +5688,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6890,7 +7087,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
