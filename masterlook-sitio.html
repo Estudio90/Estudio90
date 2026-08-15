@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <style>
   /* ==========================================================
@@ -504,6 +505,7 @@
   .chat-body{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--panel-2);}
   .chat-msg{max-width:82%; padding:9px 12px; border-radius:14px; font-size:13.5px; line-height:1.45; white-space:pre-line;}
   .chat-msg.bot{align-self:flex-start; background:var(--panel); border:1px solid var(--border); border-bottom-left-radius:4px; color:var(--text-hi);}
+  .chat-msg.bot.pensando{color:var(--gris-tenue); font-style:italic;}
   .chat-msg.user{align-self:flex-end; background:var(--oro); color:#12100A; border-bottom-right-radius:4px;}
   .chat-chips{display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; flex-shrink:0;}
   .chat-chip{background:var(--panel); border:1px solid var(--linea-fuerte); color:var(--text-hi); font-size:12px; padding:6px 11px; border-radius:99px; cursor:pointer; font-family:inherit;}
@@ -2827,6 +2829,7 @@
   }
   const db = firebase.firestore();
   const auth = firebase.auth();
+  const functions = firebase.app().functions('us-central1');
   // Sesión guardada en este dispositivo (para que un cliente no tenga que
   // volver a ingresar cada vez que visita el sitio) -- explícito a propósito,
   // para que quede claro que es una decisión y no el valor por defecto del SDK.
@@ -2924,6 +2927,25 @@
     if(insta) insta.href = 'https://instagram.com/' + horarioNegocio.instagram.replace(/^@/,'');
   }
   pintarHorarioNegocio();
+  /**
+   * Ventana real de reservas de un día, leída del horario del local
+   * (editable desde el panel) en vez de horas fijas en el código. Así,
+   * si un domingo excepcional se abre (ej: cambiando "Domingo: Cerrado"
+   * por "Domingo: 11:00–15:00"), ese día pasa a tener horas reales para
+   * reservar — y vuelve a cerrar apenas se deja el texto en "Cerrado".
+   */
+  function horarioDelDia(fecha){
+    const dia = new Date(fecha + 'T12:00:00').getDay();
+    const texto = dia === 0 ? horarioNegocio.horarioDomingo
+      : dia === 6 ? horarioNegocio.horarioSabado
+      : horarioNegocio.horarioSemana;
+    const m = String(texto || '').trim().match(/^(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})$/);
+    if(!m) return null;
+    const abre = Number(m[1])*60 + Number(m[2]);
+    const cierra = Number(m[3])*60 + Number(m[4]);
+    if(cierra <= abre) return null;
+    return { abre, cierra };
+  }
   /** Foto de fondo del hero principal, subida desde el panel; si no hay, se ve el diseño por defecto. */
   function pintarFondoHero(){
     const hero = document.querySelector('.hero');
@@ -3442,6 +3464,7 @@
     div.textContent = texto;
     body.appendChild(div);
     body.scrollTop = body.scrollHeight;
+    return div;
   }
 
   function chatChips(lista){
@@ -3514,6 +3537,40 @@
     }
   }
 
+  /**
+   * Cuando ninguna de las reglas rápidas de abajo reconoce el mensaje, se
+   * manda a la IA real (Cloud Function preguntarIACliente) en vez de dejar
+   * al visitante con un "no entendí". La IA solo ve datos públicos reales
+   * del negocio (y, si el visitante tiene sesión de cliente, su propia
+   * última reserva) -- nunca inventa precios ni horarios. Freno simple
+   * contra clics repetidos, igual al de las reseñas (RESENA_ESPERA_MS):
+   * la protección real contra abuso está en el límite por IP del servidor.
+   */
+  const CHAT_IA_ESPERA_MS = 4000;
+  let chatIaUltimoEnvio = 0;
+
+  async function chatPreguntarIA(textoOriginal){
+    const espera = CHAT_IA_ESPERA_MS - (Date.now() - chatIaUltimoEnvio);
+    if(espera > 0){
+      chatAgregar('bot', 'Un momento, estoy respondiendo tu pregunta anterior…');
+      return;
+    }
+    chatIaUltimoEnvio = Date.now();
+
+    const pensando = chatAgregar('bot', 'Escribiendo…');
+    pensando.classList.add('pensando');
+    try{
+      const llamar = functions.httpsCallable('preguntarIACliente');
+      const { data } = await llamar({ pregunta: textoOriginal });
+      pensando.remove();
+      chatAgregar('bot', data.respuesta);
+    }catch(e){
+      pensando.remove();
+      chatAgregar('bot', 'No pude responder eso en este momento. Te dejo el menú de todas formas:');
+      chatMenuPrincipal();
+    }
+  }
+
   function chatResponder(textoOriginal){
     const t = textoOriginal.toLowerCase();
 
@@ -3581,8 +3638,7 @@
       return;
     }
 
-    chatAgregar('bot', 'No estoy segura de entender eso, pero te puedo ayudar con esto:');
-    chatMenuPrincipal();
+    chatPreguntarIA(textoOriginal);
   }
 
   function chatEnviarDesdeInput(){
@@ -4463,7 +4519,7 @@
       const d = new Date(hoy);
       d.setDate(hoy.getDate() + i);
       const iso = d.toISOString().slice(0,10);
-      const cerrado = d.getDay() === 0;             // domingo cerrado
+      const cerrado = !horarioDelDia(iso);
       const etiqueta = i === 0 ? 'hoy' : i === 1 ? 'mañana' : DIAS_CORTO[d.getDay()];
 
       html += `<div class="rv-dia ${iso===sel?'on':''} ${cerrado?'cerrado':''}" data-d="${iso}">
@@ -4563,8 +4619,8 @@
     for(let i = 0; i < 14; i++){
       const d = new Date(hoy);
       d.setDate(hoy.getDate() + i);
-      if(d.getDay() === 0) continue;
       const iso = d.toISOString().slice(0,10);
+      if(!horarioDelDia(iso)) continue;
 
       const slots = await calcularSlots(iso);
       if(slots.length){
@@ -4627,8 +4683,8 @@
     }
 
     // modo demo
-    const dia = new Date(fecha + 'T12:00:00').getDay();
-    if(dia === 0) return [];
+    const horario = horarioDelDia(fecha);
+    if(!horario) return [];
 
     const barberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO);
     const ocupacion = ocupacionDelDia(fecha);
@@ -4636,12 +4692,12 @@
     // cuántas citas necesita esta reserva a la vez
     const totalCitas = (state.servicios || []).reduce((n,x)=> n + (x.qty || 1), 0) || 1;
 
-    const cierre = dia === 6 ? 18*60 : 20*60;
+    const cierre = horario.cierra;
     const esHoy = fecha === new Date().toISOString().slice(0,10);
     const ahora = new Date().getHours()*60 + new Date().getMinutes();
 
     const libres = [];
-    for(let min = 10*60; min + durMin <= cierre; min += 30){
+    for(let min = horario.abre; min + durMin <= cierre; min += 30){
       if(esHoy && min < ahora + 60) continue;
 
       // barberos realmente libres en ese bloque
@@ -4915,8 +4971,7 @@
       : barberos;
 
     const ocupacion = ocupacionDelDia(fecha);
-    const dia = new Date(fecha + 'T12:00:00').getDay();
-    const cierre = dia === 6 ? 18*60 : 20*60;
+    const cierre = (horarioDelDia(fecha) || {}).cierra ?? 20*60;
 
     // agenda temporal: lo que vamos ocupando dentro de esta misma reserva
     const usado = {};
