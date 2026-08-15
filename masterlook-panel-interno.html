@@ -2289,6 +2289,20 @@
   document.getElementById('who').addEventListener('click', (ev)=>{
     ev.stopPropagation();
     userMenu.classList.toggle('open');
+    // El avatar no siempre queda pegado al borde derecho real de la pantalla
+    // (el topbar se acomoda en varias líneas cuando hay muchas alertas de
+    // stock, o en celular), así que anclar el menú "al botón" con CSS podía
+    // sacarlo de la pantalla. Se calcula su posición real cada vez que se abre.
+    if(userMenu.classList.contains('open')){
+      const rect = document.getElementById('who').getBoundingClientRect();
+      const anchoMenu = Math.min(210, window.innerWidth - 20);
+      let izquierda = rect.right - anchoMenu;
+      izquierda = Math.max(10, Math.min(izquierda, window.innerWidth - anchoMenu - 10));
+      Object.assign(userMenu.style, {
+        position:'fixed', top:(rect.bottom + 8) + 'px', left:izquierda + 'px',
+        right:'auto', width:anchoMenu + 'px', minWidth:'0',
+      });
+    }
   });
   userMenu.querySelectorAll('.user-menu-item').forEach(btn=>
     btn.addEventListener('click', ()=> userMenu.classList.remove('open')));
