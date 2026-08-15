@@ -939,6 +939,40 @@
     .layout{grid-template-columns:1fr;}
     .kpi-row{grid-template-columns:repeat(3,1fr);}
   }
+  /* ---------- Celular: la agenda se veía enorme, muy poco cabía en pantalla ---------- */
+  @media (max-width:600px){
+    .topbar{padding:12px 14px;gap:10px;}
+    .content{padding:12px 10px 0;}
+    .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+    .kpi-card{padding:10px 12px 8px;}
+    .kpi-label{font-size:8.5px;}
+    .kpi-value{font-size:16px;margin-bottom:4px;}
+    .kpi-trend{font-size:8px;padding:1px 5px;}
+    .spark{display:none;}
+    .sidebar{padding:12px;}
+    .week-strip{padding:10px 12px;gap:5px;}
+    .wk-day{min-width:56px;padding:6px 4px;}
+    .wk-day .wk-name{font-size:9px;}
+    .wk-day .wk-num{font-size:14px;margin:1px 0;}
+    .wk-day .wk-count{font-size:9px;}
+    .grid-body{min-width:650px;}
+    .barbers-row{min-width:650px;}
+    .barber-head{padding:9px 7px;gap:7px;}
+    .b-avatar-ring{width:27px;height:27px;}
+    .b-avatar{font-size:9.5px;}
+    .b-name{font-size:11.5px;}
+    .b-count{font-size:9px;}
+    .time-slot{font-size:10px;padding:4px 6px 0 0;}
+    .appt{padding:5px 8px;min-height:44px;}
+    .appt-client{
+      font-size:12px;white-space:normal;overflow:visible;text-overflow:clip;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;
+    }
+    .appt-time{font-size:9px;}
+    .appt-service{font-size:10px;}
+    .appt-price{font-size:9px;}
+    .status-txt{font-size:9px;}
+  }
   @media (prefers-reduced-motion:reduce){
     .appt{animation:none;}
     .now-dot{animation:none;}
@@ -2422,7 +2456,7 @@
 
   pintarColumnas();
 
-  const START_HOUR=10, END_HOUR=21, SLOT_H=50;
+  const START_HOUR=10, END_HOUR=21, SLOT_H = window.innerWidth <= 600 ? 64 : 50;
   const timeCol = document.getElementById('timeCol');
   for(let h=START_HOUR; h<=END_HOUR; h++){
     const div=document.createElement('div');
@@ -2674,7 +2708,7 @@
     // la tarjeta siempre ocupa el bloque de hora completo (se redondea hacia
     // arriba), porque el local trabaja por rango de hora, no por minuto exacto
     const bottomBloque = Math.ceil(bottom / SLOT_H) * SLOT_H;
-    const h = Math.max(bottomBloque - top, 36);
+    const h = Math.max(bottomBloque - top, SLOT_H);
     const s = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
     const e = String(a.end[0]).padStart(2,'0')+':'+String(a.end[1]).padStart(2,'0');
 
