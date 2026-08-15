@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <style>
   :root{
@@ -626,6 +627,19 @@
   .mg-row .mg-unit{font-size:11px; color:#a3a2ab; text-align:center;}
   .mg-del{background:none; border:none; cursor:pointer; color:#c0392b; font-size:15px; padding:4px 6px;}
 
+  /* ---------- Masterlook Intelligence ---------- */
+  .mi-lista{display:flex;flex-direction:column;gap:2px;}
+  .mi-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:13px;}
+  .mi-fila:last-child{border-bottom:none;}
+  .mi-fila .mi-nombre{color:var(--text-hi);}
+  .mi-fila .mi-valor{font-family:'IBM Plex Mono',monospace;color:var(--text-mid);white-space:nowrap;}
+  .mi-vacio{color:#a3a2ab;font-size:12.5px;padding:6px 0;}
+  .mi-chat{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;}
+  .mi-msg{max-width:85%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;}
+  .mi-msg.pregunta{align-self:flex-end;background:var(--text-hi);color:#fff;border-bottom-right-radius:3px;}
+  .mi-msg.respuesta{align-self:flex-start;background:var(--panel-2);color:var(--text-hi);border-bottom-left-radius:3px;}
+  .mi-msg.cargando{align-self:flex-start;background:var(--panel-2);color:var(--text-low);font-style:italic;}
+
   /* ---------- Vista semanal de un barbero ---------- */
   .sb-titulo{display:flex;align-items:center;gap:10px;}
   .sb-rango{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-mid);margin-top:2px;}
@@ -1088,6 +1102,7 @@
           <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
           <button class="user-menu-item" id="btnArco" style="display:none;">📩 Derechos ARCO</button>
           <button class="user-menu-item admin-only" id="btnPromos" style="display:none;">🏷️ Promociones</button>
+          <button class="user-menu-item admin-only" id="btnIntelligence" style="display:none;">🧠 Masterlook Intelligence</button>
           <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
           <div class="user-menu-sep"></div>
           <button class="user-menu-item danger" id="btnSalir">🚪 Cerrar sesión</button>
@@ -1113,6 +1128,7 @@
       <button class="menu-panel-item" data-target="btnResenas" style="display:none;">⭐ Reseñas</button>
       <button class="menu-panel-item" data-target="btnArco" style="display:none;">📩 Derechos ARCO</button>
       <button class="menu-panel-item admin-only" data-target="btnPromos" style="display:none;">🏷️ Promociones</button>
+      <button class="menu-panel-item admin-only" data-target="btnIntelligence" style="display:none;">🧠 Masterlook Intelligence</button>
       <button class="menu-panel-item" data-target="btnConfig">⚙ Configurar</button>
     </nav>
     <div class="menu-pie">
@@ -1313,6 +1329,48 @@
         <select id="cfgBarberoHorario" class="mg-input"></select>
         <div class="mg-week" id="cfgHorario"></div>
         <button class="mg-btn solid full" id="cfgGuardarHorario">Guardar horario</button>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: MASTERLOOK INTELLIGENCE (cifras reales + IA) ===== -->
+    <div id="vistaIntelligence" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Masterlook Intelligence</h2>
+          <p class="cx-sub">Cifras reales del negocio, y respuestas de la IA basadas en esos mismos datos.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="miRefrescar">↻ Actualizar</button>
+          <button class="ctrl-btn" id="miVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="miKpiRow" style="margin-bottom:16px;"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="cx-panel">
+          <h3 style="font-size:14px;margin:0 0 10px;">Servicios más vendidos (30 días)</h3>
+          <div id="miServicios" class="mi-lista"><div class="mi-vacio">Cargando…</div></div>
+        </div>
+        <div class="cx-panel">
+          <h3 style="font-size:14px;margin:0 0 10px;">Producción por barbero (30 días)</h3>
+          <div id="miBarberos" class="mi-lista"><div class="mi-vacio">Cargando…</div></div>
+        </div>
+      </div>
+
+      <div class="cx-panel" style="margin-top:16px;">
+        <h3 style="font-size:14px;margin:0 0 10px;">Próximos días con menos reservas</h3>
+        <div id="miDiasFlojos" class="mi-lista"><div class="mi-vacio">Cargando…</div></div>
+      </div>
+
+      <div class="cx-panel" style="margin-top:16px;">
+        <h3 style="font-size:14px;margin:0 0 4px;">Pregúntale a la IA</h3>
+        <p class="mg-note">Responde solo con los datos reales de arriba — si no sabe algo, lo dice en vez de inventarlo.</p>
+        <div id="miChat" class="mi-chat"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input type="text" id="miPregunta" class="mg-input" placeholder="Ej: ¿Qué día está más vacío esta semana?">
+          <button class="mg-btn solid" id="miPreguntar" style="flex:0 0 auto;width:auto;padding:0 18px;">Preguntar</button>
+        </div>
       </div>
     </div>
 
@@ -2273,6 +2331,7 @@
   const auth = firebase.auth();
   const db = firebase.firestore();
   const storage = firebase.storage();
+  const functions = firebase.app().functions('us-central1');
 
   /**
    * Crea una cuenta real de acceso (Firebase Auth) para un miembro del equipo,
@@ -3540,7 +3599,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios'].forEach(id=>{
+      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -4131,6 +4190,118 @@
   document.getElementById('btnHorarios').addEventListener('click', mostrarHorariosPage);
   document.getElementById('hrVolver').addEventListener('click', hrVolverAgenda);
 
+  /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
+  function mostrarIntelligence(){
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = '';
+    ocultarFlotante(true);
+    miCargarEstadisticas();
+  }
+
+  function miVolverAgenda(){
+    document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  const money = (n)=> '$' + Math.round(n || 0).toLocaleString('es-CL');
+
+  async function miCargarEstadisticas(){
+    const kpiRow = document.getElementById('miKpiRow');
+    const servCont = document.getElementById('miServicios');
+    const barbCont = document.getElementById('miBarberos');
+    const diasCont = document.getElementById('miDiasFlojos');
+    servCont.innerHTML = '<div class="mi-vacio">Cargando…</div>';
+    barbCont.innerHTML = '<div class="mi-vacio">Cargando…</div>';
+    diasCont.innerHTML = '<div class="mi-vacio">Cargando…</div>';
+
+    try{
+      const llamar = functions.httpsCallable('obtenerEstadisticasNegocio');
+      const { data: s } = await llamar();
+
+      kpiRow.innerHTML = [
+        { label:'Reservas hoy', value: s.reservasHoy },
+        { label:'Reservas esta semana', value: s.reservasEstaSemana },
+        { label:'Facturación (30 días)', value: money(s.facturacionUltimos30Dias) },
+        { label:'Cancelaciones (30 días)', value: s.cancelaciones30Dias },
+        { label:'No-show (30 días)', value: s.noShows30Dias },
+      ].map(k=> `
+        <div class="kpi-card">
+          <div class="kpi-top"><div class="kpi-label">${k.label}</div></div>
+          <div class="kpi-value">${k.value}</div>
+        </div>`).join('');
+
+      servCont.innerHTML = s.serviciosMasVendidos.length
+        ? s.serviciosMasVendidos.map(x=> `
+          <div class="mi-fila"><span class="mi-nombre">${x.nombre}</span><span class="mi-valor">${x.cantidad} reservas</span></div>`).join('')
+        : '<div class="mi-vacio">Sin datos en los últimos 30 días.</div>';
+
+      barbCont.innerHTML = s.produccionPorBarbero.length
+        ? s.produccionPorBarbero.map(x=> `
+          <div class="mi-fila"><span class="mi-nombre">${x.nombre}</span><span class="mi-valor">${x.citas} citas · ${money(x.facturacion)}</span></div>`).join('')
+        : '<div class="mi-vacio">Sin datos en los últimos 30 días.</div>';
+
+      const nombreDia = (iso)=> new Date(iso + 'T12:00:00').toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'short' });
+      diasCont.innerHTML = s.proximosDiasConMenosReservas.length
+        ? s.proximosDiasConMenosReservas.map(x=> `
+          <div class="mi-fila"><span class="mi-nombre">${nombreDia(x.fecha)}</span><span class="mi-valor">${x.reservas} reservas</span></div>`).join('')
+        : '<div class="mi-vacio">Sin datos.</div>';
+    }catch(e){
+      kpiRow.innerHTML = '';
+      const msg = `<div class="mi-vacio">No se pudo cargar: ${e.message}</div>`;
+      servCont.innerHTML = msg; barbCont.innerHTML = msg; diasCont.innerHTML = msg;
+    }
+  }
+
+  function miAgregarMensaje(clase, texto){
+    const chat = document.getElementById('miChat');
+    const div = document.createElement('div');
+    div.className = 'mi-msg ' + clase;
+    div.textContent = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  async function miPreguntar(){
+    const input = document.getElementById('miPregunta');
+    const pregunta = input.value.trim();
+    if(!pregunta) return;
+    const btn = document.getElementById('miPreguntar');
+
+    miAgregarMensaje('pregunta', pregunta);
+    input.value = '';
+    btn.disabled = true;
+    const cargando = miAgregarMensaje('cargando', 'Pensando…');
+
+    try{
+      const llamar = functions.httpsCallable('preguntarIA');
+      const { data } = await llamar({ pregunta });
+      cargando.remove();
+      miAgregarMensaje('respuesta', data.respuesta);
+    }catch(e){
+      cargando.remove();
+      miAgregarMensaje('respuesta', 'No pude responder: ' + (e.message || 'error desconocido'));
+    }finally{
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  document.getElementById('btnIntelligence').addEventListener('click', mostrarIntelligence);
+  document.getElementById('miVolver').addEventListener('click', miVolverAgenda);
+  document.getElementById('miRefrescar').addEventListener('click', miCargarEstadisticas);
+  document.getElementById('miPreguntar').addEventListener('click', miPreguntar);
+  document.getElementById('miPregunta').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') miPreguntar();
+  });
+
   /* ---------- Vista semanal de un barbero (clic en su nombre en la agenda) ---------- */
   let sbCalId = null;
   let sbWeekStart = null; // Date, lunes de la semana que se está mostrando
@@ -4656,6 +4827,7 @@
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
@@ -4719,6 +4891,7 @@
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
@@ -5261,6 +5434,7 @@
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -5676,7 +5850,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5700,7 +5874,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7100,7 +7274,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
