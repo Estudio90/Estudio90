@@ -3548,6 +3548,9 @@
    */
   const CHAT_IA_ESPERA_MS = 4000;
   let chatIaUltimoEnvio = 0;
+  // Historial corto de la conversación con la IA (no las respuestas por
+  // reglas) para que pueda seguir el hilo de una reserva de varios mensajes.
+  let chatHistorialIA = [];
 
   async function chatPreguntarIA(textoOriginal){
     const espera = CHAT_IA_ESPERA_MS - (Date.now() - chatIaUltimoEnvio);
@@ -3561,14 +3564,59 @@
     pensando.classList.add('pensando');
     try{
       const llamar = functions.httpsCallable('preguntarIACliente');
-      const { data } = await llamar({ pregunta: textoOriginal });
+      const { data } = await llamar({ pregunta: textoOriginal, historial: chatHistorialIA });
       pensando.remove();
       chatAgregar('bot', data.respuesta);
+
+      chatHistorialIA.push({ rol:'user', texto: textoOriginal }, { rol:'bot', texto: data.respuesta });
+      chatHistorialIA = chatHistorialIA.slice(-10);
+
+      if(data.propuesta) chatMostrarPropuesta(data.propuesta);
     }catch(e){
       pensando.remove();
       chatAgregar('bot', 'No pude responder eso en este momento. Te dejo el menú de todas formas:');
       chatMenuPrincipal();
     }
+  }
+
+  /** Muestra un botón para continuar la reserva que la IA preparó -- el cliente la confirma él mismo en el flujo normal. */
+  function chatMostrarPropuesta(propuesta){
+    chatChips([
+      { label:`✅ Continuar: ${propuesta.servicioNombre} — ${propuesta.horaInicio}`, accion: ()=> chatIniciarReservaDesdeIA(propuesta) }
+    ]);
+  }
+
+  /** Pre-llena el servicio (y barbero, si la IA lo sugirió) y deja al cliente justo en la fecha sugerida, listo para elegir la hora. */
+  function chatIniciarReservaDesdeIA(propuesta){
+    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    const svc = lista.find(s=> s.name === propuesta.servicioNombre);
+    if(!svc){
+      chatToggle();
+      abrirReservas();
+      return;
+    }
+
+    state.svc = null; state.price = 0; state.barber = null; state.slot = null;
+    state.servicios = []; state.barberId = null; state.duracion = null;
+    selectService(svc.name, Number(svc.priceClp).toLocaleString('es-CL'), svc.id, svc.minutes, false);
+
+    if(propuesta.barberoNombre){
+      const barberos = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
+      const b = barberos.find(x=> x.name === propuesta.barberoNombre);
+      if(b){ state.barber = b.name; state.barberId = b.id; }
+    }
+
+    chatToggle();
+    abrirReservas();
+    avanzarAHorarios();
+
+    setTimeout(()=>{
+      const bookDate = document.getElementById('bookDate');
+      if(bookDate){ bookDate.value = propuesta.fecha; }
+      pintarDias();
+      loadSlots();
+      toast(`Elige la hora ${propuesta.horaInicio} del ${fmtFechaLarga(propuesta.fecha)} para confirmar`);
+    }, 350);
   }
 
   function chatResponder(textoOriginal){
