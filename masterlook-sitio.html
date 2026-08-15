@@ -391,8 +391,10 @@
 
   input[type=text], input[type=tel], input[type=email], input[type=password]{
     width:100%; padding:12px 14px; border:1px solid var(--border-strong); border-radius:var(--radius-sm);
-    font-family:inherit; font-size:0.9rem; margin-bottom:16px; background:var(--panel);
+    font-family:inherit; font-size:0.9rem; margin-bottom:16px; background:var(--panel); color:var(--text-hi);
   }
+  input[type=text]::placeholder, input[type=tel]::placeholder,
+  input[type=email]::placeholder, input[type=password]::placeholder{ color:var(--text-mid); }
   .pay-opts{display:flex; gap:10px; margin-bottom:22px;}
   .pay-opt{flex:1; border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px; text-align:center; font-size:0.84rem; cursor:pointer; font-weight:500;}
   .pay-opt:hover{border-color:var(--accent);}
@@ -1920,7 +1922,7 @@
       <input type="password" id="regPass" placeholder="Mínimo 6 caracteres">
       <div class="field-err" id="regErr"></div>
       <button class="btn-full" onclick="doRegister()">Crear mi cuenta</button>
-      <p class="auth-hint">Demo: las cuentas se guardan solo en este navegador.</p>
+      <p class="auth-hint">Tu cuenta queda guardada de verdad — puedes ingresar desde cualquier dispositivo.</p>
     </div>
   </div>
 </div>
