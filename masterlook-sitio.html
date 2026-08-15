@@ -2957,6 +2957,8 @@
   const RESENA_ESPERA_MS = 30000;
   let resenaUltimoEnvio = 0;
 
+  const GOOGLE_REVIEW_URL = 'https://g.page/r/Ccmw9wZNuKapEBE/review';
+
   document.getElementById('resEnviar').addEventListener('click', async ()=>{
     const btn = document.getElementById('resEnviar');
     const nombre = document.getElementById('resName').value.trim() || 'Anónimo';
@@ -2966,22 +2968,35 @@
     const espera = RESENA_ESPERA_MS - (Date.now() - resenaUltimoEnvio);
     if(espera > 0) return toast(`Espera ${Math.ceil(espera/1000)} segundos antes de enviar otra reseña`);
 
-    btn.disabled = true; btn.textContent = 'Enviando...';
     const ratingEnviado = resRatingSeleccionado;
+    // Si califica con 4 o 5 estrellas, abrimos la pestaña de Google ya --
+    // en blanco, todavía sin URL -- para que el navegador no la bloquee
+    // como ventana emergente (tiene que abrirse dentro del mismo clic,
+    // antes de cualquier "await"). Le ponemos la URL real recién cuando
+    // confirmamos que la reseña se guardó bien.
+    let ventanaGoogle = null;
+    if(ratingEnviado >= 4) ventanaGoogle = window.open('', '_blank');
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
     try{
       await db.collection('reviews').add({
         name: nombre, rating: ratingEnviado, comment: comentario,
         verified: false, createdAt: new Date().toISOString(),
       });
       resenaUltimoEnvio = Date.now();
-      toast('¡Gracias por tu reseña! La publicaremos luego de revisarla.');
       document.getElementById('resName').value = '';
       document.getElementById('resComment').value = '';
       resRatingSeleccionado = 5; pintarEstrellasInput();
-      // solo invitamos a publicar en Google a quienes califican bien
-      if(ratingEnviado >= 4) document.getElementById('resGracias').style.display = 'block';
+      if(ratingEnviado >= 4){
+        toast('¡Gracias por tu reseña! Te abrimos Google para que la compartas también ahí.');
+        document.getElementById('resGracias').style.display = 'block';
+        if(ventanaGoogle) ventanaGoogle.location = GOOGLE_REVIEW_URL;
+      } else {
+        toast('¡Gracias por tu reseña! La publicaremos luego de revisarla.');
+      }
     }catch(e){
       toast('No se pudo enviar: ' + e.message);
+      if(ventanaGoogle) ventanaGoogle.close();
     }
     btn.disabled = false; btn.textContent = 'Enviar Reseña';
   });
