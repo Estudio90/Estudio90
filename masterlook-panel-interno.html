@@ -1316,34 +1316,6 @@
       </div>
     </div>
 
-    <!-- ===== VISTA: SEMANA DE UN BARBERO (clic en su nombre en la agenda) ===== -->
-    <div id="vistaSemanaBarbero" style="display:none;">
-      <div class="cx-head">
-        <div class="sb-titulo">
-          <div class="avatar-round" id="sbAvatar"></div>
-          <div>
-            <h2 class="cx-title" id="sbNombre" style="margin:0;"></h2>
-            <p class="cx-sub sb-rango" id="sbRango" style="margin:0;"></p>
-          </div>
-        </div>
-        <div class="cx-nav">
-          <button class="ctrl-btn" id="sbPrev">‹</button>
-          <button class="ctrl-btn" id="sbHoy">Esta semana</button>
-          <button class="ctrl-btn" id="sbNext">›</button>
-          <button class="ctrl-btn" id="sbVolver">← Volver a la agenda</button>
-        </div>
-      </div>
-
-      <div class="cx-panel">
-        <div class="grid-wrap">
-          <div class="barbers-row" id="sbHeaderRow"></div>
-          <div class="grid-body" id="sbGridBody">
-            <div class="time-col" id="sbTimeCol"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ===== VISTA: PRODUCTOS (ventas y comisiones) ===== -->
     <div id="vistaProductos" style="display:none;">
       <div class="cx-head">
@@ -1524,7 +1496,7 @@
       </aside>
 
       <!-- Calendar -->
-      <div class="cal-panel">
+      <div class="cal-panel" id="calPanelDia">
         <div class="cal-panel-head">
           <div>
             <div class="cal-title">Calendario</div>
@@ -1560,6 +1532,33 @@
           <div class="legend-item"><span class="ldot" style="background:var(--pend)"></span>Pendiente</div>
           <div class="legend-item"><span class="ldot" style="background:var(--done)"></span>Completado</div>
           <div class="legend-item"><span class="ldot" style="background:var(--no)"></span>No show</div>
+        </div>
+      </div>
+
+      <!-- Semana de un barbero: se abre al hacer clic en su nombre en la agenda,
+           reemplaza solo el calendario -- la barra lateral se queda igual -->
+      <div class="cal-panel" id="calPanelSemana" style="display:none;">
+        <div class="cal-panel-head">
+          <div class="sb-titulo">
+            <div class="avatar-round" id="sbAvatar"></div>
+            <div>
+              <div class="cal-title" id="sbNombre"></div>
+              <div class="cal-sub sb-rango" id="sbRango"></div>
+            </div>
+          </div>
+          <div class="cal-actions">
+            <button class="ctrl-btn" id="sbPrev">‹</button>
+            <button class="ctrl-btn" id="sbHoy">Esta semana</button>
+            <button class="ctrl-btn" id="sbNext">›</button>
+            <button class="ctrl-btn" id="sbVolver">← Volver a la agenda</button>
+          </div>
+        </div>
+
+        <div class="grid-wrap">
+          <div class="barbers-row" id="sbHeaderRow"></div>
+          <div class="grid-body" id="sbGridBody">
+            <div class="time-col" id="sbTimeCol"></div>
+          </div>
         </div>
       </div>
 
@@ -3412,6 +3411,7 @@
   async function irADia(iso){
     guardarDiaActual();                 // conservamos lo del día que dejamos
     currentDate = iso;
+    sbCerrarVistaSemana();
     document.getElementById('calSub').textContent = fmtFecha(iso);
 
     // limpiamos el calendario
@@ -3540,10 +3540,11 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
+      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
+      sbCerrarVistaSemana();
       document.getElementById('vistaAgenda').style.display = '';
       document.getElementById('kpiRow').style.display = '';
       ocultarFlotante(false);
@@ -4106,10 +4107,11 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaSemanaBarbero'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = '';
     ocultarFlotante(true);
@@ -4142,19 +4144,28 @@
   function abrirSemanaBarbero(calId){
     sbCalId = calId;
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+    // usa el mismo espacio que la agenda del día -- la barra lateral (mini
+    // calendario, filtro de profesional, etc.) se queda tal cual estaba
+    ['vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
+    document.getElementById('vistaAgenda').style.display = '';
     document.getElementById('kpiRow').style.display = 'none';
-    document.getElementById('vistaSemanaBarbero').style.display = '';
+    document.getElementById('calPanelDia').style.display = 'none';
+    document.getElementById('calPanelSemana').style.display = '';
     ocultarFlotante(true);
     sbPintarSemana();
   }
 
+  /** Cierra la vista semanal de un barbero y vuelve al calendario del día normal (misma barra lateral). */
+  function sbCerrarVistaSemana(){
+    document.getElementById('calPanelSemana').style.display = 'none';
+    document.getElementById('calPanelDia').style.display = '';
+  }
+
   function sbVolverAgenda(){
-    document.getElementById('vistaSemanaBarbero').style.display = 'none';
-    document.getElementById('vistaAgenda').style.display = '';
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = '';
     ocultarFlotante(false);
   }
@@ -4645,7 +4656,7 @@
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaSemanaBarbero').style.display = 'none';
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
     ocultarFlotante(true);
@@ -4708,7 +4719,7 @@
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaSemanaBarbero').style.display = 'none';
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
     if(nav) nav.style.display = 'none';
@@ -5250,7 +5261,7 @@
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaSemanaBarbero').style.display = 'none';
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
     ocultarFlotante(true);
@@ -5665,10 +5676,11 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = '';
     ocultarFlotante(true);
@@ -5688,10 +5700,11 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaProductos').style.display = '';
     ocultarFlotante(true);
@@ -7087,10 +7100,11 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios','vistaSemanaBarbero'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
+    sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaClientes').style.display = '';
     ocultarFlotante(true);
