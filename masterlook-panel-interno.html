@@ -107,6 +107,31 @@
   .user-menu-item.danger:hover{background:#fbeceb;}
   .user-menu-sep{height:1px;background:var(--border);margin:6px 4px;}
 
+  /* ---------- Menú lateral (hamburguesa) ---------- */
+  .burger{display:flex;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:6px;flex:0 0 auto;}
+  .burger span{width:20px;height:2px;border-radius:1px;background:var(--text-hi);}
+  .menu-overlay{position:fixed;inset:0;background:rgba(15,15,20,.45);z-index:88;display:none;}
+  .menu-overlay.open{display:block;}
+  .menu-panel{
+    position:fixed;top:0;left:0;bottom:0;width:min(300px,86vw);z-index:89;
+    background:var(--panel);border-right:1px solid var(--border);padding:22px;
+    transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;box-shadow:var(--shadow-lg);
+  }
+  .menu-panel.open{transform:translateX(0);}
+  .menu-panel .menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+  .menu-panel .wordmark{font-size:14px;}
+  .x-round{background:var(--panel-2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;color:var(--text-mid);}
+  .menu-links{display:flex;flex-direction:column;flex:1;overflow-y:auto;}
+  .menu-panel-item{
+    display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+    padding:13px 4px;border:none;background:none;border-bottom:1px solid var(--border);
+    font-family:inherit;font-size:13.5px;font-weight:500;color:var(--text-hi);cursor:pointer;
+  }
+  .menu-panel-item:hover{color:var(--accent);}
+  .menu-panel-item.danger{color:#c0392b;}
+  .menu-pie{padding-top:8px;}
+
   .content{padding:22px 32px 0;}
 
   /* ---------- KPI row ---------- */
@@ -1034,6 +1059,9 @@
 <div class="app">
 
   <div class="topbar">
+    <button class="burger" id="btnMenuLateral" aria-label="Abrir menú" title="Menú">
+      <span></span><span></span><span></span>
+    </button>
     <div class="wordmark"><span class="dot"></span>Master Look</div>
     <div class="stock-chips" id="stockChips"></div>
     <div class="topbar-right">
@@ -1057,6 +1085,29 @@
       </div>
     </div>
   </div>
+
+  <div class="menu-overlay" id="menuLateralOverlay"></div>
+  <aside class="menu-panel" id="menuLateralPanel">
+    <div class="menu-top">
+      <div class="wordmark"><span class="dot"></span>Master Look</div>
+      <button class="x-round" id="cerrarMenuLateral" aria-label="Cerrar menú">×</button>
+    </div>
+    <nav class="menu-links">
+      <button class="menu-panel-item" data-target="btnRecordatorios">🔔 Recordatorios</button>
+      <button class="menu-panel-item" data-target="btnComisiones" style="display:none;">💰 Comisiones</button>
+      <button class="menu-panel-item admin-only" data-target="btnCursos" style="display:none;">🎓 Cursos</button>
+      <button class="menu-panel-item admin-only" data-target="btnUsuarios" style="display:none;">👥 Usuarios</button>
+      <button class="menu-panel-item admin-only" data-target="btnProductos" style="display:none;">📦 Productos</button>
+      <button class="menu-panel-item" data-target="btnClientes" style="display:none;">📇 Clientes</button>
+      <button class="menu-panel-item" data-target="btnResenas" style="display:none;">⭐ Reseñas</button>
+      <button class="menu-panel-item" data-target="btnArco" style="display:none;">📩 Derechos ARCO</button>
+      <button class="menu-panel-item admin-only" data-target="btnPromos" style="display:none;">🏷️ Promociones</button>
+      <button class="menu-panel-item" data-target="btnConfig">⚙ Configurar</button>
+    </nav>
+    <div class="menu-pie">
+      <button class="menu-panel-item danger" data-target="btnSalir">🚪 Cerrar sesión</button>
+    </div>
+  </aside>
 
   <div class="content">
 
@@ -2366,6 +2417,24 @@
   document.addEventListener('click', (ev)=>{
     if(!userMenu.contains(ev.target) && ev.target.id !== 'who') userMenu.classList.remove('open');
   });
+
+  // ---------- Menú lateral (hamburguesa) ----------
+  (function(){
+    const overlay = document.getElementById('menuLateralOverlay');
+    const panel = document.getElementById('menuLateralPanel');
+    function abrirMenuLateral(){ overlay.classList.add('open'); panel.classList.add('open'); }
+    function cerrarMenuLateral(){ overlay.classList.remove('open'); panel.classList.remove('open'); }
+    document.getElementById('btnMenuLateral').addEventListener('click', abrirMenuLateral);
+    document.getElementById('cerrarMenuLateral').addEventListener('click', cerrarMenuLateral);
+    overlay.addEventListener('click', cerrarMenuLateral);
+    panel.querySelectorAll('.menu-panel-item').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        cerrarMenuLateral();
+        const real = document.getElementById(btn.dataset.target);
+        if(real) real.click();
+      });
+    });
+  })();
   ['lgUser','lgPass'].forEach(id=>
     document.getElementById(id).addEventListener('keydown', e=>{
       if(e.key === 'Enter') intentarIngreso();
@@ -2965,17 +3034,15 @@
     const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
     document.querySelectorAll('.admin-only').forEach(el=> el.style.display = soloAdmin);
     // Comisiones: administrador ve todo, barbero ve su propio resumen, recepción no ve nada
-    const btnCom = document.getElementById('btnComisiones');
-    if(btnCom) btnCom.style.display = (userRole === 'ADMIN' || userRole === 'BARBER') ? '' : 'none';
+    const comOn = (userRole === 'ADMIN' || userRole === 'BARBER') ? '' : 'none';
+    document.querySelectorAll('#btnComisiones, [data-target="btnComisiones"]').forEach(el=> el.style.display = comOn);
     // Clientes: administrador y recepción sí, barbero no (mismo criterio que el contacto)
-    const btnCli = document.getElementById('btnClientes');
-    if(btnCli) btnCli.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
+    const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
+    document.querySelectorAll('#btnClientes, [data-target="btnClientes"]').forEach(el=> el.style.display = cliOn);
     // Reseñas: mismo criterio que Clientes
-    const btnRes = document.getElementById('btnResenas');
-    if(btnRes) btnRes.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
+    document.querySelectorAll('#btnResenas, [data-target="btnResenas"]').forEach(el=> el.style.display = cliOn);
     // Derechos ARCO: mismo criterio que Clientes (trae teléfono y correo)
-    const btnArc = document.getElementById('btnArco');
-    if(btnArc) btnArc.style.display = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
+    document.querySelectorAll('#btnArco, [data-target="btnArco"]').forEach(el=> el.style.display = cliOn);
   }
 
   /** Trae la agenda del día desde el servidor y la dibuja en el calendario. */
