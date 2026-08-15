@@ -1062,7 +1062,7 @@
     <button class="burger" id="btnMenuLateral" aria-label="Abrir menú" title="Menú">
       <span></span><span></span><span></span>
     </button>
-    <div class="wordmark"><span class="dot"></span>Master Look</div>
+    <div class="wordmark" id="wordmarkHome" title="Ir al inicio" style="cursor:pointer;"><span class="dot"></span>Master Look</div>
     <div class="stock-chips" id="stockChips"></div>
     <div class="topbar-right">
       <div class="period-pill">Ago 2026</div>
@@ -3473,6 +3473,27 @@
   mgOverlay.addEventListener('click', cerrarModales);
   document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', cerrarModales));
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarModales(); });
+
+  /** Al hacer clic en "Master Look" del topbar: cierra todo y vuelve a la agenda con las reservas. */
+  function irAlInicio(){
+    cerrarModales();
+    document.getElementById('userMenu')?.classList.remove('open');
+    document.getElementById('menuLateralOverlay')?.classList.remove('open');
+    document.getElementById('menuLateralPanel')?.classList.remove('open');
+    if(userRole === 'BARBER'){
+      mostrarVistaBarbero();
+    }else{
+      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.style.display = 'none';
+      });
+      document.getElementById('vistaAgenda').style.display = '';
+      document.getElementById('kpiRow').style.display = '';
+      ocultarFlotante(false);
+    }
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+  document.getElementById('wordmarkHome').addEventListener('click', irAlInicio);
 
   /** Carga servicios y barberos desde Firestore. La primera vez que está vacío, lo siembra con los valores por defecto. */
   async function cargarCatalogo(){
