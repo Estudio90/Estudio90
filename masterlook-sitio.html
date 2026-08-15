@@ -1694,7 +1694,7 @@
       <p>Productos<br>premium</p>
     </button>
 
-    <button class="acc" onclick="document.getElementById('promos').scrollIntoView({behavior:'smooth'})">
+    <button class="acc" id="promoAccBtn" onclick="document.getElementById('promos').scrollIntoView({behavior:'smooth'})">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
         <rect x="3" y="9" width="18" height="12" rx="1.5"/><path d="M3 13h18M12 9v12"/>
         <path d="M12 9S9.5 4.5 7.5 5.5 9.5 9 12 9zM12 9s2.5-4.5 4.5-3.5S14.5 9 12 9z"/>
@@ -1744,29 +1744,13 @@
 </div>
 
 <!-- ===== Promociones ===== -->
-<section id="promos">
+<section id="promos" style="display:none;">
   <div class="wrap">
     <div class="sec-head">
       <h2>Promociones</h2>
       <span class="sec-linea"></span>
     </div>
-    <div class="promo-fila">
-      <button class="promo" onclick="abrirReservas()">
-        <span class="promo-tag">Estudiantes</span>
-        <h3>20% off en corte</h3>
-        <p>Lunes a jueves presentando tu credencial universitaria.</p>
-      </button>
-      <button class="promo" onclick="abrirReservas()">
-        <span class="promo-tag">Primera visita</span>
-        <h3>Asesoría de imagen gratis</h3>
-        <p>Analizamos tu rostro y estilo antes de cortar. Sin costo.</p>
-      </button>
-      <button class="promo" onclick="abrirTienda()">
-        <span class="promo-tag">Tienda</span>
-        <h3>3x2 en línea de fijación</h3>
-        <p>Llevando tres productos, pagas dos. Hasta agotar stock.</p>
-      </button>
-    </div>
+    <div class="promo-fila" id="promoFila"></div>
   </div>
 </section>
 
@@ -2931,6 +2915,33 @@
     reviewsCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
       .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
     pintarResenas();
+  });
+
+  /* ---------- Promociones: editadas desde el panel, se ocultan solas si no hay ninguna activa ---------- */
+  const ACCIONES_PROMO = {
+    reservas: ()=> abrirReservas(),
+    tienda: ()=> abrirTienda(),
+    academia: ()=> abrirAcademia(),
+  };
+  let promosCache = [];
+  function pintarPromos(){
+    const activas = promosCache.filter(p=> p.active !== false);
+    document.getElementById('promos').style.display = activas.length ? '' : 'none';
+    document.getElementById('promoFila').innerHTML = activas.map(p=> `
+      <button class="promo" data-accion="${escapeHTML(p.action || 'reservas')}">
+        <span class="promo-tag">${escapeHTML(p.tag || '')}</span>
+        <h3>${escapeHTML(p.title || '')}</h3>
+        <p>${escapeHTML(p.description || '')}</p>
+      </button>
+    `).join('');
+    document.querySelectorAll('#promoFila .promo').forEach(btn=>{
+      btn.addEventListener('click', ()=> (ACCIONES_PROMO[btn.dataset.accion] || ACCIONES_PROMO.reservas)());
+    });
+  }
+  db.collection('promos').onSnapshot(snap=>{
+    promosCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (a.createdAt || '').localeCompare(b.createdAt || ''));
+    pintarPromos();
   });
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{

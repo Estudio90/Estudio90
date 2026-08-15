@@ -1013,6 +1013,7 @@
           <button class="user-menu-item admin-only" id="btnProductos" style="display:none;">📦 Productos</button>
           <button class="user-menu-item" id="btnClientes" style="display:none;">📇 Clientes</button>
           <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
+          <button class="user-menu-item admin-only" id="btnPromos" style="display:none;">🏷️ Promociones</button>
           <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
           <div class="user-menu-sep"></div>
           <button class="user-menu-item danger" id="btnSalir">🚪 Cerrar sesión</button>
@@ -1642,6 +1643,38 @@
 
   <h4 style="font-size:13px;font-weight:600;margin:14px 0 8px;">Publicadas en el sitio</h4>
   <div id="resPublicadasLista" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;"></div>
+
+  <div class="mg-actions">
+    <button class="mg-btn ghost" data-close>Cerrar</button>
+  </div>
+</div>
+
+<!-- Promociones del sitio -->
+<div class="mg-modal wide" id="modalPromos">
+  <div class="mg-head">
+    <h3>Promociones</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note">
+    Estas tarjetas aparecen en la sección "Promociones" del sitio. Si no hay
+    ninguna activa, esa sección se oculta sola (el botón de acceso rápido queda,
+    pero no lleva a nada).
+  </p>
+
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+    <input type="text" id="pmTag" class="mg-input" placeholder="Etiqueta (ej: Estudiantes)">
+    <input type="text" id="pmTitulo" class="mg-input" placeholder="Título (ej: 20% off en corte)">
+    <textarea id="pmDesc" class="mg-input" placeholder="Descripción" style="min-height:60px;"></textarea>
+    <select id="pmAccion" class="mg-input">
+      <option value="reservas">Al hacer clic: abre Reservas</option>
+      <option value="tienda">Al hacer clic: abre Tienda</option>
+      <option value="academia">Al hacer clic: abre Academy</option>
+    </select>
+    <button class="mg-btn solid" id="pmGuardar">Agregar promoción</button>
+  </div>
+
+  <h4 style="font-size:13px;font-weight:600;margin:14px 0 8px;">Promociones creadas</h4>
+  <div id="promosLista" style="display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;"></div>
 
   <div class="mg-actions">
     <button class="mg-btn ghost" data-close>Cerrar</button>
@@ -5594,6 +5627,85 @@
   document.getElementById('btnResenas').addEventListener('click', async ()=>{
     abrirModal('modalResenas');
     await cargarResenas();
+  });
+
+  /* ---------- Promociones del sitio ---------- */
+  let promosCache = [];
+  db.collection('promos').onSnapshot(snap=>{
+    promosCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .sort((a,b)=> (a.createdAt || '').localeCompare(b.createdAt || ''));
+    if(document.getElementById('modalPromos').classList.contains('open')) pintarPromosLista();
+  });
+
+  function pintarPromosLista(){
+    const cont = document.getElementById('promosLista');
+    cont.innerHTML = promosCache.length ? promosCache.map(p=> `
+      <div class="mg-row" data-id="${p.id}" style="flex-direction:column;align-items:stretch;gap:6px;${p.active === false ? 'opacity:.55;' : ''}">
+        <input type="text" value="${escapeHTML(p.tag || '')}" data-f="tag" placeholder="Etiqueta">
+        <input type="text" value="${escapeHTML(p.title || '')}" data-f="title" placeholder="Título">
+        <textarea data-f="description" placeholder="Descripción" style="min-height:50px;">${escapeHTML(p.description || '')}</textarea>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select data-f="action" style="flex:1;">
+            <option value="reservas" ${p.action === 'reservas' ? 'selected' : ''}>Abre Reservas</option>
+            <option value="tienda" ${p.action === 'tienda' ? 'selected' : ''}>Abre Tienda</option>
+            <option value="academia" ${p.action === 'academia' ? 'selected' : ''}>Abre Academy</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap;">
+            <input type="checkbox" data-f="active" ${p.active !== false ? 'checked' : ''}> Activa
+          </label>
+          <button class="mg-del" title="Eliminar" data-del="${p.id}">✕</button>
+        </div>
+      </div>`).join('') : '<div class="cx-empty">Todavía no hay promociones creadas.</div>';
+
+    cont.querySelectorAll('.mg-row').forEach(row=>{
+      row.querySelectorAll('[data-f]').forEach(inp=>
+        inp.addEventListener('change', ()=> guardarPromo(row)));
+    });
+    cont.querySelectorAll('[data-del]').forEach(btn=>
+      btn.addEventListener('click', ()=> eliminarPromo(btn.dataset.del)));
+  }
+
+  async function guardarPromo(row){
+    const id = row.dataset.id;
+    const body = {};
+    row.querySelectorAll('[data-f]').forEach(inp=>{
+      body[inp.dataset.f] = inp.type === 'checkbox' ? inp.checked : inp.value.trim();
+    });
+    try{ await db.collection('promos').doc(id).update(body); showToast('Promoción actualizada'); }
+    catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  }
+
+  async function eliminarPromo(id){
+    if(!confirm('¿Eliminar esta promoción del sitio?')) return;
+    try{ await db.collection('promos').doc(id).delete(); showToast('Promoción eliminada'); }
+    catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+  }
+
+  document.getElementById('pmGuardar').addEventListener('click', async ()=>{
+    const titulo = document.getElementById('pmTitulo').value.trim();
+    if(!titulo) return showToast('Ponle un título a la promoción');
+    const btn = document.getElementById('pmGuardar');
+    btn.disabled = true;
+    try{
+      await db.collection('promos').add({
+        tag: document.getElementById('pmTag').value.trim(),
+        title: titulo,
+        description: document.getElementById('pmDesc').value.trim(),
+        action: document.getElementById('pmAccion').value,
+        active: true,
+        createdAt: new Date().toISOString(),
+      });
+      showToast('Promoción agregada');
+      document.getElementById('pmTag').value = '';
+      document.getElementById('pmTitulo').value = '';
+      document.getElementById('pmDesc').value = '';
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    btn.disabled = false;
+  });
+
+  document.getElementById('btnPromos').addEventListener('click', ()=>{
+    abrirModal('modalPromos');
+    pintarPromosLista();
   });
 
   /** Reservas confirmadas para mañana (usa la misma data en vivo del calendario). */
