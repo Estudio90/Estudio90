@@ -4866,8 +4866,10 @@
     fila.innerHTML = svcs.map((sv,i)=>`
       <div class="svc-card reveal in" data-svc-id="${sv.id}"
            data-svc="${sv.name}" data-price="${sv.priceClp}" data-min="${sv.minutes}">
-        <div class="svc-foto" style="background:linear-gradient(158deg,${tonos[i % tonos.length]},#0C0C0D);">
-          <div class="svc-inicial">${iconoDeServicio(sv)}</div>
+        <div class="svc-foto" style="${sv.photoUrl
+          ? `background-image:url('${sv.photoUrl}');background-size:cover;background-position:center;`
+          : `background:linear-gradient(158deg,${tonos[i % tonos.length]},#0C0C0D);`}">
+          ${sv.photoUrl ? '' : `<div class="svc-inicial">${iconoDeServicio(sv)}</div>`}
           ${sv.featured ? '<span class="svc-badge">Recomendado</span>' : '<span></span>'}
         </div>
         <div class="svc-body">
@@ -4957,6 +4959,7 @@
               priceClp:x.priceClp, minutes:x.minutes,
               featured: x.featured ?? base?.featured ?? false,
               cat: x.cat || base?.cat,
+              photoUrl: x.photoUrl || '',
             };
           });
         }

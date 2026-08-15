@@ -3829,7 +3829,11 @@
   function pintarConfigServicios(){
     const cont = document.getElementById('cfgServicios');
     cont.innerHTML = cfgServicios.map(s=>`
-      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}">
+      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}" style="grid-template-columns:38px 1fr 92px 74px auto;">
+        <div class="svc-thumb" data-foto="${s.id}" title="Subir foto del servicio"
+             style="width:36px;height:36px;border-radius:8px;cursor:pointer;background-color:#eee;
+               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:14px;
+               ${s.photoUrl ? `background-image:url('${s.photoUrl}');` : ''}">${s.photoUrl ? '' : '📷'}</div>
         <input type="text" value="${s.name}" data-f="name" placeholder="Nombre">
         <input type="number" value="${s.priceClp}" data-f="priceClp" min="0" step="500">
         <input type="number" value="${s.minutes}" data-f="minutes" min="5" step="5">
@@ -3840,7 +3844,39 @@
       row.querySelectorAll('input').forEach(inp=>
         inp.addEventListener('change', ()=> guardarServicio(row)));
       row.querySelector('.mg-del').addEventListener('click', ()=> desactivarServicio(row));
+      row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoServicio(row.dataset.id));
     });
+  }
+
+  /** Sube (o reemplaza) la foto de un servicio y la deja lista para el sitio público. */
+  function subirFotoServicio(servicioId){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.querySelector(`.svc-thumb[data-foto="${servicioId}"]`);
+      if(thumb) thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file);
+        const ruta = `servicePhotos/${servicioId}/${Date.now()}.jpg`;
+        const ref = storage.ref(ruta);
+        await ref.put(blob, { contentType:'image/jpeg' });
+        const url = await ref.getDownloadURL();
+        const s = cfgServicios.find(x=> x.id === servicioId);
+        if(s){
+          s.photoUrl = url;
+          await db.collection('services').doc(servicioId).set(s);
+        }
+        showToast('Foto del servicio actualizada');
+        pintarConfigServicios();
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        if(thumb) thumb.textContent = '📷';
+      }
+    });
+    input.click();
   }
 
   async function guardarServicio(row){
