@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <style>
   /* ==========================================================
      MASTER LOOK — barbería & spa
@@ -2731,6 +2732,17 @@
     messagingSenderId: "420826163402",
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
   });
+  // App Check: verifica que quien le habla a Firebase es este sitio real
+  // corriendo en un navegador, no un script/bot golpeando la base de datos
+  // directo. Se activa solo cuando haya una clave de reCAPTCHA v3 real --
+  // ver docs/MASTERLOOK-CONTINUIDAD-TECNICA.md para los pasos de activación.
+  const RECAPTCHA_SITE_KEY = '';
+  if(RECAPTCHA_SITE_KEY){
+    firebase.appCheck().activate(
+      new firebase.appCheck.ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+      true
+    );
+  }
   const db = firebase.firestore();
   const auth = firebase.auth();
   // Sesión guardada en este dispositivo (para que un cliente no tenga que
@@ -2747,11 +2759,16 @@
 
   function publishToPanel(booking){
     const { phone, email, ...publico } = booking;
-    db.collection('bookings').doc(booking.id).set(publico).catch(()=>{});
+    // se devuelve esta escritura (sin atrapar el error acá) para que quien
+    // llame pueda esperar a que la reserva exista de verdad antes de pedir
+    // el correo de confirmación -- la regla de "mail" ahora exige que la
+    // reserva ya exista, para que nadie pueda mandar spam a otra dirección.
+    const escritura = db.collection('bookings').doc(booking.id).set(publico);
     // el teléfono y el correo quedan aparte, con su propio candado: solo
     // el panel (Admin/Recepción) puede leerlos, nunca es público.
     db.collection('bookings').doc(booking.id).collection('private').doc('contact')
       .set({ phone: phone || '', email: email || '' }).catch(()=>{});
+    return escritura;
   }
 
   /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
@@ -2797,7 +2814,7 @@
   function enviarCorreoReserva(reserva, estado, motivo){
     if(!reserva.email) return;
     const { subject, html, text } = plantillaCorreoReserva(reserva, estado, motivo);
-    db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text } }).catch(()=>{});
+    db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text }, bookingId: reserva.id }).catch(()=>{});
   }
 
   /** Horario real del local, editable desde el panel — mismo dato para el menú, el pie de página y el chat. */
@@ -2868,11 +2885,20 @@
   });
   pintarEstrellasInput();
 
+  // Freno simple contra el envío repetido de reseñas seguidas (spam
+  // accidental o casual) -- la protección real contra scripts/bots es
+  // App Check (ver el bloque de configuración de Firebase, arriba).
+  const RESENA_ESPERA_MS = 30000;
+  let resenaUltimoEnvio = 0;
+
   document.getElementById('resEnviar').addEventListener('click', async ()=>{
     const btn = document.getElementById('resEnviar');
     const nombre = document.getElementById('resName').value.trim() || 'Anónimo';
     const comentario = document.getElementById('resComment').value.trim();
     if(!comentario) return toast('Cuéntanos qué te pareció el servicio');
+
+    const espera = RESENA_ESPERA_MS - (Date.now() - resenaUltimoEnvio);
+    if(espera > 0) return toast(`Espera ${Math.ceil(espera/1000)} segundos antes de enviar otra reseña`);
 
     btn.disabled = true; btn.textContent = 'Enviando...';
     const ratingEnviado = resRatingSeleccionado;
@@ -2881,6 +2907,7 @@
         name: nombre, rating: ratingEnviado, comment: comentario,
         verified: false, createdAt: new Date().toISOString(),
       });
+      resenaUltimoEnvio = Date.now();
       toast('¡Gracias por tu reseña! La publicaremos luego de revisarla.');
       document.getElementById('resName').value = '';
       document.getElementById('resComment').value = '';
@@ -3007,7 +3034,7 @@
 
       const grupo = 'g' + Date.now();
       const user = currentUser();
-      citas.forEach((c,i)=>{
+      for(const [i, c] of citas.entries()){
         const reserva = {
           id: 'web-' + Date.now() + '-' + i + '-' + Math.random().toString(36).slice(2,6),
           grupo, indice: i + 1, total: citas.length,
@@ -3018,8 +3045,12 @@
           fecha: state.fecha, startMin: c.min, duracion: c.minutos,
           decision: 'pendiente', createdAt: new Date().toISOString()
         };
-        publishToPanel(reserva);
-        enviarCorreoReserva(reserva, 'pendiente');
+        try{
+          // esperamos a que la reserva quede guardada de verdad antes de pedir
+          // el correo -- la regla de "mail" ahora exige que ya exista.
+          await publishToPanel(reserva);
+          enviarCorreoReserva(reserva, 'pendiente');
+        }catch(e){ /* si no se pudo guardar la reserva, no tiene sentido mandar el correo */ }
         // si hay sesión activa, la reserva también entra a su historial de cuenta
         if(user){
           db.collection('customers').doc(user.uid).update({
@@ -3027,7 +3058,7 @@
           }).catch(()=>{});
           user.bookingIds = [...(user.bookingIds || []), reserva.id];
         }
-      });
+      }
     }
 
     btn.textContent = 'Confirmar reserva';

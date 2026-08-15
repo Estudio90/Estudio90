@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <style>
   :root{
     --bg:#fcfcfd;
@@ -2109,6 +2110,16 @@
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
   };
   firebase.initializeApp(firebaseConfig);
+  // App Check: misma protección que el sitio del cliente (ver ahí el detalle).
+  // Usa la misma clave de reCAPTCHA v3, porque el panel vive en el mismo
+  // dominio (estudio90.github.io).
+  const RECAPTCHA_SITE_KEY = '';
+  if(RECAPTCHA_SITE_KEY){
+    firebase.appCheck().activate(
+      new firebase.appCheck.ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+      true
+    );
+  }
   const auth = firebase.auth();
   const db = firebase.firestore();
   const storage = firebase.storage();
