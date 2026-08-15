@@ -852,22 +852,40 @@
   .rv-pop-name{font-size:.84rem; font-weight:600; margin:3px 0 2px; line-height:1.3;}
   .rv-pop-meta{font-size:.74rem; color:var(--text-mid);}
 
-  /* tarjetas de servicio */
-  .svc-pick{display:flex; flex-direction:column; gap:10px;}
-  .svc-opt{display:block; border:1px solid var(--border); border-radius:14px; padding:16px;
+  /* secciones por categoría (estilo catálogo: barra + grilla de tarjetas) */
+  .svc-pick{display:flex; flex-direction:column; gap:12px;}
+  .rv-cat-seccion{border:1px solid var(--border); border-radius:14px; overflow:hidden;}
+  .rv-cat-head{width:100%; display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding:13px 17px; background:var(--panel-2); border:none; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace; font-size:.76rem; font-weight:600; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--text-hi);}
+  .rv-cat-head:hover{background:var(--border);}
+  .rv-cat-toggle{font-size:1rem; font-weight:400; color:var(--text-mid); flex-shrink:0;}
+  .rv-cat-body{padding:14px;}
+  .rv-cat-seccion.cerrada .rv-cat-body{display:none;}
+  .svc-pick-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  /* tarjetas de servicio: compactas y de texto plano, sin globos grandes */
+  .svc-opt{display:block; border:1px solid var(--border); border-radius:10px; padding:12px 13px;
     cursor:pointer; background:var(--panel); transition:border-color .18s, box-shadow .18s;}
   .svc-opt:hover{border-color:var(--border-strong); box-shadow:var(--shadow-sm);}
   .svc-opt.selected{border-color:var(--oro); box-shadow:0 0 0 1px var(--oro);}
-  .svc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:14px;}
-  .svc-nombre{font-size:1rem; font-weight:600; line-height:1.3;}
-  .svc-chips{display:flex; gap:7px; margin-top:7px; flex-wrap:wrap;}
-  .svc-chip{font-size:.72rem; color:var(--text-mid); background:var(--panel-2);
-    padding:3px 9px; border-radius:99px; display:inline-flex; align-items:center; gap:4px;}
-  .svc-chip.reco{background:#f3ecd9; color:#8a6d1f;}
-  .svc-precio{font-family:'IBM Plex Mono',monospace; font-size:1.1rem; font-weight:500; white-space:nowrap;}
-  .svc-desc{font-size:.85rem; color:var(--text-mid); line-height:1.55; margin-top:10px;
-    max-height:0; overflow:hidden; transition:max-height .3s ease, margin .3s ease;}
-  .svc-opt.abierto .svc-desc{max-height:220px;}
+  .svc-top{display:block;}
+  /* nombres con prefijo "svcr" (servicio-reserva): las tarjetas de la home
+     ya usan .svc-nombre/.svc-desc/.svc-pie/.svc-precio con otro estilo
+     (mayúsculas, alto fijo, precio en globo) -- nombres separados para
+     que no se mezclen los dos componentes por compartir clase. */
+  .svcr-nombre{font-size:.86rem; font-weight:600; line-height:1.3; text-transform:none;}
+  .svc-chips{display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;}
+  .svc-chip{font-size:.74rem; color:var(--text-mid); background:none; padding:0; border:none; border-radius:0;
+    display:inline-flex; align-items:center; gap:3px;}
+  .svc-chip.reco{color:var(--oro); font-weight:600;}
+  .svcr-precio{font-family:'IBM Plex Mono',monospace; font-size:.86rem; font-weight:600;
+    color:var(--text-hi); white-space:nowrap; background:none; border:none; padding:0; margin-top:3px; border-radius:0;}
+  .svcr-desc{font-size:.79rem; color:var(--text-mid); line-height:1.5; margin-top:8px; height:auto;
+    max-height:0; overflow:hidden; display:block; transition:max-height .3s ease, margin .3s ease;}
+  .svc-opt.abierto .svcr-desc{max-height:220px;}
+  .svcr-pie{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:0; flex-wrap:wrap;}
   .svc-vacio{text-align:center; padding:36px 16px; color:var(--text-mid); font-size:.88rem;}
 
   /* reparto de citas entre barberos */
@@ -910,9 +928,9 @@
     font-weight:600; cursor:pointer; font-family:inherit;}
   .rv-el-go:hover{opacity:.88;}
 
-  .svc-botones{display:flex; gap:8px; align-items:center;}
+  .svc-botones{display:flex; gap:6px; align-items:center;}
   .svc-sumar{background:var(--panel); color:var(--text-hi); border:1px solid var(--border-strong);
-    padding:9px 15px; border-radius:99px; font-size:.79rem; font-weight:600;
+    padding:6px 11px; border-radius:8px; font-size:.72rem; font-weight:600;
     cursor:pointer; font-family:inherit; white-space:nowrap;}
   .svc-sumar:hover{border-color:var(--text-hi);}
   .svc-opt.selected .svc-sumar{background:var(--text-hi); color:var(--bg); border-color:var(--text-hi);}
@@ -938,12 +956,11 @@
     color:var(--text-mid); cursor:pointer; text-decoration:underline;}
   .rv-cambiar:hover{color:var(--text-hi);}
 
-  .svc-pie{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;}
   .svc-agendar{background:var(--oro); color:#12100A; border:1px solid var(--oro);
-    padding:9px 18px; border-radius:99px; font-size:.8rem; font-weight:600;
+    padding:6px 13px; border-radius:8px; font-size:.72rem; font-weight:600;
     cursor:pointer; font-family:inherit; white-space:nowrap;}
   .svc-agendar:hover{opacity:.87;}
-  .svc-mas{background:none; border:none; padding:0; font-size:.78rem; font-weight:600;
+  .svc-mas{background:none; border:none; padding:0; font-size:.72rem; font-weight:600;
     color:var(--text-mid); cursor:pointer; font-family:inherit; text-decoration:underline;}
   .svc-mas:hover{color:var(--text-hi);}
 
@@ -958,19 +975,19 @@
   .rv-pronto-txt span{font-size:.78rem; opacity:.72;}
   .rv-pronto-go{font-size:1.1rem; opacity:.6;}
 
-  /* barberos */
-  .barbers{display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:10px; margin-bottom:24px;}
+  /* barberos: tarjetas chicas, ni más grandes que una tarjeta de servicio */
+  .barbers{display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:7px; margin-bottom:18px;}
   .barber-opt{display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    border:1px solid var(--border); border-radius:14px; padding:14px 8px; min-height:128px;
+    border:1px solid var(--border); border-radius:10px; padding:9px 5px; min-height:82px;
     cursor:pointer; text-align:center; background:var(--panel); transition:border-color .18s;}
   .barber-opt:hover{border-color:var(--border-strong);}
   .barber-opt.selected{border-color:var(--oro); box-shadow:0 0 0 1px var(--oro);}
-  .b-foto{width:52px; height:52px; border-radius:50%; margin:0 auto 9px;
+  .b-foto{width:32px; height:32px; border-radius:50%; margin:0 auto 6px;
     background:linear-gradient(150deg,#6f6c63,#26241f); color:#fff;
     display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1rem;}
-  .b-name{font-size:.78rem; font-weight:600; line-height:1.25; word-break:break-word; hyphens:auto;}
-  .b-libre{font-size:.68rem; color:var(--text-low); margin-top:4px;}
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:.72rem;}
+  .b-name{font-size:.68rem; font-weight:600; line-height:1.2; word-break:break-word; hyphens:auto;}
+  .b-libre{font-size:.6rem; color:var(--text-low); margin-top:2px;}
   .b-libre.lleno{color:var(--text-low);}
 
   /* días */
@@ -1036,12 +1053,12 @@
     #barberPick{min-width:0;}
     .steps{flex-direction:column; gap:6px;}
     .step{padding:11px 14px;}
-    .barbers{grid-template-columns:repeat(3,1fr)!important;}
+    .barbers{grid-template-columns:repeat(4,1fr)!important;}
     .rv-modo{grid-template-columns:1fr;}
-    .svc-pie{flex-wrap:wrap;}
+    .svcr-pie{flex-wrap:wrap;}
     .svc-agendar{flex:1;}
-    .b-foto{width:44px; height:44px; font-size:.86rem;}
-    .barber-opt{min-height:112px; padding:11px 5px;}
+    .b-foto{width:30px; height:30px; font-size:.68rem;}
+    .barber-opt{min-height:76px; padding:8px 4px;}
     .slots{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));}
     .tv-head-in{padding:14px 16px; grid-template-columns:auto 1fr auto; gap:8px;}
     .tv-back{font-size:.74rem; padding:6px 8px;}
@@ -1051,7 +1068,7 @@
   }
   @media (max-width:420px){
     .rv-paso{display:none;}
-    .barbers{grid-template-columns:repeat(2,1fr)!important;}
+    .barbers{grid-template-columns:repeat(3,1fr)!important;}
   }
 
 
@@ -1193,13 +1210,13 @@
     .stat-row{grid-template-columns:1fr 1fr 1fr;}
     .steps{flex-wrap:wrap;}
     .step{flex:1 1 100%;}
-    .barbers{grid-template-columns:1fr 1fr;}
+    .barbers{grid-template-columns:repeat(4,1fr);}
   }
   @media (max-width: 560px){
     .services-grid, .course-grid, .shop-grid, .foot-grid{grid-template-columns:1fr;}
     .svc-pick{grid-template-columns:1fr;}
     .slots{grid-template-columns:1fr 1fr;}
-    .barbers{grid-template-columns:1fr;}
+    .barbers{grid-template-columns:repeat(3,1fr);}
     .stat-row{grid-template-columns:1fr;}
     .hero{padding:70px 0 40px;}
   }
@@ -1349,12 +1366,15 @@
     .rv-pop-meta{font-size:.66rem;}
 
     .svc-pick{gap:8px;}
-    .svc-opt{padding:12px; border-radius:12px;}
-    .svc-nombre{font-size:.88rem;}
-    .svc-chips{gap:5px; margin-top:5px;}
-    .svc-chip{font-size:.64rem; padding:2px 7px;}
-    .svc-precio{font-size:.96rem;}
-    .svc-desc{font-size:.76rem; margin-top:8px;}
+    .rv-cat-head{padding:11px 14px; font-size:.68rem;}
+    .rv-cat-body{padding:10px;}
+    .svc-pick-grid{grid-template-columns:1fr; gap:8px;}
+    .svc-opt{padding:11px 12px; border-radius:10px;}
+    .svcr-nombre{font-size:.82rem;}
+    .svc-chips{gap:5px; margin-top:4px;}
+    .svc-chip{font-size:.68rem;}
+    .svcr-precio{font-size:.82rem;}
+    .svcr-desc{font-size:.74rem; margin-top:7px;}
 
     .rv-plan{margin-top:14px; padding:11px; border-radius:12px;}
     .rv-plan-head{margin-bottom:8px;}
@@ -1375,7 +1395,7 @@
     .rv-chip button{width:18px; height:18px; font-size:.72rem;}
     .rv-el-go{padding:10px; font-size:.76rem;}
 
-    .svc-sumar{padding:7px 12px; font-size:.7rem;}
+    .svc-sumar{padding:5px 10px; font-size:.68rem;}
     .rv-modo{gap:7px; margin-bottom:14px;}
     .rv-modo-btn{padding:10px 11px; border-radius:11px; gap:8px;}
     .rv-modo-ic{font-size:.95rem;}
@@ -1385,9 +1405,9 @@
     .rv-elegido{padding:9px 11px; font-size:.76rem; margin:9px 0 12px; border-radius:9px;}
     .rv-cambiar{font-size:.7rem;}
 
-    .svc-pie{margin-top:10px;}
-    .svc-agendar{padding:8px 14px; font-size:.72rem;}
-    .svc-mas{font-size:.7rem;}
+    .svcr-pie{margin-top:9px;}
+    .svc-agendar{padding:5px 11px; font-size:.68rem;}
+    .svc-mas{font-size:.68rem;}
 
     .rv-pronto{padding:12px 13px; border-radius:12px; margin-bottom:14px; gap:9px;}
     .rv-pronto-ic{font-size:.98rem;}
@@ -1395,11 +1415,11 @@
     .rv-pronto-txt span{font-size:.7rem;}
     .rv-pronto-go{font-size:.98rem;}
 
-    .barbers{gap:7px; margin-bottom:14px;}
-    .barber-opt{padding:9px 5px; min-height:94px!important; border-radius:12px;}
-    .b-foto{width:36px; height:36px; margin:0 auto 6px; font-size:.78rem!important;}
-    .b-name{font-size:.7rem;}
-    .b-libre{font-size:.6rem; margin-top:3px;}
+    .barbers{gap:6px; margin-bottom:12px;}
+    .barber-opt{padding:7px 4px; min-height:70px!important; border-radius:10px;}
+    .b-foto{width:26px; height:26px; margin:0 auto 5px; font-size:.62rem!important;}
+    .b-name{font-size:.62rem;}
+    .b-libre{font-size:.56rem; margin-top:2px;}
 
     .rv-dias{gap:6px; margin-bottom:14px;}
     .rv-dia{min-width:50px; padding:8px 4px; border-radius:10px;}
@@ -4418,32 +4438,33 @@
   let rvCat = 'Todos';
 
   /* ---------- paso 1: servicios ---------- */
+  /** Categoría de un servicio: usa el campo real si existe, si no la deduce por el nombre (solo Ondulación queda aparte, como en el catálogo real). */
+  function categoriaDe(s){
+    if(s.cat) return s.cat;
+    return /ondulaci[oó]n/i.test(s.name) ? 'Ondulaciones permanentes' : 'Servicios';
+  }
+
+  // Categorías que el cliente cerró manualmente (por defecto todas empiezan cerradas, como un catálogo).
+  let rvCatsCerradas = null;
+
   function paintServices(){
     const lista = catalog.services.length ? catalog.services : SVC_DEMO;
 
-    // categorías a partir del propio catálogo
-    const cats = ['Todos', ...new Set(lista.map(s=> s.cat || 'Servicios'))];
+    const cats = ['Todos', ...new Set(lista.map(categoriaDe))];
+    if(!rvCatsCerradas) rvCatsCerradas = new Set(cats.filter(c=> c !== 'Todos'));
+
     const cont = document.getElementById('svcCats');
     cont.innerHTML = cats.map(c=>
       `<button class="rv-cat ${c===rvCat?'on':''}" data-cat="${c}">${c}</button>`).join('');
     cont.querySelectorAll('.rv-cat').forEach(b=>
-      b.addEventListener('click', ()=>{ rvCat = b.dataset.cat; paintServices(); }));
-
-    // los más pedidos, como atajo
-    const pop = document.getElementById('svcPopulares');
-    const destacados = lista.filter(s=> s.featured).slice(0,4);
-    pop.innerHTML = destacados.length ? destacados.map(s=>`
-      <div class="rv-pop" data-pop="${s.id}">
-        <div class="rv-pop-tag">Más pedido</div>
-        <div class="rv-pop-name">${s.name}</div>
-        <div class="rv-pop-meta">${money(s.priceClp)} · ${dur(s.minutes)}</div>
-      </div>`).join('') : '';
-    pop.querySelectorAll('[data-pop]').forEach(el=>
-      el.addEventListener('click', ()=>{
-        const s = lista.find(x=> x.id === el.dataset.pop);
-        selectService(s.name, s.priceClp, s.id, s.minutes);
-        avanzarAHorarios();
+      b.addEventListener('click', ()=>{
+        rvCat = b.dataset.cat;
+        if(rvCat !== 'Todos') rvCatsCerradas.delete(rvCat);
+        paintServices();
       }));
+
+    const pop = document.getElementById('svcPopulares');
+    if(pop){ pop.innerHTML = ''; pop.style.display = 'none'; }
 
     pintarListaServicios(lista);
   }
@@ -4454,12 +4475,34 @@
     return h ? (r ? `${h} h ${r} min` : `${h} h`) : `${m} min`;
   }
 
+  function tarjetaServicio(s){
+    return `
+      <div class="svc-opt ${state.serviceId === s.id ? 'selected' : ''}"
+           data-id="${s.id}" data-svc="${s.name}" data-price="${s.priceClp}" data-min="${s.minutes}">
+        <div class="svc-top">
+          <div class="svcr-nombre">${s.featured ? '★ ' : ''}${s.name}</div>
+          <div class="svc-chips">
+            <span class="svc-chip">${dur(s.minutes)}</span>
+          </div>
+          <div class="svcr-precio">${money(s.priceClp)}</div>
+        </div>
+        ${s.description ? `<div class="svcr-desc">${s.description}</div>` : ''}
+        <div class="svcr-pie">
+          ${s.description ? '<button class="svc-mas" data-mas>Más información</button>' : '<span></span>'}
+          <div class="svc-botones">
+            <button class="svc-sumar" data-sumar>＋ Sumar</button>
+            <button class="svc-agendar" data-agendar>Agendar servicio</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function pintarListaServicios(lista){
     const q = (document.getElementById('svcBuscar')?.value || '').trim().toLowerCase();
     const cont = document.getElementById('svcPick');
 
     const filtrada = lista.filter(s=>{
-      if(rvCat !== 'Todos' && (s.cat || 'Servicios') !== rvCat) return false;
+      if(rvCat !== 'Todos' && categoriaDe(s) !== rvCat) return false;
       if(q && !s.name.toLowerCase().includes(q) && !(s.description||'').toLowerCase().includes(q)) return false;
       return true;
     });
@@ -4469,28 +4512,35 @@
       return;
     }
 
-    cont.innerHTML = filtrada.map(s=>`
-      <div class="svc-opt ${state.serviceId === s.id ? 'selected' : ''}"
-           data-id="${s.id}" data-svc="${s.name}" data-price="${s.priceClp}" data-min="${s.minutes}">
-        <div class="svc-top">
-          <div>
-            <div class="svc-nombre">${s.name}</div>
-            <div class="svc-chips">
-              <span class="svc-chip">🕐 ${dur(s.minutes)}</span>
-              ${s.featured ? '<span class="svc-chip reco">★ Recomendado</span>' : ''}
-            </div>
+    // agrupa por categoría, respetando el orden en que aparecen en el catálogo
+    const agrupadas = new Map();
+    filtrada.forEach(s=>{
+      const cat = categoriaDe(s);
+      if(!agrupadas.has(cat)) agrupadas.set(cat, []);
+      agrupadas.get(cat).push(s);
+    });
+
+    cont.innerHTML = [...agrupadas.entries()].map(([cat, servicios])=>{
+      // si el cliente está buscando, mostramos los resultados abiertos de una
+      const cerrada = !q && rvCatsCerradas.has(cat);
+      return `
+        <div class="rv-cat-seccion ${cerrada ? 'cerrada' : ''}" data-cat-seccion="${cat}">
+          <button class="rv-cat-head" type="button" data-toggle-cat="${cat}">
+            <span>${cat}</span>
+            <span class="rv-cat-toggle">${cerrada ? '＋' : '－'}</span>
+          </button>
+          <div class="rv-cat-body">
+            <div class="svc-pick-grid">${servicios.map(tarjetaServicio).join('')}</div>
           </div>
-          <div class="svc-precio">${money(s.priceClp)}</div>
-        </div>
-        ${s.description ? `<div class="svc-desc">${s.description}</div>` : ''}
-        <div class="svc-pie">
-          ${s.description ? '<button class="svc-mas" data-mas>Más información</button>' : '<span></span>'}
-          <div class="svc-botones">
-            <button class="svc-sumar" data-sumar>＋ Sumar</button>
-            <button class="svc-agendar" data-agendar>Agendar →</button>
-          </div>
-        </div>
-      </div>`).join('');
+        </div>`;
+    }).join('');
+
+    cont.querySelectorAll('[data-toggle-cat]').forEach(btn=>
+      btn.addEventListener('click', ()=>{
+        const cat = btn.dataset.toggleCat;
+        if(rvCatsCerradas.has(cat)) rvCatsCerradas.delete(cat); else rvCatsCerradas.add(cat);
+        pintarListaServicios(lista);
+      }));
 
     cont.querySelectorAll('.svc-opt').forEach(card=>{
       card.addEventListener('click', ()=>
