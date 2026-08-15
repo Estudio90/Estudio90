@@ -2733,6 +2733,10 @@
   });
   const db = firebase.firestore();
   const auth = firebase.auth();
+  // Sesión guardada en este dispositivo (para que un cliente no tenga que
+  // volver a ingresar cada vez que visita el sitio) -- explícito a propósito,
+  // para que quede claro que es una decisión y no el valor por defecto del SDK.
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
   /** Refleja en vivo las reservas guardadas en Firestore, visibles desde cualquier dispositivo. */
   let bookingsCache = [];
@@ -3068,7 +3072,7 @@
 
   auth.onAuthStateChanged(async user=>{
     if(MODE === 'api') return; // ese modo maneja su propia sesión por token
-    if(!user){ customerProfile = null; await renderAccount(); return; }
+    if(!user){ customerProfile = null; await renderAccount(); reiniciarTimerInactividad(); return; }
     try{
       const doc = await db.collection('customers').doc(user.uid).get();
       customerProfile = doc.exists
@@ -3076,6 +3080,7 @@
         : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
     }catch(e){ customerProfile = null; }
     await renderAccount();
+    reiniciarTimerInactividad();
   });
 
   function initials(name){
@@ -3182,6 +3187,24 @@
     toast('Hola de nuevo, ' + nombre);
     document.getElementById('cuenta').scrollIntoView({behavior:'smooth'});
   }
+
+  /* ---------- Cierre de sesión automático por inactividad (30 min) -----------
+     Si alguien deja la cuenta abierta en un dispositivo y nadie la usa más,
+     se cierra sola -- para que no quede expuesta indefinidamente. */
+  const INACTIVIDAD_MS = 30 * 60 * 1000;
+  let inactividadTimer = null;
+  function reiniciarTimerInactividad(){
+    if(inactividadTimer) clearTimeout(inactividadTimer);
+    if(!currentUser()) return;
+    inactividadTimer = setTimeout(async ()=>{
+      if(!currentUser()) return;
+      await auth.signOut();
+      await renderAccount();
+      toast('Cerramos tu sesión por seguridad, tras un rato sin actividad.');
+    }, INACTIVIDAD_MS);
+  }
+  ['click','keydown','touchstart','scroll'].forEach(ev=>
+    document.addEventListener(ev, reiniciarTimerInactividad, { passive:true }));
 
   async function logout(){
     if(MODE === 'api'){
