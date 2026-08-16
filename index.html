@@ -908,6 +908,8 @@
   .rv-plan-sel{padding:8px 10px; border:1px solid var(--border-strong); border-radius:8px;
     font-family:inherit; font-size:.8rem; background:var(--panel); max-width:150px; flex-shrink:0;}
   .rv-plan-pie{font-size:.75rem; color:var(--text-low); margin-top:10px; text-align:center;}
+  .rv-barbero-aviso{background:#fdf3ea; border:1px solid #e3c6a1; color:#8a562a; border-radius:12px;
+    padding:12px 14px; font-size:.82rem; line-height:1.5; margin-top:14px;}
 
   /* servicios elegidos */
   .rv-elegidos{background:var(--panel-2); border:1px solid var(--border); border-radius:14px;
@@ -982,6 +984,8 @@
     cursor:pointer; text-align:center; background:var(--panel); transition:border-color .18s;}
   .barber-opt:hover{border-color:var(--border-strong);}
   .barber-opt.selected{border-color:var(--oro); box-shadow:0 0 0 1px var(--oro);}
+  .barber-opt.no-disponible{opacity:.4; cursor:not-allowed;}
+  .barber-opt.no-disponible .b-libre{color:var(--text-low);}
   .b-foto{width:32px; height:32px; border-radius:50%; margin:0 auto 6px;
     background:linear-gradient(150deg,#6f6c63,#26241f); color:#fff;
     display:flex; align-items:center; justify-content:center;
@@ -991,26 +995,34 @@
   .b-libre.lleno{color:var(--text-low);}
 
   /* días */
-  .rv-dias{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:22px;}
+  .rv-dias-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .rv-dias-nav{display:flex; align-items:center; gap:8px;}
+  .rv-dias-mes{font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--text-mid); text-transform:capitalize;}
+  .rv-dias-flecha{width:26px; height:26px; border-radius:50%; border:1px solid var(--border-strong);
+    background:var(--panel); color:var(--text-hi); cursor:pointer; font-size:.9rem; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center; font-family:inherit;}
+  .rv-dias-flecha:hover{border-color:var(--text-hi);}
+  .rv-dias-flecha:disabled{opacity:.3; cursor:not-allowed;}
+  .rv-dias{display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:22px;}
   .rv-dias::-webkit-scrollbar{height:0;}
-  .rv-dia{flex:0 0 auto; min-width:66px; border:1px solid var(--border); border-radius:12px;
-    padding:10px 6px; text-align:center; cursor:pointer; background:var(--panel);}
+  .rv-dia{flex:0 0 auto; min-width:50px; border:1px solid var(--border); border-radius:10px;
+    padding:8px 4px; text-align:center; cursor:pointer; background:var(--panel);}
   .rv-dia:hover{border-color:var(--border-strong);}
   .rv-dia.on{background:var(--oro); color:#12100A; border-color:var(--oro);}
   .rv-dia.cerrado{opacity:.35; cursor:not-allowed;}
-  .rv-dia-nom{font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; opacity:.7;}
-  .rv-dia-num{font-family:'Space Grotesk',sans-serif; font-size:1.15rem; font-weight:600; margin:2px 0;}
-  .rv-dia-libre{font-size:.65rem; opacity:.75;}
+  .rv-dia-nom{font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; opacity:.7;}
+  .rv-dia-num{font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:600; margin:2px 0;}
+  .rv-dia-libre{font-size:.58rem; opacity:.75;}
   .rv-fecha-oculta{position:absolute; opacity:0; pointer-events:none; width:0; height:0;}
 
-  /* franjas horarias */
+  /* franjas horarias: título simple con línea, sin íconos -- igual que un catálogo */
   .rv-franjas{display:flex; flex-direction:column; gap:16px;}
-  .rv-franja-tit{font-size:.78rem; font-weight:600; color:var(--text-mid); margin-bottom:9px;
-    display:flex; align-items:center; gap:7px;}
-  .rv-franja-tit .cnt{font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--text-low);}
+  .rv-franja-tit{font-size:.8rem; font-weight:600; color:var(--text-hi); margin-bottom:10px;
+    display:flex; align-items:baseline; gap:7px; padding-bottom:6px; border-bottom:1px solid var(--border);}
+  .rv-franja-tit .cnt{font-family:'IBM Plex Mono',monospace; font-size:.68rem; font-weight:400; color:var(--text-low);}
   .slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:8px;}
-  .slot{border:1px solid var(--border); border-radius:10px; padding:11px 6px; text-align:center;
-    font-family:'IBM Plex Mono',monospace; font-size:.84rem; cursor:pointer; color:var(--text-mid);
+  .slot{border:1px solid var(--border); border-radius:8px; padding:10px 6px; text-align:center;
+    font-family:'IBM Plex Mono',monospace; font-size:.82rem; cursor:pointer; color:var(--text-mid);
     background:var(--panel);}
   .slot:hover{border-color:var(--text-hi); color:var(--text-hi);}
   .slot.selected{background:var(--oro); color:#12100A; border-color:var(--oro);}
@@ -1415,11 +1427,11 @@
     .rv-pronto-txt span{font-size:.7rem;}
     .rv-pronto-go{font-size:.98rem;}
 
-    .barbers{gap:6px; margin-bottom:12px;}
-    .barber-opt{padding:7px 4px; min-height:70px!important; border-radius:10px;}
-    .b-foto{width:26px; height:26px; margin:0 auto 5px; font-size:.62rem!important;}
-    .b-name{font-size:.62rem;}
-    .b-libre{font-size:.56rem; margin-top:2px;}
+    .barbers{grid-template-columns:repeat(4,1fr)!important; gap:5px; margin-bottom:10px;}
+    .barber-opt{padding:5px 3px; min-height:48px!important; border-radius:8px;}
+    .b-foto{width:18px; height:18px; margin:0 auto 3px; font-size:.52rem!important;}
+    .b-name{font-size:.54rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+    .b-libre{display:none;}
 
     .rv-dias{gap:6px; margin-bottom:14px;}
     .rv-dia{min-width:50px; padding:8px 4px; border-radius:10px;}
@@ -2062,7 +2074,7 @@
     <div class="tv-head-in">
       <button class="tv-back" id="rvVolver">← Volver al inicio</button>
       <div class="wordmark">MASTER LOOK<sup>®</sup></div>
-      <span class="rv-paso" id="rvPaso">Paso 1 de 3</span>
+      <span class="rv-paso" id="rvPaso">Paso 1 de 4</span>
     </div>
     <div class="rv-progress"><div class="rv-progress-fill" id="rvBar"></div></div>
   </header>
@@ -2073,8 +2085,9 @@
       <!-- pasos -->
       <div class="steps">
         <div class="step active" data-step="1"><span class="n">1</span> Servicio</div>
-        <div class="step" data-step="2"><span class="n">2</span> Barbero y hora</div>
-        <div class="step" data-step="3"><span class="n">3</span> Confirmar</div>
+        <div class="step" data-step="2"><span class="n">2</span> Fecha y hora</div>
+        <div class="step" data-step="3"><span class="n">3</span> Profesional</div>
+        <div class="step" data-step="4"><span class="n">4</span> Confirmar</div>
       </div>
 
       <div class="booking-panel">
@@ -2125,11 +2138,11 @@
             </div>
           </div>
 
-          <!-- ============ PASO 2: BARBERO Y HORA ============ -->
+          <!-- ============ PASO 2: FECHA Y HORA ============ -->
           <div class="bstep" data-bstep="2">
             <div class="rv-title">
-              <h2>¿Con quién y cuándo?</h2>
-              <p>Elige tu barbero y el horario que más te acomode.</p>
+              <h2>¿Cuándo te gustaría venir?</h2>
+              <p>Elige el día y la hora que más te acomode.</p>
             </div>
 
             <button class="rv-pronto" id="rvPronto">
@@ -2141,21 +2154,19 @@
               <span class="rv-pronto-go">→</span>
             </button>
 
-            <div id="rvBarberoCompacto" class="rv-elegido" style="display:none;"></div>
-
-            <div id="rvBarberoZona">
-              <span class="field-label">Barbero</span>
-              <div class="barbers" id="barberPick"></div>
+            <div class="rv-dias-head">
+              <span class="field-label" style="margin-bottom:0;">Elige el día</span>
+              <div class="rv-dias-nav">
+                <span class="rv-dias-mes" id="rvDiasMes"></span>
+                <button type="button" class="rv-dias-flecha" id="rvDiasPrev" aria-label="Días anteriores">‹</button>
+                <button type="button" class="rv-dias-flecha" id="rvDiasNext" aria-label="Más días">›</button>
+              </div>
             </div>
-
-            <span class="field-label">Elige el día</span>
             <div class="rv-dias" id="rvDias"></div>
             <input type="date" id="bookDate" class="rv-fecha-oculta">
 
             <span class="field-label">Horarios disponibles</span>
             <div id="slotPick" class="rv-franjas"></div>
-
-            <div id="rvPlan" class="rv-plan" style="display:none;"></div>
 
             <div class="step-actions">
               <button class="btn-ghost" data-back="1">← Volver</button>
@@ -2163,8 +2174,28 @@
             </div>
           </div>
 
-          <!-- ============ PASO 3: CONFIRMAR ============ -->
+          <!-- ============ PASO 3: PROFESIONAL ============ -->
           <div class="bstep" data-bstep="3">
+            <div class="rv-title">
+              <h2>¿Con quién prefieres atenderte?</h2>
+              <p>Estos son los profesionales disponibles a la hora que elegiste.</p>
+            </div>
+
+            <div id="rvBarberoZona">
+              <div class="barbers" id="barberPick"></div>
+            </div>
+
+            <div id="rvPlan" class="rv-plan" style="display:none;"></div>
+            <div id="rvBarberoAviso" class="rv-barbero-aviso" style="display:none;"></div>
+
+            <div class="step-actions">
+              <button class="btn-ghost" data-back="2">← Volver</button>
+              <button class="btn-dark" id="toStep4" disabled>Continuar →</button>
+            </div>
+          </div>
+
+          <!-- ============ PASO 4: CONFIRMAR ============ -->
+          <div class="bstep" data-bstep="4">
             <div id="formZone">
               <div class="rv-title">
                 <h2>Últimos datos</h2>
@@ -2198,7 +2229,7 @@
               </div>
 
               <div class="step-actions">
-                <button class="btn-ghost" data-back="2">← Volver</button>
+                <button class="btn-ghost" data-back="3">← Volver</button>
                 <button class="btn-dark" id="confirmBtn" disabled>Confirmar reserva</button>
               </div>
             </div>
@@ -2669,7 +2700,10 @@
   document.querySelectorAll('.step').forEach(s=>{
     s.addEventListener('click', ()=>{
       const n = parseInt(s.dataset.step);
-      if(n===1 || (n===2 && state.svc) || (n===3 && state.svc && state.barber && state.slot)) goToStep(n);
+      if(n===1) goToStep(1);
+      else if(n===2 && state.svc) goToStep(2);
+      else if(n===3 && state.svc && state.slot){ goToStep(3); avanzarAProfesional(); }
+      else if(n===4 && state.svc && state.slot && state.barber){ goToStep(4); prefillBooking(); }
     });
   });
 
@@ -2773,7 +2807,7 @@
         const x = state.servicios.find(y=> y.id === b.dataset.masQ);
         if(x){ x.qty = (x.qty || 1) + 1; recalcularServicios(); pintarElegidos(); marcarTarjetas(); updateSummary(); actualizarBarra(); }
       }));
-    cont.querySelector('#rvElegidosGo').addEventListener('click', avanzarAHorarios);
+    cont.querySelector('#rvElegidosGo').addEventListener('click', avanzarAFechaHora);
   }
 
   /* duraciones para el modo demo, en minutos */
@@ -2793,36 +2827,36 @@
       goToStep(1);
     });
   });
-  document.getElementById('toStep2').addEventListener('click', avanzarAHorarios);
+  document.getElementById('toStep2').addEventListener('click', avanzarAFechaHora);
 
-  document.querySelectorAll('#barberPick .barber-opt').forEach(o=>{
-    o.addEventListener('click', ()=>{
-      state.barber = o.dataset.b;
-      document.querySelectorAll('#barberPick .barber-opt').forEach(x=>x.classList.toggle('selected', x===o));
-      state.slot = null; state.startMin = null;
-      updateSummary(); loadSlots(); checkStep2();
-    });
-  });
-  function checkStep2(){
-    document.getElementById('toStep3').disabled = !(state.barber && state.slot);
+  /** Paso 2 (fecha y hora): solo exige que haya una hora elegida -- el barbero se pide después. */
+  function checkFechaHora(){
+    document.getElementById('toStep3').disabled = !state.slot;
+    actualizarBarra();
+  }
+
+  /** Paso 3 (profesional): con "Cualquiera" preseleccionado, casi siempre ya queda habilitado. */
+  function checkProfesional(){
+    document.getElementById('toStep4').disabled = !state.barber;
     actualizarBarra();
   }
 
   document.querySelectorAll('[data-back]').forEach(btn=> btn.addEventListener('click', ()=> goToStep(parseInt(btn.dataset.back))));
-  document.getElementById('toStep3').addEventListener('click', ()=>{ goToStep(3); prefillBooking(); });
+  document.getElementById('toStep3').addEventListener('click', ()=>{ goToStep(3); avanzarAProfesional(); });
+  document.getElementById('toStep4').addEventListener('click', ()=>{ goToStep(4); prefillBooking(); });
 
   let payMethod = null;
   document.querySelectorAll('.pay-opt').forEach(o=>{
     o.addEventListener('click', ()=>{
       payMethod = o.dataset.pay;
       document.querySelectorAll('.pay-opt').forEach(x=>x.classList.toggle('selected', x===o));
-      checkStep3();
+      checkConfirmar();
     });
   });
   const nameInput = document.getElementById('cName');
   const phoneInput = document.getElementById('cPhone');
-  [nameInput, phoneInput].forEach(inp=> inp.addEventListener('input', checkStep3));
-  function checkStep3(){
+  [nameInput, phoneInput].forEach(inp=> inp.addEventListener('input', checkConfirmar));
+  function checkConfirmar(){
     document.getElementById('confirmBtn').disabled = !(nameInput.value.trim() && phoneInput.value.trim() && payMethod);
     actualizarBarra();
   }
@@ -3628,7 +3662,7 @@
 
     chatToggle();
     abrirReservas();
-    avanzarAHorarios();
+    avanzarAFechaHora();
 
     setTimeout(()=>{
       const bookDate = document.getElementById('bookDate');
@@ -3914,7 +3948,7 @@
     if(!phoneInput.value && user.phone) phoneInput.value = user.phone;
     const emailInput = document.getElementById('cEmail');
     if(!emailInput.value && user.email) emailInput.value = user.email;
-    checkStep3();
+    checkConfirmar();
   }
 
   /* ===== cambio de hora (uno solo, 4 horas de anticipación) ===== */
@@ -4556,7 +4590,7 @@
       card.querySelector('[data-agendar]').addEventListener('click', e=>{
         e.stopPropagation();
         selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min));
-        avanzarAHorarios();
+        avanzarAFechaHora();
       });
 
       // "Sumar" agrega el servicio y deja al cliente seguir eligiendo
@@ -4574,36 +4608,76 @@
   document.getElementById('svcBuscar')?.addEventListener('input', ()=>
     pintarListaServicios(catalog.services.length ? catalog.services : SVC_DEMO));
 
-  /* ---------- paso 2: barberos ---------- */
+  /* ---------- paso 3: profesional ----------
+     La fecha y hora ya quedaron elegidas en el paso anterior, así que
+     acá solo mostramos qué profesionales están REALMENTE libres a esa
+     hora exacta (nunca se puede elegir uno ocupado) y recalculamos el
+     reparto con planificarCitas() para las reservas de varios servicios. */
   function paintBarbers(){
     const lista = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
     const row = document.getElementById('barberPick');
+    const ocupacion = state.fecha ? ocupacionDelDia(state.fecha) : {};
+    const durTotal = state.duracion || 45;
 
     const opciones = [
-      { id:'any', name:'Cualquiera', initials:'★', nota:'El primero libre' },
-      ...lista.map(b=> ({ ...b, nota:'Ver horarios' })),
+      { id:'any', name:'Cualquiera', initials:'★', nota:'El primero libre', libre:true },
+      ...lista.map(b=>{
+        const libre = !state.fecha || state.startMin == null
+          || estaLibre(ocupacion[b.name], state.startMin, state.startMin + durTotal);
+        return { ...b, nota: libre ? 'Disponible' : 'No disponible a esta hora', libre };
+      }),
     ];
 
     row.innerHTML = opciones.map(o=>`
-      <div class="barber-opt ${state.barberId === o.id ? 'selected' : ''}" data-id="${o.id}" data-b="${o.name}">
+      <div class="barber-opt ${state.barberId === o.id ? 'selected' : ''} ${o.libre ? '' : 'no-disponible'}"
+           data-id="${o.id}" data-b="${o.name}">
         <div class="b-foto">${o.initials || o.name.slice(0,2).toUpperCase()}</div>
         <div class="b-name">${o.name}</div>
         <div class="b-libre">${o.nota}</div>
       </div>`).join('');
 
-    row.querySelectorAll('.barber-opt').forEach(o=>
+    row.querySelectorAll('.barber-opt:not(.no-disponible)').forEach(o=>
       o.addEventListener('click', ()=>{
         state.barber = o.dataset.b;
         state.barberId = o.dataset.id;
         row.querySelectorAll('.barber-opt').forEach(x=> x.classList.toggle('selected', x===o));
-        state.slot = null; state.startsAt = null; state.startMin = null;
-        updateSummary(); loadSlots(); checkStep2();
+
+        state.plan = planificarCitas(state.fecha, state.startMin);
+        pintarPlan(state.plan, state.fecha);
+
+        const aviso = document.getElementById('rvBarberoAviso');
+        const sinCupo = state.plan.length === 1 && state.plan[0]?.sinCupo;
+        if(aviso){
+          aviso.style.display = sinCupo ? '' : 'none';
+          aviso.textContent = sinCupo
+            ? 'Ese profesional ya no está disponible a esta hora. Elige otro, o vuelve atrás y prueba otro horario.'
+            : '';
+        }
+
+        updateSummary(); checkProfesional();
       }));
+  }
+
+  /** Entra al paso 3 (profesional): ya con fecha/hora fijas, arma la lista según disponibilidad real. */
+  function avanzarAProfesional(){
+    if(!state.barberId){ state.barber = 'Cualquiera'; state.barberId = 'any'; }
+    paintBarbers();
+    state.plan = planificarCitas(state.fecha, state.startMin);
+    pintarPlan(state.plan, state.fecha);
+    updateSummary();
+    checkProfesional();
+    document.getElementById('vistaReservas').scrollTop = 0;
   }
 
   /* ---------- paso 2: días ---------- */
   const DIAS_CORTO = ['dom','lun','mar','mié','jue','vie','sáb'];
   const MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio',
+    'agosto','septiembre','octubre','noviembre','diciembre'];
+
+  // cuántos días hacia adelante ya se avanzó con "›" -- siempre múltiplo de 7,
+  // para que cada página sea una semana completa, como en un calendario real.
+  let rvDiasOffset = 0;
 
   function pintarDias(){
     const cont = document.getElementById('rvDias');
@@ -4612,13 +4686,15 @@
     const hoy = new Date();
     const sel = document.getElementById('bookDate').value || hoy.toISOString().slice(0,10);
     let html = '';
+    let primerDia = null;
 
     for(let i = 0; i < 14; i++){
       const d = new Date(hoy);
-      d.setDate(hoy.getDate() + i);
+      d.setDate(hoy.getDate() + rvDiasOffset + i);
+      if(i === 0) primerDia = d;
       const iso = d.toISOString().slice(0,10);
       const cerrado = !horarioDelDia(iso);
-      const etiqueta = i === 0 ? 'hoy' : i === 1 ? 'mañana' : DIAS_CORTO[d.getDay()];
+      const etiqueta = rvDiasOffset === 0 && i === 0 ? 'hoy' : rvDiasOffset === 0 && i === 1 ? 'mañana' : DIAS_CORTO[d.getDay()];
 
       html += `<div class="rv-dia ${iso===sel?'on':''} ${cerrado?'cerrado':''}" data-d="${iso}">
         <div class="rv-dia-nom">${etiqueta}</div>
@@ -4628,14 +4704,28 @@
     }
 
     cont.innerHTML = html;
+
+    const mesLbl = document.getElementById('rvDiasMes');
+    if(mesLbl && primerDia) mesLbl.textContent = `${MESES_LARGO[primerDia.getMonth()]} ${primerDia.getFullYear()}`;
+    const btnPrev = document.getElementById('rvDiasPrev');
+    if(btnPrev) btnPrev.disabled = rvDiasOffset <= 0;
     cont.querySelectorAll('.rv-dia:not(.cerrado)').forEach(el=>
       el.addEventListener('click', ()=>{
         document.getElementById('bookDate').value = el.dataset.d;
         cont.querySelectorAll('.rv-dia').forEach(x=> x.classList.toggle('on', x===el));
         state.slot = null; state.startsAt = null; state.startMin = null;
-        updateSummary(); loadSlots(); checkStep2();
+        updateSummary(); loadSlots(); checkFechaHora();
       }));
   }
+
+  document.getElementById('rvDiasPrev')?.addEventListener('click', ()=>{
+    rvDiasOffset = Math.max(0, rvDiasOffset - 7);
+    pintarDias();
+  });
+  document.getElementById('rvDiasNext')?.addEventListener('click', ()=>{
+    rvDiasOffset += 7;
+    pintarDias();
+  });
 
   /* ---------- paso 2: horarios por franja ---------- */
   function pintarFranjas(slots, fecha){
@@ -4647,16 +4737,16 @@
     }
 
     const franjas = [
-      { nom:'Mañana',    ic:'☀', desde:0,     hasta:12*60 },
-      { nom:'Tarde',     ic:'🌤', desde:12*60, hasta:17*60 },
-      { nom:'Atardecer', ic:'🌙', desde:17*60, hasta:24*60 },
+      { nom:'Mañana', desde:0,     hasta:12*60 },
+      { nom:'Tarde',  desde:12*60, hasta:17*60 },
+      { nom:'Noche',  desde:17*60, hasta:24*60 },
     ];
 
     cont.innerHTML = franjas.map(f=>{
       const dentro = slots.filter(s=> s.min >= f.desde && s.min < f.hasta);
       if(!dentro.length) return '';
       return `<div>
-        <div class="rv-franja-tit">${f.ic} ${f.nom} <span class="cnt">${dentro.length} disponibles</span></div>
+        <div class="rv-franja-tit">${f.nom} <span class="cnt">${dentro.length} disponibles</span></div>
         <div class="slots">
           ${dentro.map(s=> `<div class="slot ${s.alcanza === false ? 'parcial' : ''}"
             data-min="${s.min}" data-label="${s.label}" data-start="${s.startsAt||''}" data-barber="${s.barberId||''}"
@@ -4673,39 +4763,10 @@
         state.slotLabel = fmtFechaLarga(fecha) + ' · ' + o.dataset.label;
         state.slot = state.slotLabel;
         state.fecha = fecha;
-        if(o.dataset.barber && (!state.barberId || state.barberId === 'any')) state.barberId = o.dataset.barber;
-
-        // Si aún no eligió barbero, tomamos "Cualquiera": nadie debería
-        // quedar trabado por no haber marcado algo opcional.
-        if(!state.barber){
-          state.barber = 'Cualquiera';
-          state.barberId = state.barberId || 'any';
-          document.querySelectorAll('#barberPick .barber-opt').forEach(x=>
-            x.classList.toggle('selected', x.dataset.id === 'any'));
-        }
 
         cont.querySelectorAll('.slot').forEach(x=> x.classList.toggle('selected', x===o));
 
-        // repartimos las citas entre los barberos disponibles
-        state.plan = planificarCitas(fecha, state.startMin);
-        pintarPlan(state.plan, fecha);
-        if(state.plan.length > 1){
-          const validas = state.plan.filter(x=> !x.sinCupo);
-          const horas = [...new Set(validas.map(x=> x.label))];
-          state.slotLabel = fmtFechaLarga(fecha) + ' · ' + horas.join(' y ');
-          state.slot = state.slotLabel;
-        }
-
-        updateSummary(); checkStep2();
-
-        // con la hora elegida ya no falta nada aquí: pasamos a confirmar
-        if(state.barber && state.slot){
-          setTimeout(()=>{
-            goToStep(3);
-            prefillBooking();
-            document.getElementById('vistaReservas').scrollTop = 0;
-          }, 320);
-        }
+        updateSummary(); checkFechaHora();
       }));
   }
 
@@ -4740,19 +4801,7 @@
     if(detalle) detalle.textContent = 'Sin horarios en los próximos 14 días';
   }
 
-  document.getElementById('rvPronto')?.addEventListener('click', ()=>{
-    // si aún no eligió barbero, tomamos el primero disponible
-    if(!state.barberId){
-      const any = document.querySelector('.barber-opt[data-id="any"]');
-      if(any){
-        state.barber = any.dataset.b;
-        state.barberId = 'any';
-        document.querySelectorAll('.barber-opt').forEach(x=> x.classList.toggle('selected', x===any));
-        updateSummary();
-      }
-    }
-    buscarPrimerHorario(true);
-  });
+  document.getElementById('rvPronto')?.addEventListener('click', ()=> buscarPrimerHorario(true));
 
   /* ---------- cálculo de horarios ---------- */
   async function calcularSlots(fecha){
@@ -4864,10 +4913,15 @@
       btn.disabled = !state.svc;
       btn.onclick = ()=> goToStep(2);
     } else if(paso === 2){
-      svcTxt.textContent = state.slot || 'Elige barbero y hora';
+      svcTxt.textContent = state.slot || 'Elige fecha y hora';
       btn.textContent = 'Continuar';
-      btn.disabled = !(state.barber && state.slot);
-      btn.onclick = ()=>{ goToStep(3); prefillBooking(); };
+      btn.disabled = !state.slot;
+      btn.onclick = ()=>{ goToStep(3); avanzarAProfesional(); };
+    } else if(paso === 3){
+      svcTxt.textContent = state.barber || 'Elige profesional';
+      btn.textContent = 'Continuar';
+      btn.disabled = !state.barber;
+      btn.onclick = ()=>{ goToStep(4); prefillBooking(); };
     } else {
       svcTxt.textContent = state.slot || '';
       btn.textContent = 'Confirmar';
@@ -4881,10 +4935,10 @@
     const activo = document.querySelector('.step.active');
     const n = Number(activo?.dataset.step || 1);
     const el = document.getElementById('rvPaso');
-    if(el) el.textContent = `Paso ${n} de 3`;
+    if(el) el.textContent = `Paso ${n} de 4`;
     const bar = document.getElementById('rvBar');
-    if(bar) bar.style.width = (n/3*100) + '%';
-    if(n === 3) pintarRecap();
+    if(bar) bar.style.width = (n/4*100) + '%';
+    if(n === 4) pintarRecap();
     actualizarBarra();
   }
 
@@ -4966,46 +5020,13 @@
    * Avanza al paso de horarios. Si el barbero ya está elegido, no lo
    * volvemos a preguntar: cargamos directamente los horarios disponibles.
    */
-  function avanzarAHorarios(){
+  /** Entra al paso 2 (fecha y hora) -- el barbero se elige después, en el paso 3. */
+  function avanzarAFechaHora(){
     goToStep(2);
-    pintarBarbers();
     pintarDias();
     loadSlots();
     buscarPrimerHorario(false);
-
-    // si venía con barbero elegido, saltamos directo a los horarios
-    if(state.barberId){
-      const bloque = document.getElementById('slotPick');
-      setTimeout(()=> bloque?.scrollIntoView({behavior:'smooth', block:'center'}), 350);
-    }
     document.getElementById('vistaReservas').scrollTop = 0;
-  }
-
-  function pintarBarbers(){
-    const zona = document.getElementById('rvBarberoZona');
-    const compacto = document.getElementById('rvBarberoCompacto');
-
-    // Si ya eligió barbero antes, no se lo volvemos a preguntar:
-    // mostramos solo una línea con la opción de cambiarlo.
-    if(state.barberId){
-      zona.style.display = 'none';
-      compacto.style.display = '';
-      compacto.innerHTML = `<span>Te atenderá <b>${state.barber}</b></span>
-        <button class="rv-cambiar" data-cambiar-barbero>Cambiar barbero</button>`;
-      compacto.querySelector('[data-cambiar-barbero]').addEventListener('click', ()=>{
-        state.barber = null; state.barberId = null;
-        state.slot = null; state.startsAt = null; state.startMin = null;
-        compacto.style.display = 'none';
-        zona.style.display = '';
-        paintBarbers();
-        updateSummary(); loadSlots(); checkStep2();
-      });
-      return;
-    }
-
-    zona.style.display = '';
-    compacto.style.display = 'none';
-    paintBarbers();
   }
 
   /* ==========================================================
@@ -5257,7 +5278,7 @@
       el.addEventListener('click', ()=>{
         selectService(el.dataset.svc, el.dataset.price, el.dataset.svcId, Number(el.dataset.min));
         abrirReservas();
-        avanzarAHorarios();
+        avanzarAFechaHora();
       }));
   }
 
