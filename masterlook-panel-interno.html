@@ -3701,6 +3701,18 @@
       const dia = new Date(fecha + 'T12:00:00').getDay();
       const cierre = dia === 6 ? 18*60 : 20*60;
 
+      // horario semanal propio del barbero, si lo configuraron desde "Equipo"
+      const bloquesBarbero = barbero?.schedules || [];
+      if(bloquesBarbero.length){
+        const hoyBloque = bloquesBarbero.find(s=> s.weekday === dia);
+        if(!hoyBloque){
+          ocupados.push([0, 24*60]);
+        } else {
+          if(hoyBloque.startMin > 0) ocupados.push([0, hoyBloque.startMin]);
+          if(hoyBloque.endMin < 24*60) ocupados.push([hoyBloque.endMin, 24*60]);
+        }
+      }
+
       const libres = [];
       let bloqueadosPorHora = 0, bloqueadosPorCita = 0;
 

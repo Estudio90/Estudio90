@@ -5064,6 +5064,21 @@
       });
     });
 
+    // horario semanal propio de cada barbero, configurado desde el panel.
+    // si un barbero no tiene horario propio configurado (schedules vacío),
+    // sigue el horario general del local como hasta ahora.
+    (catalog.barbers.length ? catalog.barbers : BARB_DEMO).forEach(b=>{
+      const bloques = b.schedules || [];
+      if(!bloques.length) return;
+      const hoy = bloques.find(s=> s.weekday === diaSemana);
+      if(!hoy){
+        (mapa[b.name] = mapa[b.name] || []).push([0, 24*60]);
+        return;
+      }
+      if(hoy.startMin > 0) (mapa[b.name] = mapa[b.name] || []).push([0, hoy.startMin]);
+      if(hoy.endMin < 24*60) (mapa[b.name] = mapa[b.name] || []).push([hoy.endMin, 24*60]);
+    });
+
     return mapa;
   }
 
