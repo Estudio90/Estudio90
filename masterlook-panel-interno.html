@@ -3704,7 +3704,7 @@
       const libres = [];
       let bloqueadosPorHora = 0, bloqueadosPorCita = 0;
 
-      for(let min = 10*60; min + dur <= cierre; min += 30){
+      for(let min = 10*60; min + dur <= cierre; min += 60){
         const choca = ocupados.some(([ini,fin])=> min < fin && (min + dur) > ini);
         const muyPronto = esHoy && min < ahora + 60;
         if(choca){ bloqueadosPorCita++; continue; }

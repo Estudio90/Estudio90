@@ -4840,8 +4840,12 @@
     const esHoy = fecha === new Date().toISOString().slice(0,10);
     const ahora = new Date().getHours()*60 + new Date().getMinutes();
 
+    // solo horas en punto: si el local abre en un minuto suelto (ej. 10:30),
+    // el primer bloque ofrecido es la siguiente hora exacta
+    const inicioGrilla = Math.ceil(horario.abre / 60) * 60;
+
     const libres = [];
-    for(let min = horario.abre; min + durMin <= cierre; min += 30){
+    for(let min = inicioGrilla; min + durMin <= cierre; min += 60){
       if(esHoy && min < ahora + 60) continue;
 
       // barberos realmente libres en ese bloque
@@ -5099,7 +5103,7 @@
       let colocada = false;
 
       // buscamos desde la hora elegida hacia adelante
-      for(let min = minInicial; min + u.minutes <= cierre && !colocada; min += 30){
+      for(let min = minInicial; min + u.minutes <= cierre && !colocada; min += 60){
         for(const b of orden){
           if(estaLibre(usado[b.name], min, min + u.minutes)){
             usado[b.name].push([min, min + u.minutes]);
