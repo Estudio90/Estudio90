@@ -484,6 +484,23 @@
   .cx-navbtn.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
   .cx-navbtn2.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
   .cx-panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(20,19,17,.05);}
+
+  /* ===== vista de colores del sitio, con preview en vivo ===== */
+  .col-layout{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;}
+  .col-editor{flex:0 0 320px;max-width:100%;}
+  .col-preview{flex:1;min-width:320px;overflow:hidden;}
+  .col-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .col-preview-toggle{display:flex;gap:6px;}
+  .col-preview-tema{padding:6px 13px;border-radius:99px;border:1px solid var(--border);background:#fff;
+    font-size:12px;font-weight:600;cursor:pointer;color:#6c6b74;font-family:inherit;}
+  .col-preview-tema.on{background:#141311;color:#fff;border-color:#141311;}
+  .col-preview-frames{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;}
+  .col-preview-item{flex-shrink:0;display:flex;flex-direction:column;gap:6px;}
+  .col-preview-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c6b74;}
+  .col-preview-frame{border:1px solid var(--border);border-radius:12px;background:#fff;display:block;}
+  @media (max-width:760px){
+    .col-editor{flex:1 1 100%;}
+  }
   .cx-search{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:13.5px;margin-bottom:16px;font-family:inherit;}
   .cx-pros{display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));gap:12px;}
   .cx-pro{background:#f8f8fa;border:1px solid var(--border);border-radius:9px;padding:13px;display:flex;align-items:center;gap:12px;}
@@ -1107,6 +1124,7 @@
           <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
           <button class="user-menu-item" id="btnArco" style="display:none;">📩 Derechos ARCO</button>
           <button class="user-menu-item admin-only" id="btnPromos" style="display:none;">🏷️ Promociones</button>
+          <button class="user-menu-item admin-only" id="btnColores" style="display:none;">🎨 Colores del sitio</button>
           <button class="user-menu-item admin-only" id="btnIntelligence" style="display:none;">🧠 Masterlook Intelligence</button>
           <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
           <div class="user-menu-sep"></div>
@@ -1133,6 +1151,7 @@
       <button class="menu-panel-item" data-target="btnResenas" style="display:none;">⭐ Reseñas</button>
       <button class="menu-panel-item" data-target="btnArco" style="display:none;">📩 Derechos ARCO</button>
       <button class="menu-panel-item admin-only" data-target="btnPromos" style="display:none;">🏷️ Promociones</button>
+      <button class="menu-panel-item admin-only" data-target="btnColores" style="display:none;">🎨 Colores del sitio</button>
       <button class="menu-panel-item admin-only" data-target="btnIntelligence" style="display:none;">🧠 Masterlook Intelligence</button>
       <button class="menu-panel-item" data-target="btnConfig">⚙ Configurar</button>
     </nav>
@@ -1334,6 +1353,71 @@
         <select id="cfgBarberoHorario" class="mg-input"></select>
         <div class="mg-week" id="cfgHorario"></div>
         <button class="mg-btn solid full" id="cfgGuardarHorario">Guardar horario</button>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: COLORES DEL SITIO (con vista previa en vivo) ===== -->
+    <div id="vistaColores" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Colores del sitio</h2>
+          <p class="cx-sub">Color de acento (botones) y color del texto del sitio público, con vista previa en vivo de celular y computador.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="colVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="col-layout">
+        <div class="cx-panel col-editor">
+          <h3 style="font-size:14px;margin:0 0 4px;">Modo oscuro (el de por defecto)</h3>
+          <div class="mg-two">
+            <div>
+              <label class="mg-label" style="font-weight:400;">Color de acento (botones)</label>
+              <input type="color" id="cfgColorAcentoOscuro" class="mg-input" style="height:42px;padding:4px;">
+            </div>
+            <div>
+              <label class="mg-label" style="font-weight:400;">Color del texto</label>
+              <input type="color" id="cfgColorTextoOscuro" class="mg-input" style="height:42px;padding:4px;">
+            </div>
+          </div>
+
+          <h3 style="font-size:14px;margin:20px 0 4px;">Modo claro</h3>
+          <div class="mg-two">
+            <div>
+              <label class="mg-label" style="font-weight:400;">Color de acento (botones)</label>
+              <input type="color" id="cfgColorAcentoClaro" class="mg-input" style="height:42px;padding:4px;">
+            </div>
+            <div>
+              <label class="mg-label" style="font-weight:400;">Color del texto</label>
+              <input type="color" id="cfgColorTextoClaro" class="mg-input" style="height:42px;padding:4px;">
+            </div>
+          </div>
+
+          <button class="mg-btn solid full" id="cfgGuardarColores" style="margin-top:18px;">Guardar colores</button>
+          <button class="mg-btn ghost full" id="cfgRestablecerColores" style="margin-top:8px;">Restablecer a los colores originales</button>
+        </div>
+
+        <div class="cx-panel col-preview">
+          <div class="col-preview-head">
+            <h3 style="font-size:14px;margin:0;">Vista previa en vivo</h3>
+            <div class="col-preview-toggle">
+              <button class="col-preview-tema on" data-col-tema="oscuro">Oscuro</button>
+              <button class="col-preview-tema" data-col-tema="claro">Claro</button>
+            </div>
+          </div>
+          <p class="mg-note" style="margin:6px 0 14px;">Los cambios se ven al instante aquí abajo, antes de guardar.</p>
+          <div class="col-preview-frames">
+            <div class="col-preview-item">
+              <span class="col-preview-label">Celular</span>
+              <iframe class="col-preview-frame" src="masterlook-sitio.html" style="width:320px;height:600px;"></iframe>
+            </div>
+            <div class="col-preview-item">
+              <span class="col-preview-label">Computador</span>
+              <iframe class="col-preview-frame" src="masterlook-sitio.html" style="width:960px;height:600px;"></iframe>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3604,7 +3688,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
+      ['vistaComisiones','vistaColores','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -4181,9 +4265,109 @@
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
+  /* ---------- Página "Colores del sitio": propia, con vista previa en vivo de celular y computador ---------- */
+  const COLORES_ORIGINALES = {
+    colorAcentoOscuro:'#C9A76A', colorTextoOscuro:'#F2F0EC',
+    colorAcentoClaro:'#96731F', colorTextoClaro:'#17171B',
+  };
+  let colTemaPreview = 'oscuro';
+
+  async function mostrarColores(){
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaColores').style.display = '';
+    ocultarFlotante(true);
+    await cargarColoresGuardados();
+    colActualizarPreview();
+  }
+
+  function colVolverAgenda(){
+    document.getElementById('vistaColores').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  async function cargarColoresGuardados(){
+    try{
+      const doc = await db.collection('settings').doc('negocio').get();
+      const d = doc.exists ? doc.data() : {};
+      document.getElementById('cfgColorAcentoOscuro').value = d.colorAcentoOscuro || COLORES_ORIGINALES.colorAcentoOscuro;
+      document.getElementById('cfgColorTextoOscuro').value = d.colorTextoOscuro || COLORES_ORIGINALES.colorTextoOscuro;
+      document.getElementById('cfgColorAcentoClaro').value = d.colorAcentoClaro || COLORES_ORIGINALES.colorAcentoClaro;
+      document.getElementById('cfgColorTextoClaro').value = d.colorTextoClaro || COLORES_ORIGINALES.colorTextoClaro;
+    }catch(e){}
+  }
+
+  /** Aplica los colores que se están editando (todavía sin guardar) directo
+   *  al <html> de cada iframe de vista previa, para que el cambio se vea al instante. */
+  function colActualizarPreview(){
+    const acento = colTemaPreview === 'oscuro'
+      ? document.getElementById('cfgColorAcentoOscuro').value
+      : document.getElementById('cfgColorAcentoClaro').value;
+    const texto = colTemaPreview === 'oscuro'
+      ? document.getElementById('cfgColorTextoOscuro').value
+      : document.getElementById('cfgColorTextoClaro').value;
+
+    document.querySelectorAll('.col-preview-frame').forEach(frame=>{
+      try{
+        const doc = frame.contentDocument;
+        if(!doc || !doc.documentElement) return;
+        if(colTemaPreview === 'claro') doc.documentElement.setAttribute('data-theme', 'light');
+        else doc.documentElement.removeAttribute('data-theme');
+        doc.documentElement.style.setProperty('--oro', acento);
+        doc.documentElement.style.setProperty('--hueso', texto);
+      }catch(e){}
+    });
+  }
+
+  document.querySelectorAll('.col-preview-frame').forEach(frame=>
+    frame.addEventListener('load', colActualizarPreview));
+
+  document.querySelectorAll('#cfgColorAcentoOscuro, #cfgColorTextoOscuro, #cfgColorAcentoClaro, #cfgColorTextoClaro').forEach(inp=>
+    inp.addEventListener('input', colActualizarPreview));
+
+  document.querySelectorAll('.col-preview-tema').forEach(b=>
+    b.addEventListener('click', ()=>{
+      colTemaPreview = b.dataset.colTema;
+      document.querySelectorAll('.col-preview-tema').forEach(x=> x.classList.toggle('on', x===b));
+      colActualizarPreview();
+    }));
+
+  document.getElementById('cfgGuardarColores').addEventListener('click', async ()=>{
+    const colorAcentoOscuro = document.getElementById('cfgColorAcentoOscuro').value;
+    const colorTextoOscuro = document.getElementById('cfgColorTextoOscuro').value;
+    const colorAcentoClaro = document.getElementById('cfgColorAcentoClaro').value;
+    const colorTextoClaro = document.getElementById('cfgColorTextoClaro').value;
+    try{
+      await db.collection('settings').doc('negocio').set(
+        { colorAcentoOscuro, colorTextoOscuro, colorAcentoClaro, colorTextoClaro }, { merge:true });
+      showToast('Colores del sitio actualizados');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  document.getElementById('cfgRestablecerColores').addEventListener('click', async ()=>{
+    document.getElementById('cfgColorAcentoOscuro').value = COLORES_ORIGINALES.colorAcentoOscuro;
+    document.getElementById('cfgColorTextoOscuro').value = COLORES_ORIGINALES.colorTextoOscuro;
+    document.getElementById('cfgColorAcentoClaro').value = COLORES_ORIGINALES.colorAcentoClaro;
+    document.getElementById('cfgColorTextoClaro').value = COLORES_ORIGINALES.colorTextoClaro;
+    colActualizarPreview();
+    try{
+      await db.collection('settings').doc('negocio').set(COLORES_ORIGINALES, { merge:true });
+      showToast('Colores restablecidos a los originales');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  document.getElementById('btnColores').addEventListener('click', mostrarColores);
+  document.getElementById('colVolver').addEventListener('click', colVolverAgenda);
+
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4209,7 +4393,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4334,7 +4518,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4839,6 +5023,7 @@
 
   function mostrarComisiones(ver){
     document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaProductos').style.display = 'none';
@@ -4905,6 +5090,7 @@
   function mostrarVistaBarbero(){
     document.getElementById('vistaAgenda').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
@@ -5446,6 +5632,7 @@
 
   function mostrarCursos(){
     document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
     document.getElementById('vistaProductos').style.display = 'none';
@@ -5867,7 +6054,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5891,7 +6078,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7291,7 +7478,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
