@@ -866,13 +866,18 @@
   .rv-cat-toggle{font-size:1rem; font-weight:400; color:var(--text-mid); flex-shrink:0;}
   .rv-cat-body{padding:14px;}
   .rv-cat-seccion.cerrada .rv-cat-body{display:none;}
-  .svc-pick-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .svc-pick-grid{display:flex; flex-direction:column; gap:10px;}
 
-  /* tarjetas de servicio: compactas y de texto plano, sin globos grandes */
-  .svc-opt{display:block; border:1px solid var(--border); border-radius:10px; padding:12px 13px;
+  /* tarjetas de servicio: fila con foto a la izquierda, estilo catálogo de reservas */
+  .svc-opt{display:flex; align-items:flex-start; gap:13px; border:1px solid var(--border); border-radius:10px; padding:13px;
     cursor:pointer; background:var(--panel); transition:border-color .18s, box-shadow .18s;}
   .svc-opt:hover{border-color:var(--border-strong); box-shadow:var(--shadow-sm);}
   .svc-opt.selected{border-color:var(--oro); box-shadow:0 0 0 1px var(--oro);}
+  .svc-foto-mini{width:72px; height:72px; border-radius:10px; background-color:var(--panel-2);
+    background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; color:var(--text-low);}
+  .svc-foto-mini svg{width:26px; height:26px;}
+  .svc-info{flex:1; min-width:0;}
   .svc-top{display:block;}
   /* nombres con prefijo "svcr" (servicio-reserva): las tarjetas de la home
      ya usan .svc-nombre/.svc-desc/.svc-pie/.svc-precio con otro estilo
@@ -888,7 +893,6 @@
   .svcr-desc{font-size:.79rem; color:var(--text-mid); line-height:1.5; margin-top:8px; height:auto;
     max-height:0; overflow:hidden; display:block; transition:max-height .3s ease, margin .3s ease;}
   .svc-opt.abierto .svcr-desc{max-height:220px;}
-  .svcr-pie{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:0; flex-wrap:wrap;}
   .svc-vacio{text-align:center; padding:36px 16px; color:var(--text-mid); font-size:.88rem;}
 
   /* reparto de citas entre barberos */
@@ -933,7 +937,7 @@
     font-weight:600; cursor:pointer; font-family:inherit;}
   .rv-el-go:hover{opacity:.88;}
 
-  .svc-botones{display:flex; gap:6px; align-items:center;}
+  .svc-botones{display:flex; flex-direction:column; gap:6px; align-items:stretch; flex-shrink:0; justify-content:center;}
   .svc-sumar{background:var(--panel); color:var(--text-hi); border:1px solid var(--border-strong);
     padding:6px 11px; border-radius:8px; font-size:.72rem; font-weight:600;
     cursor:pointer; font-family:inherit; white-space:nowrap;}
@@ -947,13 +951,14 @@
   .rv-modo{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:20px;}
   .rv-modo-btn{display:flex; align-items:center; gap:11px; text-align:left; padding:13px 15px;
     border:1px solid var(--border); border-radius:13px; background:var(--panel);
-    cursor:pointer; font-family:inherit; color:var(--text-mid);}
+    cursor:pointer; font-family:inherit; color:var(--text-mid); width:100%;}
   .rv-modo-btn:hover{border-color:var(--border-strong);}
   .rv-modo-btn.on{border-color:var(--oro); background:var(--oro-tenue); color:var(--oro);}
-  .rv-modo-ic{font-size:1.1rem; flex-shrink:0;}
-  .rv-modo-btn span:last-child{display:flex; flex-direction:column; line-height:1.3; min-width:0;}
+  .rv-modo-ic{flex-shrink:0; display:flex;}
+  .rv-modo-txt{display:flex; flex-direction:column; line-height:1.3; min-width:0; flex:1;}
   .rv-modo-btn b{font-size:.88rem;}
   .rv-modo-btn small{font-size:.72rem; opacity:.7;}
+  .rv-modo-chev{flex-shrink:0; display:flex; opacity:.5;}
 
   .rv-elegido{background:var(--panel-2); border-radius:11px; padding:12px 14px; font-size:.86rem;
     margin:14px 0 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
@@ -965,7 +970,7 @@
     padding:6px 13px; border-radius:8px; font-size:.72rem; font-weight:600;
     cursor:pointer; font-family:inherit; white-space:nowrap;}
   .svc-agendar:hover{opacity:.87;}
-  .svc-mas{background:none; border:none; padding:0; font-size:.72rem; font-weight:600;
+  .svc-mas{display:block; background:none; border:none; padding:0; margin-top:8px; font-size:.72rem; font-weight:600;
     color:var(--text-mid); cursor:pointer; font-family:inherit; text-decoration:underline;}
   .svc-mas:hover{color:var(--text-hi);}
 
@@ -1068,8 +1073,6 @@
     #barberPick{min-width:0;}
     .barbers{grid-template-columns:repeat(4,1fr)!important;}
     .rv-modo{grid-template-columns:1fr;}
-    .svcr-pie{flex-wrap:wrap;}
-    .svc-agendar{flex:1;}
     .b-foto{width:30px; height:30px; font-size:.68rem;}
     .barber-opt{min-height:76px; padding:8px 4px;}
     .slots{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));}
@@ -1380,8 +1383,10 @@
     .svc-pick{gap:8px;}
     .rv-cat-head{padding:11px 14px; font-size:.68rem;}
     .rv-cat-body{padding:10px;}
-    .svc-pick-grid{grid-template-columns:1fr; gap:8px;}
-    .svc-opt{padding:11px 12px; border-radius:10px;}
+    .svc-pick-grid{gap:8px;}
+    .svc-opt{padding:11px 12px; border-radius:10px; gap:10px;}
+    .svc-foto-mini{width:56px; height:56px; border-radius:8px;}
+    .svc-foto-mini svg{width:20px; height:20px;}
     .svcr-nombre{font-size:.82rem;}
     .svc-chips{gap:5px; margin-top:4px;}
     .svc-chip{font-size:.68rem;}
@@ -1417,7 +1422,6 @@
     .rv-elegido{padding:9px 11px; font-size:.76rem; margin:9px 0 12px; border-radius:9px;}
     .rv-cambiar{font-size:.7rem;}
 
-    .svcr-pie{margin-top:9px;}
     .svc-agendar{padding:5px 11px; font-size:.68rem;}
     .svc-mas{font-size:.68rem;}
 
@@ -2102,12 +2106,14 @@
 
             <div class="rv-modo">
               <button class="rv-modo-btn on" data-modo="servicio">
-                <span class="rv-modo-ic">✂</span>
-                <span><b>Por servicio</b><small>Elige qué te harás</small></span>
+                <span class="rv-modo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></span>
+                <span class="rv-modo-txt"><b>Por servicio</b><small>Elige qué te harás</small></span>
+                <span class="rv-modo-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
               </button>
               <button class="rv-modo-btn" data-modo="barbero">
-                <span class="rv-modo-ic">👤</span>
-                <span><b>Por barbero</b><small>Elige con quién</small></span>
+                <span class="rv-modo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                <span class="rv-modo-txt"><b>Por barbero</b><small>Elige con quién</small></span>
+                <span class="rv-modo-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
               </button>
             </div>
 
@@ -4510,23 +4516,25 @@
   }
 
   function tarjetaServicio(s){
+    const fotoEstilo = s.photoUrl ? `background-image:url('${s.photoUrl}');` : '';
     return `
       <div class="svc-opt ${state.serviceId === s.id ? 'selected' : ''}"
            data-id="${s.id}" data-svc="${s.name}" data-price="${s.priceClp}" data-min="${s.minutes}">
-        <div class="svc-top">
-          <div class="svcr-nombre">${s.featured ? '★ ' : ''}${s.name}</div>
-          <div class="svc-chips">
-            <span class="svc-chip">${dur(s.minutes)}</span>
+        <div class="svc-foto-mini" style="${fotoEstilo}">${s.photoUrl ? '' : iconoDeServicio(s)}</div>
+        <div class="svc-info">
+          <div class="svc-top">
+            <div class="svcr-nombre">${s.featured ? '★ ' : ''}${s.name}</div>
+            <div class="svc-chips">
+              <span class="svc-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${dur(s.minutes)}</span>
+            </div>
+            <div class="svcr-precio">${money(s.priceClp)}</div>
           </div>
-          <div class="svcr-precio">${money(s.priceClp)}</div>
+          ${s.description ? `<div class="svcr-desc">${s.description}</div>` : ''}
+          ${s.description ? '<button class="svc-mas" data-mas>Más información ›</button>' : ''}
         </div>
-        ${s.description ? `<div class="svcr-desc">${s.description}</div>` : ''}
-        <div class="svcr-pie">
-          ${s.description ? '<button class="svc-mas" data-mas>Más información</button>' : '<span></span>'}
-          <div class="svc-botones">
-            <button class="svc-sumar" data-sumar>＋ Sumar</button>
-            <button class="svc-agendar" data-agendar>Agendar servicio</button>
-          </div>
+        <div class="svc-botones">
+          <button class="svc-agendar" data-agendar>Seleccionar</button>
+          <button class="svc-sumar" data-sumar>＋ Sumar</button>
         </div>
       </div>`;
   }
