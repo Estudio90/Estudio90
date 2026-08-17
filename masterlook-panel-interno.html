@@ -494,12 +494,17 @@
   .col-preview-tema{padding:6px 13px;border-radius:99px;border:1px solid var(--border);background:#fff;
     font-size:12px;font-weight:600;cursor:pointer;color:#6c6b74;font-family:inherit;}
   .col-preview-tema.on{background:#141311;color:#fff;border-color:#141311;}
-  .col-preview-frames{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;}
-  .col-preview-item{flex-shrink:0;display:flex;flex-direction:column;gap:6px;}
+  .col-preview-frames{display:flex;gap:16px;align-items:flex-start;}
+  .col-preview-item{flex-shrink:0;width:220px;display:flex;flex-direction:column;gap:6px;max-width:100%;}
+  .col-preview-item-pc{flex:1;width:auto;min-width:0;}
   .col-preview-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c6b74;}
-  .col-preview-frame{border:1px solid var(--border);border-radius:12px;background:#fff;display:block;}
+  /* la "ventana" recorta el iframe escalado, para que quepa entero sin scroll ni recortes */
+  .col-preview-slot{overflow:hidden;border:1px solid var(--border);border-radius:12px;background:#fff;max-width:100%;}
+  .col-preview-frame{border:none;display:block;}
   @media (max-width:760px){
     .col-editor{flex:1 1 100%;}
+    .col-preview-frames{flex-direction:column;}
+    .col-preview-item-pc{width:100%;}
   }
   .cx-search{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:13.5px;margin-bottom:16px;font-family:inherit;}
   .cx-pros{display:grid;grid-template-columns:repeat(auto-fill,minmax(390px,1fr));gap:12px;}
@@ -1410,11 +1415,17 @@
           <div class="col-preview-frames">
             <div class="col-preview-item">
               <span class="col-preview-label">Celular</span>
-              <iframe class="col-preview-frame" src="masterlook-sitio.html" style="width:320px;height:600px;"></iframe>
+              <div class="col-preview-slot" id="colSlotCelular">
+                <iframe class="col-preview-frame" id="colFrameCelular" src="masterlook-sitio.html"
+                  style="width:390px;height:780px;transform-origin:top left;"></iframe>
+              </div>
             </div>
-            <div class="col-preview-item">
+            <div class="col-preview-item col-preview-item-pc">
               <span class="col-preview-label">Computador</span>
-              <iframe class="col-preview-frame" src="masterlook-sitio.html" style="width:960px;height:600px;"></iframe>
+              <div class="col-preview-slot" id="colSlotPc">
+                <iframe class="col-preview-frame" id="colFramePc" src="masterlook-sitio.html"
+                  style="width:1280px;height:800px;transform-origin:top left;"></iframe>
+              </div>
             </div>
           </div>
         </div>
@@ -4283,7 +4294,33 @@
     ocultarFlotante(true);
     await cargarColoresGuardados();
     colActualizarPreview();
+    colEscalarPreviews();
   }
+
+  /** Encoge cada iframe con CSS scale para que quepa entero en su caja, sin
+   *  scroll ni recortes -- el iframe sigue teniendo su ancho real por dentro
+   *  (así se disparan los mismos estilos responsivos que en el sitio de verdad),
+   *  solo se ve más chico desde afuera. */
+  function colEscalarUno(idSlot, idFrame, anchoReal, altoReal){
+    const slot = document.getElementById(idSlot);
+    const frame = document.getElementById(idFrame);
+    if(!slot || !frame) return;
+    const disponible = slot.parentElement.clientWidth;
+    if(!disponible) return;
+    const escala = Math.min(1, disponible / anchoReal);
+    frame.style.transform = `scale(${escala})`;
+    slot.style.width = (anchoReal * escala) + 'px';
+    slot.style.height = (altoReal * escala) + 'px';
+  }
+
+  function colEscalarPreviews(){
+    colEscalarUno('colSlotCelular', 'colFrameCelular', 390, 780);
+    colEscalarUno('colSlotPc', 'colFramePc', 1280, 800);
+  }
+
+  window.addEventListener('resize', ()=>{
+    if(document.getElementById('vistaColores').style.display !== 'none') colEscalarPreviews();
+  });
 
   function colVolverAgenda(){
     document.getElementById('vistaColores').style.display = 'none';
