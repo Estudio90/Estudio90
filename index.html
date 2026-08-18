@@ -173,8 +173,15 @@
      por eso subimos el alto mínimo y sesgamos el recorte hacia arriba
      (donde suele ir el logo/encabezado de la foto que suban). */
   .hero-bg.tiene-foto{background-size:cover; background-position:center 20%;}
-  .hero-bg.tiene-foto::before{content:""; position:absolute; inset:0;
+  .hero-bg.tiene-foto::before{content:""; position:absolute; inset:0; z-index:2;
     background:linear-gradient(100deg, rgba(10,10,11,.97) 0%, rgba(10,10,11,.9) 38%, rgba(10,10,11,.55) 62%, rgba(10,10,11,.28) 100%);}
+  .hero-video{position:absolute; inset:0; z-index:1; width:100%; height:100%;
+    object-fit:cover; object-position:center 20%;}
+  /* con video de fondo el degradado se aclara: si no, tapa casi todo el
+     video y no se aprecia (a diferencia de la foto fija, que soporta más
+     oscuridad porque no tiene movimiento que mostrar). */
+  .hero-bg.tiene-video::before{
+    background:linear-gradient(100deg, rgba(10,10,11,.8) 0%, rgba(10,10,11,.58) 38%, rgba(10,10,11,.3) 62%, rgba(10,10,11,.1) 100%);}
   @media (min-width:901px){
     .hero.tiene-foto{min-height:400px;}
   }
@@ -620,6 +627,10 @@
     color:var(--text-hi); text-transform:uppercase; display:block; margin-bottom:22px;
   }
   .reviews-layout{display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start;}
+  /* flotantes, con el mismo vidrio que "Reservar hora" y los accesos --
+     antes eran tarjetas planas de un solo color, se sentían apagadas. */
+  .review-form-card{background:var(--glass-nav); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    box-shadow:var(--shadow-md);}
   .review-form-card h3{font-size:1rem; margin-bottom:16px;}
   .rv-input, .rv-textarea{
     width:100%; padding:12px 15px; background:var(--bg); border:1px solid var(--border);
@@ -629,8 +640,8 @@
   .rv-rating-box{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 15px; margin-bottom:14px;}
   .rv-rating-label{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.62rem; letter-spacing:.12em; color:var(--text-mid); display:block; margin-bottom:6px;}
   .rv-stars-input{display:flex; align-items:center; gap:2px;}
-  .rv-stars-input span[data-v]{font-size:1.2rem; color:var(--border-strong); cursor:pointer; transition:color .12s ease; line-height:1;}
-  .rv-stars-input span[data-v].on{color:var(--oro);}
+  .rv-stars-input span[data-v]{font-size:1.2rem; color:rgba(255,193,7,.35); cursor:pointer; transition:color .12s ease; line-height:1;}
+  .rv-stars-input span[data-v].on{color:#FFC107;}
   .rv-rating-num{margin-left:8px; font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.8rem; color:var(--text-mid);}
   .rv-gracias{margin-top:14px; padding:14px 16px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); text-align:center;}
   .rv-gracias p{font-size:.8rem; color:var(--text-mid); margin-bottom:11px; line-height:1.4;}
@@ -641,10 +652,13 @@
   }
   .reviews-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-content:start;}
   .review-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--glass-nav); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--shadow-md);
     padding:18px 20px; display:flex; flex-direction:column; gap:10px; min-height:100%;
+    transition:transform .2s ease, border-color .2s ease;
   }
-  .review-stars{color:var(--oro); font-size:.9rem; letter-spacing:2px;}
+  .review-card:hover{border-color:var(--oro); transform:translateY(-2px);}
+  .review-stars{color:#FFC107; font-size:.9rem; letter-spacing:2px;}
   .review-quote{font-size:.85rem; color:var(--text-hi); font-style:italic; line-height:1.5; flex:1;}
   .review-foot{display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:10px; border-top:1px solid var(--border); font-size:.78rem;}
   .review-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -3151,7 +3165,7 @@
     if(cierra <= abre) return null;
     return { abre, cierra };
   }
-  /** Foto de fondo del hero principal, subida desde el panel; si no hay, se ve el diseño por defecto. */
+  /** Foto (y opcionalmente video) de fondo del hero principal, subidos desde el panel; si no hay, se ve el diseño por defecto. */
   function pintarFondoHero(){
     const hero = document.querySelector('.hero');
     const bg = document.querySelector('.hero-bg');
@@ -3168,6 +3182,28 @@
       if(url) localStorage.setItem('masterlook_portada', url);
       else localStorage.removeItem('masterlook_portada');
     }catch(e){}
+
+    // video de fondo, opcional: se reproduce en bucle encima de la foto (que
+    // queda como respaldo mientras el video carga o si el video no existe).
+    const videoUrl = horarioNegocio.portadaVideoUrl;
+    let video = bg.querySelector('.hero-video');
+    bg.classList.toggle('tiene-video', !!videoUrl);
+    if(videoUrl){
+      if(!video){
+        video = document.createElement('video');
+        video.className = 'hero-video';
+        video.autoplay = true; video.muted = true; video.loop = true; video.playsInline = true;
+        video.setAttribute('preload', 'auto');
+        bg.appendChild(video);
+      }
+      if(video.dataset.src !== videoUrl){
+        video.dataset.src = videoUrl;
+        video.src = videoUrl;
+        video.play().catch(()=>{});
+      }
+    }else if(video){
+      video.remove();
+    }
   }
   /** Colores personalizados desde el panel (Configuración > Colores del sitio).
    *  Se inyectan como reglas propias (no como estilo inline en :root) para que
