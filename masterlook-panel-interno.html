@@ -1366,7 +1366,7 @@
       <div class="cx-head">
         <div>
           <h2 class="cx-title">Colores del sitio</h2>
-          <p class="cx-sub">Color de acento (botones) y color del texto del sitio público, con vista previa en vivo de celular y computador.</p>
+          <p class="cx-sub">Color de acento (botones), color del texto y transparencia del vidrio de los botones flotantes ("Reservar hora", los accesos, "Ver productos"), con vista previa en vivo de celular y computador. Modo oscuro y modo claro se configuran por separado, cada uno con sus propios valores.</p>
         </div>
         <div class="cx-nav">
           <button class="ctrl-btn" id="colVolver">← Volver a la agenda</button>
@@ -1386,6 +1386,11 @@
               <input type="color" id="cfgColorTextoOscuro" class="mg-input" style="height:42px;padding:4px;">
             </div>
           </div>
+          <label class="mg-label" style="font-weight:400;margin-top:12px;">
+            Transparencia del vidrio (efecto espejo) — <span id="cfgTransOscuroVal">62%</span>
+          </label>
+          <input type="range" id="cfgTransOscuro" min="20" max="95" value="62" style="width:100%;">
+          <p class="mg-note" style="margin-top:2px;">Más bajo = se ve más el fondo a través del botón. Más alto = el botón se ve más sólido.</p>
 
           <h3 style="font-size:14px;margin:20px 0 4px;">Modo claro</h3>
           <div class="mg-two">
@@ -1398,6 +1403,11 @@
               <input type="color" id="cfgColorTextoClaro" class="mg-input" style="height:42px;padding:4px;">
             </div>
           </div>
+          <label class="mg-label" style="font-weight:400;margin-top:12px;">
+            Transparencia del vidrio (efecto espejo) — <span id="cfgTransClaroVal">62%</span>
+          </label>
+          <input type="range" id="cfgTransClaro" min="20" max="95" value="62" style="width:100%;">
+          <p class="mg-note" style="margin-top:2px;">Más bajo = se ve más el fondo a través del botón. Más alto = el botón se ve más sólido.</p>
 
           <button class="mg-btn solid full" id="cfgGuardarColores" style="margin-top:18px;">Guardar colores</button>
           <button class="mg-btn ghost full" id="cfgRestablecerColores" style="margin-top:8px;">Restablecer a los colores originales</button>
@@ -4280,7 +4290,12 @@
   const COLORES_ORIGINALES = {
     colorAcentoOscuro:'#C9A76A', colorTextoOscuro:'#F2F0EC',
     colorAcentoClaro:'#96731F', colorTextoClaro:'#17171B',
+    transparenciaOscuro:62, transparenciaClaro:62,
   };
+  /** rgb del vidrio de los botones en cada modo -- el admin solo ajusta
+   *  qué tan transparente se ve (el alpha), el color base queda fijo:
+   *  casi negro en modo oscuro, blanco en modo claro. */
+  const RGB_VIDRIO = { oscuro:'14,13,12', claro:'255,255,255' };
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
@@ -4337,6 +4352,12 @@
       document.getElementById('cfgColorTextoOscuro').value = d.colorTextoOscuro || COLORES_ORIGINALES.colorTextoOscuro;
       document.getElementById('cfgColorAcentoClaro').value = d.colorAcentoClaro || COLORES_ORIGINALES.colorAcentoClaro;
       document.getElementById('cfgColorTextoClaro').value = d.colorTextoClaro || COLORES_ORIGINALES.colorTextoClaro;
+      const transOscuro = d.transparenciaOscuro ?? COLORES_ORIGINALES.transparenciaOscuro;
+      const transClaro = d.transparenciaClaro ?? COLORES_ORIGINALES.transparenciaClaro;
+      document.getElementById('cfgTransOscuro').value = transOscuro;
+      document.getElementById('cfgTransOscuroVal').textContent = transOscuro + '%';
+      document.getElementById('cfgTransClaro').value = transClaro;
+      document.getElementById('cfgTransClaroVal').textContent = transClaro + '%';
     }catch(e){}
   }
 
@@ -4349,6 +4370,10 @@
     const texto = colTemaPreview === 'oscuro'
       ? document.getElementById('cfgColorTextoOscuro').value
       : document.getElementById('cfgColorTextoClaro').value;
+    const transPct = colTemaPreview === 'oscuro'
+      ? document.getElementById('cfgTransOscuro').value
+      : document.getElementById('cfgTransClaro').value;
+    const vidrio = `rgba(${RGB_VIDRIO[colTemaPreview]},${transPct / 100})`;
 
     document.querySelectorAll('.col-preview-frame').forEach(frame=>{
       try{
@@ -4358,6 +4383,7 @@
         else doc.documentElement.removeAttribute('data-theme');
         doc.documentElement.style.setProperty('--oro', acento);
         doc.documentElement.style.setProperty('--hueso', texto);
+        doc.documentElement.style.setProperty('--glass-nav', vidrio);
       }catch(e){}
     });
   }
@@ -4367,6 +4393,15 @@
 
   document.querySelectorAll('#cfgColorAcentoOscuro, #cfgColorTextoOscuro, #cfgColorAcentoClaro, #cfgColorTextoClaro').forEach(inp=>
     inp.addEventListener('input', colActualizarPreview));
+
+  document.getElementById('cfgTransOscuro').addEventListener('input', function(){
+    document.getElementById('cfgTransOscuroVal').textContent = this.value + '%';
+    colActualizarPreview();
+  });
+  document.getElementById('cfgTransClaro').addEventListener('input', function(){
+    document.getElementById('cfgTransClaroVal').textContent = this.value + '%';
+    colActualizarPreview();
+  });
 
   document.querySelectorAll('.col-preview-tema').forEach(b=>
     b.addEventListener('click', ()=>{
@@ -4380,9 +4415,12 @@
     const colorTextoOscuro = document.getElementById('cfgColorTextoOscuro').value;
     const colorAcentoClaro = document.getElementById('cfgColorAcentoClaro').value;
     const colorTextoClaro = document.getElementById('cfgColorTextoClaro').value;
+    const transparenciaOscuro = Number(document.getElementById('cfgTransOscuro').value);
+    const transparenciaClaro = Number(document.getElementById('cfgTransClaro').value);
     try{
       await db.collection('settings').doc('negocio').set(
-        { colorAcentoOscuro, colorTextoOscuro, colorAcentoClaro, colorTextoClaro }, { merge:true });
+        { colorAcentoOscuro, colorTextoOscuro, colorAcentoClaro, colorTextoClaro, transparenciaOscuro, transparenciaClaro },
+        { merge:true });
       showToast('Colores del sitio actualizados');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
@@ -4392,6 +4430,10 @@
     document.getElementById('cfgColorTextoOscuro').value = COLORES_ORIGINALES.colorTextoOscuro;
     document.getElementById('cfgColorAcentoClaro').value = COLORES_ORIGINALES.colorAcentoClaro;
     document.getElementById('cfgColorTextoClaro').value = COLORES_ORIGINALES.colorTextoClaro;
+    document.getElementById('cfgTransOscuro').value = COLORES_ORIGINALES.transparenciaOscuro;
+    document.getElementById('cfgTransOscuroVal').textContent = COLORES_ORIGINALES.transparenciaOscuro + '%';
+    document.getElementById('cfgTransClaro').value = COLORES_ORIGINALES.transparenciaClaro;
+    document.getElementById('cfgTransClaroVal').textContent = COLORES_ORIGINALES.transparenciaClaro + '%';
     colActualizarPreview();
     try{
       await db.collection('settings').doc('negocio').set(COLORES_ORIGINALES, { merge:true });
