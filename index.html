@@ -187,8 +187,10 @@
   .hero-raya{width:44px; height:2px; background:var(--oro); margin:16px 0 14px;}
   .hero-txt p{font-size:.92rem; color:var(--gris); line-height:1.6; margin-bottom:18px;}
   .btn-outline{display:inline-flex; align-items:center; gap:9px; padding:11px 22px;
-    border:1px solid var(--linea-fuerte); border-radius:99px; background:transparent;
-    font-size:.72rem; font-weight:600; letter-spacing:.09em; cursor:pointer; transition:.22s;}
+    border:1px solid var(--linea-fuerte); border-radius:99px; background:var(--glass-nav);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:var(--shadow-sm);
+    font-size:.72rem; font-weight:600; letter-spacing:.09em; cursor:pointer;
+    transition:border-color .22s, color .22s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s cubic-bezier(.4,0,.2,1);}
   .btn-outline:hover{border-color:var(--oro); color:var(--oro);}
 
   /* frascos */
@@ -248,7 +250,7 @@
   .acc h3{font-size:1.02rem; font-weight:600;}
   .acc p{font-size:.8rem; color:var(--gris); line-height:1.5;}
   /* estado compacto durante scroll (el JS decide cuándo agregar/quitar esta clase) */
-  .reservar-card.scroll-compact, .acc.scroll-compact{ transform:scale(.96); opacity:.72; }
+  .reservar-card.scroll-compact, .acc.scroll-compact, .btn-outline.scroll-compact{ transform:scale(.96); opacity:.72; }
   .acc.scroll-compact:hover{ transform:scale(.96); }
 
   /* ===== títulos de sección ===== */
@@ -2690,15 +2692,16 @@
      y se vuelven más translúcidos mientras el cliente se desplaza hacia
      abajo, y recuperan su tamaño normal al subir o al quedarse quieto.
      Nunca se esconden del todo. Aplica tanto a la barra inferior (solo
-     móvil) como a la tarjeta "Reservar hora" y los 4 accesos (Servicios,
-     Academy, Tienda, Promociones), en escritorio y en móvil por igual.
+     móvil) como a "Ver productos", la tarjeta "Reservar hora" y los 4
+     accesos (Servicios, Academy, Tienda, Promociones), en escritorio y
+     en móvil por igual.
      Escucha en fase de captura para detectar el scroll tanto de la página
      principal como el de cada "vista" (Reservas, Tienda, Academia), que se
      desplazan dentro de su propio contenedor. */
   (function(){
     const nav = document.querySelector('.bottom-nav');
     const flotantes = [
-      ...document.querySelectorAll('.reservar-card, .acc'),
+      ...document.querySelectorAll('.reservar-card, .acc, .btn-outline'),
     ];
     if(!nav && !flotantes.length) return;
 
