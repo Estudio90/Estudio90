@@ -676,7 +676,7 @@
   }
   .course-card:hover{box-shadow:var(--shadow-hover); transform:translateY(-2px);}
   .cc-photo{
-    height:210px; position:relative; padding:14px;
+    height:170px; position:relative; padding:14px;
     display:flex; flex-direction:column; justify-content:space-between;
     background:linear-gradient(150deg,#4a453d,#191713);
   }
@@ -696,22 +696,23 @@
   .cc-kicker{
     position:absolute; left:16px; top:16px; right:90px;
     font-family:var(--font-primary); font-weight:700; text-transform:uppercase;
-    font-size:1.4rem; line-height:1.05; color:rgba(255,255,255,.92); letter-spacing:.01em;
+    font-size:1rem; line-height:1.2; color:rgba(255,255,255,.92); letter-spacing:.01em;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
-  .cc-body{padding:20px; display:flex; flex-direction:column; flex:1;}
-  .cc-name{font-size:1.15rem; font-weight:600; line-height:1.3; margin-bottom:7px;}
+  .cc-body{padding:18px; display:flex; flex-direction:column; flex:1;}
+  .cc-name{font-size:1.05rem; font-weight:600; line-height:1.3; margin-bottom:7px;}
   .cc-desc{font-size:0.88rem; color:var(--text-mid); line-height:1.5;}
-  .cc-feats{list-style:none; margin:20px 0 0; display:flex; flex-direction:column; gap:9px;}
-  .cc-feats li{display:flex; align-items:center; gap:9px; font-size:0.86rem; color:var(--text-mid);}
+  .cc-feats{list-style:none; margin:14px 0 0; display:flex; flex-direction:column; gap:7px;}
+  .cc-feats li{display:flex; align-items:center; gap:9px; font-size:0.82rem; color:var(--text-mid);}
   .cc-feats svg{flex-shrink:0; color:var(--text-low);}
   .cc-price{
-    font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.45rem; color:var(--text-mid);
-    text-align:right; margin:24px 0 14px; margin-top:auto; padding-top:24px;
+    font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.25rem; color:var(--text-mid);
+    text-align:right; margin:16px 0 12px; margin-top:auto; padding-top:16px;
   }
   .cc-btn{
-    width:100%; padding:13px; background:var(--panel); color:var(--text-hi);
+    width:100%; padding:11px; background:var(--panel); color:var(--text-hi);
     border:1px solid var(--border-strong); border-radius:var(--radius-sm);
-    font-size:0.92rem; font-weight:500; cursor:pointer; font-family:inherit;
+    font-size:0.88rem; font-weight:500; cursor:pointer; font-family:inherit;
   }
   .cc-btn:hover{background:var(--text-hi); color:var(--bg); border-color:var(--text-hi);}
   .cc-btn:disabled{opacity:.45; cursor:not-allowed;}
