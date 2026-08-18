@@ -1366,7 +1366,7 @@
       <div class="cx-head">
         <div>
           <h2 class="cx-title">Colores del sitio</h2>
-          <p class="cx-sub">Color de acento (botones), color del texto y transparencia del vidrio de los botones flotantes ("Reservar hora", los accesos, "Ver productos"), con vista previa en vivo de celular y computador. Modo oscuro y modo claro se configuran por separado, cada uno con sus propios valores.</p>
+          <p class="cx-sub">Color de acento (botones), color del texto, color de fondo del sitio y transparencia del vidrio de los botones flotantes ("Reservar hora", los accesos, "Ver productos"), con vista previa en vivo de celular y computador. Modo oscuro y modo claro se configuran por separado, cada uno con sus propios valores.</p>
         </div>
         <div class="cx-nav">
           <button class="ctrl-btn" id="colVolver">← Volver a la agenda</button>
@@ -1386,6 +1386,8 @@
               <input type="color" id="cfgColorTextoOscuro" class="mg-input" style="height:42px;padding:4px;">
             </div>
           </div>
+          <label class="mg-label" style="font-weight:400;margin-top:12px;">Color de fondo</label>
+          <input type="color" id="cfgColorFondoOscuro" class="mg-input" style="height:42px;padding:4px;">
           <label class="mg-label" style="font-weight:400;margin-top:12px;">
             Transparencia del vidrio (efecto espejo) — <span id="cfgTransOscuroVal">62%</span>
           </label>
@@ -1403,6 +1405,8 @@
               <input type="color" id="cfgColorTextoClaro" class="mg-input" style="height:42px;padding:4px;">
             </div>
           </div>
+          <label class="mg-label" style="font-weight:400;margin-top:12px;">Color de fondo</label>
+          <input type="color" id="cfgColorFondoClaro" class="mg-input" style="height:42px;padding:4px;">
           <label class="mg-label" style="font-weight:400;margin-top:12px;">
             Transparencia del vidrio (efecto espejo) — <span id="cfgTransClaroVal">62%</span>
           </label>
@@ -4326,8 +4330,8 @@
 
   /* ---------- Página "Colores del sitio": propia, con vista previa en vivo de celular y computador ---------- */
   const COLORES_ORIGINALES = {
-    colorAcentoOscuro:'#C9A76A', colorTextoOscuro:'#F2F0EC',
-    colorAcentoClaro:'#96731F', colorTextoClaro:'#17171B',
+    colorAcentoOscuro:'#C9A76A', colorTextoOscuro:'#F2F0EC', colorFondoOscuro:'#0A0A0B',
+    colorAcentoClaro:'#96731F', colorTextoClaro:'#17171B', colorFondoClaro:'#FFFFFF',
     transparenciaOscuro:62, transparenciaClaro:62,
   };
   /** rgb del vidrio de los botones en cada modo -- el admin solo ajusta
@@ -4388,8 +4392,10 @@
       const d = doc.exists ? doc.data() : {};
       document.getElementById('cfgColorAcentoOscuro').value = d.colorAcentoOscuro || COLORES_ORIGINALES.colorAcentoOscuro;
       document.getElementById('cfgColorTextoOscuro').value = d.colorTextoOscuro || COLORES_ORIGINALES.colorTextoOscuro;
+      document.getElementById('cfgColorFondoOscuro').value = d.colorFondoOscuro || COLORES_ORIGINALES.colorFondoOscuro;
       document.getElementById('cfgColorAcentoClaro').value = d.colorAcentoClaro || COLORES_ORIGINALES.colorAcentoClaro;
       document.getElementById('cfgColorTextoClaro').value = d.colorTextoClaro || COLORES_ORIGINALES.colorTextoClaro;
+      document.getElementById('cfgColorFondoClaro').value = d.colorFondoClaro || COLORES_ORIGINALES.colorFondoClaro;
       const transOscuro = d.transparenciaOscuro ?? COLORES_ORIGINALES.transparenciaOscuro;
       const transClaro = d.transparenciaClaro ?? COLORES_ORIGINALES.transparenciaClaro;
       document.getElementById('cfgTransOscuro').value = transOscuro;
@@ -4429,6 +4435,9 @@
     const texto = colTemaPreview === 'oscuro'
       ? document.getElementById('cfgColorTextoOscuro').value
       : document.getElementById('cfgColorTextoClaro').value;
+    const fondo = colTemaPreview === 'oscuro'
+      ? document.getElementById('cfgColorFondoOscuro').value
+      : document.getElementById('cfgColorFondoClaro').value;
     const transPct = colTemaPreview === 'oscuro'
       ? document.getElementById('cfgTransOscuro').value
       : document.getElementById('cfgTransClaro').value;
@@ -4442,6 +4451,7 @@
         else doc.documentElement.removeAttribute('data-theme');
         doc.documentElement.style.setProperty('--oro', acento);
         doc.documentElement.style.setProperty('--hueso', texto);
+        doc.documentElement.style.setProperty('--negro', fondo);
         doc.documentElement.style.setProperty('--glass-nav', vidrio);
       }catch(e){}
     });
@@ -4450,7 +4460,7 @@
   document.querySelectorAll('.col-preview-frame').forEach(frame=>
     frame.addEventListener('load', colActualizarPreview));
 
-  document.querySelectorAll('#cfgColorAcentoOscuro, #cfgColorTextoOscuro, #cfgColorAcentoClaro, #cfgColorTextoClaro').forEach(inp=>
+  document.querySelectorAll('#cfgColorAcentoOscuro, #cfgColorTextoOscuro, #cfgColorFondoOscuro, #cfgColorAcentoClaro, #cfgColorTextoClaro, #cfgColorFondoClaro').forEach(inp=>
     inp.addEventListener('input', colActualizarPreview));
 
   document.getElementById('cfgTransOscuro').addEventListener('input', function(){
@@ -4472,13 +4482,15 @@
   document.getElementById('cfgGuardarColores').addEventListener('click', async ()=>{
     const colorAcentoOscuro = document.getElementById('cfgColorAcentoOscuro').value;
     const colorTextoOscuro = document.getElementById('cfgColorTextoOscuro').value;
+    const colorFondoOscuro = document.getElementById('cfgColorFondoOscuro').value;
     const colorAcentoClaro = document.getElementById('cfgColorAcentoClaro').value;
     const colorTextoClaro = document.getElementById('cfgColorTextoClaro').value;
+    const colorFondoClaro = document.getElementById('cfgColorFondoClaro').value;
     const transparenciaOscuro = Number(document.getElementById('cfgTransOscuro').value);
     const transparenciaClaro = Number(document.getElementById('cfgTransClaro').value);
     try{
       await db.collection('settings').doc('negocio').set(
-        { colorAcentoOscuro, colorTextoOscuro, colorAcentoClaro, colorTextoClaro, transparenciaOscuro, transparenciaClaro },
+        { colorAcentoOscuro, colorTextoOscuro, colorFondoOscuro, colorAcentoClaro, colorTextoClaro, colorFondoClaro, transparenciaOscuro, transparenciaClaro },
         { merge:true });
       showToast('Colores del sitio actualizados');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
@@ -4487,8 +4499,10 @@
   document.getElementById('cfgRestablecerColores').addEventListener('click', async ()=>{
     document.getElementById('cfgColorAcentoOscuro').value = COLORES_ORIGINALES.colorAcentoOscuro;
     document.getElementById('cfgColorTextoOscuro').value = COLORES_ORIGINALES.colorTextoOscuro;
+    document.getElementById('cfgColorFondoOscuro').value = COLORES_ORIGINALES.colorFondoOscuro;
     document.getElementById('cfgColorAcentoClaro').value = COLORES_ORIGINALES.colorAcentoClaro;
     document.getElementById('cfgColorTextoClaro').value = COLORES_ORIGINALES.colorTextoClaro;
+    document.getElementById('cfgColorFondoClaro').value = COLORES_ORIGINALES.colorFondoClaro;
     document.getElementById('cfgTransOscuro').value = COLORES_ORIGINALES.transparenciaOscuro;
     document.getElementById('cfgTransOscuroVal').textContent = COLORES_ORIGINALES.transparenciaOscuro + '%';
     document.getElementById('cfgTransClaro').value = COLORES_ORIGINALES.transparenciaClaro;

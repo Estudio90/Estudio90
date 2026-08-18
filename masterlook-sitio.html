@@ -3258,10 +3258,12 @@
     const oscuro = [];
     if(horarioNegocio.colorAcentoOscuro) oscuro.push(`--oro:${horarioNegocio.colorAcentoOscuro};`);
     if(horarioNegocio.colorTextoOscuro) oscuro.push(`--hueso:${horarioNegocio.colorTextoOscuro};`);
+    if(horarioNegocio.colorFondoOscuro) oscuro.push(`--negro:${horarioNegocio.colorFondoOscuro};`);
     if(horarioNegocio.transparenciaOscuro != null) oscuro.push(`--glass-nav:rgba(14,13,12,${horarioNegocio.transparenciaOscuro / 100});`);
     const claro = [];
     if(horarioNegocio.colorAcentoClaro) claro.push(`--oro:${horarioNegocio.colorAcentoClaro};`);
     if(horarioNegocio.colorTextoClaro) claro.push(`--hueso:${horarioNegocio.colorTextoClaro};`);
+    if(horarioNegocio.colorFondoClaro) claro.push(`--negro:${horarioNegocio.colorFondoClaro};`);
     if(horarioNegocio.transparenciaClaro != null) claro.push(`--glass-nav:rgba(255,255,255,${horarioNegocio.transparenciaClaro / 100});`);
 
     const reglas = [];
