@@ -805,6 +805,16 @@
   .ac-hero-photo::after{content:"";position:absolute;inset:0;
     background:radial-gradient(ellipse 70% 60% at 70% 30%, rgba(255,255,255,.08), transparent 60%);}
   .ac-hero-photo svg{position:absolute; inset:0; width:60%; height:60%; margin:auto; color:rgba(255,255,255,.5);}
+  .ac-hero-photo.tiene-video svg{display:none;}
+  .ac-hero-video-preview{position:absolute; inset:0; z-index:1; width:100%; height:100%; object-fit:cover;}
+
+  .ac-video-modal{position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.92);
+    display:none; align-items:center; justify-content:center; padding:24px;}
+  .ac-video-modal.open{display:flex;}
+  .ac-video-modal video{max-width:920px; width:100%; max-height:82vh; border-radius:12px; background:#000;}
+  .ac-video-close{position:absolute; top:22px; right:22px; width:40px; height:40px; border-radius:50%;
+    background:rgba(255,255,255,.14); color:#fff; border:none; font-size:16px; cursor:pointer;}
+  .ac-video-close:hover{background:rgba(255,255,255,.24);}
 
   .ac-why{padding:36px 0; border-top:1px solid var(--ac-line); text-align:center;}
   .ac-why h2{font-family:var(--font-primary); font-size:1.15rem; font-weight:600;
@@ -2424,7 +2434,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
             Accede a los cursos
           </button>
-          <button class="ac-btn-play" onclick="toast('Video de presentación próximamente')">
+          <button class="ac-btn-play" onclick="abrirVideoAcademia()">
             <span class="ac-play-ic"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
             Ver video
           </button>
@@ -2434,6 +2444,11 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 015 5c0 2-1 3.5-2.2 4.4C17.5 12.6 20 15 20 19v1H4v-1c0-4 2.5-6.4 5.2-7.6C8 10.5 7 9 7 7a5 5 0 015-5z"/></svg>
       </div>
     </section>
+
+    <div class="ac-video-modal" id="acVideoModal" onclick="if(event.target===this) cerrarVideoAcademia()">
+      <button class="ac-video-close" onclick="cerrarVideoAcademia()" aria-label="Cerrar">✕</button>
+      <video id="acVideoPlayer" controls playsinline></video>
+    </div>
 
     <!-- por qué estudiar -->
     <section class="ac-why">
@@ -3293,6 +3308,7 @@
     pintarFondoHero();
     pintarTextoHero();
     aplicarColoresPersonalizados();
+    if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarVideoAcademia();
   });
   // si la ventana cruza el punto de corte celular/computador (o se rota el
   // celular), vuelve a elegir el video que corresponde
@@ -5801,7 +5817,50 @@
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaAcademia').scrollTop = 0;
     pintarCursosAcademia();
+    pintarVideoAcademia();
     if(!desdeHistorial && hashActual() !== '#academia') irHistorial('push','academia');
+  }
+  /** Video de presentación de la Academy: reemplaza el ícono de la portada
+   *  cuando el admin sube uno; sin sonido y en bucle, como vista previa. */
+  function pintarVideoAcademia(){
+    const box = document.querySelector('.ac-hero-photo');
+    if(!box) return;
+    const url = horarioNegocio.academiaVideoUrl;
+    let video = box.querySelector('.ac-hero-video-preview');
+    box.classList.toggle('tiene-video', !!url);
+    if(url){
+      if(!video){
+        video = document.createElement('video');
+        video.className = 'ac-hero-video-preview';
+        video.autoplay = true; video.muted = true; video.loop = true; video.playsInline = true;
+        video.setAttribute('preload', 'auto');
+        box.appendChild(video);
+      }
+      if(video.dataset.src !== url){
+        video.dataset.src = url;
+        video.src = url;
+      }
+      video.play().catch(()=>{});
+    }else if(video){
+      video.remove();
+    }
+  }
+  /** Video completo (con sonido) al tocar "Ver video" en la portada de la Academy. */
+  function abrirVideoAcademia(){
+    const url = horarioNegocio.academiaVideoUrl;
+    if(!url){ toast('Video de presentación próximamente'); return; }
+    const player = document.getElementById('acVideoPlayer');
+    player.src = url;
+    player.currentTime = 0;
+    document.getElementById('acVideoModal').classList.add('open');
+    player.play().catch(()=>{});
+  }
+  function cerrarVideoAcademia(){
+    const player = document.getElementById('acVideoPlayer');
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+    document.getElementById('acVideoModal').classList.remove('open');
   }
   function cerrarAcademia(desdeHistorial){
     document.getElementById('vistaAcademia').classList.remove('open');

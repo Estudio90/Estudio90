@@ -1274,6 +1274,17 @@
           <div class="cx-empty">Elige un curso de la lista para editarlo.</div>
         </div>
       </div>
+
+      <div class="cx-panel" style="margin-top:18px;">
+        <h3 style="font-size:14px;margin:0 0 4px;">Video de presentación de la Academy</h3>
+        <p class="mg-note">Video breve que se ve en la portada de la Academy (donde antes solo había un ícono), y que se abre en grande al tocar el botón "Ver video". Ideal menos de 15 MB para que cargue rápido.</p>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="cu-thumb" id="acVideoThumb" title="Subir video de presentación"
+               style="width:80px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;overflow:hidden;
+                 display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;">🎬</div>
+          <button class="mg-btn ghost" id="acQuitarVideo" style="flex:none;padding:9px 16px;">Quitar video</button>
+        </div>
+      </div>
     </div>
 
     <!-- ===== VISTA: USUARIOS Y PERMISOS ===== -->
@@ -5898,7 +5909,60 @@
     document.getElementById('vistaCursos').style.display = '';
     ocultarFlotante(true);
     cuCargarLista();
+    cargarVideoAcademia();
   }
+
+  /** Video de presentación de la Academy (uno solo, para toda la Academy, no por curso). */
+  async function cargarVideoAcademia(){
+    try{
+      const doc = await db.collection('settings').doc('negocio').get();
+      pintarVideoAcademiaThumb(doc.exists ? (doc.data().academiaVideoUrl || '') : '');
+    }catch(e){}
+  }
+
+  function pintarVideoAcademiaThumb(url){
+    const thumb = document.getElementById('acVideoThumb');
+    if(!thumb) return;
+    thumb.innerHTML = url
+      ? `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`
+      : '🎬';
+  }
+
+  document.getElementById('acVideoThumb').addEventListener('click', ()=>{
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      if(file.size > 30*1024*1024){
+        showToast('El video pesa ' + Math.round(file.size/1024/1024) + ' MB: se recomienda comprimirlo a menos de 15 MB antes de subirlo.');
+      }
+      const thumb = document.getElementById('acVideoThumb');
+      thumb.innerHTML = '…';
+      try{
+        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+        const ref = storage.ref(`academiaVideos/${Date.now()}.${ext}`);
+        await ref.put(file, { contentType: file.type || 'video/mp4' });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ academiaVideoUrl: url }, { merge:true });
+        pintarVideoAcademiaThumb(url);
+        showToast('Video de la Academy actualizado');
+      }catch(e){
+        showToast('No se pudo subir el video: ' + e.message);
+        pintarVideoAcademiaThumb('');
+      }
+    });
+    input.click();
+  });
+
+  document.getElementById('acQuitarVideo').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({ academiaVideoUrl: '' }, { merge:true });
+      pintarVideoAcademiaThumb('');
+      showToast('Video de la Academy quitado');
+    }catch(e){ showToast('No se pudo quitar el video: ' + e.message); }
+  });
 
   function cuVolverAgenda(){
     document.getElementById('vistaCursos').style.display = 'none';
