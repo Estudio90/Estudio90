@@ -4363,7 +4363,28 @@
 
   /** Aplica los colores que se están editando (todavía sin guardar) directo
    *  al <html> de cada iframe de vista previa, para que el cambio se vea al instante. */
+  let colReintentosTimer = null;
+
+  /** El sitio de adentro del iframe tiene su propia lógica que aplica el
+   *  tema guardado en localStorage apenas termina de cargar (aplicarTema).
+   *  Si eso corre DESPUÉS de que forzamos el tema de la vista previa, nos
+   *  lo pisa -- por eso no basta con aplicarlo una sola vez: lo repetimos
+   *  unas cuantas veces durante los primeros segundos para garantizar que
+   *  la vista previa quede como el admin la eligió, sin tocar el
+   *  localStorage real (eso sí cambiaría el tema de verdad del sitio). */
   function colActualizarPreview(){
+    colAplicarUnaVez();
+    clearTimeout(colReintentosTimer);
+    let intentos = 0;
+    const reintentar = ()=>{
+      colAplicarUnaVez();
+      intentos++;
+      if(intentos < 6) colReintentosTimer = setTimeout(reintentar, 400);
+    };
+    colReintentosTimer = setTimeout(reintentar, 400);
+  }
+
+  function colAplicarUnaVez(){
     const acento = colTemaPreview === 'oscuro'
       ? document.getElementById('cfgColorAcentoOscuro').value
       : document.getElementById('cfgColorAcentoClaro').value;
