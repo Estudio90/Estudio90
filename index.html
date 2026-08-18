@@ -217,28 +217,39 @@
     background:linear-gradient(158deg,#2A2A2C,#0C0C0D);}
   .fr-tubo span{writing-mode:vertical-rl; letter-spacing:.24em; font-size:5.4px;}
 
-  /* ===== tarjeta reservar ===== */
+  /* ===== tarjeta reservar =====
+     Glass flotante premium, en desktop y en móvil -- misma posición y
+     estructura de siempre, solo cambia el material visual. Comparte el
+     mismo estado "compacto" que la barra inferior móvil (ver el bloque de
+     JS del scroll adaptativo, más abajo del <nav>): se achica y se hace
+     más discreta mientras el cliente baja, y se recupera al subir o parar. */
   .reservar-card{width:100%; display:flex; align-items:center; justify-content:space-between;
-    gap:16px; background:var(--carbon); border:1px solid var(--linea); border-radius:var(--radius);
+    gap:16px; background:var(--glass-nav); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--shadow-sm);
     padding:18px 20px; cursor:pointer; margin-top:-22px; position:relative; z-index:3;
-    text-align:left; transition:.25s;}
-  .reservar-card:hover{border-color:var(--oro); background:var(--grafito);}
+    text-align:left; transition:border-color .25s, background-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s cubic-bezier(.4,0,.2,1);}
+  .reservar-card:hover{border-color:var(--oro);}
   .rc-txt h2{font-size:1.25rem; font-weight:600; margin-bottom:4px;}
   .rc-txt p{font-size:.82rem; color:var(--gris);}
-  .rc-ic{width:50px; height:50px; border-radius:15px; background:var(--grafito);
+  .rc-ic{width:50px; height:50px; border-radius:15px; background:var(--glass-nav);
     border:1px solid var(--linea); display:flex; align-items:center; justify-content:center;
     color:var(--hueso); flex-shrink:0;}
   .reservar-card:hover .rc-ic{color:var(--oro); border-color:var(--oro-tenue);}
 
   /* ===== cuatro accesos ===== */
   .accesos{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px;}
-  .acc{background:var(--carbon); border:1px solid var(--linea); border-radius:var(--radius);
-    padding:26px 16px; cursor:pointer; text-align:center; transition:.25s;
+  .acc{background:var(--glass-nav); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--shadow-sm);
+    padding:26px 16px; cursor:pointer; text-align:center;
+    transition:border-color .25s, background-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s cubic-bezier(.4,0,.2,1);
     display:flex; flex-direction:column; align-items:center; gap:12px;}
-  .acc:hover{border-color:var(--oro); background:var(--grafito); transform:translateY(-2px);}
+  .acc:hover{border-color:var(--oro); transform:translateY(-2px);}
   .acc svg{width:30px; height:30px; color:var(--oro);}
   .acc h3{font-size:1.02rem; font-weight:600;}
   .acc p{font-size:.8rem; color:var(--gris); line-height:1.5;}
+  /* estado compacto durante scroll (el JS decide cuándo agregar/quitar esta clase) */
+  .reservar-card.scroll-compact, .acc.scroll-compact{ transform:scale(.96); opacity:.72; }
+  .acc.scroll-compact:hover{ transform:scale(.96); }
 
   /* ===== títulos de sección ===== */
   section{padding:52px 0;}
@@ -2675,15 +2686,21 @@
     });
   })();
 
-  /* Barra inferior adaptativa al scroll, al estilo Instagram: se achica y
-     se vuelve más translúcida mientras el cliente se desplaza hacia abajo,
-     y recupera su tamaño normal al subir o al quedarse quieto. Nunca se
-     esconde del todo. Escucha en fase de captura para detectar el scroll
-     tanto de la página principal como el de cada "vista" (Reservas, Tienda,
-     Academia), que se desplazan dentro de su propio contenedor. */
+  /* Accesos flotantes adaptativos al scroll, al estilo Instagram: se achican
+     y se vuelven más translúcidos mientras el cliente se desplaza hacia
+     abajo, y recuperan su tamaño normal al subir o al quedarse quieto.
+     Nunca se esconden del todo. Aplica tanto a la barra inferior (solo
+     móvil) como a la tarjeta "Reservar hora" y los 4 accesos (Servicios,
+     Academy, Tienda, Promociones), en escritorio y en móvil por igual.
+     Escucha en fase de captura para detectar el scroll tanto de la página
+     principal como el de cada "vista" (Reservas, Tienda, Academia), que se
+     desplazan dentro de su propio contenedor. */
   (function(){
     const nav = document.querySelector('.bottom-nav');
-    if(!nav) return;
+    const flotantes = [
+      ...document.querySelectorAll('.reservar-card, .acc'),
+    ];
+    if(!nav && !flotantes.length) return;
 
     const ultimoY = new WeakMap();
     let quieto = null;
@@ -2696,6 +2713,11 @@
         : raiz.scrollTop;
     }
 
+    function fijarCompacto(compacto){
+      if(nav) nav.classList.toggle('bn-compact', compacto);
+      flotantes.forEach(el=> el.classList.toggle('scroll-compact', compacto));
+    }
+
     function procesar(el){
       const y = yDe(el);
       const anterior = ultimoY.has(el) ? ultimoY.get(el) : y;
@@ -2703,12 +2725,11 @@
       ultimoY.set(el, y);
 
       if(Math.abs(dy) > 2){
-        if(dy > 0 && y > 40) nav.classList.add('bn-compact');
-        else nav.classList.remove('bn-compact');
+        fijarCompacto(dy > 0 && y > 40);
       }
 
       clearTimeout(quieto);
-      quieto = setTimeout(()=> nav.classList.remove('bn-compact'), 650);
+      quieto = setTimeout(()=> fijarCompacto(false), 650);
     }
 
     window.addEventListener('scroll', (e)=>{
