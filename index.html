@@ -670,8 +670,9 @@
 
   .course-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
   .course-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:14px;
-    overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow-sm);
+    background:var(--glass-nav); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow-md);
     transition:box-shadow .2s ease, transform .2s ease;
   }
   .course-card:hover{box-shadow:var(--shadow-hover); transform:translateY(-2px);}
@@ -718,7 +719,29 @@
   .cc-btn:disabled{opacity:.45; cursor:not-allowed;}
 
   @media (max-width:900px){ .course-grid{grid-template-columns:1fr 1fr;} }
-  @media (max-width:600px){ .course-grid{grid-template-columns:1fr;} }
+  /* en celular, carrusel horizontal (deslizar al lado) igual que "Nuestros
+     servicios", en vez de una grilla apretada: la foto necesita alto de
+     verdad porque ahi va a ir un video de cada curso, no solo una foto. */
+  @media (max-width:600px){
+    .course-grid{
+      display:flex; grid-template-columns:none; gap:14px; overflow-x:auto;
+      scroll-snap-type:x proximity; padding-bottom:6px;
+    }
+    .course-grid::-webkit-scrollbar{height:0;}
+    .course-card{flex:0 0 210px; scroll-snap-align:start;}
+    .cc-photo{height:150px; padding:10px;}
+    .cc-kicker{display:none;}
+    .cc-photo .cc-badge{font-size:.6rem; padding:4px 9px;}
+    .cc-photo .cc-usd{font-size:.72rem; padding:4px 9px;}
+    .cc-body{padding:12px 13px 13px;}
+    .cc-name{font-size:.86rem; line-height:1.3; margin-bottom:4px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+    .cc-desc{display:none;}
+    .cc-feats{display:none;}
+    .cc-price{font-size:.8rem; align-self:flex-start; margin:10px 0; margin-top:auto; padding-top:0;
+      background:var(--grafito); border:1px solid var(--linea); border-radius:99px; padding:5px 11px;}
+    .cc-btn{padding:9px; font-size:.78rem;}
+  }
 
   /* ===== vista de tienda ===== */
   .tienda-vista{position:fixed; inset:0; background:var(--bg); z-index:70; overflow-y:auto; display:none;}
@@ -1274,7 +1297,7 @@
     .barbers{grid-template-columns:repeat(4,1fr);}
   }
   @media (max-width: 560px){
-    .services-grid, .course-grid, .shop-grid, .foot-grid{grid-template-columns:1fr;}
+    .services-grid, .shop-grid, .foot-grid{grid-template-columns:1fr;}
     .svc-pick{grid-template-columns:1fr;}
     .slots{grid-template-columns:1fr 1fr;}
     .barbers{grid-template-columns:repeat(3,1fr);}
@@ -1379,19 +1402,9 @@
     .ab-title::before{left:-4px;} .ab-title::after{right:-4px;}
     .ab-sub{font-size:.78rem; margin-top:9px;}
     .courses-title{font-size:1.05rem; margin-bottom:15px;}
-
-    .course-grid{gap:12px;}
-    .cc-photo{height:140px; padding:9px;}
-    .cc-photo .cc-badge{font-size:.62rem; padding:4px 9px;}
-    .cc-photo .cc-usd{font-size:.72rem; padding:5px 10px;}
-    .cc-kicker{font-size:1rem; left:11px; top:11px; right:64px;}
-    .cc-body{padding:13px;}
-    .cc-name{font-size:.94rem; margin-bottom:4px;}
-    .cc-desc{font-size:.76rem;}
-    .cc-feats{margin:12px 0 0; gap:6px;}
-    .cc-feats li{font-size:.74rem; gap:6px;}
-    .cc-price{font-size:1.1rem; margin:14px 0 9px; padding-top:14px;}
-    .cc-btn{padding:9px; font-size:.78rem;}
+    /* el tamaño de las tarjetas de curso en celular se maneja todo junto
+       en el bloque @media (max-width:600px) de mas arriba, para no pelear
+       entre dos reglas de breakpoints distintos sobre las mismas clases. */
 
     /* tienda */
     .tv-head-in{padding:11px 14px;}
