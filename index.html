@@ -38,6 +38,7 @@
 
     --ok:#5C8A63;
     --glass:rgba(11,11,12,.9);
+    --glass-nav:rgba(14,13,12,.62);
 
     --bg:var(--negro);
     --panel:var(--carbon);
@@ -78,6 +79,7 @@
     --oro-tenue:rgba(150,115,31,.13);
 
     --glass:rgba(255,255,255,.86);
+    --glass-nav:rgba(255,255,255,.62);
     --shadow-sm:0 1px 2px rgba(20,20,25,.06);
     --shadow-md:0 14px 40px rgba(20,20,25,.10);
     --shadow-hover:0 18px 46px rgba(20,20,25,.14);
@@ -478,15 +480,28 @@
     font-family:inherit; font-size:0.9rem; margin-bottom:16px; background:var(--panel); color:var(--text-hi); resize:vertical;
   }
 
-  /* ===== mobile bottom nav + chat bubble ===== */
+  /* ===== mobile bottom nav + chat bubble =====
+     Flotante, fija al viewport, global (vive fuera de cada "vista" para no
+     desaparecer nunca) y con estado compacto/translúcido mientras se hace
+     scroll -- ver el bloque de JS junto al <nav> más abajo. */
   .bottom-nav{
-    position:fixed; left:12px; right:12px; bottom:12px; z-index:50;
-    background:var(--glass); backdrop-filter:blur(14px);
-    border:1px solid var(--linea); border-radius:20px; box-shadow:var(--shadow-md);
+    position:fixed; left:50%; transform:translateX(-50%) scale(1);
+    bottom:calc(12px + env(safe-area-inset-bottom)); z-index:75;
+    width:calc(100% - 24px); max-width:460px;
+    background:var(--glass-nav); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--linea); border-radius:26px; box-shadow:var(--shadow-md);
     display:flex; justify-content:space-around; padding:10px 4px;
+    opacity:1; transform-origin:bottom center;
+    transition:transform .35s cubic-bezier(.4,0,.2,1), opacity .35s cubic-bezier(.4,0,.2,1);
   }
-  .bn-item{display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; color:var(--text-mid); font-size:0.66rem; padding:6px 8px; border-radius:12px;}
-  .bn-item.active{color:var(--oro); background:var(--grafito); font-weight:600;}
+  .bottom-nav.bn-compact{ transform:translateX(-50%) scale(.9); opacity:.68; }
+  .bn-pill{position:absolute; top:6px; bottom:6px; left:0; width:0;
+    background:var(--border-strong); backdrop-filter:blur(6px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+    border-radius:18px; z-index:0; pointer-events:none;
+    transition:transform .32s cubic-bezier(.34,1.56,.64,1), width .32s cubic-bezier(.34,1.56,.64,1);}
+  .bn-item{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; cursor:pointer; color:var(--text-mid); font-size:0.66rem; padding:6px 8px; border-radius:12px;}
+  .bn-item.active{color:var(--oro); font-weight:600;}
   .chat-bubble{
     position:fixed; right:18px; bottom:92px; z-index:49;
     width:52px; height:52px; border-radius:50%; background:var(--oro); color:#12100A;
@@ -1051,11 +1066,13 @@
     display:flex; flex-direction:column; gap:7px;}
   .rv-g-item{font-size:.76rem; color:var(--text-mid); line-height:1.45;}
 
-  /* barra fija en móvil */
-  .rv-barra{display:none; position:fixed; left:0; right:0; bottom:0; z-index:8;
+  /* barra fija en móvil -- va apilada arriba de la barra flotante global
+     (.bottom-nav, que ahora queda siempre visible por encima de esta vista)
+     para que no se encimen. */
+  .rv-barra{display:none; position:fixed; left:0; right:0;
+    bottom:calc(78px + env(safe-area-inset-bottom)); z-index:8;
     background:var(--panel); border-top:1px solid var(--border);
-    padding:12px 18px calc(12px + env(safe-area-inset-bottom));
-    align-items:center; gap:14px; box-shadow:0 -6px 22px rgba(20,19,17,.09);}
+    padding:12px 18px; align-items:center; gap:14px; box-shadow:0 -6px 22px rgba(20,19,17,.09);}
   .rv-barra-info{flex:1; display:flex; flex-direction:column; min-width:0;}
   .rv-barra-info span{font-size:.76rem; color:var(--text-mid); white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis;}
@@ -1066,7 +1083,7 @@
     .rv-resumen{display:none;}
     .booking-panel{grid-template-columns:1fr;}
     .rv-barra{display:flex;}
-    .reservas-vista{padding-bottom:100px;}
+    .reservas-vista{padding-bottom:calc(160px + env(safe-area-inset-bottom));}
     .rv-title h2{font-size:1.3rem;}
       .rv-main{padding:18px 16px; min-width:0;}
     .booking-panel{min-width:0;}
@@ -1350,7 +1367,7 @@
     /* tienda */
     .tv-head-in{padding:11px 14px;}
     .tv-back{font-size:.72rem; padding:5px 7px;}
-    .tv-body{padding-top:20px; padding-bottom:64px;}
+    .tv-body{padding-top:20px; padding-bottom:calc(90px + env(safe-area-inset-bottom));}
     .tv-title h1{font-size:1.4rem; margin:4px 0 5px;}
     .tv-title p{font-size:.8rem;}
     .tv-tools{gap:7px; margin:16px 0 14px;}
@@ -1525,7 +1542,8 @@
     .foot-bottom{padding-top:15px; font-size:.68rem;}
 
     /* barra inferior + chat */
-    .bottom-nav{left:8px; right:8px; bottom:8px; border-radius:16px; padding:7px 2px;}
+    .bottom-nav{width:calc(100% - 16px); bottom:calc(8px + env(safe-area-inset-bottom)); border-radius:22px; padding:7px 2px;}
+    .bn-pill{border-radius:15px;}
     .bn-item{font-size:.58rem; padding:5px 6px; gap:3px;}
     .bn-item svg{width:18px; height:18px;}
     .chat-bubble{width:44px; height:44px; right:12px; bottom:76px;}
@@ -2579,6 +2597,7 @@
 </div>
 
 <nav class="bottom-nav">
+  <span class="bn-pill" id="bnPill"></span>
   <button class="bn-item" onclick="abrirReservas()">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
     Reservas
@@ -2600,6 +2619,82 @@
     Chat
   </button>
 </nav>
+
+<script>
+  /* píldora que se desliza detrás del ítem activo de la barra inferior, al estilo Instagram */
+  (function(){
+    const nav = document.querySelector('.bottom-nav');
+    const pill = document.getElementById('bnPill');
+    if(!nav || !pill) return;
+
+    function moverPill(btn){
+      if(!btn) return;
+      pill.style.width = btn.offsetWidth + 'px';
+      pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+      nav.querySelectorAll('.bn-item').forEach(b=> b.classList.toggle('active', b===btn));
+    }
+
+    nav.querySelectorAll('.bn-item').forEach(btn=>
+      btn.addEventListener('click', ()=> moverPill(btn)));
+
+    const inicial = nav.querySelector('.bn-item.active') || nav.querySelector('.bn-item');
+    // sin animación en el primer pintado, para que no "viaje" desde la esquina al cargar la página
+    pill.style.transition = 'none';
+    moverPill(inicial);
+    requestAnimationFrame(()=>{ pill.style.transition = ''; });
+
+    window.addEventListener('resize', ()=>{
+      const activo = nav.querySelector('.bn-item.active');
+      if(activo) moverPill(activo);
+    });
+  })();
+
+  /* Barra inferior adaptativa al scroll, al estilo Instagram: se achica y
+     se vuelve más translúcida mientras el cliente se desplaza hacia abajo,
+     y recupera su tamaño normal al subir o al quedarse quieto. Nunca se
+     esconde del todo. Escucha en fase de captura para detectar el scroll
+     tanto de la página principal como el de cada "vista" (Reservas, Tienda,
+     Academia), que se desplazan dentro de su propio contenedor. */
+  (function(){
+    const nav = document.querySelector('.bottom-nav');
+    if(!nav) return;
+
+    const ultimoY = new WeakMap();
+    let quieto = null;
+    let pidiendoFrame = false;
+
+    function yDe(el){
+      const raiz = (el === document) ? document.documentElement : el;
+      return (raiz === document.documentElement || raiz === document.body)
+        ? window.scrollY
+        : raiz.scrollTop;
+    }
+
+    function procesar(el){
+      const y = yDe(el);
+      const anterior = ultimoY.has(el) ? ultimoY.get(el) : y;
+      const dy = y - anterior;
+      ultimoY.set(el, y);
+
+      if(Math.abs(dy) > 2){
+        if(dy > 0 && y > 40) nav.classList.add('bn-compact');
+        else nav.classList.remove('bn-compact');
+      }
+
+      clearTimeout(quieto);
+      quieto = setTimeout(()=> nav.classList.remove('bn-compact'), 650);
+    }
+
+    window.addEventListener('scroll', (e)=>{
+      if(pidiendoFrame) return;
+      pidiendoFrame = true;
+      requestAnimationFrame(()=>{
+        procesar(e.target === document ? document.documentElement : e.target);
+        pidiendoFrame = false;
+      });
+    }, { capture:true, passive:true });
+  })();
+</script>
 
 <script>
   /* ==========================================================
@@ -3018,10 +3113,34 @@
     bg.style.backgroundImage = url ? `url('${url}')` : '';
     if(productos) productos.style.display = url ? 'none' : '';
   }
+  /** Colores personalizados desde el panel (Configuración > Colores del sitio).
+   *  Se inyectan como reglas propias (no como estilo inline en :root) para que
+   *  cada uno solo pise el color de su propio modo, oscuro o claro. */
+  function aplicarColoresPersonalizados(){
+    let el = document.getElementById('temaPersonalizado');
+    if(!el){
+      el = document.createElement('style');
+      el.id = 'temaPersonalizado';
+      document.head.appendChild(el);
+    }
+    const oscuro = [];
+    if(horarioNegocio.colorAcentoOscuro) oscuro.push(`--oro:${horarioNegocio.colorAcentoOscuro};`);
+    if(horarioNegocio.colorTextoOscuro) oscuro.push(`--hueso:${horarioNegocio.colorTextoOscuro};`);
+    const claro = [];
+    if(horarioNegocio.colorAcentoClaro) claro.push(`--oro:${horarioNegocio.colorAcentoClaro};`);
+    if(horarioNegocio.colorTextoClaro) claro.push(`--hueso:${horarioNegocio.colorTextoClaro};`);
+
+    const reglas = [];
+    if(oscuro.length) reglas.push(`:root:not([data-theme="light"]){${oscuro.join('')}}`);
+    if(claro.length) reglas.push(`:root[data-theme="light"]{${claro.join('')}}`);
+    el.textContent = reglas.join('\n');
+  }
+
   db.collection('settings').doc('negocio').onSnapshot(doc=>{
     if(doc.exists) horarioNegocio = Object.assign({}, horarioNegocio, doc.data());
     pintarHorarioNegocio();
     pintarFondoHero();
+    aplicarColoresPersonalizados();
   });
 
   /** Catálogo de servicios y barberos: se actualiza solo cuando el panel edita algo. */
