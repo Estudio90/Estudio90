@@ -177,6 +177,13 @@
     background:linear-gradient(100deg, rgba(10,10,11,.97) 0%, rgba(10,10,11,.9) 38%, rgba(10,10,11,.55) 62%, rgba(10,10,11,.28) 100%);}
   .hero-video{position:absolute; inset:0; z-index:1; width:100%; height:100%;
     object-fit:cover; object-position:center 20%;}
+  /* en escritorio el hero es mucho mas ancho que alto (a diferencia del
+     celular), asi que el recorte "cover" hace un zoom fuerte hacia arriba
+     y termina mostrando el letrero de la pared en vez de la escena; en
+     escritorio centramos el recorte mas abajo para mostrar a las personas. */
+  @media (min-width:901px){
+    .hero-video{object-position:center 68%;}
+  }
   /* con video de fondo el degradado se aclara: si no, tapa casi todo el
      video y no se aprecia (a diferencia de la foto fija, que soporta más
      oscuridad porque no tiene movimiento que mostrar). */
