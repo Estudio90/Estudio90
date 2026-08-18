@@ -1732,8 +1732,16 @@
 </aside>
 
 <!-- ===== Hero de productos ===== -->
-<section class="hero">
-  <div class="hero-bg"></div>
+<!-- La foto de portada real (subida desde el panel) queda escrita acá directo,
+     no solo por JS/Firestore: algunos navegadores integrados (como el de
+     WhatsApp) no guardan localStorage de forma confiable entre visitas, así
+     que dependiendo solo de eso, esos casos siguen viendo el diseño por
+     defecto (degradado + botellas) antes de que cargue la foto real. Si la
+     foto de portada cambia desde el panel, actualizar también esta línea
+     para que coincida (pintarFondoHero() ya la mantiene igual para todos
+     los visitantes normales; esto es el respaldo para el primer pintado). -->
+<section class="hero tiene-foto">
+  <div class="hero-bg tiene-foto" style="background-image:url('https://firebasestorage.googleapis.com/v0/b/estudio90.firebasestorage.app/o/heroPhotos%2F1786812317013.jpg?alt=media&token=5cd0b83d-64d0-40f4-b185-598fbf96ff09');"></div>
   <div class="hero-in">
     <div class="hero-txt">
       <div class="hero-eyebrow">Cuidado que</div>
@@ -1746,7 +1754,7 @@
       </button>
     </div>
 
-    <div class="hero-productos">
+    <div class="hero-productos" style="display:none;">
       <div class="plinto"></div>
       <div class="frascos">
         <div class="fr fr-pote"><span>MASTER LOOK<sup>®</sup></span></div>
