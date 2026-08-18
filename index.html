@@ -491,7 +491,7 @@
     background:var(--glass-nav); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
     border:1px solid var(--linea); border-radius:26px; box-shadow:var(--shadow-md);
     display:flex; justify-content:space-around; padding:10px 4px;
-    opacity:1; transform-origin:bottom center;
+    opacity:1; transform-origin:bottom center; will-change:transform, opacity;
     transition:transform .35s cubic-bezier(.4,0,.2,1), opacity .35s cubic-bezier(.4,0,.2,1);
   }
   .bottom-nav.bn-compact{ transform:translateX(-50%) scale(.9); opacity:.68; }
@@ -2614,7 +2614,7 @@
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
     Tienda
   </button>
-  <button class="bn-item">
+  <button class="bn-item" onclick="chatToggle()">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12c0 4.4-4 8-9 8a9.7 9.7 0 0 1-3.4-.6L3 21l1.4-4.2A7.8 7.8 0 0 1 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg>
     Chat
   </button>
@@ -5594,6 +5594,8 @@
 
   /* ---------- vista de reservas ---------- */
   function abrirReservas(desdeHistorial){
+    cerrarTienda(true);
+    cerrarAcademia(true);
     document.getElementById('vistaReservas').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaReservas').scrollTop = 0;
@@ -5618,6 +5620,8 @@
   let tvFiltro = 'todos';
 
   function abrirTienda(desdeHistorial){
+    cerrarReservas(true);
+    cerrarAcademia(true);
     document.getElementById('vistaTienda').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaTienda').scrollTop = 0;
@@ -5635,6 +5639,8 @@
 
   /* ---------- vista de academia ---------- */
   function abrirAcademia(desdeHistorial){
+    cerrarTienda(true);
+    cerrarReservas(true);
     document.getElementById('vistaAcademia').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaAcademia').scrollTop = 0;
