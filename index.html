@@ -1646,6 +1646,24 @@
     var t = localStorage.getItem('masterlook_theme');
     if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   }catch(e){}
+
+  /* La foto de portada real vive en Firestore y tarda un poco en llegar --
+     mientras tanto se veía primero el diseño por defecto (degradado +
+     botellas) y luego "saltaba" a la foto. Guardamos la última foto
+     confirmada (ver pintarFondoHero más abajo) y la aplicamos aquí mismo,
+     antes de que se pinte nada, para que no se note el salto en las
+     próximas visitas. */
+  try{
+    var portadaCache = localStorage.getItem('masterlook_portada');
+    if(portadaCache){
+      var stPortada = document.createElement('style');
+      stPortada.textContent =
+        ".hero-bg{background-image:url('" + portadaCache.replace(/'/g, "\\'") + "'); background-size:cover; background-position:center 20%;}" +
+        ".hero-bg::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg, rgba(10,10,11,.97) 0%, rgba(10,10,11,.9) 38%, rgba(10,10,11,.55) 62%, rgba(10,10,11,.28) 100%);}" +
+        ".hero-productos{display:none;}";
+      document.head.appendChild(stPortada);
+    }
+  }catch(e){}
 </script>
 
 <!-- ===== Encabezado ===== -->
@@ -3112,6 +3130,12 @@
     bg.classList.toggle('tiene-foto', !!url);
     bg.style.backgroundImage = url ? `url('${url}')` : '';
     if(productos) productos.style.display = url ? 'none' : '';
+    // guardamos la foto ya confirmada para que la próxima visita no tenga
+    // que esperar a Firestore para mostrarla (ver el <script> justo después de <body>)
+    try{
+      if(url) localStorage.setItem('masterlook_portada', url);
+      else localStorage.removeItem('masterlook_portada');
+    }catch(e){}
   }
   /** Colores personalizados desde el panel (Configuración > Colores del sitio).
    *  Se inyectan como reglas propias (no como estilo inline en :root) para que
