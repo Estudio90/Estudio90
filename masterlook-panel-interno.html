@@ -1895,7 +1895,17 @@
     <input type="text" id="cfgHeroTitulo" class="mg-input" placeholder="SE NOTA." maxlength="60">
     <label class="mg-label" style="margin-top:10px;">Párrafo</label>
     <textarea id="cfgHeroParrafo" class="mg-input" rows="2" placeholder="Productos premium para&#10;tu mejor versión." maxlength="200" style="resize:vertical;"></textarea>
-    <button class="mg-btn solid full" id="cfgGuardarHeroTexto" style="margin-top:10px;">Guardar textos de portada</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+      <div>
+        <label class="mg-label" style="font-weight:400;">Color del título</label>
+        <input type="color" id="cfgHeroColorTitulo" class="mg-input" style="height:42px;padding:4px;">
+      </div>
+      <div>
+        <label class="mg-label" style="font-weight:400;">Color del texto pequeño y párrafo</label>
+        <input type="color" id="cfgHeroColorTexto" class="mg-input" style="height:42px;padding:4px;">
+      </div>
+    </div>
+    <button class="mg-btn solid full" id="cfgGuardarHeroTexto" style="margin-top:10px;">Guardar textos y colores de portada</button>
 
     <p class="mg-note" style="margin-top:24px;">Foto de fondo de la portada del sitio (arriba de "Reservar hora"). Si no subes una, se muestra el diseño por defecto.</p>
     <div class="svc-thumb" id="cfgPortadaThumb" title="Subir foto de portada"
@@ -4290,6 +4300,8 @@
       document.getElementById('cfgHeroEyebrow').value = d.heroEyebrow || '';
       document.getElementById('cfgHeroTitulo').value = d.heroTitulo || '';
       document.getElementById('cfgHeroParrafo').value = d.heroParrafo || '';
+      document.getElementById('cfgHeroColorTitulo').value = d.heroColorTitulo || '#DFC08A';
+      document.getElementById('cfgHeroColorTexto').value = d.heroColorTexto || '#9A9691';
       pintarPortadaThumb(d.portadaUrl || '');
       pintarPortadaVideoThumb(d.portadaVideoUrl || '');
       pintarPortadaVideoDesktopThumb(d.portadaVideoEscritorioUrl || '');
@@ -4813,8 +4825,10 @@
         heroEyebrow: document.getElementById('cfgHeroEyebrow').value.trim(),
         heroTitulo: document.getElementById('cfgHeroTitulo').value.trim(),
         heroParrafo: document.getElementById('cfgHeroParrafo').value.trim(),
+        heroColorTitulo: document.getElementById('cfgHeroColorTitulo').value,
+        heroColorTexto: document.getElementById('cfgHeroColorTexto').value,
       }, { merge:true });
-      showToast('Textos de portada actualizados');
+      showToast('Textos y colores de portada actualizados');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 

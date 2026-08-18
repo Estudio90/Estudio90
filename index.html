@@ -156,6 +156,7 @@
     --hueso:#F2F0EC; --gris:#9A9691; --gris-tenue:#6B6862;
     --linea:rgba(255,255,255,.08); --linea-fuerte:rgba(255,255,255,.16);
     --oro:#C9A76A; --oro-tenue:rgba(201,167,106,.14);
+    --hero-titulo-color:var(--oro-claro);
   }
   .hero-bg{position:absolute; inset:0;
     background:
@@ -190,7 +191,7 @@
   .hero-eyebrow{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.66rem; letter-spacing:.3em;
     text-transform:uppercase; color:var(--gris); margin-bottom:8px;}
   .hero h1{font-size:clamp(2rem,4.6vw,2.8rem); font-weight:500; letter-spacing:.01em;
-    color:var(--oro-claro); line-height:1;}
+    color:var(--hero-titulo-color); line-height:1;}
   .hero-raya{width:44px; height:2px; background:var(--oro); margin:16px 0 14px;}
   .hero-txt p{font-size:.92rem; color:var(--gris); line-height:1.6; margin-bottom:18px;}
   .btn-outline{display:inline-flex; align-items:center; gap:9px; padding:11px 22px;
@@ -3228,6 +3229,20 @@
     if(parrafo && horarioNegocio.heroParrafo){
       parrafo.innerHTML = escaparHtml(horarioNegocio.heroParrafo).replace(/\n/g, '<br>');
     }
+
+    // color de las letras del hero, editable aparte del texto: el titulo
+    // grande usa --hero-titulo-color, el texto pequeño y el parrafo usan
+    // --gris (ya estaba anclada solo dentro de .hero, ver mas arriba).
+    let elColor = document.getElementById('heroColorPersonalizado');
+    if(!elColor){
+      elColor = document.createElement('style');
+      elColor.id = 'heroColorPersonalizado';
+      document.head.appendChild(elColor);
+    }
+    const reglasColor = [];
+    if(horarioNegocio.heroColorTitulo) reglasColor.push(`--hero-titulo-color:${horarioNegocio.heroColorTitulo};`);
+    if(horarioNegocio.heroColorTexto) reglasColor.push(`--gris:${horarioNegocio.heroColorTexto};`);
+    elColor.textContent = reglasColor.length ? `.hero{${reglasColor.join('')}}` : '';
   }
   /** Colores personalizados desde el panel (Configuración > Colores del sitio).
    *  Se inyectan como reglas propias (no como estilo inline en :root) para que
