@@ -2862,6 +2862,30 @@
   }, {threshold:0.15});
   revealEls.forEach(el=>io.observe(el));
 
+  /** Videos de tarjetas (cursos, etc.): con muchos a la vez la pagina se
+   *  pone lenta porque todos se descargan y reproducen aunque esten fuera
+   *  de la pantalla. En vez de "src" + autoplay directo, se usa "data-src"
+   *  y recien se carga/reproduce cuando entra a la vista; se pausa (sin
+   *  quitar el src, para no tener que descargarlo de nuevo) al salir. */
+  const ioVideo = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      const v = e.target;
+      if(e.isIntersecting){
+        if(v.dataset.src && v.src !== v.dataset.src) v.src = v.dataset.src;
+        // recien asignado el src, todavia puede no haber suficiente buffer
+        // para reproducir: si play() falla por eso, se reintenta apenas
+        // el video avisa que ya puede reproducirse (evento "canplay").
+        if(v.readyState >= 3) v.play().catch(()=>{});
+        else v.play().catch(()=> v.addEventListener('canplay', ()=> v.play().catch(()=>{}), {once:true}));
+      }else{
+        v.pause();
+      }
+    });
+  }, {rootMargin:'200px', threshold:0.1});
+  function observarVideosLazy(root){
+    (root || document).querySelectorAll('video[data-src]').forEach(v=> ioVideo.observe(v));
+  }
+
   const state = { svc:null, price:0, barber:null, slot:null };
   function money(n){ return '$' + n.toLocaleString('es-CL'); }
 
@@ -4654,7 +4678,7 @@
           <div class="cc-photo" style="${c.photoUrl
             ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;`
             : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`}">
-            ${c.videoUrl ? `<video class="cc-video" src="${c.videoUrl}" autoplay muted loop playsinline preload="auto"></video>` : ''}
+            ${c.videoUrl ? `<video class="cc-video" data-src="${c.videoUrl}" muted loop playsinline preload="none"></video>` : ''}
             <div class="cc-kicker">${kicker}</div>
             ${c.featured ? '<span class="cc-badge">Recomendado</span>' : '<span></span>'}
             ${c.priceUsd ? `<span class="cc-usd">◇ $${c.priceUsd}</span>` : '<span></span>'}
@@ -4672,6 +4696,7 @@
           </div>
         </div>`;
       }).join('');
+      observarVideosLazy(cg);
     }
 
     tvProductos = productos;
@@ -4717,7 +4742,7 @@
       const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
       return `
       <div class="ac-course">
-        <div class="ac-course-photo" style="${c.photoUrl ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;` : ''}">${c.videoUrl ? `<video class="ac-course-video" src="${c.videoUrl}" autoplay muted loop playsinline preload="auto"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
+        <div class="ac-course-photo" style="${c.photoUrl ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;` : ''}">${c.videoUrl ? `<video class="ac-course-video" data-src="${c.videoUrl}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
         <div class="ac-course-body">
           <h3>${c.name}</h3>
           <p>${c.description || 'Curso online, a tu ritmo.'}</p>
@@ -4732,6 +4757,7 @@
         </div>
       </div>`;
     }).join('');
+    observarVideosLazy(grid);
 
     conectarBotonesCompra();
   }
