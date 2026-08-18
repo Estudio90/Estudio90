@@ -681,21 +681,22 @@
     display:flex; flex-direction:column; justify-content:space-between;
     background:linear-gradient(150deg,#4a453d,#191713);
   }
+  .cc-video{position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover;}
   .cc-photo::before{
-    content:""; position:absolute; inset:0;
+    content:""; position:absolute; inset:0; z-index:1;
     background:linear-gradient(180deg, rgba(0,0,0,.15) 0%, transparent 40%, rgba(0,0,0,.55) 100%);
   }
   .cc-photo .cc-badge{
-    align-self:flex-end; background:rgba(255,255,255,.9); color:#141310;
+    align-self:flex-end; z-index:2; background:rgba(255,255,255,.9); color:#141310;
     font-size:0.74rem; font-weight:500; padding:5px 13px; border-radius:99px;
   }
   .cc-photo .cc-usd{
-    align-self:flex-start; background:rgba(20,19,17,.55); backdrop-filter:blur(4px);
+    align-self:flex-start; z-index:2; background:rgba(20,19,17,.55); backdrop-filter:blur(4px);
     color:#fff; font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:0.9rem;
     padding:6px 14px; border-radius:99px;
   }
   .cc-kicker{
-    position:absolute; left:16px; top:16px; right:90px;
+    position:absolute; left:16px; top:16px; right:90px; z-index:2;
     font-family:var(--font-primary); font-weight:700; text-transform:uppercase;
     font-size:1rem; line-height:1.2; color:rgba(255,255,255,.92); letter-spacing:.01em;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
@@ -822,6 +823,7 @@
   .ac-course-photo{height:150px; position:relative;
     background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
   .ac-course-photo svg{position:absolute; inset:0; width:34%; height:34%; margin:auto; color:rgba(255,255,255,.55);}
+  .ac-course-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
   .ac-course-body{padding:16px;}
   .ac-course-body h3{font-size:.92rem; font-weight:700; text-transform:uppercase; letter-spacing:.01em;
     line-height:1.3; margin-bottom:8px; min-height:2.4em;}
@@ -4636,6 +4638,7 @@
           <div class="cc-photo" style="${c.photoUrl
             ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;`
             : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`}">
+            ${c.videoUrl ? `<video class="cc-video" src="${c.videoUrl}" autoplay muted loop playsinline preload="auto"></video>` : ''}
             <div class="cc-kicker">${kicker}</div>
             ${c.featured ? '<span class="cc-badge">Recomendado</span>' : '<span></span>'}
             ${c.priceUsd ? `<span class="cc-usd">◇ $${c.priceUsd}</span>` : '<span></span>'}
@@ -4698,7 +4701,7 @@
       const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
       return `
       <div class="ac-course">
-        <div class="ac-course-photo" style="${c.photoUrl ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;` : ''}">${c.photoUrl ? '' : iconoDeCurso(c)}</div>
+        <div class="ac-course-photo" style="${c.photoUrl ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;` : ''}">${c.videoUrl ? `<video class="ac-course-video" src="${c.videoUrl}" autoplay muted loop playsinline preload="auto"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
         <div class="ac-course-body">
           <h3>${c.name}</h3>
           <p>${c.description || 'Curso online, a tu ritmo.'}</p>
