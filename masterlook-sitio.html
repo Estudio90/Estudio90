@@ -1771,10 +1771,10 @@
   <div class="hero-bg tiene-foto" style="background-image:url('https://firebasestorage.googleapis.com/v0/b/estudio90.firebasestorage.app/o/heroPhotos%2F1786812317013.jpg?alt=media&token=5cd0b83d-64d0-40f4-b185-598fbf96ff09');"></div>
   <div class="hero-in">
     <div class="hero-txt">
-      <div class="hero-eyebrow">Cuidado que</div>
-      <h1>SE NOTA.</h1>
+      <div class="hero-eyebrow" id="heroEyebrow">Cuidado que</div>
+      <h1 id="heroTitulo">SE NOTA.</h1>
       <div class="hero-raya"></div>
-      <p>Productos premium para<br>tu mejor versión.</p>
+      <p id="heroParrafo">Productos premium para<br>tu mejor versión.</p>
       <button class="btn-outline" onclick="abrirTienda()">
         VER PRODUCTOS
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -3212,6 +3212,23 @@
       video.remove();
     }
   }
+  /** Textos del hero (ojo, titulo, parrafo), editables desde el panel; si no
+   *  se configuraron, se quedan los textos por defecto que ya trae el HTML. */
+  function escaparHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  function pintarTextoHero(){
+    const eyebrow = document.getElementById('heroEyebrow');
+    const titulo = document.getElementById('heroTitulo');
+    const parrafo = document.getElementById('heroParrafo');
+    if(eyebrow && horarioNegocio.heroEyebrow) eyebrow.textContent = horarioNegocio.heroEyebrow;
+    if(titulo && horarioNegocio.heroTitulo) titulo.textContent = horarioNegocio.heroTitulo;
+    if(parrafo && horarioNegocio.heroParrafo){
+      parrafo.innerHTML = escaparHtml(horarioNegocio.heroParrafo).replace(/\n/g, '<br>');
+    }
+  }
   /** Colores personalizados desde el panel (Configuración > Colores del sitio).
    *  Se inyectan como reglas propias (no como estilo inline en :root) para que
    *  cada uno solo pise el color de su propio modo, oscuro o claro. */
@@ -3241,6 +3258,7 @@
     if(doc.exists) horarioNegocio = Object.assign({}, horarioNegocio, doc.data());
     pintarHorarioNegocio();
     pintarFondoHero();
+    pintarTextoHero();
     aplicarColoresPersonalizados();
   });
   // si la ventana cruza el punto de corte celular/computador (o se rota el

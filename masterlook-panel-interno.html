@@ -1888,7 +1888,16 @@
 
   <!-- Portada del sitio (foto de fondo del hero externo) -->
   <div class="mg-pane" data-pane="portada">
-    <p class="mg-note">Foto de fondo de la portada del sitio (arriba de "Reservar hora"). Si no subes una, se muestra el diseño por defecto.</p>
+    <p class="mg-note">Textos de la portada (arriba de "Reservar hora"). Si dejas algo vacío, se queda el texto por defecto.</p>
+    <label class="mg-label">Texto pequeño de arriba</label>
+    <input type="text" id="cfgHeroEyebrow" class="mg-input" placeholder="Cuidado que" maxlength="60">
+    <label class="mg-label" style="margin-top:10px;">Título grande</label>
+    <input type="text" id="cfgHeroTitulo" class="mg-input" placeholder="SE NOTA." maxlength="60">
+    <label class="mg-label" style="margin-top:10px;">Párrafo</label>
+    <textarea id="cfgHeroParrafo" class="mg-input" rows="2" placeholder="Productos premium para&#10;tu mejor versión." maxlength="200" style="resize:vertical;"></textarea>
+    <button class="mg-btn solid full" id="cfgGuardarHeroTexto" style="margin-top:10px;">Guardar textos de portada</button>
+
+    <p class="mg-note" style="margin-top:24px;">Foto de fondo de la portada del sitio (arriba de "Reservar hora"). Si no subes una, se muestra el diseño por defecto.</p>
     <div class="svc-thumb" id="cfgPortadaThumb" title="Subir foto de portada"
          style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
            background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:26px;">📷</div>
@@ -4278,6 +4287,9 @@
       document.getElementById('cfgHorLV').value = d.horarioSemana || '11:00–21:00';
       document.getElementById('cfgHorSab').value = d.horarioSabado || '10:00–19:00';
       document.getElementById('cfgHorDom').value = d.horarioDomingo || 'Cerrado';
+      document.getElementById('cfgHeroEyebrow').value = d.heroEyebrow || '';
+      document.getElementById('cfgHeroTitulo').value = d.heroTitulo || '';
+      document.getElementById('cfgHeroParrafo').value = d.heroParrafo || '';
       pintarPortadaThumb(d.portadaUrl || '');
       pintarPortadaVideoThumb(d.portadaVideoUrl || '');
       pintarPortadaVideoDesktopThumb(d.portadaVideoEscritorioUrl || '');
@@ -4795,6 +4807,17 @@
   });
 
   /* ---------- Portada del sitio (foto de fondo del hero externo) ---------- */
+  document.getElementById('cfgGuardarHeroTexto').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({
+        heroEyebrow: document.getElementById('cfgHeroEyebrow').value.trim(),
+        heroTitulo: document.getElementById('cfgHeroTitulo').value.trim(),
+        heroParrafo: document.getElementById('cfgHeroParrafo').value.trim(),
+      }, { merge:true });
+      showToast('Textos de portada actualizados');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
   function pintarPortadaThumb(url){
     const thumb = document.getElementById('cfgPortadaThumb');
     if(!thumb) return;
