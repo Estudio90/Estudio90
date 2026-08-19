@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <style>
   :root{
     --font-primary:'General Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -447,16 +448,34 @@
   }
 
   /* ===== gestión de cursos ===== */
-  .cu-layout{display:grid;grid-template-columns:290px 1fr;gap:14px;align-items:start;}
-  .cu-lista{padding:0;overflow:hidden;}
-  .cu-lista-head{padding:14px 16px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#a3a2ab;font-weight:600;}
-  .cu-item{padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;}
-  .cu-item:hover{background:#f8f8fa;}
-  .cu-item.on{background:#eef0fd;border-left:3px solid #4a5cf0;padding-left:13px;}
-  .cu-item.off{opacity:.5;}
-  .cu-nombre{font-size:13px;font-weight:600;line-height:1.35;}
-  .cu-meta{font-size:11px;color:#6c6b74;margin-top:3px;}
+  .cu-layout{display:block;}
   .cu-detalle{min-height:320px;}
+
+  .cu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;}
+  .cu-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s;}
+  .cu-card:hover{box-shadow:0 4px 16px rgba(20,19,17,.08);}
+  .cu-card.off{opacity:.55;}
+  .cu-card-thumb{height:140px;background:linear-gradient(135deg,#2b2a28,#17171b);background-size:cover;background-position:center;
+    display:flex;align-items:center;justify-content:center;font-size:26px;color:rgba(255,255,255,.35);cursor:pointer;flex:0 0 auto;}
+  .cu-card-body{padding:14px 16px 12px;display:flex;flex-direction:column;gap:3px;flex:1;}
+  .cu-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .cu-card-nombre{font-size:14.5px;font-weight:700;line-height:1.3;}
+  .cu-card-rec{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:0 0 auto;}
+  .cu-card-rec span{font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#a3a2ab;font-weight:600;white-space:nowrap;}
+  .cu-card-precio{font-family:var(--font-primary);font-size:15px;font-weight:700;margin-top:1px;}
+  .cu-card-desc{font-size:12px;color:#6c6b74;line-height:1.4;margin-top:2px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .cu-card-foot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--border);margin-top:auto;}
+  .cu-card-link{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 0;}
+  .cu-card-link.del{color:#c0392b;}
+  .cu-card-link.edit{color:var(--text-hi);}
+
+  .mg-sw{position:relative;display:inline-block;width:32px;height:18px;flex:0 0 auto;}
+  .mg-sw input{opacity:0;width:0;height:0;}
+  .mg-sw .mg-sw-track{position:absolute;inset:0;background:#d8d7dd;border-radius:99px;cursor:pointer;transition:background .15s;}
+  .mg-sw .mg-sw-track::before{content:'';position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+  .mg-sw input:checked + .mg-sw-track{background:#1A1815;}
+  .mg-sw input:checked + .mg-sw-track::before{transform:translateX(14px);}
 
   .cu-campos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
   .cu-campo{display:flex;flex-direction:column;}
@@ -478,20 +497,67 @@
   .cu-ctitulo{font-size:13px;font-weight:600;line-height:1.3;}
   .cu-curl{font-size:11px;color:#a3a2ab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
   .cu-libre{font-size:9.5px;background:#e7f6f1;color:#189d79;padding:2px 7px;border-radius:99px;margin-left:6px;}
+  .cu-video-badge{font-size:9.5px;padding:2px 7px;border-radius:99px;margin-left:6px;white-space:nowrap;}
+  .cu-video-badge--ok{background:#e7f6f1;color:#189d79;}
+  .cu-video-badge--proc{background:#fff4e0;color:#b8790a;}
+  .cu-video-badge--pend{background:#fdeaea;color:#c0392b;}
+  .cu-video-badge--err{background:#fdeaea;color:#c0392b;}
   .cu-cbtns{display:flex;gap:4px;flex-shrink:0;}
   .cu-ib{width:28px;height:28px;border:1px solid var(--border);background:#fff;border-radius:7px;cursor:pointer;font-size:12px;color:#6c6b74;}
   .cu-ib:hover{border-color:#4a5cf0;color:#4a5cf0;}
   .cu-ib.del:hover{border-color:#c0392b;color:#c0392b;}
   .cu-vacio{padding:24px;text-align:center;color:#a3a2ab;font-size:12.5px;border:1px dashed var(--border);border-radius:9px;}
 
-  .cu-add{display:grid;grid-template-columns:1.4fr 2fr 70px auto;gap:8px;align-items:center;margin-top:12px;padding:12px;background:#f8f8fa;border-radius:9px;}
+  .cu-add{display:grid;grid-template-columns:2fr 80px auto auto;gap:8px;align-items:center;margin-top:12px;padding:12px;background:#f8f8fa;border-radius:9px;}
   .cu-add input{padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;min-width:0;}
   .cu-guardar{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
 
+  .cu-editor-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:12px;}
+  .cu-editor-titulo{display:flex;align-items:center;gap:10px;}
+  .cu-back{cursor:pointer;background:none;border:none;font-size:17px;color:var(--text-hi);padding:0;font-family:inherit;}
+  .cu-editor-titulo h2{font-size:19px;font-weight:700;}
+  .cu-editor-sub{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#a3a2ab;font-weight:600;margin-top:2px;}
+  .cu-editor-rec{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-mid);white-space:nowrap;}
+
+  .cu-editor{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+  .cu-form label.cu-lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#a3a2ab;font-weight:600;margin:14px 0 6px;}
+  .cu-form label.cu-lbl:first-child{margin-top:0;}
+  .cu-form input[type=text], .cu-form input[type=number], .cu-form input[type=url], .cu-form input[type=email], .cu-form textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;}
+  .cu-form textarea{resize:vertical; min-height:70px;}
+
+  .cu-box{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;}
+  .cu-box-title{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#a3a2ab;font-weight:600;margin-bottom:4px;}
+  .cu-box-note{font-size:11.5px;color:#6c6b74;margin-bottom:12px;}
+  .cu-box.permitir{background:#eafaf3;border-style:dashed;border-color:#189d79;}
+  .cu-recurso-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8f8fa;border-radius:8px;margin-bottom:6px;font-size:12.5px;}
+  .cu-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .cu-archivo-nombre{font-size:11.5px;color:#6c6b74;}
+
+  .cu-preview{background:#17171B;border-radius:14px;overflow:hidden;color:#fff;position:sticky;top:14px;}
+  .cu-preview-head{background:#0e0e10;padding:9px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8b8a91;font-weight:600;}
+  .cu-preview-media{height:170px;background-size:cover;background-position:center;background-color:#222;display:flex;align-items:center;justify-content:center;font-size:26px;color:rgba(255,255,255,.3);}
+  .cu-preview-body{padding:16px;}
+  .cu-preview-nombre{font-size:17px;font-weight:700;}
+  .cu-preview-desc{font-size:12px;color:#c9c8ce;margin-top:6px;line-height:1.5;}
+  .cu-preview-lecciones{margin-top:16px;}
+  .cu-preview-lecciones-tit{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#8b8a91;font-weight:600;margin-bottom:6px;}
+  .cu-preview-vacio{font-size:12px;color:#6c6b74;}
+  .cu-preview-leccion{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);font-size:12.5px;}
+  .cu-preview-leccion .cu-libre{background:rgba(24,157,121,.25);color:#4ce0ac;}
+
+  @media (max-width:900px){ .cu-editor{grid-template-columns:1fr;} .cu-preview{position:static;} }
+  .cu-clase-in{border:1px solid transparent;background:transparent;font-family:inherit;padding:2px 4px;border-radius:5px;font-size:inherit;color:inherit;}
+  .cu-clase-in:hover,.cu-clase-in:focus{border-color:var(--border);background:#fff;outline:none;}
+  .cu-clase-in--min{width:52px;}
+
   @media (max-width:900px){
-    .cu-layout{grid-template-columns:1fr;}
     .cu-campos{grid-template-columns:1fr;}
     .cu-add{grid-template-columns:1fr;}
+    .cu-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:560px){
+    .cu-grid{grid-template-columns:1fr;}
   }
 
   /* ===== vista de comisiones dentro del panel ===== */
@@ -1334,14 +1400,20 @@
       </div>
 
       <div class="cu-layout">
-        <div class="cx-panel cu-lista">
-          <div class="cu-lista-head">Cursos</div>
-          <div id="cuLista"></div>
+        <div id="cuListaWrap">
+          <div class="cu-grid" id="cuLista"></div>
         </div>
 
-        <div class="cx-panel cu-detalle" id="cuDetalle">
-          <div class="cx-empty">Elige un curso de la lista para editarlo.</div>
+        <div class="cx-panel cu-detalle" id="cuDetalle" style="display:none;"></div>
+      </div>
+
+      <div class="mg-modal" id="modalCuEliminarCurso">
+        <div class="mg-head">
+          <h3>Eliminar curso</h3>
+          <button class="mg-close" data-close>✕</button>
         </div>
+        <p class="mg-note" id="cuEliminarTexto" style="margin-bottom:16px;"></p>
+        <button class="mg-btn solid full" id="cuEliminarConfirmar" style="background:#c0392b;">Eliminar</button>
       </div>
 
       <div class="cx-panel" style="margin-top:18px;">
@@ -1375,6 +1447,15 @@
     </div>
 
     <!-- Otorgar acceso manual (transferencia, efectivo, etc) -->
+    <div class="mg-modal" id="modalCuBorrarClase">
+      <div class="mg-head">
+        <h3>Quitar clase</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="cuBorrarTexto" style="margin-bottom:16px;"></p>
+      <button class="mg-btn solid full" id="cuBorrarConfirmar" style="background:#c0392b;">Quitar</button>
+    </div>
+
     <div class="mg-modal" id="modalAccesoManual">
       <div class="mg-head">
         <h3>Otorgar acceso manual</h3>
@@ -6165,24 +6246,26 @@
      ========================================================== */
   let cuCursos = [];
   let cuActual = null;      // { curso, clases }
+  let cuRecursoArchivo = null;
+  let clArchivoElegido = null;
 
   /* Publica los cursos (con sus precios y clases) en Firestore para que
      masterlook-sitio.html los muestre en la Academy, en cualquier dispositivo. */
   async function publicarCursos(){
     if(MODE === 'api') return;
-    try{
-      await Promise.all(cuCursos.map(c=> db.collection('courses').doc(c.id).set({
-        id: c.id, kind:'COURSE', name: c.name,
-        description: c.description || '',
-        priceClp: c.priceClp, priceUsd: c.priceUsd || null,
-        featured: true, active: c.active !== false,
-        accessUrl: c.accessUrl || '',
-        accessDurationDays: c.accessDurationDays || 30,
-        lessons: c.lessons || [],
-        photoUrl: c.photoUrl || '',
-        videoUrl: c.videoUrl || '',
-      })));
-    }catch(e){}
+    await Promise.all(cuCursos.map(c=> db.collection('courses').doc(c.id).set({
+      id: c.id, kind:'COURSE', name: c.name,
+      description: c.description || '',
+      priceClp: c.priceClp, priceUsd: c.priceUsd || null,
+      featured: c.featured !== false, active: c.active !== false,
+      accessUrl: c.accessUrl || '',
+      accessDurationDays: c.accessDurationDays || 30,
+      lessons: c.lessons || [],
+      photoUrl: c.photoUrl || '',
+      streamVideoId: c.streamVideoId || '',
+      streamStatus: c.streamStatus || '',
+      resources: c.resources || [],
+    })));
   }
 
   /* Catálogo de demostración, con clases de ejemplo */
@@ -6228,6 +6311,9 @@
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
     ocultarFlotante(true);
+    document.getElementById('cuDetalle').style.display = 'none';
+    document.getElementById('cuListaWrap').style.display = '';
+    cuActual = null;
     cuCargarLista();
     cargarVideoAcademia();
   }
@@ -6744,7 +6830,7 @@
       }
     }
 
-    await publicarCursos();
+    try{ await publicarCursos(); }catch(e){ /* sincronización oportunista: si falla, seguimos mostrando lo que ya cargamos */ }
 
     if(!cuCursos.length){
       cont.innerHTML = '<div class="cx-empty">Todavía no hay cursos. Crea el primero.</div>';
@@ -6752,19 +6838,78 @@
     }
 
     cont.innerHTML = cuCursos.map(c=>{
-      const nClases = c.lessons ? c.lessons.filter(l=> l.active !== false).length : (c._clases ?? '—');
-      return `<div class="cu-item ${c.active === false ? 'off' : ''} ${cuActual?.curso?.id === c.id ? 'on' : ''}" data-cu="${c.id}">
-        <div class="cu-nombre">${c.name}</div>
-        <div class="cu-meta">${cxClp(c.priceClp)} · ${nClases} clases${c.active === false ? ' · oculto' : ''}</div>
+      const thumb = c.streamVideoId && c.streamStatus === 'ready'
+        ? `background-image:url('https://${BUNNY_CDN_PUBLIC}/${c.streamVideoId}/thumbnail.jpg');`
+        : (c.photoUrl ? `background-image:url('${c.photoUrl}');` : '');
+      return `
+      <div class="cu-card ${c.active === false ? 'off' : ''}" data-cu="${c.id}">
+        <div class="cu-card-thumb" data-cu-thumb style="${thumb}">${thumb ? '' : '🎬'}</div>
+        <div class="cu-card-body">
+          <div class="cu-card-top">
+            <div class="cu-card-nombre">${c.name}</div>
+            <label class="cu-card-rec">
+              <span>Recomendación</span>
+              <span class="mg-sw"><input type="checkbox" data-cu-rec ${c.featured !== false ? 'checked' : ''}><span class="mg-sw-track"></span></span>
+            </label>
+          </div>
+          <div class="cu-card-precio">${cxClp(c.priceClp)}</div>
+          <div class="cu-card-desc">${c.description || ''}</div>
+        </div>
+        <div class="cu-card-foot">
+          <button class="cu-card-link del" data-cu-eliminar>🗑 Eliminar</button>
+          <button class="cu-card-link edit" data-cu-editar>✎ Editar curso</button>
+        </div>
       </div>`;
     }).join('');
 
-    cont.querySelectorAll('[data-cu]').forEach(el=>
-      el.addEventListener('click', ()=> cuAbrir(el.dataset.cu)));
+    cont.querySelectorAll('.cu-card').forEach(card=>{
+      const id = card.dataset.cu;
+      card.querySelector('[data-cu-thumb]').addEventListener('click', ()=> cuAbrir(id));
+      card.querySelector('[data-cu-editar]').addEventListener('click', ()=> cuAbrir(id));
+      card.querySelector('[data-cu-eliminar]').addEventListener('click', ()=> cuEliminarCurso(id));
+      card.querySelector('[data-cu-rec]').addEventListener('change', (e)=> cuCambiarRecomendacion(id, e.target.checked));
+    });
+  }
+
+  async function cuCambiarRecomendacion(id, valor){
+    const c = cuCursos.find(x=> x.id === id);
+    if(!c) return;
+    c.featured = valor;
+    try{ await publicarCursos(); }
+    catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  }
+
+  function cuEliminarCurso(id){
+    const c = cuCursos.find(x=> x.id === id);
+    if(!c) return;
+    document.getElementById('cuEliminarTexto').textContent =
+      `¿Eliminar el curso "${c.name}"? Esta acción no se puede deshacer.`;
+    abrirModal('modalCuEliminarCurso');
+    const btn = document.getElementById('cuEliminarConfirmar');
+    const nuevo = btn.cloneNode(true);
+    btn.replaceWith(nuevo);
+    nuevo.addEventListener('click', async ()=>{
+      cerrarModales();
+      try{
+        await db.collection('courses').doc(id).delete();
+        cuCursos = cuCursos.filter(x=> x.id !== id);
+        cuCargarLista();
+        showToast('Curso eliminado');
+      }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+    });
+  }
+
+  function cuVolverListado(){
+    document.getElementById('cuDetalle').style.display = 'none';
+    document.getElementById('cuListaWrap').style.display = '';
+    cuActual = null;
+    cuCargarLista();
   }
 
   async function cuAbrir(id){
     const det = document.getElementById('cuDetalle');
+    document.getElementById('cuListaWrap').style.display = 'none';
+    det.style.display = '';
     det.innerHTML = '<div class="cx-empty">Cargando...</div>';
 
     if(MODE === 'api'){
@@ -6781,207 +6926,412 @@
     }
 
     cuPintarDetalle();
-    cuCargarLista();
+  }
+
+  function cuMediaThumbHtml(curso){
+    if(curso.streamVideoId){
+      const host = curso.streamStatus === 'ready' ? `https://${BUNNY_CDN_PUBLIC}/${curso.streamVideoId}/thumbnail.jpg` : '';
+      return `<div class="cu-thumb" id="cuMediaThumb" title="Clic para cambiar" style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
+        background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
+        ${host ? `background-image:url('${host}');` : ''}">${host ? '' : '🎬'}</div>`;
+    }
+    return `<div class="cu-thumb" id="cuMediaThumb" title="Clic para cambiar" style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
+      background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
+      ${curso.photoUrl ? `background-image:url('${curso.photoUrl}');` : ''}">${curso.photoUrl ? '' : '🖼'}</div>`;
   }
 
   function cuPintarDetalle(){
     const { curso, clases } = cuActual;
-    const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
-    const horas = Math.floor(totalMin/60), mins = totalMin % 60;
 
     document.getElementById('cuDetalle').innerHTML = `
-      <div class="cu-campos">
-        <div class="cu-campo full" style="display:flex;align-items:center;gap:12px;">
-          <div class="cu-thumb" id="cuThumb" title="Subir foto del curso"
-               style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
-                 background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
-                 ${curso.photoUrl ? `background-image:url('${curso.photoUrl}');` : ''}">${curso.photoUrl ? '' : '📷'}</div>
+      <div class="cu-editor-head">
+        <div class="cu-editor-titulo">
+          <button class="cu-back" id="cuCancelar" title="Volver a cursos">←</button>
           <div>
-            <label style="display:block;margin-bottom:2px;">Foto del curso</label>
-            <span style="font-size:11.5px;color:var(--text-mid);text-transform:none;letter-spacing:0;">Clic en la miniatura para subir o cambiar</span>
+            <h2>${curso.name || 'Nuevo curso'}</h2>
+            <div class="cu-editor-sub">Edición · Vista previa alumno</div>
           </div>
         </div>
-        <div class="cu-campo full" style="display:flex;align-items:center;gap:12px;">
-          <div class="cu-thumb" id="cuVideoThumb" title="Subir video breve del curso"
-               style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;overflow:hidden;
-                 display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;">${curso.videoUrl
-                 ? `<video src="${curso.videoUrl}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`
-                 : '🎬'}</div>
-          <div>
-            <label style="display:block;margin-bottom:2px;">Video de la Academy (opcional)</label>
-            <span style="font-size:11.5px;color:var(--text-mid);text-transform:none;letter-spacing:0;">Video breve que ven los clientes en el sitio público, en vez de la foto. Clic para subir o cambiar.</span>
-          </div>
-        </div>
-        ${curso.videoUrl ? `<div class="cu-campo full"><button class="mg-btn ghost full" id="cuQuitarVideo">Quitar video (mostrar solo la foto)</button></div>` : ''}
-        <div class="cu-campo full">
-          <label>Nombre del curso</label>
+        <label class="cu-editor-rec">
+          <span class="mg-sw"><input type="checkbox" id="cuRecomendado" ${curso.featured !== false ? 'checked' : ''}><span class="mg-sw-track"></span></span>
+          Recomendado en home y catálogo
+        </label>
+      </div>
+
+      <div class="cu-editor">
+        <div class="cu-form">
+          <label class="cu-lbl">Nombre</label>
           <input type="text" id="cuNombre" value="${(curso.name||'').replace(/"/g,'&quot;')}">
-        </div>
-        <div class="cu-campo full">
-          <label>Descripción corta</label>
+
+          <label class="cu-lbl">Precio ($)</label>
+          <input type="number" id="cuPrecio" min="0" step="1000" value="${curso.priceClp || 0}">
+
+          <label class="cu-lbl">Imagen o video principal del curso</label>
+          <div class="cu-fila">
+            ${cuMediaThumbHtml(curso)}
+            <button type="button" class="mg-btn ghost" id="cuMediaBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
+            ${curso.streamVideoId ? badgeEstadoVideo(curso.streamStatus) : ''}
+            ${(curso.photoUrl || curso.streamVideoId) ? `<button type="button" class="cu-card-link del" id="cuQuitarMedia">Quitar</button>` : ''}
+          </div>
+
+          <label class="cu-lbl">Descripción</label>
           <textarea id="cuDesc">${curso.description || ''}</textarea>
-        </div>
-        <div class="cu-campo">
-          <label>Precio en pesos</label>
-          <input type="number" id="cuPrecio" class="mono-in" min="0" step="1000" value="${curso.priceClp || 0}">
-        </div>
-        <div class="cu-campo">
-          <label>Precio en dólares <span style="text-transform:none;">(internacional)</span></label>
-          <input type="number" id="cuPrecioUsd" class="mono-in" min="0" value="${curso.priceUsd ?? ''}" placeholder="opcional">
-        </div>
-        <div class="cu-campo">
-          <label>Duración del acceso <span style="text-transform:none;">(días)</span></label>
-          <input type="number" id="cuDuracionAcceso" class="mono-in" min="1" step="1" value="${curso.accessDurationDays ?? 30}">
-          <span style="display:block;font-size:11px;color:var(--text-mid);text-transform:none;letter-spacing:0;margin-top:4px;">
-            Solo aplica a compras nuevas -- no cambia los accesos que ya se otorgaron.
-          </span>
-        </div>
-        <div class="cu-campo full">
-          <label>Enlace de acceso <span style="text-transform:none;">(se envía en el comprobante)</span></label>
+
+          <label class="cu-lbl">Precio en dólares <span style="text-transform:none;">(internacional, opcional)</span></label>
+          <input type="number" id="cuPrecioUsd" min="0" value="${curso.priceUsd ?? ''}" placeholder="opcional">
+
+          <label class="cu-lbl">Duración del acceso <span style="text-transform:none;">(días)</span></label>
+          <input type="number" id="cuDuracionAcceso" min="1" step="1" value="${curso.accessDurationDays ?? 30}">
+
+          <label class="cu-lbl">Enlace de acceso <span style="text-transform:none;">(se envía en el comprobante, opcional)</span></label>
           <input type="url" id="cuAcceso" value="${curso.accessUrl || ''}" placeholder="https://...">
-        </div>
-        <div class="cu-campo full">
-          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--text-hi);">
+
+          <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--text-hi);">
             <input type="checkbox" id="cuActivo" ${curso.active !== false ? 'checked' : ''} style="width:auto;">
             Visible en el sitio
           </label>
+
+          <div class="cu-box">
+            <div class="cu-box-title">Recursos del curso</div>
+            <div class="cu-box-note">Guías, plantillas u otros archivos descargables para el alumno.</div>
+            <div id="cuRecursosLista">
+              ${(curso.resources||[]).length ? curso.resources.map((r,i)=>`
+                <div class="cu-recurso-item" data-rec="${i}">
+                  <span>📎 ${r.name}</span>
+                  <button type="button" class="cu-card-link del" data-rec-borrar>Quitar</button>
+                </div>`).join('') : '<div class="cu-box-note" style="margin:0;">Sin recursos aún.</div>'}
+            </div>
+            <div class="cu-fila" style="margin-top:10px;">
+              <input type="text" id="cuRecursoNombre" placeholder="Nombre del recurso (ej. Guía PDF)" style="flex:1;min-width:140px;">
+              <button type="button" class="mg-btn ghost" id="cuRecursoBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
+              <span class="cu-archivo-nombre" id="cuRecursoArchivoNombre">ningún archivo</span>
+            </div>
+            <button type="button" class="mg-btn solid full" id="cuAgregarRecurso" style="margin-top:10px;">+ Agregar recurso</button>
+          </div>
+
+          <button class="mg-btn solid full" id="cuGuardar" style="margin-top:18px;">Guardar datos del curso</button>
+
+          <div class="cu-box permitir">
+            <div class="cu-box-title">Permitir usuarios</div>
+            <div class="cu-box-note">Otorga acceso manual al curso sin compra (por correo del cliente).</div>
+            <div class="cu-fila">
+              <input type="email" id="cuPermitirEmail" placeholder="correo@cliente.cl" style="flex:1;min-width:140px;">
+              <button type="button" class="mg-btn solid" id="cuPermitirBtn" style="flex:none;padding:8px 16px;">Buscar</button>
+            </div>
+          </div>
+
+          <div class="cu-box">
+            <div class="cu-box-title">Lecciones en video</div>
+            <div class="cu-clases" id="cuClases">
+              ${clases.length ? clases.map((l,i)=>`
+                <div class="cu-clase ${l.active === false ? 'off' : ''}" data-cl="${l.id}">
+                  <div class="cu-num">${i+1}</div>
+                  <div class="cu-thumb-sm" data-cl-thumb title="Subir o reemplazar el video de esta clase"
+                       style="width:44px;height:44px;border-radius:8px;cursor:pointer;background-color:#eee;flex:0 0 auto;
+                         background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
+                         ${l.streamVideoId && l.streamStatus==='ready' ? `background-image:url('https://${l.isFree ? BUNNY_CDN_PUBLIC : BUNNY_CDN_PRIVATE}/${l.streamVideoId}/thumbnail.jpg');` : ''}">${l.streamVideoId ? '' : '🎬'}</div>
+                  <div class="cu-cinfo">
+                    <div class="cu-ctitulo">
+                      <input type="text" class="cu-clase-in" data-cl-titulo value="${(l.title||'').replace(/"/g,'&quot;')}">
+                      ${badgeEstadoVideo(l.streamStatus)}
+                      ${l.streamVideoId && l.streamStatus === 'processing' ? `<button type="button" class="cu-card-link" data-cl-refrescar title="Verificar si ya terminó de procesarse" style="margin-left:4px;">🔄</button>` : ''}
+                    </div>
+                    <div class="cu-curl" style="display:flex;align-items:center;gap:10px;">
+                      <input type="number" class="cu-clase-in cu-clase-in--min" data-cl-min placeholder="min" min="0" value="${l.durationMin ?? ''}">
+                      <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-mid);white-space:nowrap;">
+                        <input type="checkbox" data-cl-libre style="width:auto;" ${l.isFree ? 'checked' : ''}> Muestra gratis
+                      </label>
+                    </div>
+                  </div>
+                  <div class="cu-cbtns">
+                    <button class="cu-ib" data-subir title="Subir">↑</button>
+                    <button class="cu-ib" data-bajar title="Bajar">↓</button>
+                    <button class="cu-ib del" data-borrar title="Quitar">✕</button>
+                  </div>
+                </div>`).join('')
+                : '<div class="cu-vacio">Sin lecciones aún.</div>'}
+            </div>
+            <div class="cu-fila" style="margin-top:12px;">
+              <input type="text" id="clTitulo" placeholder="Ej: Técnica avanzada" style="flex:1;min-width:140px;">
+            </div>
+            <div class="cu-fila" style="margin-top:8px;">
+              <input type="number" id="clMin" placeholder="min" min="0" style="width:70px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);white-space:nowrap;">
+                <input type="checkbox" id="clLibre" style="width:auto;"> Muestra gratis
+              </label>
+              <button type="button" class="mg-btn ghost" id="clArchivoBtn" style="flex:none;padding:8px 14px;">Seleccionar archivo</button>
+              <span class="cu-archivo-nombre" id="clArchivoNombre">ningún archivo seleccionado</span>
+            </div>
+            <button class="mg-btn solid full" id="clAgregar" style="margin-top:10px;">+ Subir lección</button>
+          </div>
         </div>
-      </div>
 
-      <div class="cu-sec">
-        <h4>Clases en video</h4>
-        <span class="cu-tot">${clases.length} clases · ${horas ? horas + ' h ' : ''}${mins} min</span>
-      </div>
-
-      <div class="cu-clases" id="cuClases">
-        ${clases.length ? clases.map((l,i)=>`
-          <div class="cu-clase ${l.active === false ? 'off' : ''}" data-cl="${l.id}">
-            <div class="cu-num">${i+1}</div>
-            <div class="cu-cinfo">
-              <div class="cu-ctitulo">${l.title}${l.isFree ? '<span class="cu-libre">MUESTRA</span>' : ''}</div>
-              <div class="cu-curl">${l.videoUrl}${l.durationMin ? ' · ' + l.durationMin + ' min' : ''}</div>
+        <div class="cu-preview">
+          <div class="cu-preview-head">Vista previa (como alumno)</div>
+          <div id="cuPreviewMedia" class="cu-preview-media"></div>
+          <div class="cu-preview-body">
+            <div class="cu-preview-nombre" id="cuPreviewNombre"></div>
+            <div class="cu-preview-desc" id="cuPreviewDesc"></div>
+            <div class="cu-preview-lecciones">
+              <div class="cu-preview-lecciones-tit">Lecciones</div>
+              <div id="cuPreviewLecciones"></div>
             </div>
-            <div class="cu-cbtns">
-              <button class="cu-ib" data-subir title="Subir">↑</button>
-              <button class="cu-ib" data-bajar title="Bajar">↓</button>
-              <button class="cu-ib" data-editar title="Editar">✎</button>
-              <button class="cu-ib del" data-borrar title="Quitar">✕</button>
-            </div>
-          </div>`).join('')
-          : '<div class="cu-vacio">Este curso todavía no tiene clases. Agrega la primera abajo.</div>'}
-      </div>
-
-      <div class="cu-add">
-        <input type="text" id="clTitulo" placeholder="Título de la clase">
-        <input type="url" id="clUrl" placeholder="Enlace del video (YouTube, Vimeo...)">
-        <input type="number" id="clMin" placeholder="min" min="0">
-        <button class="mg-btn solid" id="clAgregar" style="flex:none;padding:9px 16px;">+ Agregar</button>
-      </div>
-
-      <div class="cu-guardar">
-        <button class="mg-btn ghost" id="cuCancelar" style="flex:none;padding:10px 18px;">Cancelar</button>
-        <button class="mg-btn solid" id="cuGuardar" style="flex:none;padding:10px 22px;">Guardar cambios</button>
+          </div>
+        </div>
       </div>
     `;
 
     cuConectarDetalle();
+    cuPintarPreview();
+  }
+
+  function cuPintarPreview(){
+    const { curso, clases } = cuActual;
+    const media = document.getElementById('cuPreviewMedia');
+    if(media){
+      const url = curso.streamVideoId && curso.streamStatus === 'ready'
+        ? `https://${BUNNY_CDN_PUBLIC}/${curso.streamVideoId}/thumbnail.jpg`
+        : curso.photoUrl;
+      media.style.backgroundImage = url ? `url('${url}')` : '';
+      media.textContent = url ? '' : '🎬';
+    }
+    const nombreEl = document.getElementById('cuPreviewNombre');
+    if(nombreEl) nombreEl.textContent = curso.name || 'Nuevo curso';
+    const descEl = document.getElementById('cuPreviewDesc');
+    if(descEl) descEl.textContent = curso.description || '';
+    const lecEl = document.getElementById('cuPreviewLecciones');
+    if(lecEl){
+      const activas = clases.filter(l=> l.active !== false);
+      lecEl.innerHTML = activas.length
+        ? activas.map(l=> `<div class="cu-preview-leccion">🎬 ${l.title}${l.isFree ? '<span class="cu-libre">MUESTRA</span>' : ''}</div>`).join('')
+        : '<div class="cu-preview-vacio">Sin lecciones publicadas.</div>';
+    }
   }
 
   function cuConectarDetalle(){
     document.querySelectorAll('#cuClases .cu-clase').forEach(row=>{
       const id = row.dataset.cl;
       const i = cuActual.clases.findIndex(l=> l.id === id);
+      const l = cuActual.clases[i];
 
       row.querySelector('[data-subir]').addEventListener('click', ()=> cuMover(i, -1));
       row.querySelector('[data-bajar]').addEventListener('click', ()=> cuMover(i, 1));
-      row.querySelector('[data-editar]').addEventListener('click', ()=> cuEditarClase(i));
       row.querySelector('[data-borrar]').addEventListener('click', ()=> cuBorrarClase(i));
+      row.querySelector('[data-cl-thumb]').addEventListener('click', ()=> cuSubirVideoClase(i));
+
+      row.querySelector('[data-cl-titulo]').addEventListener('change', (e)=>{
+        l.title = e.target.value.trim() || l.title;
+        cuGuardarClasesSilencioso();
+      });
+      row.querySelector('[data-cl-min]').addEventListener('change', (e)=>{
+        l.durationMin = e.target.value ? Number(e.target.value) : null;
+        cuGuardarClasesSilencioso();
+      });
+      row.querySelector('[data-cl-libre]').addEventListener('change', (e)=>{
+        l.isFree = e.target.checked;
+        cuGuardarClasesSilencioso();
+      });
+      row.querySelector('[data-cl-refrescar]')?.addEventListener('click', ()=> cuRefrescarEstadoClase(i));
     });
 
     document.getElementById('clAgregar').addEventListener('click', cuAgregarClase);
+    document.getElementById('clArchivoBtn').addEventListener('click', cuElegirArchivoClase);
     document.getElementById('cuGuardar').addEventListener('click', cuGuardarCurso);
-    document.getElementById('cuCancelar').addEventListener('click', ()=> cuAbrir(cuActual.curso.id));
-    document.getElementById('cuThumb').addEventListener('click', ()=> subirFotoCurso(cuActual.curso.id));
-    document.getElementById('cuVideoThumb').addEventListener('click', ()=> subirVideoCurso(cuActual.curso.id));
-    document.getElementById('cuQuitarVideo')?.addEventListener('click', ()=> quitarVideoCurso(cuActual.curso.id));
+    document.getElementById('cuCancelar').addEventListener('click', cuVolverListado);
+    document.getElementById('cuMediaThumb').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
+    document.getElementById('cuMediaBtn').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
+    document.getElementById('cuQuitarMedia')?.addEventListener('click', ()=> cuQuitarMedia(cuActual.curso.id));
+    document.getElementById('cuRecomendado').addEventListener('change', (e)=> cuCambiarRecomendacion(cuActual.curso.id, e.target.checked));
+    document.getElementById('cuRecursoBtn').addEventListener('click', cuSubirRecurso);
+    document.getElementById('cuAgregarRecurso').addEventListener('click', cuAgregarRecurso);
+    document.querySelectorAll('#cuRecursosLista [data-rec-borrar]').forEach(btn=>
+      btn.addEventListener('click', (e)=> cuEliminarRecurso(Number(e.target.closest('[data-rec]').dataset.rec))));
+    document.getElementById('cuPermitirBtn').addEventListener('click', cuPermitirUsuario);
+
+    ['cuNombre','cuDesc'].forEach(id=>
+      document.getElementById(id).addEventListener('input', ()=>{
+        cuActual.curso.name = document.getElementById('cuNombre').value;
+        cuActual.curso.description = document.getElementById('cuDesc').value;
+        cuPintarPreview();
+      }));
   }
 
   /** Sube (o reemplaza) la foto de un curso y la deja lista para el sitio público. */
-  function subirFotoCurso(cursoId){
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.addEventListener('change', async ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      const thumb = document.getElementById('cuThumb');
-      if(thumb) thumb.textContent = '…';
-      try{
-        const blob = await redimensionarImagen(file);
-        const ruta = `coursePhotos/${cursoId}/${Date.now()}.jpg`;
-        const ref = storage.ref(ruta);
-        await ref.put(blob, { contentType:'image/jpeg' });
-        const url = await ref.getDownloadURL();
-        const c = cuCursos.find(x=> x.id === cursoId);
-        if(c){
-          c.photoUrl = url;
-          if(cuActual?.curso?.id === cursoId) cuActual.curso.photoUrl = url;
-        }
-        await publicarCursos();
-        showToast('Foto del curso actualizada');
-        cuPintarDetalle();
-      }catch(e){
-        showToast('No se pudo subir la foto: ' + e.message);
-        if(thumb) thumb.textContent = '📷';
-      }
-    });
-    input.click();
+  /** Hostnames del CDN de Bunny Stream -- solo usados para armar la
+   *  miniatura de vista previa acá en el panel (no son secretos). */
+  const BUNNY_CDN_PUBLIC = 'vz-3106d8eb-0d1.b-cdn.net';
+  const BUNNY_CDN_PRIVATE = 'vz-77fac3a5-715.b-cdn.net';
+
+  function badgeEstadoVideo(status){
+    const info = {
+      pending_migration: { txt:'Pendiente de migración', cls:'pend' },
+      migrating: { txt:'Migrando…', cls:'pend' },
+      processing: { txt:'Procesando…', cls:'proc' },
+      ready: { txt:'Listo', cls:'ok' },
+      error: { txt:'Error', cls:'err' },
+    }[status];
+    return info ? `<span class="cu-video-badge cu-video-badge--${info.cls}">${info.txt}</span>` : '';
   }
 
-  /** Sube (o reemplaza) el video breve de un curso para el sitio público. */
-  function subirVideoCurso(cursoId){
+  /** Sube un archivo de video directo a Bunny Stream por TUS (subida
+   *  resumable) -- el archivo pesado nunca pasa por Firestore ni por Cloud
+   *  Functions, solo se piden credenciales de subida y se sube directo. */
+  function subirVideoABunny(file, { contexto, contextoId, isFree, title, onProgress }){
+    return new Promise((resolve, reject)=>{
+      functions.httpsCallable('crearSubidaVideo')({ contexto, contextoId, isFree, title })
+        .then((r)=>{
+          const datos = r.data;
+          const upload = new tus.Upload(file, {
+            endpoint: datos.tusEndpoint,
+            retryDelays: [0, 1000, 3000, 5000],
+            headers: {
+              AuthorizationSignature: datos.authSignature,
+              AuthorizationExpire: String(datos.authExpire),
+              VideoId: datos.videoId,
+              LibraryId: String(datos.libraryId),
+            },
+            metadata: { filetype: file.type || 'video/mp4', title: title || file.name },
+            onError: (err)=> reject(err),
+            onProgress: (subidos, total)=>{ if(onProgress) onProgress(Math.round((subidos/total)*100)); },
+            onSuccess: ()=> resolve({ videoId: datos.videoId, libreria: datos.libreria }),
+          });
+          upload.start();
+        })
+        .catch(reject);
+    });
+  }
+
+  /** Sube (o reemplaza) la imagen o video principal de un curso -- un solo
+   *  botón que detecta el tipo de archivo: foto -> Firebase Storage (como
+   *  siempre), video -> Bunny Stream (portada pública, sin firma). */
+  function cuSubirMedia(cursoId){
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'video/*';
+    input.accept = 'image/*,video/*';
     input.addEventListener('change', async ()=>{
       const file = input.files[0];
       if(!file) return;
-      if(file.size > 30*1024*1024){
-        showToast('El video pesa ' + Math.round(file.size/1024/1024) + ' MB: se recomienda comprimirlo a menos de 15 MB antes de subirlo.');
-      }
-      const thumb = document.getElementById('cuVideoThumb');
+      const thumb = document.getElementById('cuMediaThumb');
       if(thumb) thumb.innerHTML = '…';
       try{
-        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-        const ruta = `courseVideos/${cursoId}/${Date.now()}.${ext}`;
-        const ref = storage.ref(ruta);
-        await ref.put(file, { contentType: file.type || 'video/mp4' });
-        const url = await ref.getDownloadURL();
         const c = cuCursos.find(x=> x.id === cursoId);
-        if(c){
-          c.videoUrl = url;
-          if(cuActual?.curso?.id === cursoId) cuActual.curso.videoUrl = url;
+        if(file.type.startsWith('video/')){
+          const { videoId } = await subirVideoABunny(file, {
+            contexto: 'curso', contextoId: cursoId, isFree: true,
+            title: `Portada — ${cuActual?.curso?.name || cursoId}`,
+            onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
+          });
+          if(c){ c.streamVideoId = videoId; c.streamStatus = 'processing'; }
+          if(cuActual?.curso?.id === cursoId){ cuActual.curso.streamVideoId = videoId; cuActual.curso.streamStatus = 'processing'; }
+          showToast('Video subido, procesándose en Bunny Stream…');
+        } else {
+          const blob = await redimensionarImagen(file);
+          const ruta = `coursePhotos/${cursoId}/${Date.now()}.jpg`;
+          const ref = storage.ref(ruta);
+          await ref.put(blob, { contentType:'image/jpeg' });
+          const url = await ref.getDownloadURL();
+          if(c) c.photoUrl = url;
+          if(cuActual?.curso?.id === cursoId) cuActual.curso.photoUrl = url;
+          showToast('Imagen del curso actualizada');
         }
         await publicarCursos();
-        showToast('Video del curso actualizado');
         cuPintarDetalle();
       }catch(e){
-        showToast('No se pudo subir el video: ' + e.message);
-        if(thumb) thumb.textContent = '🎬';
+        showToast('No se pudo subir el archivo: ' + e.message);
+        if(thumb) thumb.textContent = '🖼';
       }
     });
     input.click();
   }
 
-  async function quitarVideoCurso(cursoId){
+  async function cuQuitarMedia(cursoId){
     const c = cuCursos.find(x=> x.id === cursoId);
-    if(c) c.videoUrl = '';
-    if(cuActual?.curso?.id === cursoId) cuActual.curso.videoUrl = '';
+    if(c){ c.streamVideoId = ''; c.streamStatus = ''; c.photoUrl = ''; }
+    if(cuActual?.curso?.id === cursoId){ cuActual.curso.streamVideoId = ''; cuActual.curso.streamStatus = ''; cuActual.curso.photoUrl = ''; }
     try{
       await publicarCursos();
-      showToast('Video del curso quitado');
-    }catch(e){ showToast('No se pudo quitar el video: ' + e.message); }
+      showToast('Imagen/video del curso quitado');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
     cuPintarDetalle();
+  }
+
+  /** Sube un archivo cualquiera (PDF, plantilla, etc.) como recurso
+   *  descargable del curso -- Firebase Storage, igual que las fotos. */
+  function cuSubirRecurso(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.addEventListener('change', ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      cuRecursoArchivo = file;
+      document.getElementById('cuRecursoArchivoNombre').textContent = file.name;
+    });
+    input.click();
+  }
+
+  async function cuAgregarRecurso(){
+    const nombre = document.getElementById('cuRecursoNombre').value.trim();
+    if(!nombre) return showToast('Escribe el nombre del recurso');
+    if(!cuRecursoArchivo) return showToast('Elige un archivo primero');
+
+    const btn = document.getElementById('cuAgregarRecurso');
+    btn.disabled = true; btn.textContent = 'Subiendo...';
+    try{
+      const ruta = `courseResources/${cuActual.curso.id}/${Date.now()}-${cuRecursoArchivo.name}`;
+      const ref = storage.ref(ruta);
+      await ref.put(cuRecursoArchivo);
+      const url = await ref.getDownloadURL();
+      cuActual.curso.resources = [...(cuActual.curso.resources||[]), { name: nombre, url }];
+      const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
+      if(enLista) enLista.resources = cuActual.curso.resources;
+      await publicarCursos();
+      cuRecursoArchivo = null;
+      showToast('Recurso agregado');
+      cuPintarDetalle();
+    }catch(e){
+      showToast('No se pudo subir el recurso: ' + e.message);
+      btn.disabled = false; btn.textContent = '+ Agregar recurso';
+    }
+  }
+
+  async function cuEliminarRecurso(i){
+    cuActual.curso.resources.splice(i, 1);
+    const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
+    if(enLista) enLista.resources = cuActual.curso.resources;
+    try{ await publicarCursos(); }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    cuPintarDetalle();
+  }
+
+  /** Otorga acceso manual al curso actual por correo, reusando la misma
+   *  función que ya usa "Accesos a cursos" -- sin duplicar esa lógica. */
+  async function cuPermitirUsuario(){
+    const email = document.getElementById('cuPermitirEmail').value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)) return showToast('Correo inválido');
+    const btn = document.getElementById('cuPermitirBtn');
+    btn.disabled = true; btn.textContent = 'Buscando...';
+    try{
+      await functions.httpsCallable('crearAccesoManual')({
+        email, courseId: cuActual.curso.id, paymentMethod: 'OTHER', amount: 0,
+      });
+      showToast(`Acceso otorgado a ${email}`);
+      document.getElementById('cuPermitirEmail').value = '';
+    }catch(e){
+      showToast(e.code === 'functions/already-exists' ? 'Ese cliente ya tiene acceso vigente' : 'No se pudo otorgar: ' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Buscar';
+    }
+  }
+
+  /** Sincroniza cuActual.clases -> cuActual.curso.lessons y guarda en
+   *  Firestore, sin toast -- usada por cada edición chica (reordenar,
+   *  cambiar título/minutos/gratis) para que nada se pierda sin tener que
+   *  apretar "Guardar cambios". */
+  async function cuGuardarClasesSilencioso(){
+    cuActual.curso.lessons = cuActual.clases;
+    const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
+    if(enLista) enLista.lessons = cuActual.clases;
+    try{ await publicarCursos(); }
+    catch(e){ showToast('No se pudo guardar: ' + e.message); }
   }
 
   async function cuMover(i, dir){
@@ -6996,82 +7346,139 @@
           method:'PUT', body: JSON.stringify({ order: arr.map(l=> l.id) })
         });
       }catch(e){ showToast(e.message); }
+    } else {
+      await cuGuardarClasesSilencioso();
     }
     cuPintarDetalle();
   }
 
-  function cuEditarClase(i){
+  /** Sube (o reemplaza) el video de una clase -- va a la librería pública de
+   *  Bunny si es "muestra gratis", o a la privada (con token obligatorio)
+   *  si es una clase paga. */
+  function cuSubirVideoClase(i){
     const l = cuActual.clases[i];
-    const titulo = prompt('Título de la clase:', l.title);
-    if(titulo === null) return;
-    const url = prompt('Enlace del video:', l.videoUrl);
-    if(url === null) return;
-    const min = prompt('Duración en minutos:', l.durationMin ?? '');
-    const libre = confirm('¿Dejarla como clase de muestra gratuita?\n\nAceptar = sí, Cancelar = no');
-
-    Object.assign(l, {
-      title: titulo.trim() || l.title,
-      videoUrl: url.trim() || l.videoUrl,
-      durationMin: min ? Number(min) : null,
-      isFree: libre,
-      _editada: true,
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.querySelector(`#cuClases .cu-clase[data-cl="${l.id}"] [data-cl-thumb]`);
+      if(thumb) thumb.innerHTML = '0%';
+      try{
+        const { videoId } = await subirVideoABunny(file, {
+          contexto: 'leccion', contextoId: `${cuActual.curso.id}:${l.id}`, isFree: l.isFree,
+          title: l.title, onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
+        });
+        l.streamVideoId = videoId; l.streamStatus = 'processing';
+        await cuGuardarClasesSilencioso();
+        showToast('Video de la clase subido, procesándose…');
+        cuPintarDetalle();
+      }catch(e){
+        showToast('No se pudo subir el video: ' + e.message);
+        if(thumb) thumb.textContent = '🎬';
+      }
     });
+    input.click();
+  }
 
-    if(MODE === 'api'){
-      api(`/shop/admin/products/lessons/${l.id}`, {
-        method:'PATCH',
-        body: JSON.stringify({ title:l.title, videoUrl:l.videoUrl, durationMin:l.durationMin, isFree:l.isFree })
-      }).then(()=> showToast('Clase actualizada')).catch(e=> showToast(e.message));
-    } else {
-      showToast('Clase actualizada');
-    }
-    cuPintarDetalle();
+  /** Consulta el estado real en Bunny (por si el aviso automático se demoró
+   *  o se perdió) y actualiza la clase con lo que Bunny diga de verdad. */
+  async function cuRefrescarEstadoClase(i){
+    const l = cuActual.clases[i];
+    if(!l.streamVideoId) return;
+    try{
+      const r = await functions.httpsCallable('obtenerEstadoVideo')({
+        videoId: l.streamVideoId, libreria: l.isFree ? 'public' : 'private',
+      });
+      l.streamStatus = r.data.estado;
+      await cuGuardarClasesSilencioso();
+      cuPintarDetalle();
+      showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
+    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
   }
 
   async function cuBorrarClase(i){
     const l = cuActual.clases[i];
-    if(!confirm(`¿Quitar la clase "${l.title}"?\n\nLos alumnos dejarán de verla.`)) return;
+    document.getElementById('cuBorrarTexto').textContent =
+      `¿Quitar la clase "${l.title}"? Los alumnos dejarán de verla.`;
+    abrirModal('modalCuBorrarClase');
+    const btn = document.getElementById('cuBorrarConfirmar');
+    const nuevo = btn.cloneNode(true);
+    btn.replaceWith(nuevo);
+    nuevo.addEventListener('click', async ()=>{
+      cerrarModales();
+      if(MODE === 'api'){
+        try{ await api(`/shop/admin/products/lessons/${l.id}`, { method:'DELETE' }); }
+        catch(e){ return showToast(e.message); }
+      }
+      cuActual.clases.splice(i, 1);
+      if(MODE !== 'api') await cuGuardarClasesSilencioso();
+      cuPintarDetalle();
+      cuCargarLista();
+      showToast('Clase eliminada');
+    });
+  }
 
-    if(MODE === 'api'){
-      try{ await api(`/shop/admin/products/lessons/${l.id}`, { method:'DELETE' }); }
-      catch(e){ return showToast(e.message); }
-    }
-    cuActual.clases.splice(i, 1);
-    cuPintarDetalle();
-    cuCargarLista();
-    showToast('Clase eliminada');
+  function cuElegirArchivoClase(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.addEventListener('change', ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      clArchivoElegido = file;
+      document.getElementById('clArchivoNombre').textContent = file.name;
+    });
+    input.click();
   }
 
   async function cuAgregarClase(){
     const titulo = document.getElementById('clTitulo').value.trim();
-    const url = document.getElementById('clUrl').value.trim();
     const min = document.getElementById('clMin').value;
+    const libre = document.getElementById('clLibre').checked || cuActual.clases.length === 0;
 
     if(!titulo) return showToast('Escribe el título de la clase');
-    if(!/^https?:\/\/.+/.test(url)) return showToast('El enlace del video no es válido');
+    if(!clArchivoElegido) return showToast('Elige un archivo de video primero');
 
     const nueva = {
       id: 'l' + Date.now(),
-      title: titulo, videoUrl: url,
-      durationMin: min ? Number(min) : null,
-      isFree: cuActual.clases.length === 0,   // la primera queda como muestra
-      active: true,
+      title: titulo, durationMin: min ? Number(min) : null,
+      isFree: libre, active: true,
+      streamVideoId: '', streamStatus: 'processing',
     };
 
-    if(MODE === 'api'){
-      try{
-        const r = await api(`/shop/admin/products/${cuActual.curso.id}/lessons`, {
-          method:'POST',
-          body: JSON.stringify({ title:titulo, videoUrl:url, durationMin:nueva.durationMin, isFree:nueva.isFree })
-        });
-        nueva.id = r.lesson.id;
-      }catch(e){ return showToast(e.message); }
-    }
+    const btnAgregar = document.getElementById('clAgregar');
+    const textoOriginal = btnAgregar.textContent;
+    btnAgregar.disabled = true;
+    try{
+      const { videoId } = await subirVideoABunny(clArchivoElegido, {
+        contexto: 'leccion', contextoId: `${cuActual.curso.id}:${nueva.id}`, isFree: nueva.isFree,
+        title: nueva.title, onProgress: (pct)=>{ btnAgregar.textContent = pct + '%'; },
+      });
+      nueva.streamVideoId = videoId;
 
-    cuActual.clases.push(nueva);
-    cuPintarDetalle();
-    cuCargarLista();
-    showToast('Clase agregada' + (nueva.isFree ? ' (queda como muestra gratuita)' : ''));
+      if(MODE === 'api'){
+        try{
+          const r = await api(`/shop/admin/products/${cuActual.curso.id}/lessons`, {
+            method:'POST',
+            body: JSON.stringify({ title:titulo, durationMin:nueva.durationMin, isFree:nueva.isFree })
+          });
+          nueva.id = r.lesson.id;
+        }catch(e){ return showToast(e.message); }
+      }
+
+      cuActual.clases.push(nueva);
+      if(MODE !== 'api') await cuGuardarClasesSilencioso();
+      clArchivoElegido = null;
+      cuPintarDetalle();
+      cuCargarLista();
+      showToast('Clase agregada, video procesándose…' + (nueva.isFree ? ' (muestra gratuita)' : ''));
+    }catch(e){
+      showToast('No se pudo subir el video: ' + e.message);
+    }finally{
+      btnAgregar.disabled = false; btnAgregar.textContent = textoOriginal;
+    }
   }
 
   async function cuGuardarCurso(){
@@ -7108,6 +7515,9 @@
       Object.assign(enLista, datos);
       enLista.lessons = cuActual.clases;
     }
+
+    try{ await publicarCursos(); }
+    catch(e){ btn.disabled = false; btn.textContent = 'Guardar cambios'; return showToast('No se pudo guardar: ' + e.message); }
 
     btn.disabled = false; btn.textContent = 'Guardar cambios';
     cuCargarLista();
