@@ -427,7 +427,7 @@
   .slots{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
   .slot{border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; text-align:center; font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:0.8rem; cursor:pointer; color:var(--text-mid);}
   .slot:hover{border-color:var(--accent); color:var(--text-hi);}
-  .slot.selected{background:var(--text-hi); color:#fff; border-color:var(--text-hi);}
+  .slot.selected{background:var(--text-hi); color:var(--bg); border-color:var(--text-hi);}
 
   input[type=text], input[type=tel], input[type=email], input[type=password]{
     width:100%; padding:12px 14px; border:1px solid var(--border-strong); border-radius:var(--radius-sm);
@@ -435,13 +435,104 @@
   }
   input[type=text]::placeholder, input[type=tel]::placeholder,
   input[type=email]::placeholder, input[type=password]::placeholder{ color:var(--text-mid); }
+
+  /* ===== Paso 4 (Datos de contacto y pago): solo estilo, misma lógica ===== */
+  .dp-title{margin-bottom:22px;}
+  .dp-title h2{font-family:var(--font-primary); font-size:1.5rem; font-weight:600; letter-spacing:-.01em;}
+  .dp-title p{color:var(--text-mid); font-size:.86rem; margin-top:8px; line-height:1.55;}
+  .dp-field{display:flex; align-items:center; gap:12px; border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:2px 16px; margin-bottom:14px; background:var(--panel);}
+  .dp-field:focus-within{border-color:var(--accent);}
+  .dp-field svg{flex:0 0 auto; color:var(--text-low);}
+  .dp-field input[type=text], .dp-field input[type=tel], .dp-field input[type=email]{
+    flex:1; min-width:0; border:none; background:none; padding:12px 0; margin:0;
+  }
+  .dp-lock-note{display:flex; align-items:center; gap:8px; color:var(--text-low); font-size:.76rem; margin:2px 0 26px;}
+  .dp-lock-note svg{flex:0 0 auto;}
+  .dp-section-title{font-family:var(--font-primary); font-size:1.05rem; font-weight:600; margin-bottom:12px;}
+  .dp-pay-card{display:flex; align-items:center; gap:14px; border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:15px 16px; margin-bottom:26px; background:var(--panel);}
+  .dp-pay-logo{flex:0 0 auto; font-family:var(--font-primary); font-weight:700; font-size:.86rem;
+    color:var(--text-hi); border:1px solid var(--border); border-radius:10px; padding:8px 12px; white-space:nowrap;}
+  .dp-pay-logo span{color:var(--accent);}
+  .dp-pay-card b{font-size:.88rem; display:block; font-weight:600;}
+  .dp-pay-card p{color:var(--text-mid); font-size:.78rem; margin-top:3px;}
+  .dp-bar{display:flex; align-items:center; gap:12px;
+    background:#17171B; border-radius:28px 22px 26px 20px / 20px 26px 22px 28px;
+    padding:10px 12px 10px 16px; margin-top:6px; position:relative; overflow:hidden;
+    box-shadow:0 10px 26px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.07);}
+  .dp-bar::before{content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(128deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 32%, transparent 58%);}
+  .dp-bar::after{content:''; position:absolute; top:-45%; left:-8%; width:55%; height:85%; pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.16), transparent 72%);
+    filter:blur(16px); transform:rotate(-14deg);}
+  .dp-bar-info{display:flex; flex-direction:column; min-width:0; position:relative; z-index:1;}
+  .dp-bar-info span{color:#fff; opacity:.6; font-size:.66rem; text-transform:uppercase; letter-spacing:.04em;}
+  .dp-bar-info small{color:#fff; opacity:.5; font-size:.66rem; margin-top:1px;}
+  .dp-bar-divider{width:1px; align-self:stretch; background:rgba(255,255,255,.15); position:relative; z-index:1;}
+  .dp-bar-amount{display:flex; flex-direction:column; min-width:0; position:relative; z-index:1;}
+  .dp-bar-amount b{color:#fff; font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.1rem;}
+  .dp-bar-amount small{color:var(--oro-claro); font-size:.68rem; margin-top:1px;}
+  .dp-bar button{flex:0 0 auto; margin-left:auto; background:#fff; color:#17171B; border:1px solid #fff;
+    padding:9px 16px; border-radius:var(--radius-sm); font-size:0.78rem; font-weight:600; cursor:pointer;
+    position:relative; z-index:1;}
+  .dp-bar button:hover{background:var(--oro-claro); border-color:var(--oro-claro);}
+  .dp-bar button:disabled{opacity:.35; cursor:not-allowed;}
+  .dp-back{display:block; width:100%; text-align:center; margin-top:12px; background:none; border:none;
+    color:var(--text-mid); font-size:.82rem; cursor:pointer; padding:8px;}
+  .dp-back:hover{color:var(--text-hi);}
+  @media (max-width:860px){ .dp-bar, .dp-back{display:none;} }
+
+  .dp-recap-row{display:flex; align-items:center; gap:12px; padding:6px 0;}
+  .dp-recap-row + .dp-recap-row{border-top:1px solid var(--border); margin-top:6px; padding-top:12px;}
+  .dp-recap-ic{flex:0 0 auto; width:42px; height:42px; border-radius:50%; background:var(--panel-2);
+    display:flex; align-items:center; justify-content:center; color:var(--text-mid);}
+  .dp-recap-info{flex:1; min-width:0;}
+  .dp-recap-info b{display:block; font-size:.92rem; font-weight:600;}
+  .dp-recap-info span{display:block; color:var(--text-mid); font-size:.78rem; margin-top:2px;}
+  .dp-recap-price{flex:0 0 auto; font-size:.92rem; font-weight:600;}
+  .dp-recap-meta{display:flex; justify-content:space-between; gap:12px; font-size:.82rem;
+    color:var(--text-mid); margin:12px 15px 0;}
+  .dp-recap-meta b{color:var(--text-hi); font-weight:600;}
+
+  .dp-upsell-note{color:var(--text-mid); font-size:.8rem; margin:2px 0 12px;}
+  .dp-upsell-lista{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
+  .dp-upsell-item{display:flex; align-items:center; gap:12px; background:#17171B;
+    border-radius:20px 26px 18px 24px / 18px 20px 18px 22px;
+    padding:9px 10px 9px 9px; position:relative; overflow:hidden;
+    box-shadow:0 8px 22px rgba(0,0,0,.26), 0 2px 6px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);}
+  .dp-upsell-item::before{content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(128deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 30%, transparent 55%);}
+  .dp-upsell-item-thumb{flex:0 0 auto; width:34px; height:34px; border-radius:9px; background:#232326;
+    display:flex; align-items:center; justify-content:center; color:#8B8A91; overflow:hidden;
+    position:relative; z-index:1;}
+  .dp-upsell-item-thumb img{width:100%; height:100%; object-fit:cover;}
+  .dp-upsell-item-txt{flex:1; min-width:0; position:relative; z-index:1;}
+  .dp-upsell-item-txt b{display:block; color:#fff; font-size:.78rem; font-weight:600;}
+  .dp-upsell-item-txt span{display:block; font-size:.72rem; margin-top:1px;}
+  .dp-upsell-item-tachado{color:#8B8A91; text-decoration:line-through; margin-right:5px;}
+  .dp-upsell-item-final{color:var(--oro-claro); font-weight:600;}
+  .dp-upsell-item-btn{flex:0 0 auto; border:1px solid rgba(255,255,255,.3); background:none; color:#fff;
+    padding:7px 12px; border-radius:var(--radius-sm); font-size:.7rem; font-weight:600;
+    position:relative; z-index:1; cursor:pointer; font-family:inherit;}
+  .dp-upsell-item.agregado .dp-upsell-item-btn{background:#fff; color:#17171B; border-color:#fff;}
+  @media (max-width:860px){
+    /* la barra fija #rvBarra flota encima del contenido -- este espacio
+       extra evita que tape la lista de productos, que es lo último visible
+       antes del fondo en el paso 4. */
+    #dpUpsellWrap{margin-bottom:160px;}
+    /* #rvBarra ya tiene su propio botón "Continuar" que hace exactamente
+       lo mismo -- en mobile no hace falta repetirlo dentro del paso. */
+    #toStep2, #toStep3, #toStep4{display:none;}
+  }
+
   .pay-opts{display:flex; gap:10px; margin-bottom:22px;}
   .pay-opt{flex:1; border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px; text-align:center; font-size:0.84rem; cursor:pointer; font-weight:500;}
   .pay-opt:hover{border-color:var(--accent);}
   .pay-opt.selected{border-color:var(--oro); background:var(--oro-tenue); color:var(--oro);}
 
   .step-actions{display:flex; justify-content:space-between; margin-top:24px;}
-  .btn-dark{background:var(--text-hi); color:#fff; border:1px solid var(--text-hi); padding:12px 22px; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:600; cursor:pointer;}
+  .btn-dark{background:var(--text-hi); color:var(--bg); border:1px solid var(--text-hi); padding:12px 22px; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:600; cursor:pointer;}
   .btn-dark:hover{background:var(--accent); border-color:var(--accent);}
   .btn-dark:disabled{opacity:0.3; cursor:not-allowed;}
   .btn-ghost{background:transparent; border:1px solid var(--border); padding:12px 22px; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:600; cursor:pointer; color:var(--text-mid);}
@@ -476,7 +567,7 @@
   .product-body .sub{font-size:0.76rem; color:var(--text-mid); margin-bottom:12px;}
   .product-body .row{display:flex; justify-content:space-between; align-items:center;}
   .product-body .price{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-weight:500;}
-  .mini-add{width:28px; height:28px; border-radius:50%; background:var(--text-hi); color:#fff; border:none; cursor:pointer; font-size:0.95rem;}
+  .mini-add{width:28px; height:28px; border-radius:50%; background:var(--text-hi); color:var(--bg); border:none; cursor:pointer; font-size:0.95rem;}
   .mini-add:hover{background:var(--accent);}
 
   /* ===== footer ===== */
@@ -1067,7 +1158,7 @@
   /* barberos: tarjetas chicas, ni más grandes que una tarjeta de servicio */
   .barbers{display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:7px; margin-bottom:18px;}
   .barber-opt{display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    border:1px solid var(--border); border-radius:10px; padding:9px 5px; min-height:82px;
+    border:1px solid var(--border); border-radius:10px; padding:9px 5px; min-height:82px; min-width:0;
     cursor:pointer; text-align:center; background:var(--panel); transition:border-color .18s;}
   .barber-opt:hover{border-color:var(--border-strong);}
   .barber-opt.selected{border-color:var(--oro); box-shadow:0 0 0 1px var(--oro);}
@@ -1076,7 +1167,8 @@
   .b-foto{width:32px; height:32px; border-radius:50%; margin:0 auto 6px;
     background:linear-gradient(150deg,#6f6c63,#26241f); color:#fff;
     display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-primary); font-weight:600; font-size:.72rem;}
+    font-family:var(--font-primary); font-weight:600; font-size:.72rem;
+    background-size:cover; background-position:center; overflow:hidden;}
   .b-name{font-size:.68rem; font-weight:600; line-height:1.2; word-break:break-word; hyphens:auto;}
   .b-libre{font-size:.6rem; color:var(--text-low); margin-top:2px;}
   .b-libre.lleno{color:var(--text-low);}
@@ -1142,6 +1234,30 @@
     overflow:hidden; text-overflow:ellipsis;}
   .rv-barra-info b{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.05rem;}
   .rv-barra .btn-dark{padding:12px 24px;}
+
+  /* Solo en el paso 4 ("Total a pagar ahora"): forma orgánica tipo gota de
+     agua, activada por JS agregando esta clase -- en los otros 3 pasos la
+     misma barra (#rvBarra) sigue exactamente igual que siempre. */
+  .rv-barra.rv-organic{
+    background:#17171B; border-top:none; margin:0 30px 6px;
+    left:0; right:0; border-radius:22px 17px 20px 15px / 15px 20px 17px 22px;
+    padding:7px 9px 7px 13px; gap:9px;
+    position:fixed; overflow:hidden;
+    box-shadow:0 10px 26px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  .rv-barra.rv-organic::before{content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(128deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.02) 32%, transparent 58%);}
+  .rv-barra.rv-organic::after{content:''; position:absolute; top:-45%; left:-8%; width:55%; height:85%; pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.16), transparent 72%);
+    filter:blur(16px); transform:rotate(-14deg);}
+  .rv-barra.rv-organic .rv-barra-info{position:relative; z-index:1;}
+  .rv-barra.rv-organic .rv-barra-info span{color:#fff; opacity:.6; font-size:.62rem;}
+  .rv-barra.rv-organic .rv-barra-info b{color:#fff; display:block; margin-top:0; font-size:1rem;}
+  #rvBarraPct{color:#fff; opacity:.5; font-size:.62rem; display:block; margin-top:0;}
+  #rvBarraSub{color:var(--oro-claro); font-size:.62rem; display:block; margin-top:0;}
+  .rv-barra.rv-organic .btn-dark{position:relative; z-index:1; background:#fff; color:#17171B; border-color:#fff;
+    padding:7px 14px; font-size:.74rem;}
+  .rv-barra.rv-organic .btn-dark:hover{background:var(--oro-claro); border-color:var(--oro-claro);}
 
   @media (max-width:860px){
     .rv-resumen{display:none;}
@@ -2245,8 +2361,8 @@
           <!-- ============ PASO 2: FECHA Y HORA ============ -->
           <div class="bstep" data-bstep="2">
             <div class="rv-title">
-              <h2>¿Cuándo te gustaría venir?</h2>
-              <p>Elige el día y la hora que más te acomode.</p>
+              <h2 id="rv2Titulo">¿Cuándo te gustaría venir?</h2>
+              <p id="rv2Sub">Elige el día y la hora que más te acomode.</p>
             </div>
 
             <button class="rv-pronto" id="rvPronto">
@@ -2301,37 +2417,62 @@
           <!-- ============ PASO 4: CONFIRMAR ============ -->
           <div class="bstep" data-bstep="4">
             <div id="formZone">
-              <div class="rv-title">
-                <h2>Últimos datos</h2>
-                <p>Te enviaremos la confirmación por WhatsApp y correo.</p>
+              <div class="dp-title">
+                <h2>Datos de contacto y pago</h2>
+                <p>Ingresa tus datos para confirmar tu reserva. Tu correo electrónico es obligatorio, ya que te enviaremos la confirmación de tu reserva y los detalles del pago.</p>
               </div>
 
+              <div class="dp-field">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-4 4.2-6 7.5-6s6.1 2 7.5 6"/></svg>
+                <input type="text" placeholder="Nombre completo" id="cName">
+              </div>
+
+              <div class="dp-field">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg>
+                <input type="email" placeholder="Correo electrónico" id="cEmail">
+              </div>
+
+              <div class="dp-field">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 005.5 5.5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A16 16 0 015 5.1 1.5 1.5 0 016.5 3.5z"/></svg>
+                <input type="tel" placeholder="Teléfono" id="cPhone">
+              </div>
+
+              <div class="dp-lock-note">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 018 0v3.5"/></svg>
+                Tus datos están protegidos con encriptación SSL.
+              </div>
+
+              <div class="dp-section-title">Resumen de tu reserva</div>
               <div class="rv-recap" id="rvRecap"></div>
 
-              <span class="field-label">Nombre completo</span>
-              <input type="text" placeholder="Ej: Diego Fuentes" id="cName">
-
-              <span class="field-label">Teléfono</span>
-              <input type="tel" placeholder="+56 9 1234 5678" id="cPhone">
-
-              <span class="field-label">Correo electrónico <span style="text-transform:none;">(para tu confirmación)</span></span>
-              <input type="email" placeholder="tu@correo.com" id="cEmail">
-
-              <span class="field-label">¿Primera vez con nosotros?</span>
-              <div class="pay-opts" id="rvPrimera">
-                <div class="pay-opt selected" data-primera="no">Ya soy cliente</div>
-                <div class="pay-opt" data-primera="si">Primera vez</div>
+              <div class="dp-section-title" style="margin-top:22px;">Método de pago</div>
+              <div class="dp-pay-card">
+                <div class="dp-pay-logo">webpay<span>plus</span></div>
+                <div>
+                  <b>Pagarás el anticipo ahora con Webpay</b>
+                  <p>Tus datos y pago están protegidos con encriptación SSL y Transbank.</p>
+                </div>
               </div>
 
-              <span class="field-label">Nota para el barbero <span style="text-transform:none;">(opcional)</span></span>
-              <input type="text" placeholder="Ej: máquina 2 a los lados, sin tijera arriba" id="cNota">
-
-              <p style="font-size:0.82rem;color:var(--text-mid);margin:4px 0 0;">Para confirmar tu hora, pagas la seña ahora mismo con Webpay -- es rápido y seguro.</p>
-
-              <div class="step-actions">
-                <button class="btn-ghost" data-back="3">← Volver</button>
-                <button class="btn-dark" id="confirmBtn" disabled>Confirmar reserva</button>
+              <div id="dpUpsellWrap" style="display:none;">
+                <div class="dp-section-title" style="margin-bottom:4px;">Agrega productos con descuento</div>
+                <p class="dp-upsell-note">Aprovecha un <span id="dpUpsellPct">10</span>% OFF agregándolos aquí mismo</p>
+                <div id="dpUpsellLista" class="dp-upsell-lista"></div>
               </div>
+
+              <div class="dp-bar">
+                <div class="dp-bar-info">
+                  <span>Total a pagar ahora</span>
+                  <small id="dpPct"></small>
+                </div>
+                <div class="dp-bar-divider"></div>
+                <div class="dp-bar-amount">
+                  <b id="dpTotal">$0</b>
+                  <small>con Webpay</small>
+                </div>
+                <button id="confirmBtn" disabled>Pagar y agendar</button>
+              </div>
+              <button class="dp-back" data-back="3">← Volver</button>
             </div>
 
             <div class="confirm-msg" id="confirmMsg">
@@ -2365,7 +2506,9 @@
   <div class="rv-barra" id="rvBarra">
     <div class="rv-barra-info">
       <span id="rvBarraSvc">Elige un servicio</span>
+      <small id="rvBarraPct" style="display:none;"></small>
       <b id="rvBarraTotal">$0</b>
+      <small id="rvBarraSub" style="display:none;">con Webpay</small>
     </div>
     <button class="btn-dark" id="rvBarraBtn" disabled>Continuar</button>
   </div>
@@ -2911,7 +3054,21 @@
     document.querySelectorAll('.bstep').forEach(b=>{
       b.classList.toggle('active', parseInt(b.dataset.bstep)===n);
     });
+    if(n===2) actualizarTituloPaso2();
     if(typeof actualizarPaso === 'function') actualizarPaso();
+  }
+
+  function actualizarTituloPaso2(){
+    const tit = document.getElementById('rv2Titulo');
+    const sub = document.getElementById('rv2Sub');
+    if(!tit || !sub) return;
+    if(state.barberId && state.barberId !== 'any' && state.barber){
+      tit.textContent = 'Horarios de ' + state.barber;
+      sub.textContent = 'Estos horarios corresponden a la disponibilidad real de ' + state.barber + '.';
+    } else {
+      tit.textContent = '¿Cuándo te gustaría venir?';
+      sub.textContent = 'Elige el día y la hora que más te acomode.';
+    }
   }
 
   document.querySelectorAll('.step').forEach(s=>{
@@ -2919,7 +3076,7 @@
       const n = parseInt(s.dataset.step);
       if(n===1) goToStep(1);
       else if(n===2 && state.svc) goToStep(2);
-      else if(n===3 && state.svc && state.slot){ goToStep(3); avanzarAProfesional(); }
+      else if(n===3 && state.svc && state.slot){ irAProfesionalOSaltar(); }
       else if(n===4 && state.svc && state.slot && state.barber){ goToStep(4); prefillBooking(); }
     });
   });
@@ -3059,7 +3216,31 @@
   }
 
   document.querySelectorAll('[data-back]').forEach(btn=> btn.addEventListener('click', ()=> goToStep(parseInt(btn.dataset.back))));
-  document.getElementById('toStep3').addEventListener('click', ()=>{ goToStep(3); avanzarAProfesional(); });
+  /** Entra al paso 3, salvo que el cliente ya haya elegido su profesional
+   *  antes (modo "por barbero" del paso 1, o lo sugirió el chat de IA) --
+   *  en ese caso arma el plan con ese profesional y, si sigue realmente
+   *  disponible a la hora elegida (y no le tocó otro barbero porque el
+   *  suyo ya no tenía cupo), salta directo al paso 4 sin preguntar de
+   *  nuevo. Si algo cambió, muestra el paso 3 como siempre. */
+  function irAProfesionalOSaltar(){
+    if(state.barberId){
+      const plan = planificarCitas(state.fecha, state.startMin);
+      const respetaEleccion = state.barberId === 'any'
+        ? plan.every(x=> !x.sinCupo)
+        : plan.every(x=> !x.sinCupo && x.barberoId === state.barberId);
+      if(respetaEleccion){
+        state.plan = plan;
+        if(state.barberId === 'any') state.barber = 'Cualquiera';
+        updateSummary();
+        goToStep(4);
+        prefillBooking();
+        return;
+      }
+    }
+    goToStep(3);
+    avanzarAProfesional();
+  }
+  document.getElementById('toStep3').addEventListener('click', irAProfesionalOSaltar);
   document.getElementById('toStep4').addEventListener('click', ()=>{ goToStep(4); prefillBooking(); });
 
   // El anticipo por Webpay ya no es una opción entre otras -- es el único
@@ -3067,12 +3248,6 @@
   // seguridad: "pagar en el local" se eliminó del público, sigue existiendo
   // solo como reserva manual desde el panel administrativo).
   const payMethod = 'Webpay';
-  document.querySelectorAll('#rvPrimera .pay-opt').forEach(o=>{
-    o.addEventListener('click', ()=>{
-      document.querySelectorAll('#rvPrimera .pay-opt').forEach(x=>x.classList.toggle('selected', x===o));
-      checkConfirmar();
-    });
-  });
   const nameInput = document.getElementById('cName');
   const phoneInput = document.getElementById('cPhone');
   [nameInput, phoneInput].forEach(inp=> inp.addEventListener('input', checkConfirmar));
@@ -3561,7 +3736,11 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              tipo: 'RESERVATION_DEPOSIT', datos: { grupo: hold.grupo },
+              tipo: 'RESERVATION_DEPOSIT',
+              datos: {
+                grupo: hold.grupo,
+                productos: (state.upsellSeleccion || []).map(s=> ({ id: s.id, qty: 1 })),
+              },
               buyerName: datos.name, buyerEmail: datos.email, buyerPhone: datos.phone,
             }),
           });
@@ -3591,9 +3770,13 @@
     document.body.appendChild(form);
     form.submit();
   }
-  document.getElementById('newBooking').addEventListener('click', ()=>{
-    state.svc=null; state.price=0; state.barber=null; state.slot=null; payMethod=null;
-    state.servicios=[]; state.barberId=null; state.duracion=null;
+  function reiniciarModoReserva(){
+    state.svc=null; state.price=0; state.barber=null; state.slot=null; state.slotLabel=null;
+    state.anticipoReal=null; state.anticipoPct=null; state.montoConProducto=null;
+    state.servicios=[]; state.barberId=null; state.duracion=null; state.plan=[];
+    state.fecha=null; state.startMin=null;
+    state.upsellCatalogo=[]; state.upsellSeleccion=[];
+    if(typeof cambiarModo === 'function') cambiarModo('servicio');
     pintarElegidos(); marcarTarjetas();
     document.querySelectorAll('.svc-opt, .barber-opt, .slot, .pay-opt').forEach(x=>x.classList.remove('selected'));
     nameInput.value=''; phoneInput.value=''; document.getElementById('cEmail').value='';
@@ -3603,7 +3786,8 @@
     document.getElementById('formZone').style.display = 'block';
     document.getElementById('confirmMsg').classList.remove('show');
     updateSummary(); goToStep(1);
-  });
+  }
+  document.getElementById('newBooking').addEventListener('click', reiniciarModoReserva);
   // ===== cuentas de cliente: cuenta real (Firebase Auth), no solo del navegador =====
   let customerProfile = null;
 
@@ -4984,7 +5168,7 @@
     row.innerHTML = opciones.map(o=>`
       <div class="barber-opt ${state.barberId === o.id ? 'selected' : ''} ${o.libre ? '' : 'no-disponible'}"
            data-id="${o.id}" data-b="${o.name}">
-        <div class="b-foto">${o.initials || o.name.slice(0,2).toUpperCase()}</div>
+        <div class="b-foto" style="${o.photoUrl ? `background-image:url('${o.photoUrl}');` : ''}">${o.photoUrl ? '' : (o.initials || o.name.slice(0,2).toUpperCase())}</div>
         <div class="b-name">${o.name}</div>
         <div class="b-libre">${o.nota}</div>
       </div>`).join('');
@@ -5238,20 +5422,156 @@
   }
 
   /* ---------- recap del paso 3 ---------- */
+  const ICONO_TIJERA = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M20 4L8.5 15.5M20 20L13 13M8.5 8.5L11 11"/></svg>';
+  const ICONO_BOLSA = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>';
   function pintarRecap(){
     const el = document.getElementById('rvRecap');
     if(!el) return;
-    el.innerHTML = `
-      ${(state.servicios||[]).map(x=>
-        `<div class="rv-recap-linea"><span>${x.qty > 1 ? x.qty + '× ' : ''}${x.name}</span><b>${money(x.price * (x.qty||1))}</b></div>`).join('')
-        || '<div class="rv-recap-linea"><span>Servicio</span><b>—</b></div>'}
-      <div class="rv-recap-linea"><span>Duración total</span><b>${dur(state.duracion || 0)}</b></div>
-      ${(state.plan && state.plan.length > 1)
-        ? state.plan.filter(x=> !x.sinCupo).map(x=>
-            `<div class="rv-recap-linea"><span>${x.label} · ${x.servicio}</span><b>${x.barbero}</b></div>`).join('')
-        : `<div class="rv-recap-linea"><span>Barbero</span><b>${state.barber || '—'}</b></div>`}
-      <div class="rv-recap-linea"><span>Cuándo</span><b>${state.slot || '—'}</b></div>
-      <div class="rv-recap-linea"><span>Total</span><b>${money(state.price || 0)}</b></div>`;
+    const servicios = (state.servicios && state.servicios.length)
+      ? state.servicios
+      : [{ name: state.svc || 'Servicio', price: state.price || 0, qty:1 }];
+    const planes = (state.plan && state.plan.filter(x=> !x.sinCupo).length > 1)
+      ? state.plan.filter(x=> !x.sinCupo) : null;
+
+    const filas = servicios.map((s,i)=>{
+      const barbero = planes ? (planes[i]?.barbero || 'Profesional a confirmar') : (state.barber || 'Profesional a confirmar');
+      const duracion = planes ? (planes[i]?.minutos || 0) : (state.duracion || 0);
+      return `
+        <div class="dp-recap-row">
+          <div class="dp-recap-ic">${ICONO_TIJERA}</div>
+          <div class="dp-recap-info">
+            <b>${s.qty > 1 ? s.qty + '× ' : ''}${s.name}</b>
+            <span>${dur(duracion)} · ${barbero}</span>
+          </div>
+          <b class="dp-recap-price">${money(s.price * (s.qty||1))}</b>
+        </div>`;
+    }).join('');
+
+    const filasProducto = (state.upsellSeleccion || []).map(sel=> `
+      <div class="dp-recap-row">
+        <div class="dp-recap-ic">${ICONO_BOLSA}</div>
+        <div class="dp-recap-info">
+          <b>${sel.name}</b>
+          <span>Producto agregado · ${state.upsellDescuentoPct}% OFF</span>
+        </div>
+        <b class="dp-recap-price">${money(precioConDescuentoUI(sel.price))}</b>
+      </div>`).join('');
+
+    el.innerHTML = filas + filasProducto
+      + `<div class="dp-recap-meta"><span>Cuándo</span><b>${state.slot || '—'}</b></div>`
+      + (servicios.length > 1 ? `<div class="dp-recap-meta"><span>Total</span><b>${money(state.price || 0)}</b></div>` : '');
+  }
+
+  /** Lista "agrega productos con descuento" -- deja elegir cualquiera de los
+   *  productos activos de la tienda (no solo uno) para sumarlo directo a la
+   *  reserva y pagarlo junto con el anticipo en el mismo Webpay. El % de
+   *  descuento lo configura el dueño desde el panel (Configurar); acá solo
+   *  se muestra -- el servidor (calcularMonto en webpay.js) vuelve a leer
+   *  ese mismo % de Firestore al cobrar, nunca confía en lo que mande el
+   *  navegador. */
+  function precioConDescuentoUI(precio){
+    return Math.round(precio * (1 - (state.upsellDescuentoPct || 10) / 100));
+  }
+  async function cargarUpsellProductos(){
+    const wrap = document.getElementById('dpUpsellWrap');
+    if(!wrap) return;
+    state.upsellSeleccion = [];
+    state.upsellCatalogo = [];
+    try{
+      const [snapProductos, negocioDoc] = await Promise.all([
+        db.collection('products').limit(8).get(),
+        db.collection('settings').doc('negocio').get(),
+      ]);
+      const pct = negocioDoc.exists ? Number(negocioDoc.data().descuentoProductoReserva) : NaN;
+      state.upsellDescuentoPct = Number.isFinite(pct) ? pct : 10;
+      document.getElementById('dpUpsellPct').textContent = state.upsellDescuentoPct;
+
+      state.upsellCatalogo = snapProductos.docs
+        .map(d=> ({ id: d.id, ...d.data() }))
+        .filter(p=> p.active !== false)
+        .slice(0, 4)
+        .map(p=> ({ id: p.id, name: p.name, price: Number(p.price || 0), photoUrl: p.photoUrl || '' }));
+
+      if(!state.upsellCatalogo.length){ wrap.style.display = 'none'; return; }
+      pintarUpsell();
+      wrap.style.display = 'block';
+    }catch(e){
+      wrap.style.display = 'none';
+    }
+  }
+
+  function pintarUpsell(){
+    const cont = document.getElementById('dpUpsellLista');
+    cont.innerHTML = state.upsellCatalogo.map(p=>{
+      const agregado = (state.upsellSeleccion || []).some(s=> s.id === p.id);
+      return `
+        <div class="dp-upsell-item ${agregado ? 'agregado' : ''}" data-id="${p.id}">
+          <div class="dp-upsell-item-thumb">${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : ICONO_BOLSA}</div>
+          <div class="dp-upsell-item-txt">
+            <b>${p.name}</b>
+            <span><span class="dp-upsell-item-tachado">${money(p.price)}</span><span class="dp-upsell-item-final">${money(precioConDescuentoUI(p.price))}</span></span>
+          </div>
+          <button type="button" class="dp-upsell-item-btn">${agregado ? 'Quitar' : 'Agregar'}</button>
+        </div>`;
+    }).join('');
+    cont.querySelectorAll('.dp-upsell-item').forEach(row=>{
+      row.querySelector('.dp-upsell-item-btn').addEventListener('click', ()=>{
+        const id = row.dataset.id;
+        const idx = state.upsellSeleccion.findIndex(s=> s.id === id);
+        if(idx >= 0){
+          state.upsellSeleccion.splice(idx, 1);
+        } else {
+          const p = state.upsellCatalogo.find(x=> x.id === id);
+          state.upsellSeleccion.push({ id: p.id, name: p.name, price: p.price });
+        }
+        pintarUpsell();
+        pintarRecap();
+        cargarAnticipoResumen();
+      });
+    });
+  }
+
+  /** Muestra el anticipo REAL que se va a cobrar (el mismo que calcula el
+   *  servidor en calcularMonto/webpay.js: el campo `anticipo` del servicio,
+   *  o $5.000 si no tiene uno propio) -- solo para mostrarlo antes de ir a
+   *  Webpay; el monto que de verdad se cobra lo sigue calculando el
+   *  servidor al crear la transacción, esto es puramente informativo. */
+  const ANTICIPO_POR_DEFECTO_UI = 5000;
+  async function cargarAnticipoResumen(){
+    const citas = (state.plan && state.plan.length) ? state.plan.filter(x=> !x.sinCupo) : [{ servicioId: state.serviceId }];
+    let total = 0;
+    try{
+      for(const c of citas){
+        if(c.servicioId){
+          const doc = await db.collection('services').doc(c.servicioId).get();
+          const anticipo = doc.exists && typeof doc.data().anticipo === 'number' ? doc.data().anticipo : ANTICIPO_POR_DEFECTO_UI;
+          total += anticipo;
+        } else {
+          total += ANTICIPO_POR_DEFECTO_UI;
+        }
+      }
+    }catch(e){
+      total = ANTICIPO_POR_DEFECTO_UI * citas.length;
+    }
+    state.anticipoReal = total;
+    const pct = state.price ? Math.round(total / state.price * 100) : 0;
+    state.anticipoPct = pct;
+
+    // Los productos agregados desde la lista "X% OFF" se suman al total a
+    // pagar AHORA (junto con el anticipo, en el mismo Webpay) -- el
+    // servidor vuelve a calcular este mismo monto de forma independiente al
+    // crear la transacción, esto solo lo muestra antes de pagar.
+    let totalAhora = total;
+    for(const sel of (state.upsellSeleccion || [])){
+      totalAhora += precioConDescuentoUI(sel.price);
+    }
+    state.montoConProducto = totalAhora;
+
+    const el = document.getElementById('dpTotal');
+    if(el) el.textContent = money(totalAhora);
+    const pctEl = document.getElementById('dpPct');
+    if(pctEl) pctEl.textContent = pct + '% del valor total';
+    actualizarBarra();
   }
 
   /* ---------- barra fija en móvil ---------- */
@@ -5262,7 +5582,18 @@
     const btn = document.getElementById('rvBarraBtn');
     if(!btn) return;
 
-    total.textContent = money(state.price || 0);
+    document.getElementById('rvBarra')?.classList.toggle('rv-organic', paso === 4);
+    total.textContent = money(paso === 4 && state.montoConProducto != null ? state.montoConProducto : (state.price || 0));
+    const pctEl = document.getElementById('rvBarraPct');
+    const subEl = document.getElementById('rvBarraSub');
+    if(paso === 4 && state.anticipoPct != null){
+      pctEl.textContent = state.anticipoPct + '% del valor total';
+      pctEl.style.display = '';
+      subEl.style.display = '';
+    } else {
+      pctEl.style.display = 'none';
+      subEl.style.display = 'none';
+    }
 
     if(paso === 1){
       svcTxt.textContent = state.svc || 'Elige un servicio';
@@ -5273,15 +5604,15 @@
       svcTxt.textContent = state.slot || 'Elige fecha y hora';
       btn.textContent = 'Continuar';
       btn.disabled = !state.slot;
-      btn.onclick = ()=>{ goToStep(3); avanzarAProfesional(); };
+      btn.onclick = irAProfesionalOSaltar;
     } else if(paso === 3){
       svcTxt.textContent = state.barber || 'Elige profesional';
       btn.textContent = 'Continuar';
       btn.disabled = !state.barber;
       btn.onclick = ()=>{ goToStep(4); prefillBooking(); };
     } else {
-      svcTxt.textContent = state.slot || '';
-      btn.textContent = 'Confirmar';
+      svcTxt.textContent = 'Total a pagar ahora';
+      btn.textContent = 'Pagar y agendar';
       btn.disabled = document.getElementById('confirmBtn').disabled;
       btn.onclick = ()=> document.getElementById('confirmBtn').click();
     }
@@ -5295,7 +5626,7 @@
     if(el) el.textContent = `Paso ${n} de 4`;
     const bar = document.getElementById('rvBar');
     if(bar) bar.style.width = (n/4*100) + '%';
-    if(n === 4) pintarRecap();
+    if(n === 4){ pintarRecap(); cargarAnticipoResumen(); cargarUpsellProductos(); }
     actualizarBarra();
   }
 
@@ -5343,7 +5674,7 @@
 
     row.innerHTML = opciones.map(o=>`
       <div class="barber-opt ${state.barberId === o.id ? 'selected' : ''}" data-id="${o.id}" data-b="${o.name}">
-        <div class="b-foto">${o.initials || o.name.slice(0,2).toUpperCase()}</div>
+        <div class="b-foto" style="${o.photoUrl ? `background-image:url('${o.photoUrl}');` : ''}">${o.photoUrl ? '' : (o.initials || o.name.slice(0,2).toUpperCase())}</div>
         <div class="b-name">${o.name}</div>
         <div class="b-libre">${o.nota}</div>
       </div>`).join('');
@@ -5835,7 +6166,10 @@
     if(!desdeHistorial && hashActual() === '#reservas') irHistorial('back');
   }
 
-  document.getElementById('rvVolver').addEventListener('click', ()=> cerrarReservas());
+  document.getElementById('rvVolver').addEventListener('click', ()=>{
+    cerrarReservas();
+    if(typeof reiniciarModoReserva === 'function') reiniciarModoReserva();
+  });
 
 
   /* ---------- vista de tienda ----------
