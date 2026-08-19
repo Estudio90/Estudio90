@@ -2326,11 +2326,7 @@
               <span class="field-label">Nota para el barbero <span style="text-transform:none;">(opcional)</span></span>
               <input type="text" placeholder="Ej: máquina 2 a los lados, sin tijera arriba" id="cNota">
 
-              <span class="field-label">Medio de pago</span>
-              <div class="pay-opts" id="payPick">
-                <div class="pay-opt" data-pay="Webpay">Webpay ahora</div>
-                <div class="pay-opt" data-pay="Efectivo en local">Pagar en el local</div>
-              </div>
+              <p style="font-size:0.82rem;color:var(--text-mid);margin:4px 0 0;">Para confirmar tu hora, pagas la seña ahora mismo con Webpay -- es rápido y seguro.</p>
 
               <div class="step-actions">
                 <button class="btn-ghost" data-back="3">← Volver</button>
@@ -3066,11 +3062,14 @@
   document.getElementById('toStep3').addEventListener('click', ()=>{ goToStep(3); avanzarAProfesional(); });
   document.getElementById('toStep4').addEventListener('click', ()=>{ goToStep(4); prefillBooking(); });
 
-  let payMethod = null;
-  document.querySelectorAll('.pay-opt').forEach(o=>{
+  // El anticipo por Webpay ya no es una opción entre otras -- es el único
+  // camino para confirmar una reserva desde el sitio (ver informe de
+  // seguridad: "pagar en el local" se eliminó del público, sigue existiendo
+  // solo como reserva manual desde el panel administrativo).
+  const payMethod = 'Webpay';
+  document.querySelectorAll('#rvPrimera .pay-opt').forEach(o=>{
     o.addEventListener('click', ()=>{
-      payMethod = o.dataset.pay;
-      document.querySelectorAll('.pay-opt').forEach(x=>x.classList.toggle('selected', x===o));
+      document.querySelectorAll('#rvPrimera .pay-opt').forEach(x=>x.classList.toggle('selected', x===o));
       checkConfirmar();
     });
   });
@@ -3116,20 +3115,6 @@
     bookingsCache = snap.docs.map(d=> d.data());
     renderAccount().catch(()=>{});
   });
-
-  function publishToPanel(booking){
-    const { phone, email, ...publico } = booking;
-    // se devuelve esta escritura (sin atrapar el error acá) para que quien
-    // llame pueda esperar a que la reserva exista de verdad antes de pedir
-    // el correo de confirmación -- la regla de "mail" ahora exige que la
-    // reserva ya exista, para que nadie pueda mandar spam a otra dirección.
-    const escritura = db.collection('bookings').doc(booking.id).set(publico);
-    // el teléfono y el correo quedan aparte, con su propio candado: solo
-    // el panel (Admin/Recepción) puede leerlos, nunca es público.
-    db.collection('bookings').doc(booking.id).collection('private').doc('contact')
-      .set({ phone: phone || '', email: email || '' }).catch(()=>{});
-    return escritura;
-  }
 
   /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
   function plantillaCorreoReserva(reserva, estado, motivo){
@@ -3549,42 +3534,48 @@
       // no sabía qué barbero quedaba ocupado y podía duplicarlo.
       const citas = (state.plan && state.plan.length)
         ? state.plan.filter(x=> !x.sinCupo)
-        : [{ servicio: state.svc, precio: state.price, minutos: state.duracion,
+        : [{ servicio: state.svc, servicioId: state.serviceId, precio: state.price, minutos: state.duracion,
              barbero: state.barber, min: state.startMin, label: '' }];
 
-      const grupo = 'g' + Date.now();
-      const user = currentUser();
-      for(const [i, c] of citas.entries()){
-        const reserva = {
-          id: 'web-' + Date.now() + '-' + i + '-' + Math.random().toString(36).slice(2,6),
-          grupo, indice: i + 1, total: citas.length,
-          client: datos.name, phone: datos.phone, email: datos.email,
-          svc: c.servicio, barber: c.barbero,
-          slot: fmtFechaLarga(state.fecha) + ' · ' + (c.label || ''),
-          price: c.precio, pay: datos.pay,
-          fecha: state.fecha, startMin: c.min, duracion: c.minutos,
-          decision: 'pendiente', createdAt: new Date().toISOString()
-        };
+      if(payMethod === 'Webpay'){
+        // El backend vuelve a comprobar disponibilidad real y recien ahi
+        // bloquea la hora (10 min) mientras se paga -- el navegador nunca
+        // decide por si solo si el horario sigue libre.
         try{
-          // esperamos a que la reserva quede guardada de verdad antes de pedir
-          // el correo -- la regla de "mail" ahora exige que ya exista.
-          await publishToPanel(reserva);
-          enviarCorreoReserva(reserva, 'pendiente');
-        }catch(e){ /* si no se pudo guardar la reserva, no tiene sentido mandar el correo */ }
-        // si hay sesión activa, la reserva también entra a su historial de cuenta
-        if(user){
-          db.collection('customers').doc(user.uid).update({
-            bookingIds: firebase.firestore.FieldValue.arrayUnion(reserva.id)
-          }).catch(()=>{});
-          user.bookingIds = [...(user.bookingIds || []), reserva.id];
+          const holdResp = await fetch('https://us-central1-estudio90.cloudfunctions.net/crearHoldReserva', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fecha: state.fecha,
+              client: datos.name, phone: datos.phone, email: datos.email,
+              citas: citas.map(c=> ({
+                serviceId: c.servicioId, servicio: c.servicio, price: c.precio,
+                barberName: c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
+              })),
+            }),
+          });
+          const hold = await holdResp.json();
+          if(!holdResp.ok) throw new Error(hold.error || 'No se pudo reservar la hora');
+
+          const pagoResp = await fetch('https://us-central1-estudio90.cloudfunctions.net/webpayCrearTransaccion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tipo: 'RESERVATION_DEPOSIT', datos: { grupo: hold.grupo },
+              buyerName: datos.name, buyerEmail: datos.email, buyerPhone: datos.phone,
+            }),
+          });
+          const pago = await pagoResp.json();
+          if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo iniciar el pago del anticipo');
+          redirectToWebpay(pago.url, pago.token);
+        }catch(e){
+          btn.disabled = false;
+          btn.textContent = 'Confirmar reserva';
+          toast(e.message);
         }
+        return;
       }
     }
-
-    btn.textContent = 'Confirmar reserva';
-    document.getElementById('formZone').style.display = 'none';
-    document.getElementById('confirmMsg').classList.add('show');
-    await renderAccount();
   });
 
   /** Transbank exige que el token viaje por POST en un formulario. */
@@ -4540,6 +4531,7 @@
     if(!nombre) return toast('Escribe tu nombre');
     if(!/^\S+@\S+\.\S+$/.test(correo)) return toast('Necesitamos un correo válido para el comprobante');
     if(metodoEnvio === 'delivery' && !direccion) return toast('Indica la dirección de envío');
+    if(medioPago === 'mercadopago') return toast('MercadoPago todavía no está disponible: elige Webpay para pagar.');
 
     btn.disabled = true; btn.textContent = 'Procesando...';
 
@@ -4561,17 +4553,10 @@
           })
         });
 
-        if(medioPago === 'mercadopago'){
-          const mp = await api('/payments/mercadopago/start', {
-            method:'POST', body: JSON.stringify({ orderId: r.order.id })
-          });
-          window.location.href = mp.url;
-        } else {
-          const wp = await api('/payments/webpay/start-order', {
-            method:'POST', body: JSON.stringify({ orderId: r.order.id })
-          });
-          redirectToWebpay(wp.url, wp.token);
-        }
+        const wp = await api('/payments/webpay/start-order', {
+          method:'POST', body: JSON.stringify({ orderId: r.order.id })
+        });
+        redirectToWebpay(wp.url, wp.token);
         return;
       }catch(e){
         btn.disabled = false; btn.textContent = 'Pagar';
@@ -4579,58 +4564,101 @@
       }
     }
 
-    const sub = carrito.reduce((s,i)=> s + i.price * i.qty, 0);
-    const codigo = 'ML-C-' + Math.random().toString(36).slice(2,7).toUpperCase();
-    registrarVentaProductosOnline(carrito, nombre, correo);
-    mostrarCompraLista(codigo, correo, sub + costoEnvio());
-    btn.disabled = false; btn.textContent = 'Pagar';
+    // No se mezclan cursos y productos en un mismo pago: cada tipo de compra
+    // (COURSE_PURCHASE / PRODUCT_ORDER / RESERVATION_DEPOSIT) es una
+    // transacción separada, con su propio monto calculado en el servidor.
+    const cursos = carrito.filter(i=> i.kind === 'COURSE');
+    const productos = carrito.filter(i=> i.kind !== 'COURSE');
+    if(cursos.length && productos.length){
+      btn.disabled = false; btn.textContent = 'Pagar';
+      return toast('No puedes comprar cursos y productos juntos: hazlo en compras separadas.');
+    }
+    if(cursos.length > 1){
+      btn.disabled = false; btn.textContent = 'Pagar';
+      return toast('Compra un curso a la vez.');
+    }
+
+    const tipo = cursos.length ? 'COURSE_PURCHASE' : 'PRODUCT_ORDER';
+    const datos = cursos.length
+      ? { courseId: cursos[0].id }
+      : {
+          items: productos.map(i=> ({ id:i.id, qty:i.qty })),
+          metodoEnvio,
+          direccion: direccion || null,
+          ciudad: document.getElementById('ckCiudad').value.trim() || null,
+        };
+
+    // Webpay real: la transacción se crea en el servidor (Cloud Function),
+    // que recalcula el monto real leyendo Firestore -- nunca confía en lo
+    // que mande el navegador. Transbank confirma el pago del lado del
+    // servidor al volver (ver manejarRetornoWebpay, que lee el resultado
+    // ya confirmado en Firestore, nunca decide por sí solo que se pagó).
+    try{
+      const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/webpayCrearTransaccion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo, datos,
+          buyerName: nombre, buyerEmail: correo,
+          buyerPhone: document.getElementById('ckFono').value.trim(),
+        }),
+      });
+      const pago = await resp.json();
+      if(!resp.ok) throw new Error(pago.error || 'No se pudo iniciar el pago');
+      redirectToWebpay(pago.url, pago.token);
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Pagar';
+      toast(e.message);
+    }
   });
 
-  /**
-   * Deja registrada en el panel cada venta de PRODUCTO (no cursos) hecha por el
-   * sitio, para que aparezca sola en Productos. Busca el producto por nombre en
-   * el inventario real del panel; si existe, también descuenta su stock.
-   */
-  async function registrarVentaProductosOnline(items, nombreCliente, correoCliente){
-    const productos = items.filter(i=> i.kind === 'PRODUCT');
-    for(const item of productos){
+  /** Al volver de Webpay (confirmado por el servidor en webpayConfirmar),
+   *  se lee el resultado REAL desde Firestore -- nunca se asume éxito solo
+   *  por haber llegado a esta página. */
+  async function manejarRetornoWebpay(){
+    const params = new URLSearchParams(location.search);
+    const resultado = params.get('pago');
+    const orden = params.get('orden');
+    if(!resultado) return;
+
+    // limpiamos la URL de inmediato para que un refresco no vuelva a procesar
+    history.replaceState(null, '', location.pathname + location.hash);
+
+    if(resultado === 'confirmado' && orden){
       try{
-        // el carrito ya trae el id real de Firestore cuando el catálogo viene
-        // del panel; si no coincide (catálogo de respaldo), buscamos por nombre
-        let match = null;
-        const porId = await db.collection('products').doc(item.id).get();
-        if(porId.exists) match = porId;
-        else {
-          const snap = await db.collection('products').where('name', '==', item.name).limit(1).get();
-          match = snap.empty ? null : snap.docs[0];
+        const doc = await db.collection('pagosWebpay').doc(orden).get();
+        const p = doc.exists ? doc.data() : null;
+        if(p && p.estado === 'confirmado'){
+          const codigo = 'ML-' + orden.slice(-6).toUpperCase();
+          const mensajes = {
+            COURSE_PURCHASE: ' Ya puedes ver el curso en "Mis cursos".',
+            RESERVATION_DEPOSIT: ' Tu reserva quedó confirmada.',
+            PRODUCT_ORDER: '',
+          };
+          toast(`Pago confirmado (orden ${codigo}). Enviamos el comprobante a ${p.buyerEmail}.${mensajes[p.tipo] || ''}`);
+          if(p.tipo === 'RESERVATION_DEPOSIT') await renderAccount();
+        } else {
+          toast('No pudimos verificar tu pago. Escríbenos si el cargo aparece en tu cuenta.');
         }
-        await db.collection('productSales').add({
-          productId: match ? match.id : item.id, productName: item.name,
-          qty: item.qty, price: item.price, subtotal: item.price * item.qty,
-          origen: 'online', cliente: { nombre: nombreCliente, correo: correoCliente },
-          fecha: new Date().toISOString().slice(0,10), createdAt: new Date().toISOString(),
-        });
-        if(match){
-          const nuevoStock = Math.max(0, (match.data().stock ?? 0) - item.qty);
-          await db.collection('products').doc(match.id).update({ stock: nuevoStock });
-        }
-      }catch(e){}
+      }catch(e){
+        toast('No pudimos verificar tu pago. Escríbenos si el cargo aparece en tu cuenta.');
+      }
+      carrito = [];
+      guardarCarrito();
+      pintarCarrito();
+    } else if(resultado === 'rechazado'){
+      toast('El pago fue rechazado. Tu hora no quedó reservada; puedes intentar de nuevo.');
+    } else if(resultado === 'abandonado'){
+      toast('Pago cancelado.');
+    } else {
+      toast('Ocurrió un problema al procesar el pago. Intenta de nuevo.');
     }
   }
+  manejarRetornoWebpay();
 
-  function mostrarCompraLista(codigo, correo, total){
-    const cursos = carrito.filter(i=> i.kind === 'COURSE');
-    document.getElementById('ckForm').style.display = 'none';
-    document.getElementById('ckListo').classList.add('show');
-    document.getElementById('ckMensaje').innerHTML =
-      `Compra <b>${codigo}</b> por ${money(total)}.<br>
-       Enviamos el comprobante a <b>${correo}</b>.
-       ${cursos.length ? '<br>Incluye el acceso a tus cursos.' : ''}
-       ${MODE !== 'api' ? '<br><span style="font-size:.8rem;color:var(--text-low);">Modo demo: el cobro real y el correo necesitan servidor.</span>' : ''}`;
-    carrito = [];
-    guardarCarrito();
-    pintarCarrito();
-  }
+  // NOTA: registrar la venta y descontar stock ahora lo hace el servidor
+  // (webpayConfirmar -> procesarConfirmacion, ver database/functions/webpay.js),
+  // solo cuando Transbank confirma el pago -- ya no se hace desde el navegador.
 
   function conectarBotonesCompra(){
     document.querySelectorAll('[data-buy]').forEach(btn=>{
@@ -5451,7 +5479,7 @@
           if(estaLibre(usado[b.name], min, min + u.minutes)){
             usado[b.name].push([min, min + u.minutes]);
             plan.push({
-              servicio: u.name, precio: u.price, minutos: u.minutes,
+              servicio: u.name, servicioId: u.id, precio: u.price, minutos: u.minutes,
               barbero: b.name, barberoId: b.id, min,
               label: String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0'),
             });

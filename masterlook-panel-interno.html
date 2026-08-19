@@ -137,6 +137,24 @@
   .menu-panel-item:hover{color:var(--accent);}
   .menu-panel-item.danger{color:#c0392b;}
   .menu-pie{padding-top:8px;}
+  .nav-section-label{
+    font-family:var(--font-primary);font-size:10.5px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--text-low);padding:16px 4px 6px;
+  }
+  .nav-section-label:first-child{padding-top:0;}
+  .nav-group{border-bottom:1px solid var(--border);}
+  .nav-group-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;
+    padding:13px 4px;border:none;background:none;cursor:pointer;
+    font-family:inherit;font-size:13.5px;font-weight:500;color:var(--text-hi);
+  }
+  .nav-group-head:hover{color:var(--accent);}
+  .nav-group-head .chev{font-size:10px;color:var(--text-low);transition:transform .2s ease;}
+  .nav-group.open .nav-group-head .chev{transform:rotate(180deg);}
+  .nav-group-items{display:none;flex-direction:column;padding:0 0 8px 16px;}
+  .nav-group.open .nav-group-items{display:flex;}
+  .nav-group-items .menu-panel-item{border-bottom:none;padding:9px 4px;font-size:13px;color:var(--text-mid);}
+  .nav-group-items .menu-panel-item:hover{color:var(--accent);}
 
   .content{padding:22px 32px 0;}
 
@@ -1116,26 +1134,7 @@
     <div class="stock-chips" id="stockChips"></div>
     <div class="topbar-right">
       <div class="period-pill">Ago 2026</div>
-      <div class="user-menu-wrap">
-        <div class="avatar-round" id="who" title="Menú">AD</div>
-        <div class="user-menu" id="userMenu">
-          <button class="user-menu-item" id="btnRecordatorios">🔔 Recordatorios</button>
-          <button class="user-menu-item" id="btnComisiones" style="display:none;">💰 Comisiones</button>
-          <button class="user-menu-item admin-only" id="btnCursos" style="display:none;">🎓 Cursos</button>
-          <button class="user-menu-item admin-only" id="btnUsuarios" style="display:none;">👥 Usuarios</button>
-          <button class="user-menu-item admin-only" id="btnProductos" style="display:none;">📦 Productos</button>
-          <button class="user-menu-item" id="btnClientes" style="display:none;">📇 Clientes</button>
-          <button class="user-menu-item" id="btnHorarios" style="display:none;">🕐 Horarios</button>
-          <button class="user-menu-item" id="btnResenas" style="display:none;">⭐ Reseñas</button>
-          <button class="user-menu-item" id="btnArco" style="display:none;">📩 Derechos ARCO</button>
-          <button class="user-menu-item admin-only" id="btnPromos" style="display:none;">🏷️ Promociones</button>
-          <button class="user-menu-item admin-only" id="btnColores" style="display:none;">🎨 Colores del sitio</button>
-          <button class="user-menu-item admin-only" id="btnIntelligence" style="display:none;">🧠 Masterlook Intelligence</button>
-          <button class="user-menu-item" id="btnConfig">⚙ Configurar</button>
-          <div class="user-menu-sep"></div>
-          <button class="user-menu-item danger" id="btnSalir">🚪 Cerrar sesión</button>
-        </div>
-      </div>
+      <div class="avatar-round" id="who" title="Menú">AD</div>
     </div>
   </div>
 
@@ -1146,22 +1145,92 @@
       <button class="x-round" id="cerrarMenuLateral" aria-label="Cerrar menú">×</button>
     </div>
     <nav class="menu-links">
-      <button class="menu-panel-item" data-target="btnRecordatorios">🔔 Recordatorios</button>
-      <button class="menu-panel-item" data-target="btnComisiones" style="display:none;">💰 Comisiones</button>
-      <button class="menu-panel-item admin-only" data-target="btnCursos" style="display:none;">🎓 Cursos</button>
-      <button class="menu-panel-item admin-only" data-target="btnUsuarios" style="display:none;">👥 Usuarios</button>
-      <button class="menu-panel-item admin-only" data-target="btnProductos" style="display:none;">📦 Productos</button>
-      <button class="menu-panel-item" data-target="btnClientes" style="display:none;">📇 Clientes</button>
-      <button class="menu-panel-item" data-target="btnHorarios" style="display:none;">🕐 Horarios</button>
-      <button class="menu-panel-item" data-target="btnResenas" style="display:none;">⭐ Reseñas</button>
-      <button class="menu-panel-item" data-target="btnArco" style="display:none;">📩 Derechos ARCO</button>
-      <button class="menu-panel-item admin-only" data-target="btnPromos" style="display:none;">🏷️ Promociones</button>
-      <button class="menu-panel-item admin-only" data-target="btnColores" style="display:none;">🎨 Colores del sitio</button>
-      <button class="menu-panel-item admin-only" data-target="btnIntelligence" style="display:none;">🧠 Masterlook Intelligence</button>
-      <button class="menu-panel-item" data-target="btnConfig">⚙ Configurar</button>
+      <div class="nav-section-label">Panel</div>
+      <button class="menu-panel-item" id="btnAgendaNav">Agenda</button>
+      <button class="menu-panel-item" id="btnRecordatorios">Recordatorios</button>
+
+      <div class="nav-section-label">Vista cliente</div>
+      <button class="menu-panel-item" id="btnVistaPrevia">Vista previa</button>
+      <button class="menu-panel-item" id="btnMensajeriaWhatsapp">Mensajería WhatsApp</button>
+
+      <div class="nav-group" id="grupoReservas">
+        <button class="nav-group-head" type="button">Reservas <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnReservasVer">Ver todas las reservas</button>
+          <button class="menu-panel-item" id="btnReservaNueva">Nueva reserva</button>
+        </div>
+      </div>
+
+      <div class="nav-group" id="grupoServicios" style="display:none;">
+        <button class="nav-group-head" type="button">Servicios <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnServiciosCatalogo">Panel · catálogo</button>
+          <button class="menu-panel-item" id="btnVentasServicios">Ventas facturadas</button>
+        </div>
+      </div>
+
+      <div class="nav-group" id="grupoAcademy" style="display:none;">
+        <button class="nav-group-head" type="button">Academy <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnAcademyVideos">Videos de cursos</button>
+          <button class="menu-panel-item" id="btnAcademyPanel">Panel · cursos</button>
+          <button class="menu-panel-item" id="btnVentasAcademy">Ventas facturadas</button>
+          <button class="menu-panel-item" id="btnAccesosCursos">Accesos a cursos</button>
+        </div>
+      </div>
+
+      <div class="nav-group" id="grupoTienda" style="display:none;">
+        <button class="nav-group-head" type="button">Tienda <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnProductos">Panel · inventario</button>
+          <button class="menu-panel-item" id="btnTiendaVer">Ver productos</button>
+          <button class="menu-panel-item" id="btnVentasTienda">Ventas facturadas</button>
+        </div>
+      </div>
+
+      <button class="menu-panel-item" id="btnResenas" style="display:none;">Reseñas</button>
+
+      <div class="nav-group" id="grupoEquipo" style="display:none;">
+        <button class="nav-group-head" type="button">Equipo barberos <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnHorarios">Horarios</button>
+          <button class="menu-panel-item" id="btnEquipoServicios">Servicios staff</button>
+          <button class="menu-panel-item" id="btnComisiones">Comisiones</button>
+          <button class="menu-panel-item" id="btnInformeComisiones">Informe comisiones</button>
+        </div>
+      </div>
+
+      <div class="nav-group" id="grupoClientesDatos" style="display:none;">
+        <button class="nav-group-head" type="button">Clientes y datos <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnArchivosMultimedia">Archivos multimedia</button>
+          <button class="menu-panel-item" id="btnClientes">Clientes</button>
+          <button class="menu-panel-item" id="btnCampanas">Campañas</button>
+          <button class="menu-panel-item" id="btnArco">Derechos ARCO</button>
+        </div>
+      </div>
+
+      <div class="nav-group" id="grupoMas" style="display:none;">
+        <button class="nav-group-head" type="button">Más <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnColores">Colores del sitio</button>
+          <button class="menu-panel-item" id="btnPromos">Promociones</button>
+          <button class="menu-panel-item" id="btnIntelligence">Masterlook Intelligence</button>
+        </div>
+      </div>
     </nav>
     <div class="menu-pie">
-      <button class="menu-panel-item danger" data-target="btnSalir">🚪 Cerrar sesión</button>
+      <div class="nav-section-label">Cuenta</div>
+      <div class="nav-group" id="grupoMiEquipo" style="display:none;">
+        <button class="nav-group-head" type="button">Mi equipo <span class="chev">▾</span></button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnEquipoVer">Ver equipo</button>
+          <button class="menu-panel-item" id="btnEquipoNuevo">Registrar nuevo</button>
+        </div>
+      </div>
+      <button class="menu-panel-item" id="btnMiPerfil">Mi perfil</button>
+      <button class="menu-panel-item" id="btnConfig">Configurar</button>
+      <button class="menu-panel-item danger" id="btnSalir">Cerrar sesión</button>
     </div>
   </aside>
 
@@ -1284,6 +1353,196 @@
                  display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;">🎬</div>
           <button class="mg-btn ghost" id="acQuitarVideo" style="flex:none;padding:9px 16px;">Quitar video</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: ACCESOS A CURSOS (entitlements) ===== -->
+    <div id="vistaAccesosCursos" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Accesos a cursos</h2>
+          <p class="cx-sub">Quién tiene acceso a cada curso, desde cuándo y hasta cuándo -- por Webpay o registrado a mano.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn primary" id="acNuevoAcceso">+ Otorgar acceso manual</button>
+          <button class="ctrl-btn" id="acVolverAgenda">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="cx-panel">
+        <div id="acLista"><div class="cx-empty">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- Otorgar acceso manual (transferencia, efectivo, etc) -->
+    <div class="mg-modal" id="modalAccesoManual">
+      <div class="mg-head">
+        <h3>Otorgar acceso manual</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" style="margin-bottom:12px;">Para cuando el cliente pagó fuera de Webpay (transferencia, efectivo, u otro medio autorizado). Queda registrado igual que una compra real, con quién lo otorgó.</p>
+      <label class="mg-label">Correo del cliente</label>
+      <input type="email" id="amCorreo" class="mg-input" placeholder="cliente@correo.com">
+      <label class="mg-label">Nombre <span style="text-transform:none;">(si es cliente nuevo)</span></label>
+      <input type="text" id="amNombre" class="mg-input" placeholder="Nombre completo">
+      <label class="mg-label">Curso</label>
+      <select id="amCurso" class="mg-input"></select>
+      <label class="mg-label">Método de pago</label>
+      <select id="amMetodo" class="mg-input">
+        <option value="TRANSFER">Transferencia bancaria</option>
+        <option value="CASH">Efectivo</option>
+        <option value="OTHER">Otro medio</option>
+      </select>
+      <label class="mg-label">Monto pagado <span style="text-transform:none;">(opcional)</span></label>
+      <input type="number" id="amMonto" class="mg-input" min="0" step="1000" placeholder="0">
+      <button class="mg-btn solid full" id="amGuardar" style="margin-top:14px;">Activar acceso</button>
+    </div>
+
+    <!-- Confirmar acción sobre un acceso (revocar / reactivar) -->
+    <div class="mg-modal" id="modalConfirmAcceso">
+      <div class="mg-head">
+        <h3 id="acConfirmTitulo">Confirmar</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="acConfirmTexto" style="margin-bottom:16px;"></p>
+      <button class="mg-btn solid full" id="acConfirmSi">Confirmar</button>
+    </div>
+
+    <!-- Extender acceso -->
+    <div class="mg-modal" id="modalExtenderAcceso">
+      <div class="mg-head">
+        <h3>Extender acceso</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <label class="mg-label">Días a extender</label>
+      <input type="number" id="acExtenderDias" class="mg-input" min="1" step="1" value="15">
+      <button class="mg-btn solid full" id="acExtenderConfirmar" style="margin-top:14px;">Extender</button>
+    </div>
+
+    <!-- Historial de un acceso -->
+    <div class="mg-modal" id="modalHistorialAcceso">
+      <div class="mg-head">
+        <h3>Historial del acceso</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div id="acHistorialLista" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Mi perfil -->
+    <div class="mg-modal" id="modalMiPerfil">
+      <div class="mg-head">
+        <h3>Mi perfil</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <label class="mg-label">Nombre</label>
+      <input type="text" id="mpNombre" class="mg-input" placeholder="Tu nombre">
+      <label class="mg-label">Correo</label>
+      <input type="text" id="mpCorreo" class="mg-input" disabled>
+      <button class="mg-btn solid full" id="mpGuardar" style="margin-top:14px;">Guardar nombre</button>
+      <p class="mg-note" style="margin-top:16px;">¿Quieres cambiar tu contraseña? Te mandamos un correo con el enlace para hacerlo de forma segura.</p>
+      <button class="mg-btn ghost full" id="mpCambiarClave">Enviar correo para cambiar contraseña</button>
+    </div>
+
+    <!-- Mensajería WhatsApp: informativo, no es una bandeja real -->
+    <div class="mg-modal" id="modalMensajeriaWhatsapp">
+      <div class="mg-head">
+        <h3>Mensajería WhatsApp</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note">Hoy WhatsApp solo se puede abrir de a un cliente por vez (el navegador no permite mandar mensajes masivos ni tener una bandeja de entrada real dentro del panel) — por eso cada botón "WhatsApp" del panel abre una conversación individual.</p>
+      <p class="mg-note" style="margin-top:10px;">Para tener una bandeja de mensajes real (enviar y recibir de varios clientes desde aquí) hay que contratar una API oficial de WhatsApp Business con un proveedor autorizado. Opciones típicas:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <div style="font-weight:600;">API oficial de Meta (directa)</div>
+          <div style="color:var(--text-mid);font-size:12px;">Desde julio 2025 Meta cobra por mensaje entregado (no por conversación), según categoría y país del destinatario -- Chile ya factura en CLP desde abril 2026, pero la tarifa exacta por categoría hay que revisarla en el tarifario oficial de Meta al momento de decidir (se actualiza cada trimestre). Sin intermediario, así que en teoría es la más barata -- pero la complejidad de integrarla es alta: hay que construir el servidor de webhooks, las plantillas de mensaje y la verificación del número desde cero, y el soporte de Meta para negocios chicos es lento.</div>
+        </div>
+        <div style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <div style="font-weight:600;">Twilio</div>
+          <div style="color:var(--text-mid);font-size:12px;">Cobra un markup fijo de US$0,005 por mensaje encima de lo que cobra Meta -- en la práctica, 20-40% más caro que ir directo. A cambio, su documentación y SDK son mucho más simples de integrar que la API cruda de Meta (aunque igual toma semanas de desarrollo). Buena opción si prefieres priorizar soporte y documentación por sobre el costo.</div>
+        </div>
+        <div style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <div style="font-weight:600;">360dialog</div>
+          <div style="color:var(--text-mid);font-size:12px;">€49/mes de plataforma + las tarifas de Meta sin ningún markup adicional -- la más barata a mediano/largo plazo si el volumen de mensajes crece. La complejidad técnica es similar a ir directo a Meta (tú sigues escribiendo la lógica de conversación), pero al ser un proveedor oficial (BSP), verificar el número de WhatsApp Business suele ser más rápido y con menos trámites.</div>
+        </div>
+      </div>
+      <p class="mg-note" style="margin-top:10px;"><strong>Decisión (pendiente de implementar):</strong> se eligió la API oficial de Meta directa -- sin intermediario, la más barata a largo plazo, pero requiere más trabajo de integración. Queda pendiente hasta que se dé luz verde para construirla.</p>
+    </div>
+
+    <!-- ===== VISTA: ARCHIVOS MULTIMEDIA (todas las fotos de clientes) ===== -->
+    <div id="vistaArchivosMultimedia" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Archivos multimedia</h2>
+          <p class="cx-sub">Todas las fotos de cortes subidas desde las citas, de cualquier cliente.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="amvVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+      <div class="cx-panel">
+        <div id="amvGaleria" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+          <div class="cx-empty">Cargando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: VENTAS FACTURADAS (Servicios / Academy / Tienda) ===== -->
+    <div id="vistaVentas" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title" id="vtTitulo">Ventas facturadas</h2>
+          <p class="cx-sub" id="vtSub"></p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="vtVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+      <div class="cx-panel">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+          <label class="mg-label" style="margin:0;">Desde</label>
+          <input type="date" id="vtDesde" class="mg-input" style="width:auto;">
+          <label class="mg-label" style="margin:0;">Hasta</label>
+          <input type="date" id="vtHasta" class="mg-input" style="width:auto;">
+          <button class="ctrl-btn primary" id="vtFiltrar">Filtrar</button>
+        </div>
+        <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px;" id="vtKpis"></div>
+        <div id="vtTabla"><div class="cx-empty">Elige un rango de fechas y presiona Filtrar.</div></div>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: CAMPAÑAS (envío masivo de correo) ===== -->
+    <div id="vistaCampanas" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Campañas</h2>
+          <p class="cx-sub">Manda un correo a un grupo de clientes de una sola vez.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="cpVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+      <div class="cx-panel">
+        <label class="mg-label">Audiencia</label>
+        <select id="cpAudiencia" class="mg-input">
+          <option value="todos">Todos los clientes</option>
+          <option value="curso">Clientes con acceso a un curso específico</option>
+          <option value="reciente">Clientes con reserva en los últimos 30 días</option>
+        </select>
+        <select id="cpCurso" class="mg-input" style="display:none;margin-top:8px;"></select>
+
+        <label class="mg-label" style="margin-top:14px;">Asunto</label>
+        <input type="text" id="cpAsunto" class="mg-input" placeholder="Ej: 20% de descuento esta semana">
+
+        <label class="mg-label">Mensaje</label>
+        <textarea id="cpCuerpo" class="mg-input" rows="6" style="resize:vertical;" placeholder="Escribe el mensaje que recibirán por correo..."></textarea>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+          <button class="ctrl-btn" id="cpContarAudiencia">Ver cuántos clientes recibirán esto</button>
+          <span id="cpConteo" style="font-size:13px;color:var(--text-mid);"></span>
+        </div>
+
+        <button class="mg-btn solid full" id="cpEnviar" style="margin-top:16px;">Enviar campaña</button>
+        <p class="mg-note" id="cpEstado" style="margin-top:10px;"></p>
       </div>
     </div>
 
@@ -2686,49 +2945,41 @@
   document.getElementById('lgEntrar').addEventListener('click', intentarIngreso);
   document.getElementById('btnSalir')?.addEventListener('click', salirDelPanel);
 
-  // menú desplegable del avatar (arriba a la derecha)
-  const userMenu = document.getElementById('userMenu');
-  document.getElementById('who').addEventListener('click', (ev)=>{
-    ev.stopPropagation();
-    userMenu.classList.toggle('open');
-    // El avatar no siempre queda pegado al borde derecho real de la pantalla
-    // (el topbar se acomoda en varias líneas cuando hay muchas alertas de
-    // stock, o en celular), así que anclar el menú "al botón" con CSS podía
-    // sacarlo de la pantalla. Se calcula su posición real cada vez que se abre.
-    if(userMenu.classList.contains('open')){
-      const rect = document.getElementById('who').getBoundingClientRect();
-      const anchoMenu = Math.min(210, window.innerWidth - 20);
-      let izquierda = rect.right - anchoMenu;
-      izquierda = Math.max(10, Math.min(izquierda, window.innerWidth - anchoMenu - 10));
-      Object.assign(userMenu.style, {
-        position:'fixed', top:(rect.bottom + 8) + 'px', left:izquierda + 'px',
-        right:'auto', width:anchoMenu + 'px', minWidth:'0',
-      });
-    }
+  // ---------- Menú lateral (único: hamburguesa y avatar abren lo mismo) ----------
+  const menuLateralOverlay = document.getElementById('menuLateralOverlay');
+  const menuLateralPanel = document.getElementById('menuLateralPanel');
+  function abrirMenuLateral(){ menuLateralOverlay.classList.add('open'); menuLateralPanel.classList.add('open'); }
+  function cerrarMenuLateral(){ menuLateralOverlay.classList.remove('open'); menuLateralPanel.classList.remove('open'); }
+  document.getElementById('btnMenuLateral').addEventListener('click', abrirMenuLateral);
+  document.getElementById('who').addEventListener('click', abrirMenuLateral);
+  document.getElementById('cerrarMenuLateral').addEventListener('click', cerrarMenuLateral);
+  menuLateralOverlay.addEventListener('click', cerrarMenuLateral);
+
+  // Grupos expandibles (Reservas, Servicios, Academy, Tienda, Equipo barberos,
+  // Clientes y datos, Mi equipo, Más): un clic en el título abre/cierra el
+  // grupo, sin cerrar el panel entero.
+  menuLateralPanel.querySelectorAll('.nav-group-head').forEach(head=>{
+    head.addEventListener('click', ()=> head.closest('.nav-group').classList.toggle('open'));
   });
-  userMenu.querySelectorAll('.user-menu-item').forEach(btn=>
-    btn.addEventListener('click', ()=> userMenu.classList.remove('open')));
-  document.addEventListener('click', (ev)=>{
-    if(!userMenu.contains(ev.target) && ev.target.id !== 'who') userMenu.classList.remove('open');
+  // Cualquier destino real (no el título de un grupo) cierra el panel al elegirlo.
+  menuLateralPanel.querySelectorAll('.menu-links .menu-panel-item, .menu-pie .menu-panel-item').forEach(btn=>{
+    btn.addEventListener('click', cerrarMenuLateral);
   });
 
-  // ---------- Menú lateral (hamburguesa) ----------
-  (function(){
-    const overlay = document.getElementById('menuLateralOverlay');
-    const panel = document.getElementById('menuLateralPanel');
-    function abrirMenuLateral(){ overlay.classList.add('open'); panel.classList.add('open'); }
-    function cerrarMenuLateral(){ overlay.classList.remove('open'); panel.classList.remove('open'); }
-    document.getElementById('btnMenuLateral').addEventListener('click', abrirMenuLateral);
-    document.getElementById('cerrarMenuLateral').addEventListener('click', cerrarMenuLateral);
-    overlay.addEventListener('click', cerrarMenuLateral);
-    panel.querySelectorAll('.menu-panel-item').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        cerrarMenuLateral();
-        const real = document.getElementById(btn.dataset.target);
-        if(real) real.click();
-      });
-    });
-  })();
+  // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
+  document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
+  document.getElementById('btnReservasVer').addEventListener('click', irAlInicio);
+  document.getElementById('btnReservaNueva').addEventListener('click', ()=>{
+    irAlInicio();
+    document.getElementById('btnNuevaReserva')?.click();
+  });
+  document.getElementById('btnVistaPrevia').addEventListener('click', ()=>
+    window.open('masterlook-sitio.html', '_blank'));
+  document.getElementById('btnTiendaVer').addEventListener('click', ()=>
+    window.open('masterlook-sitio.html#tienda', '_blank'));
+  document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarHorariosPage);
+  document.getElementById('btnEquipoServicios').addEventListener('click', mostrarHorariosPage);
+  document.getElementById('btnInformeComisiones').addEventListener('click', ()=> mostrarComisiones('reporte'));
   ['lgUser','lgPass'].forEach(id=>
     document.getElementById(id).addEventListener('keydown', e=>{
       if(e.key === 'Enter') intentarIngreso();
@@ -2749,6 +3000,7 @@
         }
         userRole = doc.data().role || 'BARBER';
         userBarberName = doc.data().barber?.name || null;
+        userPermissions = doc.data().permissions || [];
       } else {
         // cuenta sin ficha en "staff": solo el dueño original de la cuenta
         // sigue siendo administrador por defecto, igual que en las reglas del servidor.
@@ -3270,6 +3522,7 @@
   const API_BASE = window.MASTERLOOK_API || 'http://localhost:4000/api';
   let MODE = 'demo';
   let accessToken = null;
+  let userPermissions = []; // permisos extra del staff logueado (además de los del rol)
   let userRole = null;      // 'ADMIN' | 'BARBER' — define qué puede ver
 
   async function api(path, options = {}){
@@ -3328,19 +3581,42 @@
      lo valida: ocultar el botón no es la única protección. */
   function mostrarControlesAdmin(){
     const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
-    document.querySelectorAll('.admin-only').forEach(el=> el.style.display = soloAdmin);
-    // Comisiones: administrador ve todo, barbero ve su propio resumen, recepción no ve nada
+    // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
+    // Servicios staff/Informe comisiones, Mi equipo, y el grupo "Más".
+    ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
+     'btnEquipoServicios','btnInformeComisiones','btnEquipoVer','btnEquipoNuevo',
+     'btnPromos','btnColores','btnIntelligence'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
+    });
+
+    // Comisiones: administrador ve todo, barbero ve su propio resumen, recepción no ve nada.
     const comOn = (userRole === 'ADMIN' || userRole === 'BARBER') ? '' : 'none';
-    document.querySelectorAll('#btnComisiones, [data-target="btnComisiones"]').forEach(el=> el.style.display = comOn);
-    // Clientes: administrador y recepción sí, barbero no (mismo criterio que el contacto)
+    document.getElementById('btnComisiones').style.display = comOn;
+
+    // Clientes/Horarios/Reseñas/ARCO: administrador y recepción sí, barbero no.
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
-    document.querySelectorAll('#btnClientes, [data-target="btnClientes"]').forEach(el=> el.style.display = cliOn);
-    // Horarios: mismo criterio que Clientes
-    document.querySelectorAll('#btnHorarios, [data-target="btnHorarios"]').forEach(el=> el.style.display = cliOn);
-    // Reseñas: mismo criterio que Clientes
-    document.querySelectorAll('#btnResenas, [data-target="btnResenas"]').forEach(el=> el.style.display = cliOn);
-    // Derechos ARCO: mismo criterio que Clientes (trae teléfono y correo)
-    document.querySelectorAll('#btnArco, [data-target="btnArco"]').forEach(el=> el.style.display = cliOn);
+    ['btnClientes','btnHorarios','btnServiciosCatalogo','btnResenas','btnArco',
+     'btnArchivosMultimedia','btnVentasServicios'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = cliOn;
+    });
+
+    // Accesos a cursos: administrador siempre, o cualquier staff con el
+    // permiso específico CURSOS_ACCESOS (aunque no sea ADMIN) -- la función
+    // en el servidor exige lo mismo, esto solo evita mostrar el botón.
+    const accesosOn = (userRole === 'ADMIN' || userPermissions.includes('CURSOS_ACCESOS')) ? '' : 'none';
+    document.getElementById('btnAccesosCursos').style.display = accesosOn;
+
+    // Campañas: por ahora solo administrador (envío masivo de correo).
+    const campanasEl = document.getElementById('btnCampanas');
+    if(campanasEl) campanasEl.style.display = soloAdmin;
+
+    // Un grupo expandible se oculta por completo si ninguno de sus ítems
+    // quedó visible para este rol (evita mostrar un título de grupo vacío).
+    document.querySelectorAll('.nav-group').forEach(grupo=>{
+      const items = grupo.querySelectorAll('.menu-panel-item');
+      const algunoVisible = Array.from(items).some(el=> el.style.display !== 'none');
+      grupo.style.display = algunoVisible ? '' : 'none';
+    });
   }
 
   /** Trae la agenda del día desde el servidor y la dibuja en el calendario. */
@@ -3749,13 +4025,12 @@
   /** Al hacer clic en "Master Look" del topbar: cierra todo y vuelve a la agenda con las reservas. */
   function irAlInicio(){
     cerrarModales();
-    document.getElementById('userMenu')?.classList.remove('open');
     document.getElementById('menuLateralOverlay')?.classList.remove('open');
     document.getElementById('menuLateralPanel')?.classList.remove('open');
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaColores','vistaCursos','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
+      ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -4352,7 +4627,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4530,7 +4805,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4556,7 +4831,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4681,7 +4956,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4995,14 +5270,15 @@
   function pintarConfigServicios(){
     const cont = document.getElementById('cfgServicios');
     cont.innerHTML = cfgServicios.map(s=>`
-      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}" style="grid-template-columns:38px 1fr 92px 74px auto;">
+      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}" style="grid-template-columns:38px 1fr 92px 74px 84px auto;">
         <div class="svc-thumb" data-foto="${s.id}" title="Subir foto del servicio"
              style="width:36px;height:36px;border-radius:8px;cursor:pointer;background-color:#eee;
                background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:14px;
                ${s.photoUrl ? `background-image:url('${s.photoUrl}');` : ''}">${s.photoUrl ? '' : '📷'}</div>
         <input type="text" value="${s.name}" data-f="name" placeholder="Nombre">
-        <input type="number" value="${s.priceClp}" data-f="priceClp" min="0" step="500">
-        <input type="number" value="${s.minutes}" data-f="minutes" min="5" step="5">
+        <input type="number" value="${s.priceClp}" data-f="priceClp" min="0" step="500" title="Precio">
+        <input type="number" value="${s.minutes}" data-f="minutes" min="5" step="5" title="Duración (min)">
+        <input type="number" value="${s.anticipo ?? 5000}" data-f="anticipo" min="0" step="500" title="Anticipo para reservar (Webpay)">
         <button class="mg-del" title="Desactivar">✕</button>
       </div>`).join('');
 
@@ -5101,7 +5377,7 @@
         cfgServicios.push({ ...r.service, barberIds:[] });
       }catch(e){ return showToast(e.message); }
     } else {
-      const nuevo = { id:'d'+Date.now(), name:nombre, priceClp:precio, minutes:mins, active:true, featured:false };
+      const nuevo = { id:'d'+Date.now(), name:nombre, priceClp:precio, minutes:mins, active:true, featured:false, anticipo:5000 };
       cfgServicios.push(nuevo);
       try{ await db.collection('services').doc(nuevo.id).set(nuevo); }catch(e){}
     }
@@ -5859,6 +6135,7 @@
         priceClp: c.priceClp, priceUsd: c.priceUsd || null,
         featured: true, active: c.active !== false,
         accessUrl: c.accessUrl || '',
+        accessDurationDays: c.accessDurationDays || 30,
         lessons: c.lessons || [],
         photoUrl: c.photoUrl || '',
         videoUrl: c.videoUrl || '',
@@ -5904,6 +6181,7 @@
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaAccesosCursos').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -5911,6 +6189,430 @@
     cuCargarLista();
     cargarVideoAcademia();
   }
+
+  /* ===== Accesos a cursos (entitlements): otorgar/extender/revocar/reactivar ===== */
+  function mostrarAccesosCursos(){
+    document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
+    document.getElementById('vistaUsuarios').style.display = 'none';
+    document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = 'none';
+    document.getElementById('vistaClientes').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaCursos').style.display = 'none';
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaAccesosCursos').style.display = '';
+    ocultarFlotante(true);
+    cargarAccesos();
+  }
+  document.getElementById('btnAccesosCursos').addEventListener('click', mostrarAccesosCursos);
+  document.getElementById('acVolverAgenda').addEventListener('click', ()=>{
+    document.getElementById('vistaAccesosCursos').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  });
+
+  const ESTADO_ACCESO_LABEL = { active:'Activo', expired:'Expirado', revoked:'Revocado' };
+  const ESTADO_ACCESO_COLOR = { active:'#2E7D32', expired:'#9A9691', revoked:'#B3261E' };
+  const METODO_PAGO_LABEL = { WEBPAY:'Webpay', TRANSFER:'Transferencia', CASH:'Efectivo', OTHER:'Otro' };
+
+  function fmtFechaAcceso(ts){
+    if(!ts) return '—';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  let accesosCache = [];
+  async function cargarAccesos(){
+    const cont = document.getElementById('acLista');
+    cont.innerHTML = '<div class="cx-empty">Cargando...</div>';
+    try{
+      const snap = await db.collection('entitlements').orderBy('createdAt', 'desc').limit(200).get();
+      accesosCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+      pintarAccesos();
+    }catch(e){
+      cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+    }
+  }
+
+  function pintarAccesos(){
+    const cont = document.getElementById('acLista');
+    if(!accesosCache.length){
+      cont.innerHTML = '<div class="cx-empty">Todavía no hay accesos otorgados.</div>';
+      return;
+    }
+    cont.innerHTML = `
+      <div class="mg-row" style="grid-template-columns:1.4fr 1.1fr 100px 90px 90px 90px 100px auto;font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.04em;">
+        <div>Cliente</div><div>Curso</div><div>Método</div><div>Inicio</div><div>Expira</div><div>Estado</div><div>Creado por</div><div>Acciones</div>
+      </div>
+    ` + accesosCache.map(a=>{
+      const vencido = a.accessExpirationDate?.toMillis && a.accessExpirationDate.toMillis() < Date.now();
+      const estadoReal = (a.accessStatus === 'active' && vencido) ? 'expired' : a.accessStatus;
+      const creador = a.createdBy === 'system:webpay' ? 'Webpay' : (a.createdBy || '—');
+      return `
+      <div class="mg-row" data-id="${a.id}" style="grid-template-columns:1.4fr 1.1fr 100px 90px 90px 90px 100px auto;align-items:center;">
+        <div>
+          <div style="font-weight:600;">${a.buyerName || '—'}</div>
+          <div style="font-size:11px;color:var(--text-mid);">${a.buyerEmail || ''}</div>
+        </div>
+        <div>${a.courseName || a.courseId}</div>
+        <div>${METODO_PAGO_LABEL[a.paymentMethod] || a.paymentMethod || '—'}</div>
+        <div>${fmtFechaAcceso(a.accessStartDate)}</div>
+        <div>${fmtFechaAcceso(a.accessExpirationDate)}</div>
+        <div><span style="display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;color:#fff;background:${ESTADO_ACCESO_COLOR[estadoReal] || '#9A9691'};">${ESTADO_ACCESO_LABEL[estadoReal] || estadoReal}</span></div>
+        <div style="font-size:11px;color:var(--text-mid);word-break:break-word;">${creador}</div>
+        <div style="display:flex;gap:6px;">
+          <button class="cu-ib" data-extender title="Extender acceso">＋</button>
+          <button class="cu-ib" data-revocar title="Revocar acceso" ${estadoReal === 'revoked' ? 'disabled' : ''}>🚫</button>
+          <button class="cu-ib" data-reactivar title="Reactivar acceso" ${estadoReal !== 'revoked' ? 'disabled' : ''}>↺</button>
+          <button class="cu-ib" data-historial title="Ver historial">🕘</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    cont.querySelectorAll('.mg-row[data-id]').forEach(row=>{
+      const id = row.dataset.id;
+      row.querySelector('[data-extender]').addEventListener('click', ()=> accionExtenderAcceso(id));
+      row.querySelector('[data-revocar]').addEventListener('click', ()=> accionRevocarAcceso(id));
+      row.querySelector('[data-reactivar]').addEventListener('click', ()=> accionReactivarAcceso(id));
+      row.querySelector('[data-historial]').addEventListener('click', ()=> verHistorialAcceso(id));
+    });
+  }
+
+  function accionExtenderAcceso(id){
+    document.getElementById('acExtenderDias').value = '15';
+    abrirModal('modalExtenderAcceso');
+    document.getElementById('acExtenderConfirmar').onclick = async ()=>{
+      const dias = Number(document.getElementById('acExtenderDias').value);
+      if(!dias || dias <= 0) return showToast('Ingresa un número de días válido');
+      try{
+        await functions.httpsCallable('extenderAcceso')({ accessId:id, dias });
+        showToast('Acceso extendido ' + dias + ' días');
+        cerrarModales();
+        cargarAccesos();
+      }catch(e){ showToast('No se pudo extender: ' + (e.message || 'error')); }
+    };
+  }
+
+  function accionRevocarAcceso(id){
+    document.getElementById('acConfirmTitulo').textContent = 'Revocar acceso';
+    document.getElementById('acConfirmTexto').textContent = 'El cliente perderá la posibilidad de ver el curso. ¿Confirmas?';
+    abrirModal('modalConfirmAcceso');
+    document.getElementById('acConfirmSi').onclick = async ()=>{
+      try{
+        await functions.httpsCallable('revocarAcceso')({ accessId:id });
+        showToast('Acceso revocado');
+        cerrarModales();
+        cargarAccesos();
+      }catch(e){ showToast('No se pudo revocar: ' + (e.message || 'error')); }
+    };
+  }
+
+  function accionReactivarAcceso(id){
+    document.getElementById('acConfirmTitulo').textContent = 'Reactivar acceso';
+    document.getElementById('acConfirmTexto').textContent = 'El cliente volverá a poder ver el curso. ¿Confirmas?';
+    abrirModal('modalConfirmAcceso');
+    document.getElementById('acConfirmSi').onclick = async ()=>{
+      try{
+        await functions.httpsCallable('reactivarAcceso')({ accessId:id });
+        showToast('Acceso reactivado');
+        cerrarModales();
+        cargarAccesos();
+      }catch(e){ showToast('No se pudo reactivar: ' + (e.message || 'error')); }
+    };
+  }
+
+  async function verHistorialAcceso(id){
+    const cont = document.getElementById('acHistorialLista');
+    cont.innerHTML = 'Cargando...';
+    abrirModal('modalHistorialAcceso');
+    try{
+      const snap = await db.collection('entitlements').doc(id).collection('audit').orderBy('at', 'desc').get();
+      if(!snap.docs.length){ cont.innerHTML = '<div class="cx-empty">Sin historial todavía.</div>'; return; }
+      cont.innerHTML = snap.docs.map(d=>{
+        const x = d.data();
+        const fecha = x.at?.toDate ? x.at.toDate().toLocaleString('es-CL') : '';
+        return `<div style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <div style="font-weight:600;">${x.action}</div>
+          <div style="color:var(--text-mid);font-size:11px;">${fecha}${x.by ? ' · ' + x.by : ''}</div>
+        </div>`;
+      }).join('');
+    }catch(e){ cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`; }
+  }
+
+  document.getElementById('acNuevoAcceso').addEventListener('click', async ()=>{
+    const sel = document.getElementById('amCurso');
+    try{
+      const snap = await db.collection('courses').get();
+      sel.innerHTML = snap.docs.map(d=> `<option value="${d.id}">${d.data().name}</option>`).join('');
+    }catch(e){ sel.innerHTML = ''; }
+    document.getElementById('amCorreo').value = '';
+    document.getElementById('amNombre').value = '';
+    document.getElementById('amMonto').value = '';
+    abrirModal('modalAccesoManual');
+  });
+
+  document.getElementById('amGuardar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('amGuardar');
+    const email = document.getElementById('amCorreo').value.trim();
+    const name = document.getElementById('amNombre').value.trim();
+    const courseId = document.getElementById('amCurso').value;
+    const paymentMethod = document.getElementById('amMetodo').value;
+    const monto = document.getElementById('amMonto').value;
+
+    if(!/^\S+@\S+\.\S+$/.test(email)) return showToast('Correo inválido');
+    if(!courseId) return showToast('Elige un curso');
+
+    btn.disabled = true; btn.textContent = 'Activando...';
+    try{
+      await functions.httpsCallable('crearAccesoManual')({
+        email, name, courseId, paymentMethod,
+        amount: monto ? Number(monto) : null,
+      });
+      showToast('Acceso activado');
+      cerrarModales();
+      cargarAccesos();
+    }catch(e){
+      showToast(e.message || 'No se pudo activar el acceso');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Activar acceso';
+    }
+  });
+
+  /* ===== Mi perfil ===== */
+  function mostrarMiPerfil(){
+    document.getElementById('mpNombre').value = userBarberName || auth.currentUser?.displayName || '';
+    document.getElementById('mpCorreo').value = auth.currentUser?.email || '';
+    abrirModal('modalMiPerfil');
+  }
+  document.getElementById('btnMiPerfil').addEventListener('click', mostrarMiPerfil);
+  document.getElementById('mpGuardar').addEventListener('click', async ()=>{
+    const nombre = document.getElementById('mpNombre').value.trim();
+    if(!nombre) return showToast('Escribe tu nombre');
+    try{
+      await db.collection('staff').doc(auth.currentUser.uid).set({ name: nombre }, { merge: true });
+      showToast('Nombre actualizado');
+      cerrarModales();
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || 'error')); }
+  });
+  document.getElementById('mpCambiarClave').addEventListener('click', async ()=>{
+    try{
+      await auth.sendPasswordResetEmail(auth.currentUser.email);
+      showToast('Te mandamos un correo para cambiar tu contraseña');
+    }catch(e){ showToast('No se pudo enviar el correo: ' + (e.message || 'error')); }
+  });
+
+  /* ===== Mensajería WhatsApp (panel informativo) ===== */
+  document.getElementById('btnMensajeriaWhatsapp').addEventListener('click', ()=>
+    abrirModal('modalMensajeriaWhatsapp'));
+
+  /* ===== Archivos multimedia: todas las fotos de clientes ===== */
+  function mostrarArchivosMultimedia(){
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaArchivosMultimedia').style.display = '';
+    ocultarFlotante(true);
+    cargarGaleriaGeneral();
+  }
+  document.getElementById('btnArchivosMultimedia').addEventListener('click', mostrarArchivosMultimedia);
+  document.getElementById('amvVolver').addEventListener('click', irAlInicio);
+  async function cargarGaleriaGeneral(){
+    const cont = document.getElementById('amvGaleria');
+    cont.innerHTML = '<div class="cx-empty">Cargando...</div>';
+    try{
+      const snap = await db.collection('clientPhotos').orderBy('createdAt', 'desc').limit(200).get();
+      const fotos = snap.docs.map(d=> d.data());
+      cont.innerHTML = fotos.length ? fotos.map(f=> `
+        <div>
+          <img src="${f.photoUrl}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:9.5px;color:#6c6b74;margin-top:3px;">${escapeHTML(f.clientName || '')} · ${escapeHTML(f.barberName || '')} · ${(f.createdAt || '').slice(0,10)}</div>
+        </div>`).join('') : '<div class="cx-empty" style="grid-column:1/-1;">Todavía no hay fotos subidas.</div>';
+    }catch(e){
+      cont.innerHTML = `<div class="cx-empty">No se pudieron cargar las fotos: ${e.message}</div>`;
+    }
+  }
+
+  /* ===== Ventas facturadas (Servicios / Academy / Tienda) ===== */
+  const VENTAS_CONFIG = {
+    servicios: { titulo:'Ventas facturadas · Servicios', sub:'Reservas con anticipo pagado por Webpay, por rango de fechas.' },
+    academy:   { titulo:'Ventas facturadas · Academy', sub:'Cursos comprados por Webpay, por rango de fechas.' },
+    tienda:    { titulo:'Ventas facturadas · Tienda', sub:'Ventas de productos, por rango de fechas.' },
+  };
+  let ventasTipoActual = 'servicios';
+  function mostrarVentas(tipo){
+    ventasTipoActual = tipo;
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaCampanas'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaVentas').style.display = '';
+    ocultarFlotante(true);
+    document.getElementById('vtTitulo').textContent = VENTAS_CONFIG[tipo].titulo;
+    document.getElementById('vtSub').textContent = VENTAS_CONFIG[tipo].sub;
+    const hoy = new Date().toISOString().slice(0,10);
+    const hace30 = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
+    document.getElementById('vtDesde').value = hace30;
+    document.getElementById('vtHasta').value = hoy;
+    document.getElementById('vtKpis').innerHTML = '';
+    document.getElementById('vtTabla').innerHTML = '<div class="cx-empty">Elige un rango de fechas y presiona Filtrar.</div>';
+  }
+  document.getElementById('btnVentasServicios').addEventListener('click', ()=> mostrarVentas('servicios'));
+  document.getElementById('btnVentasAcademy').addEventListener('click', ()=> mostrarVentas('academy'));
+  document.getElementById('btnVentasTienda').addEventListener('click', ()=> mostrarVentas('tienda'));
+  document.getElementById('vtVolver').addEventListener('click', irAlInicio);
+
+  function vtKpiCard(label, valor){
+    return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value">${valor}</div></div>`;
+  }
+  document.getElementById('vtFiltrar').addEventListener('click', async ()=>{
+    const desde = document.getElementById('vtDesde').value;
+    const hasta = document.getElementById('vtHasta').value;
+    const tabla = document.getElementById('vtTabla');
+    const kpis = document.getElementById('vtKpis');
+    if(!desde || !hasta) return showToast('Elige un rango de fechas');
+    tabla.innerHTML = '<div class="cx-empty">Buscando...</div>';
+    kpis.innerHTML = '';
+    try{
+      let filas = [];
+      const fechaDeTimestamp = (ts)=> ts?.toDate ? ts.toDate().toISOString().slice(0,10) : '';
+      if(ventasTipoActual === 'servicios'){
+        const snap = await db.collection('pagosWebpay')
+          .where('tipo', '==', 'RESERVATION_DEPOSIT').where('estado', '==', 'confirmado').get();
+        filas = snap.docs.map(d=> d.data())
+          .map(p=> ({ fecha: fechaDeTimestamp(p.confirmedAt), detalle: p.buyerName || p.buyerEmail || '', monto: p.amount || 0 }))
+          .filter(f=> f.fecha >= desde && f.fecha <= hasta);
+      } else if(ventasTipoActual === 'academy'){
+        const snap = await db.collection('pagosWebpay')
+          .where('tipo', '==', 'COURSE_PURCHASE').where('estado', '==', 'confirmado').get();
+        filas = snap.docs.map(d=> d.data())
+          .map(p=> ({ fecha: fechaDeTimestamp(p.confirmedAt), detalle: (p.buyerName || p.buyerEmail || '') + ' · ' + (p.detalle?.courseName || p.detalle?.courseId || ''), monto: p.amount || 0 }))
+          .filter(f=> f.fecha >= desde && f.fecha <= hasta);
+      } else {
+        const snap = await db.collection('productSales').get();
+        filas = snap.docs.map(d=> d.data())
+          .filter(v=> (v.fecha || (v.createdAt||'').slice(0,10)) >= desde && (v.fecha || (v.createdAt||'').slice(0,10)) <= hasta)
+          .map(v=> ({ fecha: v.fecha || (v.createdAt||'').slice(0,10), detalle: (v.productName || v.productId) + ' ×' + (v.qty||1), monto: v.subtotal ?? ((v.price||0)*(v.qty||1)) }));
+      }
+      filas.sort((a,b)=> b.fecha.localeCompare(a.fecha));
+      const total = filas.reduce((s,f)=> s + (f.monto||0), 0);
+      kpis.innerHTML = vtKpiCard('Ventas en el rango', filas.length) + vtKpiCard('Total facturado', '$' + total.toLocaleString('es-CL'));
+      tabla.innerHTML = filas.length ? `
+        <div class="mg-row" style="grid-template-columns:110px 1fr 120px;font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;">
+          <div>Fecha</div><div>Detalle</div><div>Monto</div>
+        </div>` + filas.map(f=> `
+        <div class="mg-row" style="grid-template-columns:110px 1fr 120px;align-items:center;">
+          <div>${f.fecha}</div><div>${escapeHTML(String(f.detalle))}</div><div>$${(f.monto||0).toLocaleString('es-CL')}</div>
+        </div>`).join('') : '<div class="cx-empty">Sin ventas en ese rango.</div>';
+    }catch(e){
+      tabla.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+    }
+  });
+
+  /* ===== Campañas: envío masivo de correo ===== */
+  function mostrarCampanas(){
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaCampanas').style.display = '';
+    ocultarFlotante(true);
+    document.getElementById('cpAsunto').value = '';
+    document.getElementById('cpCuerpo').value = '';
+    document.getElementById('cpConteo').textContent = '';
+    document.getElementById('cpEstado').textContent = '';
+    if(!document.getElementById('cpCurso').dataset.cargado){
+      db.collection('courses').get().then(snap=>{
+        document.getElementById('cpCurso').innerHTML = snap.docs.map(d=> `<option value="${d.id}">${escapeHTML(d.data().name||d.id)}</option>`).join('');
+        document.getElementById('cpCurso').dataset.cargado = '1';
+      }).catch(()=>{});
+    }
+  }
+  document.getElementById('btnCampanas').addEventListener('click', mostrarCampanas);
+  document.getElementById('cpVolver').addEventListener('click', irAlInicio);
+  document.getElementById('cpAudiencia').addEventListener('change', ()=>{
+    document.getElementById('cpCurso').style.display = document.getElementById('cpAudiencia').value === 'curso' ? '' : 'none';
+  });
+
+  async function cpResolverAudiencia(){
+    const modo = document.getElementById('cpAudiencia').value;
+    if(modo === 'curso'){
+      const courseId = document.getElementById('cpCurso').value;
+      const snap = await db.collection('entitlements').where('courseId', '==', courseId).get();
+      const correos = new Set(snap.docs.map(d=> d.data().buyerEmail).filter(Boolean));
+      return Array.from(correos);
+    }
+    if(modo === 'reciente'){
+      const hace30 = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
+      const snap = await db.collection('bookings').where('fecha', '>=', hace30).get();
+      const correos = new Set();
+      for(const d of snap.docs){
+        try{
+          const priv = await db.collection('bookings').doc(d.id).collection('private').doc('contact').get();
+          if(priv.exists && priv.data().email) correos.add(priv.data().email);
+        }catch(e){}
+      }
+      return Array.from(correos);
+    }
+    const snap = await db.collection('customers').get();
+    const correos = new Set(snap.docs.map(d=> d.data().email).filter(Boolean));
+    return Array.from(correos);
+  }
+
+  document.getElementById('cpContarAudiencia').addEventListener('click', async ()=>{
+    const span = document.getElementById('cpConteo');
+    span.textContent = 'Calculando...';
+    try{
+      const correos = await cpResolverAudiencia();
+      span.textContent = correos.length + (correos.length === 1 ? ' cliente recibirá esto' : ' clientes recibirán esto');
+    }catch(e){ span.textContent = 'No se pudo calcular: ' + e.message; }
+  });
+
+  async function cpEnviarAhora(){
+    const btn = document.getElementById('cpEnviar');
+    const estado = document.getElementById('cpEstado');
+    const asunto = document.getElementById('cpAsunto').value.trim();
+    const cuerpo = document.getElementById('cpCuerpo').value.trim();
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    estado.textContent = '';
+    try{
+      const correos = await cpResolverAudiencia();
+      if(!correos.length){ estado.textContent = 'No hay destinatarios para esa audiencia.'; return; }
+      const html = cuerpo.replace(/\n/g, '<br>');
+      let enviados = 0;
+      for(const email of correos){
+        try{
+          await db.collection('mail').add({ to:[email], message:{ subject: asunto, html, text: cuerpo } });
+          enviados++;
+        }catch(e){}
+      }
+      estado.textContent = `Campaña enviada a ${enviados} de ${correos.length} clientes.`;
+      showToast('Campaña enviada');
+    }catch(e){
+      estado.textContent = 'No se pudo enviar: ' + e.message;
+    }finally{
+      btn.disabled = false; btn.textContent = 'Enviar campaña';
+    }
+  }
+  document.getElementById('cpEnviar').addEventListener('click', ()=>{
+    const asunto = document.getElementById('cpAsunto').value.trim();
+    const cuerpo = document.getElementById('cpCuerpo').value.trim();
+    if(!asunto || !cuerpo) return showToast('Escribe el asunto y el mensaje');
+    document.getElementById('acConfirmTitulo').textContent = 'Enviar campaña';
+    document.getElementById('acConfirmTexto').textContent = '¿Enviar este correo a toda la audiencia elegida? Esta acción no se puede deshacer.';
+    abrirModal('modalConfirmAcceso');
+    document.getElementById('acConfirmSi').onclick = ()=>{ cerrarModales(); cpEnviarAhora(); };
+  });
 
   /** Video de presentación de la Academy (uno solo, para toda la Academy, no por curso). */
   async function cargarVideoAcademia(){
@@ -5971,7 +6673,8 @@
     ocultarFlotante(false);
   }
 
-  document.getElementById('btnCursos').addEventListener('click', mostrarCursos);
+  document.getElementById('btnAcademyVideos').addEventListener('click', mostrarCursos);
+  document.getElementById('btnAcademyPanel').addEventListener('click', mostrarCursos);
   document.getElementById('cuVolver').addEventListener('click', cuVolverAgenda);
 
   async function cuCargarLista(){
@@ -6083,6 +6786,13 @@
         <div class="cu-campo">
           <label>Precio en dólares <span style="text-transform:none;">(internacional)</span></label>
           <input type="number" id="cuPrecioUsd" class="mono-in" min="0" value="${curso.priceUsd ?? ''}" placeholder="opcional">
+        </div>
+        <div class="cu-campo">
+          <label>Duración del acceso <span style="text-transform:none;">(días)</span></label>
+          <input type="number" id="cuDuracionAcceso" class="mono-in" min="1" step="1" value="${curso.accessDurationDays ?? 30}">
+          <span style="display:block;font-size:11px;color:var(--text-mid);text-transform:none;letter-spacing:0;margin-top:4px;">
+            Solo aplica a compras nuevas -- no cambia los accesos que ya se otorgaron.
+          </span>
         </div>
         <div class="cu-campo full">
           <label>Enlace de acceso <span style="text-transform:none;">(se envía en el comprobante)</span></label>
@@ -6330,6 +7040,7 @@
       priceClp: Number(document.getElementById('cuPrecio').value) || 0,
       priceUsd: document.getElementById('cuPrecioUsd').value
         ? Number(document.getElementById('cuPrecioUsd').value) : null,
+      accessDurationDays: Number(document.getElementById('cuDuracionAcceso').value) || 30,
       accessUrl: document.getElementById('cuAcceso').value.trim(),
       active: document.getElementById('cuActivo').checked,
     };
@@ -6405,6 +7116,7 @@
     { id:'COMISIONES_VER',    nombre:'Ver comisiones',             grupo:'Dinero', sensible:true },
     { id:'COMISIONES_EDITAR', nombre:'Cambiar porcentajes',        grupo:'Dinero', sensible:true },
     { id:'USUARIOS_EDITAR',   nombre:'Dar acceso a otros',         grupo:'Dinero', sensible:true },
+    { id:'CURSOS_ACCESOS',    nombre:'Otorgar, extender o revocar acceso a cursos', grupo:'Dinero', sensible:true },
   ];
 
   const PERMISOS_ROL = {
@@ -6432,7 +7144,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6451,12 +7163,13 @@
     ocultarFlotante(false);
   }
 
-  document.getElementById('btnUsuarios').addEventListener('click', mostrarUsuarios);
+  document.getElementById('btnEquipoVer').addEventListener('click', mostrarUsuarios);
+  document.getElementById('btnEquipoNuevo').addEventListener('click', ()=>{ mostrarUsuarios(); usAbrir(null); });
   document.getElementById('usVolver').addEventListener('click', usVolverAgenda);
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7856,7 +8569,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
