@@ -14,6 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
 <style>
   /* ==========================================================
      MASTER LOOK — barbería & spa
@@ -2085,18 +2086,25 @@
           <div class="empty-hist">Todavía no tienes reservas. Agenda tu primera hora y aparecerá aquí.</div>
         </div>
       </div>
-      <div class="panel-card">
-        <h3 class="display" style="font-size:0.95rem;">Beneficios</h3>
-        <div class="points-card">
-          <div class="pl">Puntos acumulados</div>
-          <div class="pv" id="accPoints">0</div>
-          <div class="pl" id="pointsPending" style="color:#8a6d1f; margin-top:6px; display:none;"></div>
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="panel-card">
+          <h3 class="display" style="font-size:0.95rem;">Beneficios</h3>
+          <div class="points-card">
+            <div class="pl">Puntos acumulados</div>
+            <div class="pv" id="accPoints">0</div>
+            <div class="pl" id="pointsPending" style="color:#8a6d1f; margin-top:6px; display:none;"></div>
+          </div>
+          <div class="points-card">
+            <div class="pl">Visitas totales</div>
+            <div class="pv" id="accVisits">0</div>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-mid); margin-top:14px; line-height:1.5;">Cada $1.000 gastados suman 1 punto. Con 100 puntos obtienes un corte gratis.</p>
         </div>
-        <div class="points-card">
-          <div class="pl">Visitas totales</div>
-          <div class="pv" id="accVisits">0</div>
+        <div class="panel-card">
+          <h3 class="display" style="font-size:0.95rem; margin-bottom:6px;">Mis cursos</h3>
+          <p id="accCursosResumen" style="font-size:0.8rem; color:var(--text-mid); line-height:1.5;">Revisa tu progreso y mira tus clases cuando quieras.</p>
+          <button class="btn-dark" style="width:100%; margin-top:10px;" onclick="abrirMisCursos()">Ver mis cursos</button>
         </div>
-        <p style="font-size:0.8rem; color:var(--text-mid); margin-top:14px; line-height:1.5;">Cada $1.000 gastados suman 1 punto. Con 100 puntos obtienes un corte gratis.</p>
       </div>
     </div>
   </div>
@@ -2584,11 +2592,6 @@
       </div>
     </section>
 
-    <div class="ac-video-modal" id="acVideoModal" onclick="if(event.target===this) cerrarVideoAcademia()">
-      <button class="ac-video-close" onclick="cerrarVideoAcademia()" aria-label="Cerrar">✕</button>
-      <video id="acVideoPlayer" controls playsinline></video>
-    </div>
-
     <!-- por qué estudiar -->
     <section class="ac-why">
       <h2>¿Por qué estudiar en Masterlook Academy?</h2>
@@ -2699,6 +2702,32 @@
     </div>
 
   </div>
+</div>
+
+<!-- ===== Mis cursos (vista completa) ===== -->
+<div id="vistaMisCursos" class="tienda-vista">
+  <header class="tv-head">
+    <div class="tv-head-in">
+      <button class="tv-back" id="mcVolver">← Volver al inicio</button>
+      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <span></span>
+    </div>
+  </header>
+  <div class="wrap tv-body">
+    <div class="rv-title" style="margin-top:24px;">
+      <h2>Mis cursos</h2>
+      <p>Tus clases, listas para ver cuando quieras.</p>
+    </div>
+    <div id="misCursosLista"></div>
+  </div>
+</div>
+
+<!-- Reproductor de video compartido: portada de Academy y clases de "Mis
+     cursos" -- posición fija, funciona igual sin importar qué vista esté
+     abierta detrás. -->
+<div class="ac-video-modal" id="acVideoModal" onclick="if(event.target===this) cerrarReproductor()">
+  <button class="ac-video-close" onclick="cerrarReproductor()" aria-label="Cerrar">✕</button>
+  <video id="acVideoPlayer" controls playsinline></video>
 </div>
 
 <!-- ===== Carrito ===== -->
@@ -3006,11 +3035,41 @@
    *  de la pantalla. En vez de "src" + autoplay directo, se usa "data-src"
    *  y recien se carga/reproduce cuando entra a la vista; se pausa (sin
    *  quitar el src, para no tener que descargarlo de nuevo) al salir. */
+  /** Hostname del CDN de la librería pública de Bunny Stream -- portadas de
+   *  curso, muestra, hero y video de Academy (todo lo público, sin firma). */
+  const BUNNY_CDN_PUBLIC = 'vz-3106d8eb-0d1.b-cdn.net';
+  function bunnyPlaylistUrl(streamVideoId){
+    return `https://${BUNNY_CDN_PUBLIC}/${streamVideoId}/playlist.m3u8`;
+  }
+  function bunnyThumbUrl(streamVideoId){
+    return `https://${BUNNY_CDN_PUBLIC}/${streamVideoId}/thumbnail.jpg`;
+  }
+
+  /** Adjunta un video de Bunny Stream (HLS) a un <video> -- Safari/iOS lo
+   *  reproducen nativo, el resto necesita hls.js para el streaming
+   *  adaptativo (Chrome/Firefox/Android no soportan HLS de forma nativa). */
+  function adjuntarHls(video, src){
+    if(video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src = src;
+    } else if(window.Hls && Hls.isSupported()){
+      if(video._hls) video._hls.destroy();
+      const hls = new Hls();
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      video._hls = hls;
+    } else {
+      video.src = src;
+    }
+  }
+
   const ioVideo = new IntersectionObserver((entries)=>{
     entries.forEach(e=>{
       const v = e.target;
       if(e.isIntersecting){
-        if(v.dataset.src && v.src !== v.dataset.src) v.src = v.dataset.src;
+        if(v.dataset.src && !v.dataset.hlsAttached){
+          adjuntarHls(v, v.dataset.src);
+          v.dataset.hlsAttached = '1';
+        }
         // recien asignado el src, todavia puede no haber suficiente buffer
         // para reproducir: si play() falla por eso, se reintenta apenas
         // el video avisa que ya puede reproducirse (evento "canplay").
@@ -3405,9 +3464,10 @@
     // queda como respaldo mientras el video carga o si el video no existe).
     // celular y computador usan videos independientes porque el recorte del
     // hero es muy distinto entre los dos (ver mqHeroDesktop mas abajo).
-    const videoUrl = mqHeroDesktop.matches
-      ? (horarioNegocio.portadaVideoEscritorioUrl || '')
-      : (horarioNegocio.portadaVideoUrl || '');
+    const heroVideoId = mqHeroDesktop.matches
+      ? (horarioNegocio.heroStreamStatusDesktop === 'ready' ? horarioNegocio.heroStreamVideoIdDesktop : '')
+      : (horarioNegocio.heroStreamStatus === 'ready' ? horarioNegocio.heroStreamVideoId : '');
+    const videoUrl = heroVideoId ? bunnyPlaylistUrl(heroVideoId) : '';
     let video = bg.querySelector('.hero-video');
     bg.classList.toggle('tiene-video', !!videoUrl);
     if(hero) hero.classList.toggle('tiene-video', !!videoUrl);
@@ -3421,7 +3481,7 @@
       }
       if(video.dataset.src !== videoUrl){
         video.dataset.src = videoUrl;
-        video.src = videoUrl;
+        adjuntarHls(video, videoUrl);
         video.play().catch(()=>{});
       }
     }else if(video){
@@ -4821,6 +4881,7 @@
           };
           toast(`Pago confirmado (orden ${codigo}). Enviamos el comprobante a ${p.buyerEmail}.${mensajes[p.tipo] || ''}`);
           if(p.tipo === 'RESERVATION_DEPOSIT') await renderAccount();
+          if(p.tipo === 'COURSE_PURCHASE') abrirMisCursos();
         } else {
           toast('No pudimos verificar tu pago. Escríbenos si el cargo aparece en tu cuenta.');
         }
@@ -4887,10 +4948,9 @@
 
         return `
         <div class="course-card reveal in">
-          <div class="cc-photo" style="${c.photoUrl
-            ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;`
-            : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`}">
-            ${c.videoUrl ? `<video class="cc-video" data-src="${c.videoUrl}" muted loop playsinline preload="none"></video>` : ''}
+          <div class="cc-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId) : c.photoUrl;
+            return img ? `background-image:url('${img}');background-size:cover;background-position:center;` : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`; })()}">
+            ${(c.streamVideoId && c.streamStatus==='ready') ? `<video class="cc-video" data-src="${bunnyPlaylistUrl(c.streamVideoId)}" muted loop playsinline preload="none"></video>` : ''}
             <div class="cc-kicker">${kicker}</div>
             ${c.featured ? '<span class="cc-badge">Recomendado</span>' : '<span></span>'}
             ${c.priceUsd ? `<span class="cc-usd">◇ $${c.priceUsd}</span>` : '<span></span>'}
@@ -4954,7 +5014,8 @@
       const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
       return `
       <div class="ac-course">
-        <div class="ac-course-photo" style="${c.photoUrl ? `background-image:url('${c.photoUrl}');background-size:cover;background-position:center;` : ''}">${c.videoUrl ? `<video class="ac-course-video" data-src="${c.videoUrl}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
+        <div class="ac-course-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId) : c.photoUrl;
+            return img ? `background-image:url('${img}');background-size:cover;background-position:center;` : ''; })()}">${(c.streamVideoId && c.streamStatus==='ready') ? `<video class="ac-course-video" data-src="${bunnyPlaylistUrl(c.streamVideoId)}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
         <div class="ac-course-body">
           <h3>${c.name}</h3>
           <p>${c.description || 'Curso online, a tu ritmo.'}</p>
@@ -6213,7 +6274,8 @@
   function pintarVideoAcademia(){
     const box = document.querySelector('.ac-hero-photo');
     if(!box) return;
-    const url = horarioNegocio.academiaVideoUrl;
+    const url = horarioNegocio.academiaStreamStatus === 'ready' && horarioNegocio.academiaStreamVideoId
+      ? bunnyPlaylistUrl(horarioNegocio.academiaStreamVideoId) : '';
     let video = box.querySelector('.ac-hero-video-preview');
     box.classList.toggle('tiene-video', !!url);
     if(url){
@@ -6226,29 +6288,37 @@
       }
       if(video.dataset.src !== url){
         video.dataset.src = url;
-        video.src = url;
+        adjuntarHls(video, url);
       }
       video.play().catch(()=>{});
     }else if(video){
       video.remove();
     }
   }
-  /** Video completo (con sonido) al tocar "Ver video" en la portada de la Academy. */
-  function abrirVideoAcademia(){
-    const url = horarioNegocio.academiaVideoUrl;
-    if(!url){ toast('Video de presentación próximamente'); return; }
+  /** Reproductor compartido (modal de pantalla completa): usado por el video
+   *  de presentación de Academy y por las clases de "Mis cursos" -- misma
+   *  ventana, mismo elemento <video>, solo cambia qué URL se le pasa. */
+  function abrirReproductor(url){
     const player = document.getElementById('acVideoPlayer');
-    player.src = url;
+    adjuntarHls(player, url);
     player.currentTime = 0;
     document.getElementById('acVideoModal').classList.add('open');
     player.play().catch(()=>{});
   }
-  function cerrarVideoAcademia(){
+  function cerrarReproductor(){
     const player = document.getElementById('acVideoPlayer');
     player.pause();
+    if(player._hls){ player._hls.destroy(); player._hls = null; }
     player.removeAttribute('src');
+    delete player.dataset.src;
     player.load();
     document.getElementById('acVideoModal').classList.remove('open');
+  }
+  /** Video completo (con sonido) al tocar "Ver video" en la portada de la Academy. */
+  function abrirVideoAcademia(){
+    const listo = horarioNegocio.academiaStreamStatus === 'ready' && horarioNegocio.academiaStreamVideoId;
+    if(!listo){ toast('Video de presentación próximamente'); return; }
+    abrirReproductor(bunnyPlaylistUrl(horarioNegocio.academiaStreamVideoId));
   }
   function cerrarAcademia(desdeHistorial){
     document.getElementById('vistaAcademia').classList.remove('open');
@@ -6256,6 +6326,73 @@
     if(!desdeHistorial && hashActual() === '#academia') irHistorial('back');
   }
   document.getElementById('acVolver').addEventListener('click', ()=> cerrarAcademia());
+
+  /* ---------- Mis cursos: clases de los cursos que el cliente compró ---------- */
+  async function abrirMisCursos(desdeHistorial){
+    const user = currentUser();
+    if(!user){ toast('Inicia sesión para ver tus cursos'); return; }
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true);
+    document.getElementById('vistaMisCursos').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('vistaMisCursos').scrollTop = 0;
+    if(!desdeHistorial && hashActual() !== '#mis-cursos') irHistorial('push', 'mis-cursos');
+    await pintarMisCursos();
+  }
+  function cerrarMisCursos(desdeHistorial){
+    document.getElementById('vistaMisCursos').classList.remove('open');
+    document.body.style.overflow = '';
+    if(!desdeHistorial && hashActual() === '#mis-cursos') irHistorial('back');
+  }
+  document.getElementById('mcVolver').addEventListener('click', ()=> cerrarMisCursos());
+
+  async function pintarMisCursos(){
+    const cont = document.getElementById('misCursosLista');
+    cont.innerHTML = '<div class="cx-empty">Cargando...</div>';
+    const user = currentUser();
+    if(!user){ cont.innerHTML = '<div class="cx-empty">Inicia sesión para ver tus cursos.</div>'; return; }
+
+    let entitlements = [];
+    try{
+      const snap = await db.collection('entitlements').where('userId', '==', user.uid).where('accessStatus', '==', 'active').get();
+      const ahora = Date.now();
+      entitlements = snap.docs.map(d=> d.data()).filter(e=> (e.accessExpirationDate?.toMillis() || 0) > ahora);
+    }catch(e){ cont.innerHTML = `<div class="cx-empty">No se pudieron cargar tus cursos: ${e.message}</div>`; return; }
+
+    if(!entitlements.length){
+      cont.innerHTML = '<div class="cx-empty">Todavía no tienes cursos. <span style="text-decoration:underline;cursor:pointer;" onclick="cerrarMisCursos();abrirAcademia();">Ver cursos disponibles</span></div>';
+      return;
+    }
+
+    const cursoDocs = await Promise.all(entitlements.map(e=> db.collection('courses').doc(e.courseId).get()));
+    cont.innerHTML = cursoDocs.filter(d=> d.exists).map(d=>{
+      const c = d.data();
+      const lecciones = (c.lessons || []).filter(l=> l.active !== false);
+      return `
+      <div class="panel-card" style="margin-bottom:16px;">
+        <h3 class="display" style="margin-bottom:12px;">${c.name}</h3>
+        ${lecciones.length ? lecciones.map(l=> `
+          <div class="mc-leccion" data-curso="${c.id}" data-leccion="${l.id}"
+               style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--border);cursor:pointer;">
+            <span style="flex:0 0 auto;">▶</span>
+            <span style="flex:1;">${l.title}${l.durationMin ? ` <span style="color:var(--text-mid);font-size:0.82rem;">· ${l.durationMin} min</span>` : ''}</span>
+            ${l.isFree ? '<span class="cu-libre">MUESTRA</span>' : ''}
+          </div>`).join('')
+          : '<div class="empty-hist">Este curso todavía no tiene clases publicadas.</div>'}
+      </div>`;
+    }).join('');
+
+    cont.querySelectorAll('.mc-leccion').forEach(row=>
+      row.addEventListener('click', ()=> abrirReproductorClase(row.dataset.curso, row.dataset.leccion)));
+  }
+
+  async function abrirReproductorClase(courseId, lessonId){
+    try{
+      const r = await functions.httpsCallable('obtenerTokenReproduccion')({ courseId, lessonId });
+      abrirReproductor(r.data.playbackUrl);
+    }catch(e){
+      toast(e.message || 'No se pudo abrir la clase');
+    }
+  }
 
   /** Botón "Inicio" de la barra inferior: cierra cualquier vista de pantalla
    *  completa que esté abierta (si no, el scroll no se nota porque esas
@@ -6272,15 +6409,17 @@
     if(document.getElementById('vistaTienda').classList.contains('open')) cerrarTienda();
     else if(document.getElementById('vistaAcademia').classList.contains('open')) cerrarAcademia();
     else if(document.getElementById('vistaReservas').classList.contains('open')) cerrarReservas();
+    else if(document.getElementById('vistaMisCursos').classList.contains('open')) cerrarMisCursos();
   });
 
   // el botón atrás del navegador cierra la vista abierta
   window.addEventListener('popstate', ()=>{
     const h = hashActual();
-    if(h === '#tienda'){ cerrarReservas(true); cerrarAcademia(true); abrirTienda(true); }
-    else if(h === '#reservas'){ cerrarTienda(true); cerrarAcademia(true); abrirReservas(true); }
-    else if(h === '#academia'){ cerrarTienda(true); cerrarReservas(true); abrirAcademia(true); }
-    else { cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); }
+    if(h === '#tienda'){ cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); abrirTienda(true); }
+    else if(h === '#reservas'){ cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); abrirReservas(true); }
+    else if(h === '#academia'){ cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); abrirAcademia(true); }
+    else if(h === '#mis-cursos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); abrirMisCursos(true); }
+    else { cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); }
   });
 
   document.querySelectorAll('.tv-chip').forEach(c=>
@@ -6396,6 +6535,7 @@
     if(hashActual() === '#tienda') abrirTienda(true);
     if(hashActual() === '#reservas') abrirReservas(true);
     if(hashActual() === '#academia') abrirAcademia(true);
+    if(hashActual() === '#mis-cursos') abrirMisCursos(true);
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }
     });

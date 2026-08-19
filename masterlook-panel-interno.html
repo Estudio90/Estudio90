@@ -4677,8 +4677,8 @@
       document.getElementById('cfgHeroColorTitulo').value = d.heroColorTitulo || '#DFC08A';
       document.getElementById('cfgHeroColorTexto').value = d.heroColorTexto || '#9A9691';
       pintarPortadaThumb(d.portadaUrl || '');
-      pintarPortadaVideoThumb(d.portadaVideoUrl || '');
-      pintarPortadaVideoDesktopThumb(d.portadaVideoEscritorioUrl || '');
+      pintarPortadaVideoThumb(d.heroStreamVideoId || '', d.heroStreamStatus || '');
+      pintarPortadaVideoDesktopThumb(d.heroStreamVideoIdDesktop || '', d.heroStreamStatusDesktop || '');
       document.getElementById('cfgNombreNegocio').value = d.nombre || 'MASTERLOOK';
       document.getElementById('cfgDescNegocio').value = d.descripcion || 'Barbería y grooming studio. Reservas simples, resultados de maestro.';
       document.getElementById('cfgDireccion').value = d.direccion || 'Santiago, Chile';
@@ -5258,90 +5258,36 @@
     }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
   });
 
-  function pintarPortadaVideoThumb(url){
-    const thumb = document.getElementById('cfgPortadaVideoThumb');
-    if(!thumb) return;
-    thumb.innerHTML = url
-      ? `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`
-      : '🎬';
+  function pintarPortadaVideoThumb(streamVideoId, status){
+    pintarVideoConfigThumb('cfgPortadaVideoThumb', streamVideoId, status, '🎬');
   }
 
-  document.getElementById('cfgPortadaVideoThumb').addEventListener('click', ()=>{
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.addEventListener('change', async ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      if(file.size > 30*1024*1024){
-        showToast('El video pesa ' + Math.round(file.size/1024/1024) + ' MB: se recomienda comprimirlo a menos de 15 MB antes de subirlo.');
-      }
-      const thumb = document.getElementById('cfgPortadaVideoThumb');
-      thumb.innerHTML = '…';
-      try{
-        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-        const ref = storage.ref(`heroVideos/${Date.now()}.${ext}`);
-        await ref.put(file, { contentType: file.type || 'video/mp4' });
-        const url = await ref.getDownloadURL();
-        await db.collection('settings').doc('negocio').set({ portadaVideoUrl: url }, { merge:true });
-        pintarPortadaVideoThumb(url);
-        showToast('Video de portada actualizado');
-      }catch(e){
-        showToast('No se pudo subir el video: ' + e.message);
-        pintarPortadaVideoThumb('');
-      }
-    });
-    input.click();
-  });
+  document.getElementById('cfgPortadaVideoThumb').addEventListener('click', ()=> subirVideoConfig({
+    contexto: 'hero', campoVideoId: 'heroStreamVideoId', campoStatus: 'heroStreamStatus',
+    thumbId: 'cfgPortadaVideoThumb', iconoVacio: '🎬', nombreExito: 'Video de portada',
+  }));
 
   document.getElementById('cfgQuitarPortadaVideo').addEventListener('click', async ()=>{
     try{
-      await db.collection('settings').doc('negocio').set({ portadaVideoUrl: '' }, { merge:true });
-      pintarPortadaVideoThumb('');
+      await db.collection('settings').doc('negocio').set({ heroStreamVideoId: '', heroStreamStatus: '' }, { merge:true });
+      pintarPortadaVideoThumb('', '');
       showToast('Video de portada (celular) quitado');
     }catch(e){ showToast('No se pudo quitar el video: ' + e.message); }
   });
 
-  function pintarPortadaVideoDesktopThumb(url){
-    const thumb = document.getElementById('cfgPortadaVideoDesktopThumb');
-    if(!thumb) return;
-    thumb.innerHTML = url
-      ? `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`
-      : '🖥️';
+  function pintarPortadaVideoDesktopThumb(streamVideoId, status){
+    pintarVideoConfigThumb('cfgPortadaVideoDesktopThumb', streamVideoId, status, '🖥️');
   }
 
-  document.getElementById('cfgPortadaVideoDesktopThumb').addEventListener('click', ()=>{
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.addEventListener('change', async ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      if(file.size > 30*1024*1024){
-        showToast('El video pesa ' + Math.round(file.size/1024/1024) + ' MB: se recomienda comprimirlo a menos de 15 MB antes de subirlo.');
-      }
-      const thumb = document.getElementById('cfgPortadaVideoDesktopThumb');
-      thumb.innerHTML = '…';
-      try{
-        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-        const ref = storage.ref(`heroVideosDesktop/${Date.now()}.${ext}`);
-        await ref.put(file, { contentType: file.type || 'video/mp4' });
-        const url = await ref.getDownloadURL();
-        await db.collection('settings').doc('negocio').set({ portadaVideoEscritorioUrl: url }, { merge:true });
-        pintarPortadaVideoDesktopThumb(url);
-        showToast('Video de portada (computador) actualizado');
-      }catch(e){
-        showToast('No se pudo subir el video: ' + e.message);
-        pintarPortadaVideoDesktopThumb('');
-      }
-    });
-    input.click();
-  });
+  document.getElementById('cfgPortadaVideoDesktopThumb').addEventListener('click', ()=> subirVideoConfig({
+    contexto: 'heroDesktop', campoVideoId: 'heroStreamVideoIdDesktop', campoStatus: 'heroStreamStatusDesktop',
+    thumbId: 'cfgPortadaVideoDesktopThumb', iconoVacio: '🖥️', nombreExito: 'Video de portada (computador)',
+  }));
 
   document.getElementById('cfgQuitarPortadaVideoDesktop').addEventListener('click', async ()=>{
     try{
-      await db.collection('settings').doc('negocio').set({ portadaVideoEscritorioUrl: '' }, { merge:true });
-      pintarPortadaVideoDesktopThumb('');
+      await db.collection('settings').doc('negocio').set({ heroStreamVideoIdDesktop: '', heroStreamStatusDesktop: '' }, { merge:true });
+      pintarPortadaVideoDesktopThumb('', '');
       showToast('Video de portada (computador) quitado');
     }catch(e){ showToast('No se pudo quitar el video: ' + e.message); }
   });
@@ -6746,50 +6692,24 @@
   async function cargarVideoAcademia(){
     try{
       const doc = await db.collection('settings').doc('negocio').get();
-      pintarVideoAcademiaThumb(doc.exists ? (doc.data().academiaVideoUrl || '') : '');
+      const d = doc.exists ? doc.data() : {};
+      pintarVideoAcademiaThumb(d.academiaStreamVideoId || '', d.academiaStreamStatus || '');
     }catch(e){}
   }
 
-  function pintarVideoAcademiaThumb(url){
-    const thumb = document.getElementById('acVideoThumb');
-    if(!thumb) return;
-    thumb.innerHTML = url
-      ? `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`
-      : '🎬';
+  function pintarVideoAcademiaThumb(streamVideoId, status){
+    pintarVideoConfigThumb('acVideoThumb', streamVideoId, status, '🎬');
   }
 
-  document.getElementById('acVideoThumb').addEventListener('click', ()=>{
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.addEventListener('change', async ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      if(file.size > 30*1024*1024){
-        showToast('El video pesa ' + Math.round(file.size/1024/1024) + ' MB: se recomienda comprimirlo a menos de 15 MB antes de subirlo.');
-      }
-      const thumb = document.getElementById('acVideoThumb');
-      thumb.innerHTML = '…';
-      try{
-        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-        const ref = storage.ref(`academiaVideos/${Date.now()}.${ext}`);
-        await ref.put(file, { contentType: file.type || 'video/mp4' });
-        const url = await ref.getDownloadURL();
-        await db.collection('settings').doc('negocio').set({ academiaVideoUrl: url }, { merge:true });
-        pintarVideoAcademiaThumb(url);
-        showToast('Video de la Academy actualizado');
-      }catch(e){
-        showToast('No se pudo subir el video: ' + e.message);
-        pintarVideoAcademiaThumb('');
-      }
-    });
-    input.click();
-  });
+  document.getElementById('acVideoThumb').addEventListener('click', ()=> subirVideoConfig({
+    contexto: 'academia', campoVideoId: 'academiaStreamVideoId', campoStatus: 'academiaStreamStatus',
+    thumbId: 'acVideoThumb', iconoVacio: '🎬', nombreExito: 'Video de la Academy',
+  }));
 
   document.getElementById('acQuitarVideo').addEventListener('click', async ()=>{
     try{
-      await db.collection('settings').doc('negocio').set({ academiaVideoUrl: '' }, { merge:true });
-      pintarVideoAcademiaThumb('');
+      await db.collection('settings').doc('negocio').set({ academiaStreamVideoId: '', academiaStreamStatus: '' }, { merge:true });
+      pintarVideoAcademiaThumb('', '');
       showToast('Video de la Academy quitado');
     }catch(e){ showToast('No se pudo quitar el video: ' + e.message); }
   });
@@ -7204,6 +7124,48 @@
   /** Sube (o reemplaza) la imagen o video principal de un curso -- un solo
    *  botón que detecta el tipo de archivo: foto -> Firebase Storage (como
    *  siempre), video -> Bunny Stream (portada pública, sin firma). */
+  /** Pinta la miniatura de un video de configuración (hero/Academy) a partir
+   *  de su streamVideoId -- reusado por los tres videos "únicos" del sitio
+   *  (no por curso): hero mobile, hero desktop, intro de Academy. */
+  function pintarVideoConfigThumb(thumbId, streamVideoId, status, iconoVacio){
+    const thumb = document.getElementById(thumbId);
+    if(!thumb) return;
+    if(streamVideoId && status === 'ready'){
+      thumb.innerHTML = `<img src="https://${BUNNY_CDN_PUBLIC}/${streamVideoId}/thumbnail.jpg" style="width:100%;height:100%;object-fit:cover;" alt="">`;
+    } else if(streamVideoId){
+      thumb.innerHTML = '…';
+    } else {
+      thumb.innerHTML = iconoVacio;
+    }
+  }
+
+  /** Sube un video de configuración (hero/Academy) a la librería pública de
+   *  Bunny y lo guarda en settings/negocio. */
+  function subirVideoConfig({ contexto, campoVideoId, campoStatus, thumbId, iconoVacio, nombreExito }){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById(thumbId);
+      if(thumb) thumb.innerHTML = '0%';
+      try{
+        const { videoId } = await subirVideoABunny(file, {
+          contexto, isFree: true, title: contexto,
+          onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
+        });
+        await db.collection('settings').doc('negocio').set({ [campoVideoId]: videoId, [campoStatus]: 'processing' }, { merge:true });
+        pintarVideoConfigThumb(thumbId, videoId, 'processing', iconoVacio);
+        showToast(nombreExito + ' subido, procesándose…');
+      }catch(e){
+        showToast('No se pudo subir el video: ' + e.message);
+        pintarVideoConfigThumb(thumbId, null, null, iconoVacio);
+      }
+    });
+    input.click();
+  }
+
   function cuSubirMedia(cursoId){
     const input = document.createElement('input');
     input.type = 'file';
