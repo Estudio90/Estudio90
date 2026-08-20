@@ -8,7 +8,13 @@
 <meta http-equiv="Expires" content="0">
 <title>Master Look — Panel</title>
 <link rel="preconnect" href="https://api.fontshare.com">
-<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@700,600,500,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Fontshare (Clash Display) está devolviendo "Access restricted" en este
+     momento -- se usa Bricolage Grotesque de Google Fonts como equivalente
+     confiable mientras tanto; mismo aire de título distintivo. -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Bricolage+Grotesque:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -18,7 +24,12 @@
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <style>
   :root{
-    --font-primary:'General Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    /* Bricolage Grotesque para títulos/números (mismo aire que Clash Display,
+       la que usa AgendaPro -- Fontshare está restringido ahora mismo, se
+       cambia a Clash Display exacto apenas vuelva a funcionar), Poppins para
+       el texto general del panel. */
+    --font-primary:'Bricolage Grotesque','General Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --font-body:'Poppins','General Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
     --bg:#fcfcfd;
     --panel:#ffffff;
@@ -52,12 +63,12 @@
   body{
     background:var(--bg);
     color:var(--text-hi);
-    font-family:var(--font-primary);
+    font-family:var(--font-body);
     -webkit-font-smoothing:antialiased;
     font-variant-numeric:tabular-nums;
     letter-spacing:-.006em;
   }
-  h1,h2,h3{letter-spacing:-.014em;}
+  h1,h2,h3{letter-spacing:-.014em;font-family:var(--font-primary);}
   button{font-family:inherit;}
   .app{max-width:1560px;margin:0 auto;padding:0 0 60px;}
 
