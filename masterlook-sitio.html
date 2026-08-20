@@ -544,7 +544,16 @@
     border-bottom:1px solid var(--border); font-size:0.85rem;}
   .sum-row span:last-child{text-align:right; word-break:break-word;}
   .sum-row span:first-child{color:var(--text-low);}
-  .sum-total{display:flex; justify-content:space-between; margin-top:16px; padding-top:16px; border-top:1px solid var(--oro); font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:500;}
+  .sum-total{display:flex; justify-content:space-between; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-strong); font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.15rem; font-weight:500;}
+  .sum-anticipo{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding:10px 12px;
+    border-radius:var(--radius-sm); background:var(--panel-2);}
+  .sum-anticipo-label{display:flex; align-items:center; gap:8px; font-size:.82rem; color:var(--text-mid);}
+  .sum-anticipo-label svg{width:16px; height:16px; flex:0 0 auto; color:var(--text-low);}
+  .sum-anticipo-monto{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.92rem; font-weight:600; color:var(--text-hi);}
+  .sum-aviso{display:none; align-items:flex-start; gap:9px; margin-top:12px; padding:11px 13px;
+    border-radius:var(--radius-sm); background:#EAF2FC; color:#1B4C8C; font-size:.78rem; line-height:1.45;}
+  .sum-aviso.show{display:flex;}
+  .sum-aviso svg{width:15px; height:15px; flex:0 0 auto; margin-top:1px;}
   .confirm-msg{display:none; text-align:center; padding:36px 16px;}
   .confirm-msg.show{display:block;}
   .confirm-msg .check{width:52px; height:52px; border-radius:50%; background:var(--ok-tint); color:var(--ok); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin:0 auto 16px;}
@@ -2720,6 +2729,17 @@
           <div class="sum-row"><span>Barbero</span><span id="sumBarber">Sin seleccionar</span></div>
           <div class="sum-row"><span>Fecha y hora</span><span id="sumSlot">Sin seleccionar</span></div>
           <div class="sum-total"><span>Total</span><span id="sumTotal">$0</span></div>
+          <div class="sum-anticipo" id="sumAnticipoWrap" style="display:none;">
+            <span class="sum-anticipo-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M2.5 10h19"/></svg>
+              Anticipo a pagar en línea
+            </span>
+            <span class="sum-anticipo-monto" id="sumAnticipo">$0</span>
+          </div>
+          <div class="sum-aviso" id="sumAviso">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+            <span>Este servicio requiere un abono para agendarse -- el monto restante se paga al momento de realizar el servicio.</span>
+          </div>
           <div class="rv-garantia">
             <div class="rv-g-item">✓ Puedes cambiar la hora una vez, hasta 4 h antes</div>
             <div class="rv-g-item">✓ Sin costo por reservar</div>
@@ -3467,6 +3487,7 @@
     document.getElementById('sumBarber').textContent = state.barber || 'Sin seleccionar';
     document.getElementById('sumSlot').textContent = state.slot || 'Sin seleccionar';
     document.getElementById('sumTotal').textContent = money(state.price);
+    cargarAnticipoResumen();
   }
 
   function goToStep(n){
@@ -5999,6 +6020,16 @@
     if(el) el.textContent = money(totalAhora);
     const pctEl = document.getElementById('dpPct');
     if(pctEl) pctEl.textContent = pct + '% del valor total';
+
+    // Mismo dato, reflejado también en el resumen lateral (visible en todos
+    // los pasos, no solo en "Confirmar") -- siempre debajo del Total.
+    const wrap = document.getElementById('sumAnticipoWrap');
+    if(wrap){
+      wrap.style.display = state.price ? 'flex' : 'none';
+      document.getElementById('sumAnticipo').textContent = money(total);
+      document.getElementById('sumAviso').classList.toggle('show', !!state.price && total < state.price);
+    }
+
     actualizarBarra();
   }
 
