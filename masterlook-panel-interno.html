@@ -1272,6 +1272,10 @@
   .pc-table tbody td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
   .pc-table tbody tr:last-child td{border-bottom:none;}
   .pc-row.off{opacity:.5;}
+  .pc-group-row td{padding:16px 10px 8px;border-bottom:none;font-family:var(--font-primary);font-size:11.5px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--text-mid);}
+  .pc-group-row:first-child td{padding-top:2px;}
+  .pc-group-count{font-weight:500;color:var(--text-low);text-transform:none;letter-spacing:0;}
   .pc-prod-cell{display:flex;align-items:center;gap:16px;}
   .pc-thumb{width:148px;height:70px;border-radius:12px;background:var(--panel-2);flex:0 0 auto;cursor:pointer;
     display:flex;align-items:center;justify-content:center;overflow:hidden;}
@@ -1316,6 +1320,9 @@
     .pc-table, .pc-table tbody{display:block;width:100%;}
     .pc-table tbody tr{display:block;width:100%;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
     .pc-table tbody tr:last-child{margin-bottom:0;}
+    .pc-table tbody tr.pc-group-row{border:none;padding:0;margin:18px 0 8px;}
+    .pc-table tbody tr.pc-group-row:first-child{margin-top:0;}
+    .pc-table tbody tr.pc-group-row td{padding:0;}
     .pc-table tbody td{display:block;width:100%;border-bottom:none;padding:0;}
     .pc-prod-cell{margin-bottom:10px;}
     .pc-thumb{width:84px;height:84px;}
@@ -2284,6 +2291,19 @@
                 <label>Descripción (opcional)</label>
                 <textarea id="pcDescripcion" placeholder="Ej: Fijación fuerte con acabado natural"></textarea>
                 <div class="hint">Se mostrará en el sitio web</div>
+              </div>
+              <div class="pc-field">
+                <label>Categoría (opcional)</label>
+                <select id="pcCategoria">
+                  <option value="">Sin categoría</option>
+                  <option value="Barbería profesional">Barbería profesional</option>
+                  <option value="Cuidado de la piel">Cuidado de la piel</option>
+                  <option value="Fragancias">Fragancias</option>
+                  <option value="Herramientas y accesorios">Herramientas y accesorios</option>
+                  <option value="Ropa running">Ropa running</option>
+                  <option value="Accesorios">Accesorios</option>
+                </select>
+                <div class="hint">Define en qué sección de la tienda aparece</div>
               </div>
             </div>
 
@@ -8685,8 +8705,10 @@
       if(v === 'catalogo') pintarCatalogoProductos();
     }));
 
-  const PC_POR_PAGINA = 10;
-  let pcPagina = 1;
+  /** Mismas categorías que el selector "Categoría" del formulario y que las
+   *  secciones de la tienda pública (ST_CATEGORIAS en masterlook-sitio.html)
+   *  -- se usan para dividir el catálogo en secciones, en este mismo orden. */
+  const PC_CATEGORIAS = ['Barbería profesional','Cuidado de la piel','Fragancias','Herramientas y accesorios','Ropa running','Accesorios'];
   let pcEditando = null; // id del producto cuya fila está en modo edición
   let pcAEliminar = null;
 
@@ -8777,6 +8799,46 @@
     });
   }
 
+  function pcFilaProducto(p){
+    const editando = pcEditando === p.id;
+    const stockBajo = (p.stock ?? 0) <= PC_UMBRAL_STOCK_BAJO;
+    const nombreCelda = editando
+      ? `<div class="pc-name-wrap"><input type="text" value="${escapeHTML(p.name)}" data-f="name" placeholder="Nombre"></div>`
+      : `<div class="pc-name">${escapeHTML(p.name)}</div>`;
+    const precioCelda = editando
+      ? `<div class="pc-price-cell"><input type="number" value="${p.price}" data-f="price" min="0" step="500"></div>`
+      : `<div class="pc-price">${cxClp(p.price)}</div>`;
+    const descCelda = editando
+      ? `<div class="pc-desc-cell"><textarea data-f="description" placeholder="Descripción (sitio web)">${escapeHTML(p.description || '')}</textarea>
+          <select data-f="category" style="margin-top:6px;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;">
+            <option value="" ${!p.category ? 'selected':''}>Sin categoría</option>
+            ${PC_CATEGORIAS.map(c=> `<option value="${c}" ${p.category===c?'selected':''}>${c}</option>`).join('')}
+          </select></div>`
+      : `<div class="pc-desc">${escapeHTML(p.description || '')}</div>`;
+    const accionEditar = editando
+      ? `<button class="pc-ib save" data-pc-guardar title="Guardar">${PC_ICONO_CHECK}</button>`
+      : `<button class="pc-ib" data-pc-editar title="Editar">${PC_ICONO_LAPIZ}</button>`;
+    const accionEliminar = p.active === false
+      ? `<button class="pc-ib" data-pc-reactivar title="Reactivar">${PC_ICONO_REACTIVAR}</button>`
+      : `<button class="pc-ib del" data-pc-eliminar title="Eliminar">${PC_ICONO_PAPELERA}</button>`;
+
+    return `
+    <tr class="pc-row ${p.active === false ? 'off' : ''}" data-id="${p.id}">
+      <td>
+        <div class="pc-prod-cell">
+          <div class="pc-thumb" data-fotoprod="${p.id}" title="Subir foto del producto">
+            ${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : `<span class="ph">📷</span>`}
+          </div>
+          ${nombreCelda}
+        </div>
+      </td>
+      <td data-label="Precio: ">${precioCelda}</td>
+      <td data-label="Stock: "><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
+      <td>${descCelda}</td>
+      <td><div class="pc-actions">${accionEditar}${accionEliminar}</div></td>
+    </tr>`;
+  }
+
   function pintarCatalogoProductos(){
     pcPintarIlustracion();
     const cont = document.getElementById('pcLista');
@@ -8785,67 +8847,27 @@
     if(!productsCache.length){
       cont.innerHTML = '<tr><td colspan="5" class="us-vacio">Todavía no hay productos.</td></tr>';
       document.getElementById('pcConteo').textContent = '';
-      document.getElementById('pcPager').innerHTML = '';
       return;
     }
     if(!lista.length){
       cont.innerHTML = '<tr><td colspan="5" class="us-vacio">Ningún producto coincide con la búsqueda.</td></tr>';
       document.getElementById('pcConteo').textContent = '';
-      document.getElementById('pcPager').innerHTML = '';
       return;
     }
 
-    const totalPaginas = Math.max(1, Math.ceil(lista.length / PC_POR_PAGINA));
-    pcPagina = Math.min(pcPagina, totalPaginas);
-    const desde = (pcPagina - 1) * PC_POR_PAGINA;
-    const pagina = lista.slice(desde, desde + PC_POR_PAGINA);
+    // Catálogo dividido en las mismas secciones que la tienda pública, para
+    // que quede ordenado al ir subiendo productos: una sección por categoría
+    // (en el orden fijo de PC_CATEGORIAS) y "Sin categoría" al final.
+    const grupos = PC_CATEGORIAS.map(cat=> ({ nombre: cat, items: lista.filter(p=> p.category === cat) }));
+    const sinCategoria = lista.filter(p=> !p.category);
+    if(sinCategoria.length) grupos.push({ nombre: 'Sin categoría', items: sinCategoria });
 
-    cont.innerHTML = pagina.map(p=>{
-      const editando = pcEditando === p.id;
-      const stockBajo = (p.stock ?? 0) <= PC_UMBRAL_STOCK_BAJO;
-      const nombreCelda = editando
-        ? `<div class="pc-name-wrap"><input type="text" value="${escapeHTML(p.name)}" data-f="name" placeholder="Nombre"></div>`
-        : `<div class="pc-name">${escapeHTML(p.name)}</div>`;
-      const precioCelda = editando
-        ? `<div class="pc-price-cell"><input type="number" value="${p.price}" data-f="price" min="0" step="500"></div>`
-        : `<div class="pc-price">${cxClp(p.price)}</div>`;
-      const descCelda = editando
-        ? `<div class="pc-desc-cell"><textarea data-f="description" placeholder="Descripción (sitio web)">${escapeHTML(p.description || '')}</textarea></div>`
-        : `<div class="pc-desc">${escapeHTML(p.description || '')}</div>`;
-      const accionEditar = editando
-        ? `<button class="pc-ib save" data-pc-guardar title="Guardar">${PC_ICONO_CHECK}</button>`
-        : `<button class="pc-ib" data-pc-editar title="Editar">${PC_ICONO_LAPIZ}</button>`;
-      const accionEliminar = p.active === false
-        ? `<button class="pc-ib" data-pc-reactivar title="Reactivar">${PC_ICONO_REACTIVAR}</button>`
-        : `<button class="pc-ib del" data-pc-eliminar title="Eliminar">${PC_ICONO_PAPELERA}</button>`;
+    cont.innerHTML = grupos.filter(g=> g.items.length).map(g=> `
+      <tr class="pc-group-row"><td colspan="5">${escapeHTML(g.nombre)} <span class="pc-group-count">· ${g.items.length}</span></td></tr>
+      ${g.items.map(pcFilaProducto).join('')}
+    `).join('');
 
-      return `
-      <tr class="pc-row ${p.active === false ? 'off' : ''}" data-id="${p.id}">
-        <td>
-          <div class="pc-prod-cell">
-            <div class="pc-thumb" data-fotoprod="${p.id}" title="Subir foto del producto">
-              ${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : `<span class="ph">📷</span>`}
-            </div>
-            ${nombreCelda}
-          </div>
-        </td>
-        <td data-label="Precio: ">${precioCelda}</td>
-        <td data-label="Stock: "><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
-        <td>${descCelda}</td>
-        <td><div class="pc-actions">${accionEditar}${accionEliminar}</div></td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('pcConteo').textContent =
-      `Mostrando ${desde + 1} a ${Math.min(desde + PC_POR_PAGINA, lista.length)} de ${lista.length} productos`;
-
-    const pager = document.getElementById('pcPager');
-    pager.innerHTML = `
-      <button id="pcPagAnt" ${pcPagina <= 1 ? 'disabled' : ''}>←</button>
-      <span class="cur">${pcPagina}</span>
-      <button id="pcPagSig" ${pcPagina >= totalPaginas ? 'disabled' : ''}>→</button>`;
-    pager.querySelector('#pcPagAnt').addEventListener('click', ()=>{ pcPagina--; pintarCatalogoProductos(); });
-    pager.querySelector('#pcPagSig').addEventListener('click', ()=>{ pcPagina++; pintarCatalogoProductos(); });
+    document.getElementById('pcConteo').textContent = `${lista.length} producto${lista.length === 1 ? '' : 's'} en total`;
 
     cont.querySelectorAll('.pc-row').forEach(row=>{
       row.querySelector('.pc-thumb').addEventListener('click', ()=> subirFotoProducto(row.dataset.id));
@@ -8860,8 +8882,8 @@
     });
   }
 
-  document.getElementById('pcBuscar').addEventListener('input', ()=>{ pcPagina = 1; pintarCatalogoProductos(); });
-  document.getElementById('pcFiltro').addEventListener('change', ()=>{ pcPagina = 1; pintarCatalogoProductos(); });
+  document.getElementById('pcBuscar').addEventListener('input', pintarCatalogoProductos);
+  document.getElementById('pcFiltro').addEventListener('change', pintarCatalogoProductos);
 
   /** Sube (o reemplaza) la foto de un producto y la deja lista para la tienda del sitio. */
   function subirFotoProducto(productoId){
@@ -8942,11 +8964,12 @@
     const precio = Number(document.getElementById('pcPrecio').value);
     const stock = Number(document.getElementById('pcStock').value) || 0;
     const descripcion = document.getElementById('pcDescripcion').value.trim();
+    const categoria = document.getElementById('pcCategoria').value;
     if(!nombre) return showToast('Escribe el nombre del producto');
     if(!precio || precio <= 0) return showToast('Ingresa un precio válido');
 
     const id = 'p' + Date.now();
-    const nuevo = { id, name:nombre, price:precio, stock, description:descripcion, active:true };
+    const nuevo = { id, name:nombre, price:precio, stock, description:descripcion, category:categoria, active:true };
     btn.disabled = true; btn.textContent = 'Agregando...';
     try{
       await db.collection('products').doc(id).set(nuevo);
@@ -8955,6 +8978,7 @@
       document.getElementById('pcPrecio').value = '';
       document.getElementById('pcStock').value = '0';
       document.getElementById('pcDescripcion').value = '';
+      document.getElementById('pcCategoria').value = '';
       productsCache.push(nuevo);
       pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
