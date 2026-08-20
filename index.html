@@ -3049,14 +3049,36 @@
    *  reproducen nativo, el resto necesita hls.js para el streaming
    *  adaptativo (Chrome/Firefox/Android no soportan HLS de forma nativa). */
   function adjuntarHls(video, src){
-    if(video.canPlayType('application/vnd.apple.mpegurl')){
-      video.src = src;
-    } else if(window.Hls && Hls.isSupported()){
+    // hls.js primero: canPlayType('application/vnd.apple.mpegurl') devuelve
+    // "maybe" en Chrome/Edge/Android aunque en realidad no soportan HLS
+    // nativo -- confiar en eso deja el video sin reproducir (error código 4).
+    // Solo Safari/iOS de verdad reproducen HLS nativo, y ahí Hls.isSupported()
+    // es false, así que cae al branch nativo correctamente.
+    if(window.Hls && Hls.isSupported()){
       if(video._hls) video._hls.destroy();
-      const hls = new Hls();
+      // El token de Bunny firma toda la carpeta del video (manifest + listas
+      // de calidad + segmentos), pero hls.js solo lo lleva en la primera
+      // petición -- las sub-listas (360p/720p/...) las pide sin el query
+      // string y Bunny las rechaza con 403. Se reenvía a mano en cada
+      // petición que haga hls.js.
+      const srcUrl = new URL(src, location.href);
+      const token = srcUrl.searchParams.get('token');
+      const expires = srcUrl.searchParams.get('expires');
+      const hls = new Hls(token ? {
+        xhrSetup(xhr, url){
+          const u = new URL(url, location.href);
+          if(!u.searchParams.has('token')){
+            u.searchParams.set('token', token);
+            u.searchParams.set('expires', expires);
+          }
+          xhr.open('GET', u.href, true);
+        }
+      } : {});
       hls.loadSource(src);
       hls.attachMedia(video);
       video._hls = hls;
+    } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src = src;
     } else {
       video.src = src;
     }
