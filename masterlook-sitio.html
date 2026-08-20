@@ -993,9 +993,9 @@
   .st-footer-social a{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-strong);
     display:flex;align-items:center;justify-content:center;color:var(--text-hi);}
   .st-footer-col h5{font-size:.72rem;font-weight:700;letter-spacing:.06em;margin-bottom:14px;}
-  .st-footer-col div, .st-footer-col a{display:block;color:var(--text-mid);font-size:.8rem;
-    margin-bottom:9px;background:none;border:none;cursor:default;font-family:inherit;text-align:left;padding:0;}
-  .st-footer-col button{cursor:pointer;color:var(--text-mid);}
+  .st-footer-col div, .st-footer-col a, .st-footer-col button{display:block;color:var(--text-mid);font-size:.8rem;
+    margin-bottom:9px;background:none;border:none;cursor:default;font-family:inherit;text-align:left;padding:0;width:auto;}
+  .st-footer-col button{cursor:pointer;}
   .st-footer-col button:hover{color:var(--text-hi);}
   .st-footer-bottom{max-width:1180px;margin:36px auto 0;padding-top:20px;border-top:1px solid var(--border);
     display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:.72rem;color:var(--text-mid);}
@@ -1007,7 +1007,7 @@
     .st-icons{gap:10px;}
     .st-icons svg{width:16px;height:16px;}
 
-    .st-hero{grid-template-columns:1fr;}
+    .st-hero{grid-template-columns:1fr;min-height:0;}
     .st-hero-r{height:180px;min-height:0;order:-1;}
     .st-hero-l{padding:22px 20px;}
     .st-hero-eyebrow{font-size:.62rem;margin-bottom:10px;}
@@ -1021,8 +1021,8 @@
     .st-cats-wrap{margin-top:-18px;padding:0 14px;}
     .st-cats{display:flex;overflow-x:auto;gap:4px;padding:12px 8px;scrollbar-width:none;grid-template-columns:none;}
     .st-cats::-webkit-scrollbar{display:none;}
-    .st-cat{flex:0 0 auto;min-width:76px;border-right:none;padding:5px 10px;font-size:.6rem;gap:5px;}
-    .st-cat svg{width:18px;height:18px;}
+    .st-cat{flex:0 0 auto;min-width:64px;border-right:none;padding:4px 7px;font-size:.52rem;gap:4px;line-height:1.15;}
+    .st-cat svg{width:15px;height:15px;}
 
     .st-section{padding:32px 16px 4px;}
     .st-section-head{margin-bottom:14px;}
@@ -1035,8 +1035,13 @@
     .st-card-price{font-size:.8rem;}
     .st-add{width:28px;height:28px;font-size:.95rem;}
 
-    .st-editorial{grid-template-columns:1fr;margin-top:36px;padding:0 16px;gap:10px;}
-    .st-edit-block{min-height:180px;padding:18px;}
+    .st-editorial{grid-template-columns:1fr 1fr;margin-top:36px;padding:0 16px;gap:10px;}
+    .st-edit-block{min-height:120px;padding:14px;}
+    .st-edit-eyebrow{font-size:.56rem;margin-bottom:4px;}
+    .st-edit-block h3{font-size:.82rem;margin-bottom:10px;}
+    .st-edit-block button{padding:7px 12px;font-size:.62rem;gap:5px;}
+    .st-edit-block button svg{width:11px;height:11px;}
+    .st-perks{grid-column:1/-1;}
     .st-edit-block h3{font-size:1.05rem;}
     .st-perks{padding:18px;}
 
