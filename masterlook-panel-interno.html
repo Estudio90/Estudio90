@@ -787,6 +787,7 @@
   @media (max-width: 700px){
     .mg-row{grid-template-columns:1fr auto;}
     .mg-row .mg-unit{display:none;}
+    .mg-list-head{display:none !important;}
     .mg-two{grid-template-columns:1fr;}
   }
 
@@ -2669,6 +2670,10 @@
 
   <!-- Servicios -->
   <div class="mg-pane active" data-pane="servicios">
+    <div class="mg-list-head" style="display:grid;grid-template-columns:38px 1fr 92px 74px 84px auto;gap:8px;padding:0 10px 6px;
+      font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#a3a2ab;">
+      <div></div><div></div><div>Precio</div><div>Duración</div><div>Anticipo</div><div></div>
+    </div>
     <div class="mg-list" id="cfgServicios"></div>
     <button class="mg-btn ghost full" id="cfgAddServicio">+ Agregar servicio</button>
   </div>
