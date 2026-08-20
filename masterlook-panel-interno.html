@@ -1168,6 +1168,53 @@
   .lg-salir{background:none; border:1px solid rgba(255,255,255,.25); color:rgba(255,255,255,.75);
     padding:6px 13px; border-radius:99px; font-family:inherit; font-size:11.5px; cursor:pointer;}
   .lg-salir:hover{background:rgba(255,255,255,.12); color:#fff;}
+
+  /* ---------- Suscripciones y servicios ---------- */
+  .sus-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .sus-alert{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--border);
+    border-radius:10px;background:#fff8e8;color:#8a6412;font-size:12.5px;margin-bottom:8px;}
+  .sus-alert.warn{background:#fdeaea;color:#c0392b;}
+  .sus-fx-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .sus-fx-chip{font-size:12.5px;color:#6c6b74;background:#f8f8fa;padding:7px 12px;border-radius:9px;}
+  .sus-fx-chip b{color:var(--text-hi);}
+  .sus-pay-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--border);
+    border-radius:9px;background:#fff;margin-bottom:8px;}
+  .sus-pay-nombre{font-weight:600;font-size:13px;}
+  .sus-pay-fecha{font-size:11.5px;color:#a3a2ab;}
+  .sus-pay-monto{margin-left:auto;text-align:right;font-family:var(--font-primary);font-size:13px;font-weight:700;}
+  .sus-pay-monto small{display:block;font-weight:400;color:#6c6b74;font-size:10.5px;}
+  .sus-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .sus-cal-dow{font-size:9.5px;text-transform:uppercase;color:#a3a2ab;text-align:center;padding:4px 0;}
+  .sus-cal-day{min-height:52px;border:1px solid var(--border);border-radius:8px;padding:5px;font-size:11px;background:#fff;}
+  .sus-cal-day.empty{border:none;background:none;}
+  .sus-cal-day .n{font-family:var(--font-primary);color:#a3a2ab;}
+  .sus-cal-day.has-charge{cursor:pointer;border-color:#1A1815;}
+  .sus-cal-day.has-charge:hover{background:#f8f8fa;}
+  .sus-cal-day.selected{background:#1A1815;color:#fff;}
+  .sus-cal-day.selected .n{color:#fff;}
+  .sus-cal-tag{font-size:8.5px;background:#f1f1f4;border-radius:5px;padding:1px 4px;margin-top:3px;
+    display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sus-cal-day.selected .sus-cal-tag{background:rgba(255,255,255,.2);color:#fff;}
+  .sus-list{display:flex;flex-direction:column;gap:10px;}
+  .sus-card{padding:14px 16px;}
+  .sus-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .sus-card-nombre{font-size:14px;font-weight:700;}
+  .sus-card-nombre a{color:inherit;text-decoration:none;border-bottom:1px dotted #a3a2ab;}
+  .sus-card-cat{font-size:10px;color:#a3a2ab;text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+  .sus-card-desc{font-size:12px;color:#6c6b74;margin-top:6px;}
+  .sus-card-mid{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;}
+  .sus-card-field{font-size:11.5px;color:#6c6b74;}
+  .sus-card-field b{color:var(--text-hi);display:block;font-family:var(--font-primary);font-size:13px;font-weight:700;}
+  .sus-card-foot{display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:12px;
+    border-top:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+  .sus-card-links{display:flex;gap:14px;}
+  .sus-hist-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .sus-hist-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#a3a2ab;
+    padding:8px 10px;border-bottom:1px solid var(--border);}
+  .sus-hist-table td{padding:9px 10px;border-bottom:1px solid var(--border);}
+  .sus-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .sus-chart-title{font-size:12.5px;font-weight:600;margin-bottom:10px;}
+  .sus-menu-badge{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -1282,6 +1329,7 @@
           <button class="menu-panel-item" id="btnColores">Colores del sitio</button>
           <button class="menu-panel-item" id="btnPromos">Promociones</button>
           <button class="menu-panel-item" id="btnIntelligence">Masterlook Intelligence</button>
+          <button class="menu-panel-item" id="btnSuscripciones">Suscripciones y servicios<span class="sus-menu-badge" id="susMenuBadge" style="display:none;" title="Hay pagos próximos"></span></button>
         </div>
       </div>
     </nav>
@@ -1424,6 +1472,202 @@
                style="width:80px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;overflow:hidden;
                  display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;">🎬</div>
           <button class="mg-btn ghost" id="acQuitarVideo" style="flex:none;padding:9px 16px;">Quitar video</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: SUSCRIPCIONES Y SERVICIOS (gasto interno, solo ADMIN) ===== -->
+    <div id="vistaSuscripciones" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Suscripciones y servicios</h2>
+          <p class="cx-sub">Todo lo que pagas para mantener Masterlook -- hosting, video, IA, dominio y lo que vaya sumándose.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn primary" id="susNuevo">+ Agregar servicio</button>
+          <button class="ctrl-btn" id="susVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div id="susAlertas"></div>
+
+      <div class="sus-kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Gasto mensual</span></div>
+          <div class="kpi-value" id="susKpiMensual">$0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Gasto anual</span></div>
+          <div class="kpi-value" id="susKpiAnual">$0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Próximo pago</span></div>
+          <div class="kpi-value" id="susKpiProximo" style="font-size:15px;">--</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Pagos próximos (30 días)</span></div>
+          <div class="kpi-value" id="susKpiPagosProximos">$0</div>
+        </div>
+      </div>
+
+      <div class="cx-panel" style="margin-bottom:18px;">
+        <h3 style="font-size:14px;margin:0 0 10px;">Tipo de cambio</h3>
+        <div class="sus-fx-row">
+          <span class="sus-fx-chip">USD → CLP: <b id="susFxUsd">Sin configurar</b></span>
+          <span class="sus-fx-chip">EUR → CLP: <b id="susFxEur">Sin configurar</b></span>
+          <span class="sus-fx-chip" id="susFxFecha"></span>
+          <button class="ctrl-btn" id="susEditarFx" style="margin-left:auto;">Actualizar tipo de cambio</button>
+        </div>
+      </div>
+
+      <div class="cx-panel" style="margin-bottom:18px;">
+        <h3 style="font-size:14px;margin:0 0 12px;">Próximos pagos</h3>
+        <div id="susProximosPagos"><div class="cx-empty">Todavía no hay servicios registrados.</div></div>
+      </div>
+
+      <div class="cx-panel" style="margin-bottom:18px;">
+        <h3 style="font-size:14px;margin:0 0 12px;">Calendario de cobros</h3>
+        <div class="cx-nav" style="margin-bottom:12px;">
+          <button class="ctrl-btn" id="susCalAnterior">← Mes anterior</button>
+          <span id="susCalTitulo" style="align-self:center;font-weight:600;font-size:13px;"></span>
+          <button class="ctrl-btn" id="susCalSiguiente">Mes siguiente →</button>
+        </div>
+        <div class="sus-cal" id="susCalDow"></div>
+        <div class="sus-cal" id="susCalGrid" style="margin-top:4px;"></div>
+        <div id="susCalDetalle" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="cx-sec" style="margin-top:0;border-top:none;padding-top:0;">
+        <h4>Listado de servicios</h4>
+      </div>
+      <div class="sus-list" id="susLista"><div class="cx-empty">Todavía no hay servicios registrados.</div></div>
+
+      <div class="cx-panel" style="margin:22px 0 18px;">
+        <h3 style="font-size:14px;margin:0 0 12px;">Historial de pagos</h3>
+        <div id="susHistorial"><div class="cx-empty">Todavía no hay pagos registrados.</div></div>
+      </div>
+
+      <div class="cx-panel" style="margin-bottom:18px;">
+        <h3 style="font-size:14px;margin:0 0 14px;">Gráficos</h3>
+        <div class="sus-charts">
+          <div>
+            <div class="sus-chart-title">Gasto por categoría</div>
+            <div id="susChartCategoria"></div>
+          </div>
+          <div>
+            <div class="sus-chart-title">Tendencia mensual (últimos 6 meses)</div>
+            <div id="susChartTendencia"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agregar / editar servicio -->
+      <div class="mg-modal wide" id="modalSusServicio">
+        <div class="mg-head">
+          <h3 id="susServicioTitulo">Agregar servicio</h3>
+          <button class="mg-close" data-close>✕</button>
+        </div>
+        <div class="cu-campos">
+          <div class="cu-campo">
+            <label>Nombre del servicio</label>
+            <input type="text" id="susNombre" placeholder="Ej: Bunny Stream">
+          </div>
+          <div class="cu-campo">
+            <label>Categoría</label>
+            <select id="susCategoria">
+              <option>Hosting</option><option>Dominio</option><option>IA</option><option>Video</option>
+              <option>Almacenamiento</option><option>Automatización</option><option>Marketing</option>
+              <option>Agenda</option><option>Correo</option><option>Diseño</option><option>Desarrollo</option>
+              <option>Otros</option>
+            </select>
+          </div>
+          <div class="cu-campo full">
+            <label>Descripción</label>
+            <textarea id="susDescripcion" placeholder="Para qué se usa"></textarea>
+          </div>
+          <div class="cu-campo">
+            <label>Precio</label>
+            <input type="number" min="0" step="0.01" id="susPrecio" class="mono-in">
+          </div>
+          <div class="cu-campo">
+            <label>Moneda</label>
+            <select id="susMoneda"><option>CLP</option><option>USD</option><option>EUR</option><option>OTRA</option></select>
+          </div>
+          <div class="cu-campo">
+            <label>Frecuencia</label>
+            <select id="susFrecuencia"><option value="mensual">Mensual</option><option value="anual">Anual</option><option value="otro">Otro período</option></select>
+          </div>
+          <div class="cu-campo" id="susFrecuenciaDiasWrap" style="display:none;">
+            <label>Cada cuántos días</label>
+            <input type="number" min="1" id="susFrecuenciaDias" class="mono-in">
+          </div>
+          <div class="cu-campo">
+            <label>Próxima fecha de cobro</label>
+            <input type="date" id="susProximaFecha">
+          </div>
+          <div class="cu-campo">
+            <label>Estado</label>
+            <select id="susEstado"><option value="active">Activo</option><option value="cancelled">Cancelado</option></select>
+          </div>
+          <div class="cu-campo">
+            <label>Método de pago</label>
+            <input type="text" id="susMetodoPago" placeholder="Ej: Visa terminada en 1234">
+          </div>
+          <div class="cu-campo">
+            <label>Plan contratado</label>
+            <input type="text" id="susPlan" placeholder="Ej: Volume Storage Zone, Pro, Build tier">
+          </div>
+          <div class="cu-campo full">
+            <label>Enlace del proveedor</label>
+            <input type="text" id="susProviderUrl" placeholder="Ej: https://dash.bunny.net">
+          </div>
+          <div class="cu-campo full" style="flex-direction:row;align-items:center;gap:9px;">
+            <input type="checkbox" id="susInsistente" style="width:auto;">
+            <label style="margin:0;text-transform:none;font-size:12.5px;color:var(--text-hi);" for="susInsistente">
+              Avisar de forma insistente si no confirmo el pago (para servicios donde no puedo verificar el cobro por otro lado, como Bunny o la IA)
+            </label>
+          </div>
+          <div class="cu-campo full">
+            <label>Notas</label>
+            <textarea id="susNotas"></textarea>
+          </div>
+        </div>
+        <div class="cu-guardar">
+          <button class="mg-btn ghost" data-close>Cancelar</button>
+          <button class="mg-btn solid" id="susGuardar">Guardar servicio</button>
+        </div>
+      </div>
+
+      <!-- Confirmar eliminación -->
+      <div class="mg-modal" id="modalSusEliminar">
+        <div class="mg-head">
+          <h3>Eliminar servicio</h3>
+          <button class="mg-close" data-close>✕</button>
+        </div>
+        <p class="mg-note" id="susEliminarTexto" style="margin-bottom:16px;"></p>
+        <button class="mg-btn solid full" id="susEliminarConfirmar" style="background:#c0392b;">Eliminar</button>
+      </div>
+
+      <!-- Actualizar tipo de cambio -->
+      <div class="mg-modal" id="modalSusFx">
+        <div class="mg-head">
+          <h3>Tipo de cambio</h3>
+          <button class="mg-close" data-close>✕</button>
+        </div>
+        <p class="mg-note" style="margin-bottom:14px;">Se usa para estimar en pesos chilenos los servicios en otra moneda. Nunca se inventa: si lo dejas vacío, esos servicios no muestran un CLP estimado.</p>
+        <div class="cu-campos">
+          <div class="cu-campo">
+            <label>1 USD =</label>
+            <input type="number" min="0" step="0.01" id="susFxUsdInput" class="mono-in">
+          </div>
+          <div class="cu-campo">
+            <label>1 EUR =</label>
+            <input type="number" min="0" step="0.01" id="susFxEurInput" class="mono-in">
+          </div>
+        </div>
+        <div class="cu-guardar">
+          <button class="mg-btn ghost" data-close>Cancelar</button>
+          <button class="mg-btn solid" id="susFxGuardar">Guardar</button>
         </div>
       </div>
     </div>
@@ -3669,7 +3913,7 @@
     // Servicios staff/Informe comisiones, Mi equipo, y el grupo "Más".
     ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
      'btnEquipoServicios','btnInformeComisiones','btnEquipoVer','btnEquipoNuevo',
-     'btnPromos','btnColores','btnIntelligence'].forEach(id=>{
+     'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
 
@@ -3701,6 +3945,11 @@
       const algunoVisible = Array.from(items).some(el=> el.style.display !== 'none');
       grupo.style.display = algunoVisible ? '' : 'none';
     });
+
+    // Punto rojo de "hay pagos próximos" -- se revisa una sola vez al
+    // entrar, no solo cuando se abre la sección, para que avise aunque
+    // ese día no se entre a Suscripciones.
+    if(userRole === 'ADMIN' && typeof susComprobarAlertaMenu === 'function') susComprobarAlertaMenu();
   }
 
   /** Trae la agenda del día desde el servidor y la dibuja en el calendario. */
@@ -4114,7 +4363,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
+      ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -4712,7 +4961,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4890,7 +5139,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -4916,7 +5165,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5041,7 +5290,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios'].forEach(id=>{
+    ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5704,6 +5953,7 @@
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaSuscripciones').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
@@ -6253,6 +6503,7 @@
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = 'none';
+    document.getElementById('vistaSuscripciones').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -6275,6 +6526,7 @@
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('vistaSuscripciones').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = '';
@@ -6486,7 +6738,7 @@
   /* ===== Archivos multimedia: todas las fotos de clientes ===== */
   function mostrarArchivosMultimedia(){
     ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas'].forEach(id=>{
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
     sbCerrarVistaSemana();
@@ -6594,7 +6846,7 @@
   /* ===== Campañas: envío masivo de correo ===== */
   function mostrarCampanas(){
     ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas'].forEach(id=>{
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
     sbCerrarVistaSemana();
@@ -6724,6 +6976,579 @@
   document.getElementById('btnAcademyVideos').addEventListener('click', mostrarCursos);
   document.getElementById('btnAcademyPanel').addEventListener('click', mostrarCursos);
   document.getElementById('cuVolver').addEventListener('click', cuVolverAgenda);
+
+  /* ================= Suscripciones y servicios (solo ADMIN) =================
+   * Gasto interno del negocio en herramientas (hosting, Bunny Stream, IA,
+   * dominio, etc.) -- nunca visible para clientes. Colección `subscriptions`
+   * (una subcolección `payments` por servicio para el historial), protegida
+   * en firestore.rules con isAdmin() tanto en lectura como en escritura.
+   * nextChargeDate es la única fuente de verdad para "próximo cobro"; el
+   * "día de cobro" simplemente se muestra extraído de esa fecha. */
+  let susServicios = [];
+  let susHistorialCache = [];
+  let susActual = null;
+  let susFx = { usd: null, eur: null, actualizado: null };
+  let susCalMes = new Date();
+  let susCalDiaSel = null;
+
+  /** Se llama una sola vez al entrar como ADMIN (desde mostrarControlesAdmin,
+   *  no solo al abrir la sección) para que el punto rojo del menú avise
+   *  aunque la administradora nunca entre a Suscripciones ese día. Si falla
+   *  (sin conexión, etc.) simplemente no se muestra el punto -- nunca rompe
+   *  el login. */
+  async function susComprobarAlertaMenu(){
+    try{
+      const desde = new Date(); desde.setHours(0,0,0,0);
+      const hasta = new Date(desde); hasta.setDate(hasta.getDate() + 3);
+      const fmt = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const desdeStr = fmt(desde), hastaStr = fmt(hasta);
+      const snap = await db.collection('subscriptions').where('status', '==', 'active').get();
+      const hayProximos = snap.docs.some(d=>{
+        const s = d.data();
+        if(!s.nextChargeDate) return false;
+        const proximo = s.nextChargeDate >= desdeStr && s.nextChargeDate <= hastaStr;
+        const vencidoInsistente = s.insistente && s.nextChargeDate < desdeStr;
+        return proximo || vencidoInsistente;
+      });
+      const badge = document.getElementById('susMenuBadge');
+      if(badge) badge.style.display = hayProximos ? 'inline-block' : 'none';
+    }catch(e){ /* sin punto rojo si falla, nunca un error visible */ }
+  }
+
+  function mostrarSuscripciones(){
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia',
+     'vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaSuscripciones').style.display = '';
+    ocultarFlotante(true);
+    susCalMes = new Date();
+    susCalDiaSel = null;
+    susCargarTodo();
+  }
+  function susVolverAgenda(){
+    document.getElementById('vistaSuscripciones').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+  document.getElementById('btnSuscripciones').addEventListener('click', mostrarSuscripciones);
+  document.getElementById('susVolver').addEventListener('click', susVolverAgenda);
+
+  /** nextChargeDate SIEMPRE avanza desde su propio valor anterior, nunca
+   *  desde hoy -- si vence el 25 y se paga el 23, el próximo cobro queda
+   *  el 25 del mes siguiente, no el 23. Clampa a fin de mes cuando el mes
+   *  destino tiene menos días (31 ene -> 28/29 feb). */
+  function avanzarFechaCobro(fechaStr, frecuencia, frecuenciaDias){
+    const d = new Date(fechaStr + 'T12:00:00');
+    if(frecuencia === 'anual'){
+      const mesOriginal = d.getMonth();
+      d.setFullYear(d.getFullYear() + 1);
+      if(d.getMonth() !== mesOriginal) d.setDate(0);
+    }else if(frecuencia === 'otro'){
+      d.setDate(d.getDate() + (Number(frecuenciaDias) || 30));
+    }else{
+      const diaOriginal = d.getDate();
+      d.setMonth(d.getMonth() + 1);
+      if(d.getDate() !== diaOriginal) d.setDate(0);
+    }
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function susFormatFecha(fechaStr){
+    if(!fechaStr) return '';
+    return new Date(fechaStr + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric' });
+  }
+
+  /** null si la moneda necesita un tipo de cambio que todavía no está
+   *  configurado -- nunca se inventa un valor. */
+  function susTasaCambio(moneda){
+    if(moneda === 'CLP') return 1;
+    if(moneda === 'USD') return susFx.usd || null;
+    if(moneda === 'EUR') return susFx.eur || null;
+    return null;
+  }
+  function susMontoClp(precio, moneda){
+    const tasa = susTasaCambio(moneda);
+    return tasa == null ? null : precio * tasa;
+  }
+  function susMensualEquivalente(s){
+    const clp = susMontoClp(Number(s.price) || 0, s.currency);
+    if(clp == null) return null;
+    if(s.frequency === 'anual') return clp / 12;
+    if(s.frequency === 'otro') return clp * (30 / (Number(s.frequencyDays) || 30));
+    return clp;
+  }
+  function susEstadoPago(s){
+    if(s.status === 'cancelled') return { texto:'Cancelado', clase:'pend' };
+    if(!s.nextChargeDate) return { texto:'Sin fecha', clase:'pend' };
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const dias = Math.round((new Date(s.nextChargeDate + 'T12:00:00') - hoy) / 86400000);
+    if(dias < 0) return { texto:'Vencido', clase:'err' };
+    if(dias <= 5) return { texto:'Próximo a vencer', clase:'proc' };
+    return { texto:'Pendiente', clase:'ok' };
+  }
+
+  async function susCargarFx(){
+    try{
+      const doc = await db.collection('settings').doc('negocio').get();
+      const d = doc.data() || {};
+      susFx = { usd: d.tipoCambioUSD || null, eur: d.tipoCambioEUR || null, actualizado: d.tipoCambioActualizado || null };
+    }catch(e){ susFx = { usd:null, eur:null, actualizado:null }; }
+  }
+  async function susCargarServicios(){
+    try{
+      const snap = await db.collection('subscriptions').get();
+      susServicios = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+    }catch(e){ susServicios = []; showToast('No se pudieron cargar los servicios: ' + e.message); }
+  }
+  async function susCargarHistorial(){
+    try{
+      const snap = await db.collectionGroup('payments').orderBy('paidAt', 'desc').limit(150).get();
+      susHistorialCache = snap.docs.map(d=> ({ id:d.id, servicioId: d.ref.parent.parent.id, ...d.data() }));
+    }catch(e){ susHistorialCache = []; }
+  }
+  async function susCargarTodo(){
+    await Promise.all([susCargarFx(), susCargarServicios(), susCargarHistorial()]);
+    susPintarCalendarioDow();
+    susPintarTodo();
+  }
+  function susPintarTodo(){
+    susComprobarAlertaMenu();
+    susPintarFx();
+    susPintarKpis();
+    susPintarAlertas();
+    susPintarProximosPagos();
+    susPintarCalendario();
+    susPintarLista();
+    susPintarHistorial();
+    susPintarGraficos();
+  }
+
+  function susPintarFx(){
+    document.getElementById('susFxUsd').textContent = susFx.usd ? formatCLP(susFx.usd) : 'Sin configurar';
+    document.getElementById('susFxEur').textContent = susFx.eur ? formatCLP(susFx.eur) : 'Sin configurar';
+    document.getElementById('susFxFecha').textContent = susFx.actualizado ? `Actualizado: ${susFormatFecha(susFx.actualizado.slice(0,10))}` : '';
+  }
+  document.getElementById('susEditarFx').addEventListener('click', ()=>{
+    document.getElementById('susFxUsdInput').value = susFx.usd || '';
+    document.getElementById('susFxEurInput').value = susFx.eur || '';
+    abrirModal('modalSusFx');
+  });
+  document.getElementById('susFxGuardar').addEventListener('click', async ()=>{
+    const usd = Number(document.getElementById('susFxUsdInput').value) || null;
+    const eur = Number(document.getElementById('susFxEurInput').value) || null;
+    try{
+      const actualizado = new Date().toISOString();
+      await db.collection('settings').doc('negocio').set({ tipoCambioUSD: usd, tipoCambioEUR: eur, tipoCambioActualizado: actualizado }, { merge:true });
+      susFx = { usd, eur, actualizado };
+      cerrarModales();
+      showToast('Tipo de cambio actualizado');
+      susPintarTodo();
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  function susPintarKpis(){
+    const activos = susServicios.filter(s=> s.status !== 'cancelled');
+    let mensual = 0;
+    activos.forEach(s=>{ const eq = susMensualEquivalente(s); if(eq != null) mensual += eq; });
+    document.getElementById('susKpiMensual').textContent = formatCLP(mensual);
+    document.getElementById('susKpiAnual').textContent = formatCLP(mensual * 12);
+
+    const proximo = activos.filter(s=> s.nextChargeDate).sort((a,b)=> a.nextChargeDate.localeCompare(b.nextChargeDate))[0];
+    document.getElementById('susKpiProximo').innerHTML = proximo
+      ? `${escapeHTML(proximo.name)}<br><span style="font-size:11px;color:#6c6b74;">${susFormatFecha(proximo.nextChargeDate)}</span>`
+      : '--';
+
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const total30 = activos.reduce((sum,s)=>{
+      if(!s.nextChargeDate) return sum;
+      const dias = Math.round((new Date(s.nextChargeDate + 'T12:00:00') - hoy) / 86400000);
+      if(dias < 0 || dias > 30) return sum;
+      const clp = susMontoClp(Number(s.price) || 0, s.currency);
+      return sum + (clp || 0);
+    }, 0);
+    document.getElementById('susKpiPagosProximos').textContent = formatCLP(total30);
+  }
+
+  function susCalcularAlertas(){
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const activos = susServicios.filter(s=> s.status !== 'cancelled');
+    const alertas = [];
+    activos.forEach(s=>{
+      if(!s.nextChargeDate) return;
+      const dias = Math.round((new Date(s.nextChargeDate + 'T12:00:00') - hoy) / 86400000);
+      if(dias >= 0 && dias <= 3){
+        alertas.push({ texto:`${s.name} se cobra en ${dias === 0 ? 'menos de un día' : dias + ' día' + (dias>1?'s':'')}.`, tipo: dias<=1?'warn':'' });
+      }else if(dias < 0 && s.insistente){
+        // servicios marcados "insistente" (ej. Bunny, la IA -- no se puede
+        // verificar el cobro por API del proveedor) siguen avisando cada vez
+        // que se abre el panel hasta que se confirme el pago, en vez de
+        // quedar en silencio como "Vencido".
+        const diasVencido = Math.abs(dias);
+        alertas.push({ texto:`${s.name} venció hace ${diasVencido} día${diasVencido>1?'s':''} y todavía no confirmas el pago.`, tipo:'warn' });
+      }
+    });
+    const totalSemana = activos.reduce((sum,s)=>{
+      if(!s.nextChargeDate) return sum;
+      const dias = Math.round((new Date(s.nextChargeDate + 'T12:00:00') - hoy) / 86400000);
+      if(dias < 0 || dias > 7) return sum;
+      return sum + (susMontoClp(Number(s.price) || 0, s.currency) || 0);
+    }, 0);
+    if(totalSemana > 0) alertas.push({ texto:`Esta semana tienes ${formatCLP(totalSemana)} en pagos programados.` });
+
+    if(susHistorialCache.length){
+      const anioActual = hoy.getFullYear(), mesActual = hoy.getMonth();
+      let mesAnt = mesActual - 1, anioAnt = anioActual;
+      if(mesAnt < 0){ mesAnt = 11; anioAnt--; }
+      let totalActual = 0, totalAnterior = 0;
+      susHistorialCache.forEach(p=>{
+        if(!p.paidAt || p.clpEquivalente == null) return;
+        const f = new Date(p.paidAt);
+        if(f.getFullYear() === anioActual && f.getMonth() === mesActual) totalActual += p.clpEquivalente;
+        else if(f.getFullYear() === anioAnt && f.getMonth() === mesAnt) totalAnterior += p.clpEquivalente;
+      });
+      if(totalAnterior > 0 && totalActual > 0 && Math.abs(totalActual - totalAnterior) >= 1000){
+        const diff = totalActual - totalAnterior;
+        alertas.push({ texto:`Tu gasto mensual ${diff>0?'subió':'bajó'} ${formatCLP(Math.abs(diff))} respecto al mes anterior.` });
+      }
+    }
+    return alertas;
+  }
+  function susPintarAlertas(){
+    document.getElementById('susAlertas').innerHTML = susCalcularAlertas()
+      .map(a=> `<div class="sus-alert ${a.tipo||''}">${a.texto}</div>`).join('');
+  }
+
+  function susPintarProximosPagos(){
+    const cont = document.getElementById('susProximosPagos');
+    const activos = susServicios.filter(s=> s.status !== 'cancelled' && s.nextChargeDate)
+      .sort((a,b)=> a.nextChargeDate.localeCompare(b.nextChargeDate));
+    if(!activos.length){ cont.innerHTML = '<div class="cx-empty">No hay pagos próximos.</div>'; return; }
+    cont.innerHTML = activos.map(s=>{
+      const clp = susMontoClp(Number(s.price) || 0, s.currency);
+      const estado = susEstadoPago(s);
+      return `
+      <div class="sus-pay-row">
+        <span class="cu-video-badge cu-video-badge--${estado.clase}">${estado.texto}</span>
+        <div>
+          <div class="sus-pay-nombre">${escapeHTML(s.name)}</div>
+          <div class="sus-pay-fecha">${susFormatFecha(s.nextChargeDate)}</div>
+        </div>
+        <div class="sus-pay-monto">${s.currency} ${Number(s.price).toLocaleString('es-CL')}${clp!=null ? `<small>≈ ${formatCLP(clp)}</small>` : ''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function susPintarCalendarioDow(){
+    document.getElementById('susCalDow').innerHTML = ['L','M','X','J','V','S','D'].map(d=> `<div class="sus-cal-dow">${d}</div>`).join('');
+  }
+  function susPintarCalendario(){
+    const year = susCalMes.getFullYear(), month = susCalMes.getMonth();
+    document.getElementById('susCalTitulo').textContent = susCalMes.toLocaleDateString('es-CL', { month:'long', year:'numeric' });
+    const offset = (new Date(year, month, 1).getDay() + 6) % 7;
+    const diasEnMes = new Date(year, month+1, 0).getDate();
+    const porDia = {};
+    susServicios.filter(s=> s.status !== 'cancelled' && s.nextChargeDate).forEach(s=>{
+      (porDia[s.nextChargeDate] = porDia[s.nextChargeDate] || []).push(s);
+    });
+    let html = '';
+    for(let i=0;i<offset;i++) html += '<div class="sus-cal-day empty"></div>';
+    for(let dia=1; dia<=diasEnMes; dia++){
+      const fecha = `${year}-${String(month+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+      const servicios = porDia[fecha] || [];
+      const sel = fecha === susCalDiaSel ? 'selected' : '';
+      html += `<div class="sus-cal-day ${servicios.length?'has-charge':''} ${sel}" data-fecha="${fecha}">
+        <span class="n">${dia}</span>
+        ${servicios.slice(0,2).map(s=> `<span class="sus-cal-tag">${escapeHTML(s.name)}</span>`).join('')}
+        ${servicios.length>2 ? `<span class="sus-cal-tag">+${servicios.length-2}</span>` : ''}
+      </div>`;
+    }
+    const grid = document.getElementById('susCalGrid');
+    grid.innerHTML = html;
+    grid.querySelectorAll('.sus-cal-day.has-charge').forEach(el=> el.addEventListener('click', ()=> susSeleccionarDiaCalendario(el.dataset.fecha)));
+  }
+  function susSeleccionarDiaCalendario(fecha){
+    susCalDiaSel = susCalDiaSel === fecha ? null : fecha;
+    susPintarCalendario();
+    const cont = document.getElementById('susCalDetalle');
+    if(!susCalDiaSel){ cont.innerHTML = ''; return; }
+    const servicios = susServicios.filter(s=> s.nextChargeDate === susCalDiaSel);
+    cont.innerHTML = `<div class="cx-sub" style="margin-bottom:8px;">${susFormatFecha(susCalDiaSel)}</div>` +
+      servicios.map(s=> `<div class="sus-pay-row"><div class="sus-pay-nombre">${escapeHTML(s.name)}</div><div class="sus-pay-monto">${s.currency} ${Number(s.price).toLocaleString('es-CL')}</div></div>`).join('');
+  }
+  document.getElementById('susCalAnterior').addEventListener('click', ()=>{
+    susCalMes = new Date(susCalMes.getFullYear(), susCalMes.getMonth()-1, 1);
+    susPintarCalendario();
+  });
+  document.getElementById('susCalSiguiente').addEventListener('click', ()=>{
+    susCalMes = new Date(susCalMes.getFullYear(), susCalMes.getMonth()+1, 1);
+    susPintarCalendario();
+  });
+
+  function susPintarLista(){
+    const cont = document.getElementById('susLista');
+    if(!susServicios.length){ cont.innerHTML = '<div class="cx-empty">Todavía no hay servicios. Agrega el primero.</div>'; return; }
+    const ordenados = [...susServicios].sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+    cont.innerHTML = ordenados.map(s=>{
+      const clp = susMontoClp(Number(s.price) || 0, s.currency);
+      const estado = susEstadoPago(s);
+      const nombreHtml = s.providerUrl
+        ? `<a href="${escapeHTML(s.providerUrl)}" target="_blank" rel="noopener">${escapeHTML(s.name)}</a>`
+        : escapeHTML(s.name);
+      return `
+      <div class="cu-card sus-card ${s.status==='cancelled' ? 'off' : ''}" data-sus="${s.id}">
+        <div class="sus-card-top">
+          <div>
+            <div class="sus-card-nombre">${nombreHtml}</div>
+            <div class="sus-card-cat">${escapeHTML(s.category || 'Otros')}</div>
+          </div>
+          <span class="cu-video-badge cu-video-badge--${estado.clase}">${estado.texto}</span>
+        </div>
+        ${s.description ? `<div class="sus-card-desc">${escapeHTML(s.description)}</div>` : ''}
+        <div class="sus-card-mid">
+          <div class="sus-card-field">Precio<b>${s.currency} ${Number(s.price).toLocaleString('es-CL')}${clp!=null ? ` <span style="font-weight:400;color:#a3a2ab;">≈ ${formatCLP(clp)}</span>` : ''}</b></div>
+          <div class="sus-card-field">Frecuencia<b>${s.frequency === 'mensual' ? 'Mensual' : s.frequency === 'anual' ? 'Anual' : `Cada ${s.frequencyDays || '?'} días`}</b></div>
+          <div class="sus-card-field">Próximo cobro<b>${susFormatFecha(s.nextChargeDate) || '--'}</b></div>
+          <div class="sus-card-field">Método de pago<b>${escapeHTML(s.paymentMethod || '--')}</b></div>
+          ${s.plan ? `<div class="sus-card-field">Plan<b>${escapeHTML(s.plan)}</b></div>` : ''}
+        </div>
+        ${s.notes ? `<div class="sus-card-desc" style="margin-top:8px;"><i>${escapeHTML(s.notes)}</i></div>` : ''}
+        <div class="sus-card-foot">
+          <div class="sus-card-links">
+            <button class="cu-card-link edit" data-sus-editar>✎ Editar</button>
+            <button class="cu-card-link" data-sus-pagado style="color:#189d79;">✓ Marcar como pagado</button>
+            ${s.status === 'cancelled'
+              ? `<button class="cu-card-link" data-sus-reactivar style="color:#189d79;">↻ Reactivar</button>`
+              : `<button class="cu-card-link" data-sus-cancelar style="color:#b8790a;">⏸ Cancelar</button>`}
+          </div>
+          <button class="cu-card-link del" data-sus-eliminar>🗑 Eliminar</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    cont.querySelectorAll('.sus-card').forEach(card=>{
+      const id = card.dataset.sus;
+      card.querySelector('[data-sus-editar]').addEventListener('click', ()=> susAbrirEditar(id));
+      card.querySelector('[data-sus-pagado]').addEventListener('click', ()=> susMarcarPagado(id));
+      card.querySelector('[data-sus-eliminar]').addEventListener('click', ()=> susEliminar(id));
+      const btnCancelar = card.querySelector('[data-sus-cancelar]');
+      if(btnCancelar) btnCancelar.addEventListener('click', ()=> susCambiarEstado(id, 'cancelled'));
+      const btnReactivar = card.querySelector('[data-sus-reactivar]');
+      if(btnReactivar) btnReactivar.addEventListener('click', ()=> susCambiarEstado(id, 'active'));
+    });
+  }
+
+  document.getElementById('susNuevo').addEventListener('click', ()=>{
+    susActual = null;
+    document.getElementById('susServicioTitulo').textContent = 'Agregar servicio';
+    document.getElementById('susNombre').value = '';
+    document.getElementById('susCategoria').value = 'Hosting';
+    document.getElementById('susDescripcion').value = '';
+    document.getElementById('susPrecio').value = '';
+    document.getElementById('susMoneda').value = 'CLP';
+    document.getElementById('susFrecuencia').value = 'mensual';
+    document.getElementById('susFrecuenciaDias').value = '';
+    document.getElementById('susFrecuenciaDiasWrap').style.display = 'none';
+    document.getElementById('susProximaFecha').value = '';
+    document.getElementById('susEstado').value = 'active';
+    document.getElementById('susMetodoPago').value = '';
+    document.getElementById('susPlan').value = '';
+    document.getElementById('susProviderUrl').value = '';
+    document.getElementById('susInsistente').checked = false;
+    document.getElementById('susNotas').value = '';
+    abrirModal('modalSusServicio');
+  });
+  function susAbrirEditar(id){
+    const s = susServicios.find(x=> x.id === id);
+    if(!s) return;
+    susActual = s;
+    document.getElementById('susServicioTitulo').textContent = 'Editar servicio';
+    document.getElementById('susNombre').value = s.name || '';
+    document.getElementById('susCategoria').value = s.category || 'Otros';
+    document.getElementById('susDescripcion').value = s.description || '';
+    document.getElementById('susPrecio').value = s.price != null ? s.price : '';
+    document.getElementById('susMoneda').value = s.currency || 'CLP';
+    document.getElementById('susFrecuencia').value = s.frequency || 'mensual';
+    document.getElementById('susFrecuenciaDias').value = s.frequencyDays || '';
+    document.getElementById('susFrecuenciaDiasWrap').style.display = s.frequency === 'otro' ? '' : 'none';
+    document.getElementById('susProximaFecha').value = s.nextChargeDate || '';
+    document.getElementById('susEstado').value = s.status || 'active';
+    document.getElementById('susMetodoPago').value = s.paymentMethod || '';
+    document.getElementById('susPlan').value = s.plan || '';
+    document.getElementById('susProviderUrl').value = s.providerUrl || '';
+    document.getElementById('susInsistente').checked = !!s.insistente;
+    document.getElementById('susNotas').value = s.notes || '';
+    abrirModal('modalSusServicio');
+  }
+  document.getElementById('susFrecuencia').addEventListener('change', (e)=>{
+    document.getElementById('susFrecuenciaDiasWrap').style.display = e.target.value === 'otro' ? '' : 'none';
+  });
+
+  document.getElementById('susGuardar').addEventListener('click', async ()=>{
+    const nombre = document.getElementById('susNombre').value.trim();
+    const precio = Number(document.getElementById('susPrecio').value);
+    const fecha = document.getElementById('susProximaFecha').value;
+    if(!nombre) return showToast('Escribe el nombre del servicio');
+    if(!precio || precio <= 0) return showToast('Escribe un precio válido');
+    if(!fecha) return showToast('Elige la próxima fecha de cobro');
+
+    const btn = document.getElementById('susGuardar');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try{
+      const datos = {
+        name: nombre,
+        category: document.getElementById('susCategoria').value,
+        description: document.getElementById('susDescripcion').value.trim(),
+        price: precio,
+        currency: document.getElementById('susMoneda').value,
+        frequency: document.getElementById('susFrecuencia').value,
+        frequencyDays: document.getElementById('susFrecuencia').value === 'otro' ? (Number(document.getElementById('susFrecuenciaDias').value) || 30) : null,
+        nextChargeDate: fecha,
+        status: document.getElementById('susEstado').value,
+        paymentMethod: document.getElementById('susMetodoPago').value.trim(),
+        plan: document.getElementById('susPlan').value.trim(),
+        providerUrl: document.getElementById('susProviderUrl').value.trim(),
+        insistente: document.getElementById('susInsistente').checked,
+        notes: document.getElementById('susNotas').value.trim(),
+        updatedAt: new Date().toISOString(),
+      };
+      if(susActual){
+        await db.collection('subscriptions').doc(susActual.id).set(datos, { merge:true });
+      }else{
+        datos.createdAt = new Date().toISOString();
+        await db.collection('subscriptions').add(datos);
+      }
+      cerrarModales();
+      showToast('Servicio guardado');
+      await susCargarServicios();
+      susPintarTodo();
+    }catch(e){
+      showToast('No se pudo guardar: ' + e.message);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Guardar servicio';
+    }
+  });
+
+  async function susMarcarPagado(id){
+    const s = susServicios.find(x=> x.id === id);
+    if(!s) return;
+    if(!s.nextChargeDate) return showToast('Este servicio no tiene próxima fecha de cobro configurada');
+    const clp = susMontoClp(Number(s.price) || 0, s.currency); // congelado con el tipo de cambio vigente AHORA
+    const nuevaFecha = avanzarFechaCobro(s.nextChargeDate, s.frequency, s.frequencyDays);
+    try{
+      await db.collection('subscriptions').doc(id).collection('payments').add({
+        amount: Number(s.price) || 0,
+        currency: s.currency,
+        clpEquivalente: clp,
+        paidAt: new Date().toISOString(),
+        notes: `Ciclo con vencimiento ${s.nextChargeDate}`,
+      });
+      await db.collection('subscriptions').doc(id).set({ nextChargeDate: nuevaFecha, updatedAt: new Date().toISOString() }, { merge:true });
+      showToast(`Pago registrado. Próximo cobro: ${susFormatFecha(nuevaFecha)}`);
+      await Promise.all([susCargarServicios(), susCargarHistorial()]);
+      susPintarTodo();
+    }catch(e){ showToast('No se pudo registrar el pago: ' + e.message); }
+  }
+
+  async function susCambiarEstado(id, status){
+    try{
+      await db.collection('subscriptions').doc(id).set({ status, updatedAt: new Date().toISOString() }, { merge:true });
+      showToast(status === 'cancelled' ? 'Servicio cancelado' : 'Servicio reactivado');
+      await susCargarServicios();
+      susPintarTodo();
+    }catch(e){ showToast('No se pudo actualizar: ' + e.message); }
+  }
+
+  function susEliminar(id){
+    const s = susServicios.find(x=> x.id === id);
+    if(!s) return;
+    susActual = s;
+    document.getElementById('susEliminarTexto').textContent = `¿Eliminar "${s.name}"? Esto borra también su historial de pagos. Esta acción no se puede deshacer.`;
+    abrirModal('modalSusEliminar');
+  }
+  document.getElementById('susEliminarConfirmar').addEventListener('click', async ()=>{
+    if(!susActual) return;
+    try{
+      const pagos = await db.collection('subscriptions').doc(susActual.id).collection('payments').get();
+      const batch = db.batch();
+      pagos.docs.forEach(d=> batch.delete(d.ref));
+      batch.delete(db.collection('subscriptions').doc(susActual.id));
+      await batch.commit();
+      cerrarModales();
+      showToast('Servicio eliminado');
+      susActual = null;
+      await Promise.all([susCargarServicios(), susCargarHistorial()]);
+      susPintarTodo();
+    }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+  });
+
+  function susPintarHistorial(){
+    const cont = document.getElementById('susHistorial');
+    if(!susHistorialCache.length){ cont.innerHTML = '<div class="cx-empty">Todavía no hay pagos registrados.</div>'; return; }
+    const filas = susHistorialCache.map(p=>{
+      const s = susServicios.find(x=> x.id === p.servicioId);
+      return `<tr>
+        <td>${escapeHTML(s ? s.name : '(servicio eliminado)')}</td>
+        <td>${susFormatFecha((p.paidAt || '').slice(0,10))}</td>
+        <td>${p.currency} ${Number(p.amount).toLocaleString('es-CL')}</td>
+        <td>${p.clpEquivalente != null ? formatCLP(p.clpEquivalente) : '--'}</td>
+        <td>Pagado</td>
+      </tr>`;
+    }).join('');
+    cont.innerHTML = `<div style="overflow-x:auto;"><table class="sus-hist-table">
+      <thead><tr><th>Servicio</th><th>Fecha</th><th>Monto</th><th>Equivalente CLP</th><th>Estado</th></tr></thead>
+      <tbody>${filas}</tbody></table></div>`;
+  }
+
+  function susPintarGraficos(){
+    const activos = susServicios.filter(s=> s.status !== 'cancelled');
+    const porCategoria = {};
+    activos.forEach(s=>{
+      const eq = susMensualEquivalente(s);
+      if(eq == null) return;
+      porCategoria[s.category] = (porCategoria[s.category] || 0) + eq;
+    });
+    const catEntries = Object.entries(porCategoria).sort((a,b)=> b[1]-a[1]);
+    const maxCat = Math.max(1, ...catEntries.map(e=> e[1]));
+    document.getElementById('susChartCategoria').innerHTML = catEntries.length ? `
+      <svg viewBox="0 0 300 ${catEntries.length*28+10}" style="width:100%;height:auto;font-family:inherit;">
+        ${catEntries.map((e,i)=>{
+          const w = (e[1]/maxCat) * 170;
+          const y = i*28;
+          return `<text x="0" y="${y+14}" font-size="10" fill="#6c6b74">${escapeHTML(e[0])}</text>
+            <rect x="90" y="${y+4}" width="${w}" height="14" rx="4" fill="#1A1815"></rect>
+            <text x="${90+w+6}" y="${y+14}" font-size="9.5" fill="#1A1815">${formatCLP(e[1])}</text>`;
+        }).join('')}
+      </svg>` : '<div class="cx-empty">Sin datos todavía.</div>';
+
+    const hoy = new Date();
+    const meses = [];
+    for(let i=5;i>=0;i--){
+      const d = new Date(hoy.getFullYear(), hoy.getMonth()-i, 1);
+      meses.push({ year:d.getFullYear(), month:d.getMonth(), label:d.toLocaleDateString('es-CL',{month:'short'}), total:0 });
+    }
+    susHistorialCache.forEach(p=>{
+      if(!p.paidAt || p.clpEquivalente == null) return;
+      const f = new Date(p.paidAt);
+      const m = meses.find(mm=> mm.year === f.getFullYear() && mm.month === f.getMonth());
+      if(m) m.total += p.clpEquivalente;
+    });
+    const maxMes = Math.max(1, ...meses.map(m=> m.total));
+    const barW = 34, gap = 16;
+    document.getElementById('susChartTendencia').innerHTML = meses.some(m=>m.total>0) ? `
+      <svg viewBox="0 0 ${meses.length*(barW+gap)} 140" style="width:100%;height:auto;">
+        ${meses.map((m,i)=>{
+          const h = (m.total/maxMes) * 90;
+          const x = i*(barW+gap);
+          return `<rect x="${x}" y="${110-h}" width="${barW}" height="${h}" rx="4" fill="#1A1815"></rect>
+            <text x="${x+barW/2}" y="126" font-size="10" fill="#6c6b74" text-anchor="middle">${m.label}</text>`;
+        }).join('')}
+      </svg>` : '<div class="cx-empty">Sin datos todavía.</div>';
+  }
 
   async function cuCargarLista(){
     const cont = document.getElementById('cuLista');
@@ -7558,7 +8383,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7583,7 +8408,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -8983,7 +9808,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
