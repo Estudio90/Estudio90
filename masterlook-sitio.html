@@ -860,6 +860,218 @@
   .tv-chip.on{background:var(--oro); color:#12100A; border-color:var(--oro);}
   .tv-vacio{grid-column:1/-1; text-align:center; padding:50px 20px; color:var(--text-mid); font-size:.92rem;}
 
+  /* ============ Tienda: vitrina editorial ============ */
+  /* Igual que Academia: la vitrina es blanco/negro/cemento fija, sin
+     importar el tema oscuro/claro del resto del sitio -- por eso se
+     reasignan las mismas variables semánticas (--bg, --text-hi, etc.) a
+     tonos claros solo dentro de #vistaTienda; el resto del sitio (y los
+     modales de carrito/checkout, que viven fuera de este contenedor en
+     el DOM) no se ven afectados. */
+  #vistaTienda{
+    --bg:#FFFFFF; --panel:#FFFFFF; --panel-2:#F5F5F7;
+    --border:rgba(20,20,25,.08); --border-strong:rgba(20,20,25,.16);
+    --text-hi:#17171B; --text-mid:#5B5A62; --text-low:#8B8A91;
+    --accent:#96731F;
+    --shadow-sm:0 1px 2px rgba(20,20,25,.06); --shadow-md:0 14px 40px rgba(20,20,25,.10);
+    background:var(--bg); color:var(--text-hi);
+  }
+  #vistaTienda .tv-head{background:rgba(255,255,255,.9); border-bottom-color:var(--border);}
+  #vistaTienda .tv-back,
+  #vistaTienda .icon-btn{color:var(--text-hi);}
+  #vistaTienda .tv-back:hover{background:var(--panel-2);}
+  .st-topbar{background:#12100e;color:#f2f0ec;font-size:.74rem;letter-spacing:.02em;
+    display:flex;align-items:center;justify-content:center;gap:16px;padding:9px 24px;flex-wrap:wrap;}
+  .st-topbar-msgs{display:flex;gap:28px;flex-wrap:wrap;}
+  .st-topbar-msg{display:flex;align-items:center;gap:7px;opacity:.92;}
+
+  .st-header{background:var(--bg);border-bottom:1px solid var(--border);
+    padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+  .st-logo{font-family:var(--font-primary);font-size:1.25rem;font-weight:700;letter-spacing:.01em;line-height:1.1;}
+  .st-logo small{display:block;font-size:.58rem;font-weight:600;letter-spacing:.14em;color:var(--text-mid);margin-top:2px;}
+  .st-nav{display:flex;gap:26px;flex-wrap:wrap;}
+  .st-nav button{background:none;border:none;cursor:pointer;font-family:inherit;
+    font-size:.76rem;font-weight:600;letter-spacing:.03em;color:var(--text-hi);padding:4px 0;}
+  .st-nav button:hover{color:var(--text-mid);}
+  .st-icons{display:flex;align-items:center;gap:16px;}
+  .st-icons button{background:none;border:none;cursor:pointer;color:var(--text-hi);
+    display:flex;align-items:center;padding:2px;position:relative;}
+  .st-icons .cart-badge{position:absolute;top:-6px;right:-8px;background:var(--text-hi);color:var(--bg);
+    font-size:.62rem;font-weight:700;border-radius:99px;min-width:16px;height:16px;
+    display:flex;align-items:center;justify-content:center;padding:0 3px;}
+
+  .st-hero{display:grid;grid-template-columns:45% 55%;min-height:min(560px,72vh);}
+  .st-hero-l{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(24px,5vw,64px);}
+  .st-hero-eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;color:var(--text-mid);
+    display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+  .st-hero-eyebrow::before{content:'';width:26px;height:1px;background:var(--text-mid);}
+  .st-hero-l h1{font-family:var(--font-primary);font-size:clamp(2.4rem,4.6vw,3.4rem);
+    font-weight:600;line-height:1.08;letter-spacing:-.01em;margin-bottom:18px;}
+  .st-hero-l p{color:var(--text-mid);font-size:.98rem;line-height:1.6;max-width:420px;margin-bottom:28px;}
+  .st-hero-cta{align-self:flex-start;background:var(--text-hi);color:var(--bg);border:none;
+    padding:14px 26px;border-radius:99px;font-family:inherit;font-size:.85rem;font-weight:700;
+    cursor:pointer;display:inline-flex;align-items:center;gap:9px;margin-bottom:36px;}
+  .st-hero-cta:hover{background:var(--accent);}
+  .st-hero-feats{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;max-width:420px;}
+  .st-hero-feat{display:flex;align-items:center;gap:9px;font-size:.72rem;font-weight:700;
+    letter-spacing:.02em;color:var(--text-hi);}
+  .st-hero-feat svg{flex:0 0 auto;color:var(--text-mid);}
+  .st-hero-r{position:relative;background:linear-gradient(155deg,var(--panel-2),var(--panel));overflow:hidden;min-height:320px;}
+  .st-hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+
+  .st-cats-wrap{margin:-34px auto 0;padding:0 24px;position:relative;z-index:3;}
+  .st-cats{max-width:1180px;margin:0 auto;background:var(--panel);border:1px solid var(--border);
+    border-radius:18px;box-shadow:var(--shadow-md);padding:22px 12px;
+    display:grid;grid-template-columns:repeat(7,1fr);}
+  .st-cat{background:none;border:none;border-right:1px solid var(--border);cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;gap:9px;padding:6px 8px;
+    font-size:.68rem;font-weight:700;letter-spacing:.01em;color:var(--text-hi);text-align:center;line-height:1.25;}
+  .st-cat:last-child{border-right:none;}
+  .st-cat svg{color:var(--text-hi);}
+  .st-cat:hover{color:var(--text-mid);}
+  .st-cat.on{color:var(--accent);}
+
+  .st-section{padding:64px 24px 8px;}
+  .st-section-head{max-width:1180px;margin:0 auto 26px;display:flex;align-items:baseline;justify-content:space-between;}
+  .st-section-head h2{font-family:var(--font-primary);font-size:1.05rem;font-weight:700;letter-spacing:.05em;}
+  .st-section-head a{background:none;border:none;cursor:pointer;font-family:inherit;color:var(--text-hi);
+    font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px;}
+  .st-section-head a:hover{color:var(--text-mid);}
+
+  .st-grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:18px;}
+  .st-card{display:flex;flex-direction:column;}
+  .st-card-photo{aspect-ratio:1/1.05;background:var(--panel-2);border-radius:14px;position:relative;
+    overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+  .st-card-photo img{width:88%;height:88%;object-fit:contain;}
+  .st-card-photo .ph{font-size:2rem;opacity:.25;}
+  .st-card-tag{position:absolute;top:10px;left:10px;background:var(--bg);color:var(--text-hi);
+    font-size:.62rem;font-weight:700;letter-spacing:.03em;padding:4px 9px;border-radius:99px;border:1px solid var(--border);}
+  .st-card h4{font-size:.86rem;font-weight:700;margin-bottom:3px;}
+  .st-card .st-card-desc{color:var(--text-mid);font-size:.76rem;line-height:1.4;margin-bottom:10px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .st-card-row{display:flex;align-items:center;justify-content:space-between;margin-top:auto;}
+  .st-card-price{font-family:var(--font-primary);font-size:.92rem;font-weight:700;}
+  .st-add{width:34px;height:34px;border-radius:50%;background:var(--text-hi);color:var(--bg);border:none;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:1.1rem;}
+  .st-add:hover{background:var(--accent);}
+  .st-add:disabled{opacity:.35;cursor:not-allowed;}
+
+  .st-editorial{max-width:1180px;margin:70px auto 0;padding:0 24px;display:grid;
+    grid-template-columns:1.15fr 1.15fr 1fr;gap:18px;}
+  .st-edit-block{position:relative;border-radius:16px;overflow:hidden;min-height:280px;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:26px;color:#f2f0ec;}
+  .st-edit-block::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.65));}
+  .st-edit-block > *{position:relative;z-index:1;}
+  .st-edit-eyebrow{font-size:.66rem;font-weight:700;letter-spacing:.1em;opacity:.85;margin-bottom:8px;}
+  .st-edit-block h3{font-family:var(--font-primary);font-size:1.3rem;font-weight:600;line-height:1.2;margin-bottom:14px;}
+  .st-edit-block button{align-self:flex-start;background:#fff;color:#12100e;border:none;padding:10px 18px;
+    border-radius:99px;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;}
+  .st-perks{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px;
+    display:flex;flex-direction:column;gap:16px;color:var(--text-hi);}
+  .st-perk{display:flex;align-items:center;gap:12px;}
+  .st-perk svg{flex:0 0 auto;color:var(--text-hi);}
+  .st-perk b{display:block;font-size:.78rem;font-weight:700;}
+  .st-perk span{display:block;font-size:.7rem;color:var(--text-mid);margin-top:1px;}
+  .st-perks button{margin-top:4px;background:#12100e;color:#f2f0ec;border:none;padding:11px 16px;border-radius:99px;
+    font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+
+  .st-news{max-width:1180px;margin:64px auto 0;padding:0 24px 56px;display:flex;align-items:center;
+    justify-content:flex-end;gap:16px;flex-wrap:wrap;}
+  .st-news-txt{text-align:right;}
+  .st-news-txt h4{font-family:var(--font-primary);font-size:.92rem;font-weight:700;}
+  .st-news-txt p{color:var(--text-mid);font-size:.76rem;margin-top:3px;}
+  .st-news-form{display:flex;gap:8px;}
+  .st-news-form input{padding:11px 16px;border:1px solid var(--border-strong);border-radius:99px;
+    font-family:inherit;font-size:.82rem;background:var(--panel);width:220px;}
+  .st-news-form button{background:#12100e;color:#f2f0ec;border:none;padding:11px 20px;border-radius:99px;
+    font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+
+  .st-footer{background:var(--panel-2);border-top:1px solid var(--border);margin-top:20px;padding:52px 24px 26px;}
+  .st-footer-in{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;}
+  .st-footer-brand .st-logo{margin-bottom:12px;}
+  .st-footer-brand p{color:var(--text-mid);font-size:.78rem;line-height:1.6;max-width:240px;margin-bottom:16px;}
+  .st-footer-social{display:flex;gap:10px;}
+  .st-footer-social a{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-strong);
+    display:flex;align-items:center;justify-content:center;color:var(--text-hi);}
+  .st-footer-col h5{font-size:.72rem;font-weight:700;letter-spacing:.06em;margin-bottom:14px;}
+  .st-footer-col div, .st-footer-col a{display:block;color:var(--text-mid);font-size:.8rem;
+    margin-bottom:9px;background:none;border:none;cursor:default;font-family:inherit;text-align:left;padding:0;}
+  .st-footer-col button{cursor:pointer;color:var(--text-mid);}
+  .st-footer-col button:hover{color:var(--text-hi);}
+  .st-footer-bottom{max-width:1180px;margin:36px auto 0;padding-top:20px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:.72rem;color:var(--text-mid);}
+
+  @media (max-width:960px){
+    .st-header{padding:12px 16px;}
+    .st-logo{font-size:.92rem;}
+    .st-logo small{font-size:.5rem;letter-spacing:.1em;}
+    .st-icons{gap:10px;}
+    .st-icons svg{width:16px;height:16px;}
+
+    .st-hero{grid-template-columns:1fr;}
+    .st-hero-r{height:180px;min-height:0;order:-1;}
+    .st-hero-l{padding:22px 20px;}
+    .st-hero-eyebrow{font-size:.62rem;margin-bottom:10px;}
+    .st-hero-l h1{font-size:1.7rem;margin-bottom:10px;}
+    .st-hero-l p{font-size:.82rem;line-height:1.5;margin-bottom:16px;}
+    .st-hero-cta{padding:11px 20px;font-size:.76rem;margin-bottom:20px;}
+    .st-hero-feats{gap:8px 14px;}
+    .st-hero-feat{font-size:.64rem;gap:6px;}
+    .st-hero-feat svg{width:13px;height:13px;}
+
+    .st-cats-wrap{margin-top:-18px;padding:0 14px;}
+    .st-cats{display:flex;overflow-x:auto;gap:4px;padding:12px 8px;scrollbar-width:none;grid-template-columns:none;}
+    .st-cats::-webkit-scrollbar{display:none;}
+    .st-cat{flex:0 0 auto;min-width:76px;border-right:none;padding:5px 10px;font-size:.6rem;gap:5px;}
+    .st-cat svg{width:18px;height:18px;}
+
+    .st-section{padding:32px 16px 4px;}
+    .st-section-head{margin-bottom:14px;}
+    .st-section-head h2{font-size:.82rem;}
+    .st-section-head a{font-size:.7rem;}
+    .st-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .st-card-photo{margin-bottom:8px;}
+    .st-card h4{font-size:.74rem;}
+    .st-card .st-card-desc{font-size:.66rem;margin-bottom:6px;-webkit-line-clamp:1;}
+    .st-card-price{font-size:.8rem;}
+    .st-add{width:28px;height:28px;font-size:.95rem;}
+
+    .st-editorial{grid-template-columns:1fr;margin-top:36px;padding:0 16px;gap:10px;}
+    .st-edit-block{min-height:180px;padding:18px;}
+    .st-edit-block h3{font-size:1.05rem;}
+    .st-perks{padding:18px;}
+
+    .st-news{margin-top:36px;padding:0 16px 36px;justify-content:flex-start;}
+    .st-news-txt{text-align:left;}
+    .st-news-form{width:100%;}
+    .st-news-form input{flex:1;min-width:0;width:auto;}
+
+    .st-footer{padding:36px 16px 20px;}
+    .st-footer-in{grid-template-columns:1fr 1fr;gap:24px 16px;}
+    .st-nav{display:none;}
+  }
+  @media (max-width:520px){
+    .st-topbar{font-size:.62rem;padding:7px 14px;}
+    .st-topbar-msgs{gap:12px;justify-content:center;width:100%;}
+    .st-footer-in{grid-template-columns:1fr;gap:26px;}
+  }
+  /* En celular, carrusel horizontal chico -- mismo patrón que ya usa
+     "Cursos destacados" (.course-grid a los 600px), en vez de la grilla
+     de 2 columnas con fotos grandes. */
+  @media (max-width:600px){
+    .st-grid{display:flex;grid-template-columns:none;gap:12px;overflow-x:auto;
+      scroll-snap-type:x proximity;padding-bottom:6px;}
+    .st-grid::-webkit-scrollbar{height:0;}
+    .st-card{flex:0 0 132px;scroll-snap-align:start;}
+    .st-card-photo{aspect-ratio:auto;height:132px;margin-bottom:8px;}
+    .st-card-photo img{width:78%;height:78%;}
+    .st-card-tag{font-size:.56rem;padding:3px 7px;top:6px;left:6px;}
+    .st-card h4{font-size:.7rem;line-height:1.25;margin-bottom:2px;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .st-card-desc{display:none;}
+    .st-card-price{font-size:.7rem;}
+    .st-add{width:24px;height:24px;font-size:.85rem;}
+  }
+
   /* ==========================================================
      ACADEMIA (vista completa)
      Página propia, en blanco y negro, fija sin importar el tema
@@ -2537,23 +2749,147 @@
     </div>
   </header>
 
-  <div class="wrap tv-body">
-    <div class="tv-title">
-      <span class="eyebrow-sm">TIENDA</span>
-      <h1>Productos para el día a día</h1>
-      <p>Lo mismo que usamos en el sillón, listo para llevar a casa.</p>
-    </div>
+  <div class="tv-body" style="padding-top:0;padding-bottom:0;">
 
-    <div class="tv-tools">
-      <input type="text" id="tvBuscar" class="tv-search" placeholder="Buscar producto...">
-      <div class="tv-filtros">
-        <button class="tv-chip on" data-filtro="todos">Todos</button>
-        <button class="tv-chip" data-filtro="destacados">Destacados</button>
-        <button class="tv-chip" data-filtro="disponibles">Disponibles</button>
+    <div class="st-topbar">
+      <div class="st-topbar-msgs">
+        <span class="st-topbar-msg">Atención con hora agendada</span>
+        <span class="st-topbar-msg">Retiro en tienda disponible</span>
       </div>
     </div>
 
-    <div class="shop-grid" id="shopGrid"></div>
+    <div class="st-header">
+      <div class="st-logo">MASTERLOOK<small>BARBER &amp; LIFESTYLE</small></div>
+      <nav class="st-nav">
+        <button data-stnav="todos">TIENDA</button>
+        <button data-stnav="bestsellers">MÁS VENDIDOS</button>
+        <button data-stnav="Barbería profesional">BARBERÍA</button>
+        <button data-stnav="Accesorios">ACCESORIOS</button>
+        <button data-stnav="Ropa running">ROPA RUNNING</button>
+      </nav>
+      <div class="st-icons">
+        <button aria-label="Buscar" id="stBuscarBtn">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </button>
+        <button aria-label="Mi cuenta" onclick="onAccountChipClick()">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        </button>
+        <button aria-label="Carrito" onclick="abrirCarrito()">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L4.5 2H2"/></svg>
+          <span class="cart-badge" id="cartBadge4" style="display:none;">0</span>
+        </button>
+      </div>
+    </div>
+    <div id="stBuscarWrap" style="display:none;padding:12px 24px;border-bottom:1px solid var(--border);">
+      <input type="text" id="tvBuscar" class="tv-search" placeholder="Buscar producto..." style="max-width:1180px;margin:0 auto;display:block;">
+    </div>
+
+    <div class="st-hero">
+      <div class="st-hero-l">
+        <div class="st-hero-eyebrow">GROOMING · ESTILO · MASTERLOOK</div>
+        <h1>Cuidado que<br>se nota.</h1>
+        <p>Productos de barbería profesionales, los mismos que usamos en el sillón — listos para llevar a casa.</p>
+        <button class="st-hero-cta" id="stHeroCta">COMPRAR AHORA <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <div class="st-hero-feats">
+          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Uso profesional</div>
+          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 3h6v4l4 10a2 2 0 01-2 3H7a2 2 0 01-2-3l4-10V3z"/></svg>Fórmulas efectivas</div>
+          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 6L9 17l-5-5"/></svg>Los usamos a diario</div>
+          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/></svg>Uso diario seguro</div>
+        </div>
+      </div>
+      <div class="st-hero-r" id="stHeroFoto"></div>
+    </div>
+
+    <div class="st-cats-wrap">
+      <div class="st-cats" id="stCats"></div>
+    </div>
+
+    <div class="st-section">
+      <div class="st-section-head">
+        <h2>MÁS VENDIDOS</h2>
+        <a id="stVerTodo">VER TODO <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="shop-grid st-grid" id="shopGrid"></div>
+    </div>
+
+    <div class="st-editorial">
+      <div class="st-edit-block" id="stEditBarberia">
+        <div class="st-edit-eyebrow">BARBERÍA PROFESIONAL</div>
+        <h3>Herramientas que<br>marcan la diferencia.</h3>
+        <button data-stnav="Herramientas y accesorios">VER HERRAMIENTAS <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="st-edit-block" id="stEditRunning">
+        <div class="st-edit-eyebrow">COLECCIÓN RUNNING</div>
+        <h3>Rendimiento<br>con estilo.</h3>
+        <button data-stnav="Ropa running">COMPRAR AHORA <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="st-perks">
+        <div class="st-perk">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="7" width="15" height="13" rx="1"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="20" r="1.6"/><circle cx="17.5" cy="20" r="1.6"/></svg>
+          <div><b>Retiro en tienda</b><span>Coordina el retiro de tu pedido en Masterlook</span></div>
+        </div>
+        <div class="st-perk">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+          <div><b>Cambios sin complicaciones</b><span>Escríbenos y lo resolvemos directo</span></div>
+        </div>
+        <div class="st-perk">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <div><b>Pago 100% seguro</b><span>Webpay, encriptado de extremo a extremo</span></div>
+        </div>
+        <button onclick="cerrarTienda();document.querySelector('a[href=\'#servicios\']')?.scrollIntoView();">VER MÁS INFORMACIÓN <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="st-news">
+      <div class="st-news-txt">
+        <h4>ÚNETE A MASTERLOOK</h4>
+        <p>Entérate antes que nadie de productos nuevos y novedades.</p>
+      </div>
+      <form class="st-news-form" id="stNewsForm">
+        <input type="email" id="stNewsEmail" placeholder="Ingresa tu email" required>
+        <button type="submit">SUSCRIBIRSE</button>
+      </form>
+    </div>
+
+    <footer class="st-footer">
+      <div class="st-footer-in">
+        <div class="st-footer-brand">
+          <div class="st-logo">MASTERLOOK<small>BARBER &amp; LIFESTYLE</small></div>
+          <p>Productos profesionales para el cuidado personal masculino. Barbería, skincare y rendimiento en un solo lugar.</p>
+          <div class="st-footer-social">
+            <a href="https://wa.me/56949124645" target="_blank" rel="noopener" aria-label="WhatsApp"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.7 14.2c-.2.6-1.4 1.2-1.9 1.2-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-5-4.3-5.1-4.5-.1-.2-1.2-1.6-1.2-3.1s.8-2.2 1-2.5c.3-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.3 0 .5-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.8c.2-.3.4-.2.7-.1l1.7.8c.2.1.4.2.5.3.1.2.1.9-.1 1.5z"/></svg></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+          </div>
+        </div>
+        <div class="st-footer-col">
+          <h5>TIENDA</h5>
+          <button data-stnav="todos">Todos los productos</button>
+          <button data-stnav="bestsellers">Más vendidos</button>
+        </div>
+        <div class="st-footer-col">
+          <h5>COLECCIONES</h5>
+          <button data-stnav="Barbería profesional">Barbería profesional</button>
+          <button data-stnav="Cuidado de la piel">Cuidado de la piel</button>
+          <button data-stnav="Fragancias">Fragancias</button>
+          <button data-stnav="Herramientas y accesorios">Herramientas</button>
+          <button data-stnav="Ropa running">Ropa running</button>
+          <button data-stnav="Accesorios">Accesorios</button>
+        </div>
+        <div class="st-footer-col">
+          <h5>ACERCA DE</h5>
+          <div>Nuestra historia</div>
+          <div>Prensa</div>
+        </div>
+        <div class="st-footer-col">
+          <h5>AYUDA</h5>
+          <a href="https://wa.me/56949124645" target="_blank" rel="noopener">Contacto</a>
+          <div>Envíos y devoluciones</div>
+        </div>
+      </div>
+      <div class="st-footer-bottom">
+        <span>© <span id="stAnio"></span> Masterlook. Todos los derechos reservados.</span>
+      </div>
+    </footer>
   </div>
 </div>
 
@@ -3609,7 +3945,7 @@
   db.collection('products').onSnapshot(snap=>{
     productosSiteCache = snap.docs.map(d=> d.data()).filter(p=> p.active !== false).map(p=>
       ({ id:p.id, kind:'PRODUCT', name:p.name, description:p.description || '',
-         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0, photoUrl:p.photoUrl || '' }));
+         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0, photoUrl:p.photoUrl || '', category:p.category || '' }));
     if(!cursosListos) return;
     cargarTienda();
   });
@@ -4680,7 +5016,7 @@
     document.getElementById('cartFoot').style.display = carrito.length ? '' : 'none';
 
     const unidades = carrito.reduce((s,i)=> s + i.qty, 0);
-    ['cartBadge','cartBadge2','cartBadge3'].forEach(id=>{
+    ['cartBadge','cartBadge2','cartBadge3','cartBadge4'].forEach(id=>{
       const b = document.getElementById(id);
       if(b){ b.textContent = unidades; b.style.display = unidades ? 'flex' : 'none'; }
     });
@@ -6491,36 +6827,135 @@
 
   document.getElementById('tvBuscar').addEventListener('input', pintarProductos);
 
+  /** Categorías fijas de la tienda -- coinciden exactamente con las opciones
+   *  del selector "Categoría" en Productos > Catálogo del panel interno.
+   *  "Nuevos productos" no filtra por category (no hay campo de fecha en
+   *  el modelo actual), muestra el catálogo completo. */
+  const ST_CATEGORIAS = [
+    { id:'Barbería profesional', icon:'<path d="M6 9a3 3 0 100-6 3 3 0 000 6zM6 21a3 3 0 100-6 3 3 0 000 6zM20 4L8.5 15.5M20 20L4 4"/>' },
+    { id:'Cuidado de la piel', icon:'<path d="M12 2s7 6.5 7 12a7 7 0 11-14 0c0-5.5 7-12 7-12z"/>' },
+    { id:'Fragancias', icon:'<path d="M9 3h6v4l4 10a2 2 0 01-2 3H7a2 2 0 01-2-3l4-10V3z"/><path d="M9 3h6"/>' },
+    { id:'Herramientas y accesorios', icon:'<path d="M14.7 6.3a4 4 0 11-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 015.4-5.4z"/>' },
+    { id:'Ropa running', icon:'<path d="M8 4l4 2 4-2 4 4-3 3v11H7V11L4 8z"/>' },
+    { id:'Accesorios', icon:'<path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L4.5 2H2"/>' },
+    { id:'Nuevos productos', icon:'<path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1z"/>' },
+  ];
+
+  function pintarCategoriasTienda(){
+    const cont = document.getElementById('stCats');
+    if(!cont || cont.dataset.pintado) return;
+    cont.dataset.pintado = '1';
+    cont.innerHTML = ST_CATEGORIAS.map(c=> `
+      <button class="st-cat" data-stnav="${c.id === 'Nuevos productos' ? 'todos' : c.id}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${c.icon}</svg>
+        ${c.id.toUpperCase()}
+      </button>`).join('');
+  }
+
   function pintarProductos(){
     const grid = document.getElementById('shopGrid');
     if(!grid) return;
+    pintarCategoriasTienda();
+    pintarHeroTienda();
 
     const q = document.getElementById('tvBuscar').value.trim().toLowerCase();
     const lista = tvProductos.filter(p=>{
       if(q && !p.name.toLowerCase().includes(q) && !(p.description||'').toLowerCase().includes(q)) return false;
-      if(tvFiltro === 'destacados' && !p.featured) return false;
-      if(tvFiltro === 'disponibles' && p.soldOut) return false;
+      if(tvFiltro === 'bestsellers' && !p.featured) return false;
+      if(tvFiltro !== 'todos' && tvFiltro !== 'bestsellers' && p.category !== tvFiltro) return false;
       return true;
     });
 
+    document.querySelectorAll('.st-cat, .st-nav button').forEach(b=>
+      b.classList.toggle('on', b.dataset.stnav === tvFiltro));
+
     if(!lista.length){
-      grid.innerHTML = '<div class="tv-vacio">No encontramos productos con ese criterio.</div>';
+      grid.innerHTML = '<div class="tv-vacio">Todavía no hay productos en esta categoría.</div>';
       return;
     }
 
     grid.innerHTML = lista.map(p=>`
-      <div class="card">
-        <div class="product-thumb" style="${p.photoUrl ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center;` : ''}">${p.featured ? '<span class="tag">Bestseller</span>' : ''}</div>
-        <div class="product-body">
-          <h4>${p.name}</h4>
-          <div class="sub">${p.description || ''}</div>
-          <div class="row"><span class="price">${money(p.priceClp)}</span></div>
-          <button class="buy-btn" data-buy="${p.id}" data-name="${p.name}" data-price="${p.priceClp}" data-kind="PRODUCT"
-            ${p.soldOut ? 'disabled' : ''}>${p.soldOut ? 'Agotado' : 'Agregar al carrito'}</button>
+      <div class="st-card">
+        <div class="st-card-photo">
+          ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${escapeHTML(p.name)}">` : '<span class="ph">🧴</span>'}
+          ${p.featured ? '<span class="st-card-tag">Bestseller</span>' : ''}
+        </div>
+        <h4>${escapeHTML(p.name)}</h4>
+        <div class="st-card-desc">${escapeHTML(p.description || '')}</div>
+        <div class="st-card-row">
+          <span class="st-card-price">${money(p.priceClp)}</span>
+          <button class="st-add" data-buy="${p.id}" data-name="${escapeHTML(p.name)}" data-price="${p.priceClp}" data-kind="PRODUCT"
+            ${p.soldOut ? 'disabled' : ''} title="${p.soldOut ? 'Agotado' : 'Agregar al carrito'}">${p.soldOut ? '✕' : '+'}</button>
         </div>
       </div>`).join('');
 
     conectarBotonesCompra();
+  }
+
+  /** Cualquier botón con data-stnav filtra la tienda por esa categoría (o
+   *  "todos"/"bestsellers") y hace scroll a la grilla -- reutilizado por el
+   *  menú, la barra de categorías, los bloques editoriales y el footer. */
+  document.addEventListener('click', e=>{
+    const btn = e.target.closest('[data-stnav]');
+    if(!btn) return;
+    tvFiltro = btn.dataset.stnav;
+    pintarProductos();
+    document.getElementById('shopGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+  document.getElementById('stHeroCta')?.addEventListener('click', ()=>{
+    document.getElementById('shopGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+  document.getElementById('stVerTodo')?.addEventListener('click', ()=>{
+    tvFiltro = 'todos'; pintarProductos();
+    document.getElementById('shopGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+  document.getElementById('stBuscarBtn')?.addEventListener('click', ()=>{
+    const wrap = document.getElementById('stBuscarWrap');
+    const abierto = wrap.style.display !== 'none';
+    wrap.style.display = abierto ? 'none' : 'block';
+    if(!abierto) document.getElementById('tvBuscar').focus();
+  });
+  const stAnioEl = document.getElementById('stAnio');
+  if(stAnioEl) stAnioEl.textContent = new Date().getFullYear();
+
+  /** Suscripción simple a novedades -- solo guarda el correo, sin mandar
+   *  campañas automáticas (eso ya existe aparte en el panel, no se duplica). */
+  document.getElementById('stNewsForm')?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const input = document.getElementById('stNewsEmail');
+    const email = input.value.trim();
+    if(!email) return;
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    try{
+      await db.collection('newsletterSignups').add({ email, createdAt: new Date().toISOString() });
+      toast('¡Gracias por suscribirte!');
+      input.value = '';
+    }catch(err){ toast('No se pudo suscribir, intenta de nuevo'); }
+    btn.disabled = false;
+  });
+
+  /** Composición del hero derecho: usa fotos reales de productos ya
+   *  subidas desde el panel (nunca imágenes inventadas); si todavía no hay
+   *  ninguna, queda solo el fondo con textura suave. */
+  function pintarHeroTienda(){
+    const cont = document.getElementById('stHeroFoto');
+    if(!cont || cont.dataset.pintado) return;
+    const conFoto = productosSiteCache.filter(p=> p.photoUrl);
+    if(!conFoto.length) return; // se reintenta la próxima vez que se pinte la tienda
+    cont.dataset.pintado = '1';
+    const principal = conFoto[0];
+    cont.innerHTML = `<img src="${principal.photoUrl}" alt="${escapeHTML(principal.name)}">`;
+
+    // Los dos bloques editoriales de abajo (Barbería / Running) también
+    // necesitan una foto de fondo -- se reutilizan fotos reales de
+    // productos ya subidas (nunca imágenes inventadas). Si solo hay una,
+    // se repite; sin ninguna, queda el degradé oscuro sin foto.
+    const b1 = document.getElementById('stEditBarberia');
+    const b2 = document.getElementById('stEditRunning');
+    const foto2 = conFoto[1] || conFoto[0];
+    if(b1) b1.style.cssText += `background-image:url('${principal.photoUrl}');background-size:cover;background-position:center;`;
+    if(b2) b2.style.cssText += `background-image:url('${foto2.photoUrl}');background-size:cover;background-position:center;`;
   }
 
   function revisarRetornoPago(){
