@@ -1859,6 +1859,11 @@
           <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
         </svg>
       </button>
+      <button class="icon-btn" id="misCursosChip" aria-label="Mis cursos" onclick="abrirMisCursos()" style="display:none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
       <button class="icon-btn campana" aria-label="Notificaciones" onclick="abrirCarrito()">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M18 8A6 6 0 1 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>
@@ -3880,7 +3885,7 @@
 
   auth.onAuthStateChanged(async user=>{
     if(MODE === 'api') return; // ese modo maneja su propia sesión por token
-    if(!user){ customerProfile = null; await renderAccount(); reiniciarTimerInactividad(); return; }
+    if(!user){ customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); reiniciarTimerInactividad(); return; }
     try{
       const doc = await db.collection('customers').doc(user.uid).get();
       customerProfile = doc.exists
@@ -3888,6 +3893,7 @@
         : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
     }catch(e){ customerProfile = null; }
     await renderAccount();
+    actualizarChipMisCursos(user.uid);
     reiniciarTimerInactividad();
   });
 
@@ -4903,7 +4909,7 @@
           };
           toast(`Pago confirmado (orden ${codigo}). Enviamos el comprobante a ${p.buyerEmail}.${mensajes[p.tipo] || ''}`);
           if(p.tipo === 'RESERVATION_DEPOSIT') await renderAccount();
-          if(p.tipo === 'COURSE_PURCHASE') abrirMisCursos();
+          if(p.tipo === 'COURSE_PURCHASE'){ const u = currentUser(); if(u) actualizarChipMisCursos(u.uid); abrirMisCursos(); }
         } else {
           toast('No pudimos verificar tu pago. Escríbenos si el cargo aparece en tu cuenta.');
         }
@@ -6367,6 +6373,27 @@
   }
   document.getElementById('mcVolver').addEventListener('click', ()=> cerrarMisCursos());
 
+  /** Entitlements activos y vigentes de un usuario -- usado tanto para
+   *  pintar "Mis cursos" como para decidir si el ícono del header se
+   *  muestra (solo aparece a quien de verdad compró algo). */
+  async function obtenerEntitlementsActivos(uid){
+    const snap = await db.collection('entitlements').where('userId', '==', uid).where('accessStatus', '==', 'active').get();
+    const ahora = Date.now();
+    return snap.docs.map(d=> d.data()).filter(e=> (e.accessExpirationDate?.toMillis() || 0) > ahora);
+  }
+
+  /** El ícono de "Mis cursos" del header solo se muestra a clientes con al
+   *  menos un curso vigente -- para el resto queda oculto, no solo inerte. */
+  async function actualizarChipMisCursos(uid){
+    const btn = document.getElementById('misCursosChip');
+    if(!btn) return;
+    if(!uid){ btn.style.display = 'none'; return; }
+    try{
+      const entitlements = await obtenerEntitlementsActivos(uid);
+      btn.style.display = entitlements.length ? 'flex' : 'none';
+    }catch(e){ btn.style.display = 'none'; }
+  }
+
   async function pintarMisCursos(){
     const cont = document.getElementById('misCursosLista');
     cont.innerHTML = '<div class="cx-empty">Cargando...</div>';
@@ -6375,9 +6402,7 @@
 
     let entitlements = [];
     try{
-      const snap = await db.collection('entitlements').where('userId', '==', user.uid).where('accessStatus', '==', 'active').get();
-      const ahora = Date.now();
-      entitlements = snap.docs.map(d=> d.data()).filter(e=> (e.accessExpirationDate?.toMillis() || 0) > ahora);
+      entitlements = await obtenerEntitlementsActivos(user.uid);
     }catch(e){ cont.innerHTML = `<div class="cx-empty">No se pudieron cargar tus cursos: ${e.message}</div>`; return; }
 
     if(!entitlements.length){
