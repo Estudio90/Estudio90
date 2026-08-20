@@ -313,24 +313,20 @@
   }
   .col{
     border-right:1px solid var(--border);position:relative;cursor:cell;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(rgba(15,15,20,0.045) 1px, transparent 1px);
-    background-size:100% 50px, 100% 50px;
-    background-position:0 0, 0 25px;
+    background-image:linear-gradient(var(--border) 1px, transparent 1px);
+    background-size:100% 50px;
+    background-position:0 0;
     transition:opacity .2s ease, background-color .12s ease;
   }
-  .col:hover{background-color:rgba(74,92,240,0.02);}
   .col:last-child{border-right:none;}
   .slot-add{
-    position:absolute;left:8px;right:8px;height:33px;border-radius:8px;
-    background:var(--accent-tint);border:1px dashed var(--accent);
-    display:flex;align-items:center;justify-content:center;gap:5px;
-    color:var(--accent);font-size:11px;font-weight:600;pointer-events:none;
-    opacity:0;transition:opacity .1s ease;z-index:3;
+    position:absolute;left:4px;right:4px;height:33px;border-radius:7px;
+    background:rgba(15,15,20,0.035);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-low);font-size:11px;font-weight:500;pointer-events:none;
+    opacity:0;transition:opacity .15s ease;z-index:3;
   }
   .slot-add.show{opacity:1;}
-  .slot-add .plus{font-size:14px;line-height:1;}
 
   .now-line{position:absolute;left:56px;right:0;height:1.5px;z-index:5;
     background:linear-gradient(to right, var(--onda) 0%, var(--onda) 40%, rgba(216,90,67,0) 100%);
@@ -850,12 +846,12 @@
 
   .block-overlay{
     position:absolute;left:0;right:0;z-index:1;box-sizing:border-box;
-    background:repeating-linear-gradient(135deg, rgba(15,15,20,0.07) 0 8px, rgba(15,15,20,0.02) 8px 16px);
-    border-top:1px solid var(--border-strong);border-bottom:1px solid var(--border-strong);
-    cursor:pointer;padding:6px 8px;overflow:hidden;
+    background:rgba(15,15,20,0.035);
+    cursor:pointer;padding:7px 9px;overflow:hidden;transition:background-color .12s ease;
   }
-  .block-overlay:hover{background:repeating-linear-gradient(135deg, rgba(15,15,20,0.11) 0 8px, rgba(15,15,20,0.04) 8px 16px);}
-  .block-overlay .bo-label{font-size:10.5px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.04em;}
+  .block-overlay:hover{background:rgba(15,15,20,0.06);}
+  .block-overlay .bo-label{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-mid);}
+  .block-overlay .bo-label svg{width:12px;height:12px;flex:0 0 auto;color:var(--text-low);}
   .block-overlay .bo-reason{font-size:10px;color:var(--text-low);margin-top:2px;}
   .bl-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #eee;}
   .bl-item:last-child{border-bottom:none;}
@@ -1000,6 +996,10 @@
     opacity:0;pointer-events:none;transform:translateY(-4px);transition:all .14s ease;
   }
   .payment-menu.open{opacity:1;pointer-events:auto;transform:translateY(0);}
+  /* modificador para usar el mismo popover fuera de .payment-wrap, posicionado
+     libremente por coordenadas (ej. el popover de "Reserva / Bloquear horario"
+     de la agenda) en vez de pegado al 100% de un contenedor relativo */
+  .payment-menu.floating{position:fixed;left:auto;right:auto;top:auto;width:190px;}
   .payment-menu-item{
     display:flex;align-items:center;gap:9px;padding:10px 10px;border-radius:8px;
     font-size:13px;color:var(--text-hi);cursor:pointer;
@@ -3681,8 +3681,7 @@
     grid.appendChild(c);
     const alto = (END_HOUR - START_HOUR) * SLOT_H;
     c.style.height = alto + 'px';
-    c.style.backgroundSize = `100% ${SLOT_H}px, 100% ${SLOT_H}px`;
-    c.style.backgroundPosition = `0 0, 0 ${SLOT_H/2}px`;
+    c.style.backgroundSize = `100% ${SLOT_H}px`;
   }
 
   pintarColumnas();
@@ -3699,8 +3698,7 @@
   [1,2,3,4,5].forEach(id=>{
     const c=document.getElementById('col'+id);
     c.style.height=totalHeight+'px';
-    c.style.backgroundSize=`100% ${SLOT_H}px, 100% ${SLOT_H}px`;
-    c.style.backgroundPosition=`0 0, 0 ${SLOT_H/2}px`;
+    c.style.backgroundSize=`100% ${SLOT_H}px`;
   });
   timeCol.style.height=totalHeight+'px';
   function timeToTop(hh,mm){ return ((hh-START_HOUR)+mm/60)*SLOT_H; }
@@ -4995,7 +4993,7 @@
         el.className = 'block-overlay';
         el.style.top = top+'px';
         el.style.height = Math.max(bottom-top, 20)+'px';
-        el.innerHTML = `<div class="bo-label">🚫 Bloqueado${bl.recurring ? ' · fijo' : ''}</div>` +
+        el.innerHTML = `<div class="bo-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>Bloqueado${bl.recurring ? ' · fijo' : ''}</div>` +
           (bl.reason ? `<div class="bo-reason">${bl.reason}</div>` : '');
         el.title = 'Clic para quitar este bloqueo';
         el.addEventListener('click', ()=> quitarBloqueo(bl.id));
@@ -5055,27 +5053,41 @@
 
   let bloqueoEditando = null;
 
-  document.getElementById('btnBloquear').addEventListener('click', async ()=>{
+  /** Abre "Bloquear horario" en blanco -- reutilizado tanto por el botón del
+   *  menú como por la opción "Bloquear horario" del popover de la agenda,
+   *  que además le puede pasar un barbero y una hora exacta para dejarlos
+   *  ya elegidos (igual criterio que "Reserva" en ese mismo popover). */
+  async function abrirModalBloqueoNuevo({ barberoId, fecha, horaDesde } = {}){
     await cargarCatalogo();
     bloqueoEditando = null;
     document.getElementById('blGuardar').textContent = 'Bloquear';
     const sel = document.getElementById('blBarbero');
     sel.innerHTML = '<option value="ALL">🍽️ Todos los barberos (ej. almuerzo)</option>' +
       cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${b.name}</option>`).join('');
-    document.getElementById('blFecha').value = currentDate;
+    if(barberoId) sel.value = barberoId;
+    document.getElementById('blFecha').value = fecha || currentDate;
     document.getElementById('blFijo').checked = false;
     document.getElementById('blDiasZona').style.display = 'none';
     pintarDiasBloqueo([1,2,3,4,5,6]); // lunes a sábado por defecto (el local abre esos días)
     document.getElementById('blFechaZona').style.display = '';
-    document.getElementById('blTodoDia').checked = true;
-    document.getElementById('blHoras').style.display = 'none';
-    document.getElementById('blDesde').value = '13:00';
-    document.getElementById('blHasta').value = '15:00';
+    document.getElementById('blTodoDia').checked = !horaDesde;
+    document.getElementById('blHoras').style.display = horaDesde ? '' : 'none';
+    if(horaDesde){
+      const [h,m] = horaDesde.split(':').map(Number);
+      const finMin = h*60 + m + 30;
+      document.getElementById('blDesde').value = horaDesde;
+      document.getElementById('blHasta').value = String(Math.floor(finMin/60)).padStart(2,'0')+':'+String(finMin%60).padStart(2,'0');
+    } else {
+      document.getElementById('blDesde').value = '13:00';
+      document.getElementById('blHasta').value = '15:00';
+    }
     document.getElementById('blMotivo').value = '';
     document.getElementById('blAviso').classList.remove('show');
     renderBlockList();
     abrirModal('modalBloqueo');
-  });
+  }
+
+  document.getElementById('btnBloquear').addEventListener('click', ()=> abrirModalBloqueoNuevo());
 
   async function editarBloqueo(id){
     const bl = demoBlocks.find(b=> b.id === id);
@@ -5677,8 +5689,7 @@
       const col = document.createElement('div');
       col.className = 'col sb-col';
       col.style.height = totalHeight + 'px';
-      col.style.backgroundSize = `100% ${SLOT_H}px, 100% ${SLOT_H}px`;
-      col.style.backgroundPosition = `0 0, 0 ${SLOT_H/2}px`;
+      col.style.backgroundSize = `100% ${SLOT_H}px`;
       gridBody.appendChild(col);
 
       // horas fuera del turno de este barbero ese día
@@ -10778,12 +10789,77 @@
 
   applyFilters();
 
-  /* ---------------- Clic en hueco vacío = crear cita rápida ---------------- */
+  /* ---------------- Clic en hueco vacío = popover "Reserva / Bloquear horario" ---------------- */
+
+  /** Abre el mismo formulario de "+ Nueva reserva" de siempre, con el
+   *  barbero y la fecha ya elegidos según dónde se hizo clic en la agenda
+   *  -- misma lógica que ya existía, ahora como función aparte para que la
+   *  llame también el popover en vez de abrirse directo al hacer clic. */
+  async function abrirReservaDesdeAgenda(barberoCalId, timeTxt){
+    await cargarCatalogo();
+    llenarSelect(document.getElementById('nrServicio'), cfgServicios.filter(s=> s.active), 'id',
+      s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
+    llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
+    const barbero = cfgBarberos.find(b=> b.calId === barberoCalId);
+    if(barbero) document.getElementById('nrBarbero').value = barbero.id;
+    document.getElementById('nrFecha').value = currentDate;
+    document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
+    nrSeleccion.startsAt = null;
+    document.getElementById('nrGuardar').disabled = true;
+    abrirModal('modalReserva');
+    await cargarHorasLibres();
+
+    // si la hora exacta donde se hizo clic sigue libre, la dejamos ya elegida
+    document.querySelector(`#nrHoras .mg-slot[data-h="${timeTxt}"]`)?.click();
+  }
+
+  // Popover compacto y flotante, un solo elemento compartido por toda la
+  // agenda (se reposiciona en cada clic) -- mismo look que el menú de pago
+  // (.payment-menu/.payment-menu-item), solo con posición libre por coordenadas.
+  const slotPopover = document.createElement('div');
+  slotPopover.className = 'payment-menu floating';
+  slotPopover.innerHTML = `
+    <div class="payment-menu-item" data-accion="reserva">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg>
+      Reserva
+    </div>
+    <div class="payment-menu-item" data-accion="bloquear">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>
+      Bloquear horario
+    </div>`;
+  document.body.appendChild(slotPopover);
+  slotPopover.addEventListener('click', (e)=> e.stopPropagation());
+
+  let slotPendiente = null; // { barberoCalId, timeTxt } del último clic en un hueco vacío
+
+  function cerrarSlotPopover(){ slotPopover.classList.remove('open'); slotPendiente = null; }
+  document.addEventListener('click', cerrarSlotPopover);
+
+  function abrirSlotPopover(x, y){
+    slotPopover.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+    slotPopover.style.top = Math.min(y, window.innerHeight - 110) + 'px';
+    slotPopover.classList.add('open');
+  }
+
+  slotPopover.querySelector('[data-accion="reserva"]').addEventListener('click', ()=>{
+    if(!slotPendiente) return;
+    const { barberoCalId, timeTxt } = slotPendiente;
+    cerrarSlotPopover();
+    abrirReservaDesdeAgenda(barberoCalId, timeTxt);
+  });
+  slotPopover.querySelector('[data-accion="bloquear"]').addEventListener('click', ()=>{
+    if(!slotPendiente) return;
+    const { barberoCalId, timeTxt } = slotPendiente;
+    cerrarSlotPopover();
+    const barbero = cfgBarberos.find(b=> b.calId === barberoCalId);
+    abrirModalBloqueoNuevo({ barberoId: barbero?.id, fecha: currentDate, horaDesde: timeTxt });
+  });
+
   [1,2,3,4,5].forEach(id=>{
     const col = document.getElementById('col'+id);
     const indicator = document.createElement('div');
     indicator.className = 'slot-add';
-    indicator.innerHTML = '<span class="plus">+</span><span>Nueva cita</span>';
+    indicator.innerHTML = '<span>Reservar</span>';
     col.appendChild(indicator);
 
     col.addEventListener('mousemove', (e)=>{
@@ -10797,8 +10873,9 @@
     });
     col.addEventListener('mouseleave', ()=> indicator.classList.remove('show'));
 
-    col.addEventListener('click', async (e)=>{
+    col.addEventListener('click', (e)=>{
       if(e.target.closest('.appt') || e.target.closest('.block-overlay')) return;
+      e.stopPropagation(); // no dispares el listener global que cierra el popover
       const rect = col.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const slotIndex = Math.round(y / (SLOT_H/2));
@@ -10807,23 +10884,8 @@
       const mm = totalMin % 60;
       const timeTxt = String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
 
-      // abrimos el mismo formulario de "+ Nueva reserva", pero con el barbero
-      // y la fecha ya elegidos según dónde se hizo clic en la agenda
-      await cargarCatalogo();
-      llenarSelect(document.getElementById('nrServicio'), cfgServicios.filter(s=> s.active), 'id',
-        s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
-      llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
-      const barbero = cfgBarberos.find(b=> b.calId === id);
-      if(barbero) document.getElementById('nrBarbero').value = barbero.id;
-      document.getElementById('nrFecha').value = currentDate;
-      document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
-      nrSeleccion.startsAt = null;
-      document.getElementById('nrGuardar').disabled = true;
-      abrirModal('modalReserva');
-      await cargarHorasLibres();
-
-      // si la hora exacta donde se hizo clic sigue libre, la dejamos ya elegida
-      document.querySelector(`#nrHoras .mg-slot[data-h="${timeTxt}"]`)?.click();
+      slotPendiente = { barberoCalId: id, timeTxt };
+      abrirSlotPopover(e.clientX, e.clientY);
     });
   });
 
