@@ -22,6 +22,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     /* Bricolage Grotesque para títulos/números (mismo aire que Clash Display,
@@ -2003,7 +2004,7 @@
         </div>
         <div class="cx-nav">
           <button class="ctrl-btn" id="clImportar">⬆ Importar clientes</button>
-          <input type="file" id="clArchivo" accept=".csv" style="display:none;">
+          <input type="file" id="clArchivo" accept=".csv,.xlsx,.xls" style="display:none;">
           <button class="ctrl-btn primary" id="clNuevo">+ Nuevo cliente</button>
           <button class="ctrl-btn" id="clVolver">← Volver a la agenda</button>
         </div>
@@ -2011,7 +2012,7 @@
 
       <div class="cx-panel">
         <p class="mg-note" style="margin-bottom:12px;">
-          Para importar, sube un archivo CSV con columnas Nombre, Apellido, Correo, Teléfono y RUT
+          Para importar, sube un archivo CSV o Excel (.xlsx) con columnas Nombre, Apellido, Correo, Teléfono y RUT
           (así exportan AgendaPro y programas parecidos).
         </p>
         <input type="text" class="cx-search" id="clBuscar" placeholder="Buscar por nombre, correo, teléfono o RUT">
@@ -10328,11 +10329,31 @@
 
   document.getElementById('clImportar').addEventListener('click', ()=> document.getElementById('clArchivo').click());
 
+  /** Lee un archivo Excel (.xlsx/.xls) y lo deja como filas de texto, mismo
+   *  formato que devuelve parseCSV -- para que el resto del importador
+   *  (mapeo de encabezados, armado de clientes) sea idéntico sin importar
+   *  el formato del archivo que suba. */
+  async function leerFilasExcel(file){
+    const buffer = await file.arrayBuffer();
+    const libro = XLSX.read(buffer, { type:'array' });
+    const hoja = libro.Sheets[libro.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(hoja, { header:1, defval:'', raw:false })
+      .map(fila=> fila.map(c=> String(c ?? '')));
+  }
+
   document.getElementById('clArchivo').addEventListener('change', async (ev)=>{
     const file = ev.target.files[0];
     if(!file) return;
-    const texto = await file.text();
-    const filas = parseCSV(texto).filter(r=> r.some(c=> c.trim() !== ''));
+    const esExcel = /\.xlsx?$/i.test(file.name);
+    let filas;
+    try{
+      filas = esExcel ? await leerFilasExcel(file) : parseCSV(await file.text());
+    }catch(e){
+      showToast('No se pudo leer el archivo: ' + e.message);
+      ev.target.value = '';
+      return;
+    }
+    filas = filas.filter(r=> r.some(c=> c.trim() !== ''));
     if(filas.length < 2){ showToast('El archivo no tiene datos para importar'); ev.target.value=''; return; }
 
     const idx = clMapearEncabezados(filas[0]);
@@ -10358,7 +10379,7 @@
         const id = 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
         batch.set(db.collection('clientes').doc(id), { id, ...c, createdAt: new Date().toISOString() });
       });
-      try{ await batch.commit(); importados += tanda.length; }
+      try{ await batch.commit(); importados += tanda.length; showToast(`Importando... ${importados}/${datos.length}`); }
       catch(err){ showToast('Error importando: ' + err.message); break; }
     }
     showToast(`${importados} clientes importados`);
