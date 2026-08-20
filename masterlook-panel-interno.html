@@ -707,6 +707,16 @@
     font-family:inherit; font-size:13.5px; background:#fff; color:#1A1815;
   }
   .mg-input:focus{outline:2px solid #4a5cf0; outline-offset:1px;}
+  .nr-nombre-wrap{position:relative;}
+  .nr-sugerencias{display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:10;
+    background:#fff; border:1px solid #e2e2e6; border-radius:10px; box-shadow:0 12px 28px rgba(20,19,17,.16);
+    max-height:220px; overflow-y:auto;}
+  .nr-sug-item{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:9px 12px; cursor:pointer; font-size:13px; border-bottom:1px solid #f1f1f4;}
+  .nr-sug-item:last-child{border-bottom:none;}
+  .nr-sug-item:hover{background:#f7f7f9;}
+  .nr-sug-nombre{font-weight:600; color:#1A1815; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .nr-sug-detalle{font-size:11.5px; color:#a3a2ab; flex:0 0 auto;}
   .mg-two{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end;}
   .mg-slots{display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:4px;}
   .mg-slot{
@@ -2549,7 +2559,10 @@
   <p class="mg-note">Para clientes que llaman por teléfono o llegan sin cita. Queda confirmada de inmediato.</p>
 
   <label class="mg-label">Nombre del cliente</label>
-  <input type="text" id="nrNombre" class="mg-input" placeholder="Ej: Pedro Ramírez">
+  <div class="nr-nombre-wrap">
+    <input type="text" id="nrNombre" class="mg-input" placeholder="Ej: Pedro Ramírez" autocomplete="off">
+    <div class="nr-sugerencias" id="nrSugerencias"></div>
+  </div>
 
   <label class="mg-label">Teléfono <span class="mg-opt">(opcional)</span></label>
   <input type="tel" id="nrFono" class="mg-input" placeholder="+56 9 1234 5678">
@@ -4754,10 +4767,98 @@
     }
   }
 
-  document.getElementById('nrNombre').addEventListener('input', validarNuevaReserva);
   function validarNuevaReserva(){
     document.getElementById('nrGuardar').disabled =
       !(document.getElementById('nrNombre').value.trim() && nrSeleccion.startsAt);
+  }
+
+  /** Autocompletar con clientes ya registrados (por nombre, teléfono o
+   *  correo) al escribir en "Nombre del cliente" -- al elegir uno se
+   *  rellena también el teléfono. Se carga la base de Clientes una sola
+   *  vez, la primera vez que se usa este campo. */
+  let nrClientesListos = false;
+  async function nrAsegurarClientesCache(){
+    if(nrClientesListos) return;
+    nrClientesListos = true;
+    try{
+      const snap = await db.collection('clientes').get();
+      clientesCache = snap.docs.map(d=> d.data());
+    }catch(e){ nrClientesListos = false; }
+  }
+
+  function nrBuscarClientes(q){
+    const query = q.trim().toLowerCase();
+    if(query.length < 2) return [];
+    return clientesCache.filter(c=>{
+      const nombreCompleto = ((c.nombre||'') + ' ' + (c.apellido||'')).trim().toLowerCase();
+      return nombreCompleto.includes(query)
+        || (c.telefono||'').toLowerCase().includes(query)
+        || (c.email||'').toLowerCase().includes(query);
+    }).slice(0, 6);
+  }
+
+  function nrPintarSugerencias(lista){
+    const cont = document.getElementById('nrSugerencias');
+    if(!lista.length){ cont.style.display = 'none'; cont.innerHTML = ''; return; }
+    cont.innerHTML = lista.map(c=>{
+      const nombreCompleto = ((c.nombre||'') + ' ' + (c.apellido||'')).trim();
+      return `<div class="nr-sug-item" data-nombre="${escapeHTML(nombreCompleto)}" data-fono="${escapeHTML(c.telefono||'')}">
+        <span class="nr-sug-nombre">${escapeHTML(nombreCompleto)}</span>
+        <span class="nr-sug-detalle">${escapeHTML(c.telefono || c.email || '')}</span>
+      </div>`;
+    }).join('');
+    cont.style.display = 'block';
+    cont.querySelectorAll('.nr-sug-item').forEach(item=>{
+      // mousedown (no click) para que dispare antes del blur del input
+      item.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        document.getElementById('nrNombre').value = item.dataset.nombre;
+        document.getElementById('nrFono').value = item.dataset.fono;
+        cont.style.display = 'none';
+        cont.innerHTML = '';
+        validarNuevaReserva();
+      });
+    });
+  }
+
+  document.getElementById('nrNombre').addEventListener('input', ()=>{
+    validarNuevaReserva();
+    nrPintarSugerencias(nrBuscarClientes(document.getElementById('nrNombre').value));
+  });
+  document.getElementById('nrNombre').addEventListener('focus', async ()=>{
+    await nrAsegurarClientesCache();
+    nrPintarSugerencias(nrBuscarClientes(document.getElementById('nrNombre').value));
+  });
+  document.getElementById('nrNombre').addEventListener('blur', ()=>{
+    setTimeout(()=>{ document.getElementById('nrSugerencias').style.display = 'none'; }, 150);
+  });
+
+  /** Igual criterio que las reservas del sitio (ver database/functions/
+   *  clientes.js): al confirmar una reserva de administración, se busca un
+   *  cliente existente por teléfono y se actualiza, o se crea uno nuevo --
+   *  nunca se duplica. Si falla, no bloquea la reserva (ya quedó guardada). */
+  async function nrSincronizarCliente(nombreCompleto, telefono){
+    const tel = (telefono || '').trim();
+    if(!tel) return;
+    const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+    const nombre = partes[0] || '', apellido = partes.slice(1).join(' ');
+    try{
+      const snap = await db.collection('clientes').where('telefono','==',tel).limit(1).get();
+      if(!snap.empty){
+        const doc = snap.docs[0];
+        const previo = doc.data();
+        await doc.ref.set({
+          nombre: previo.nombre || nombre,
+          apellido: previo.apellido || apellido,
+          telefono: tel,
+          email: previo.email || '',
+          rut: previo.rut || '',
+        }, { merge:true });
+      } else {
+        const id = 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+        await db.collection('clientes').doc(id).set({ id, nombre, apellido, telefono:tel, email:'', rut:'', createdAt: new Date().toISOString() });
+      }
+    }catch(e){ /* no bloquea la reserva si esto falla */ }
   }
 
   document.getElementById('nrGuardar').addEventListener('click', async ()=>{
@@ -4814,6 +4915,9 @@
         showToast('No se pudo guardar: ' + e.message);
         return;
       }
+
+      await nrSincronizarCliente(nombre, fono);
+      nrClientesListos = false; // para que la próxima vez que se use el campo traiga este cliente ya cargado
 
       // No la dibujamos a mano acá: el listener en vivo de "bookings" (el mismo
       // que usan las reservas del sitio) la va a traer y pintar solo en cuanto
