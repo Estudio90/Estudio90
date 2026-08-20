@@ -2000,7 +2000,7 @@
       <div class="cx-head">
         <div>
           <h2 class="cx-title">Clientes</h2>
-          <p class="cx-sub">Tu base de datos de clientes.</p>
+          <p class="cx-sub" id="clConteo">Tu base de datos de clientes.</p>
         </div>
         <div class="cx-nav">
           <button class="ctrl-btn" id="clImportar">⬆ Importar clientes</button>
@@ -10223,6 +10223,9 @@
   }
 
   function clPintar(){
+    document.getElementById('clConteo').textContent =
+      `${clientesCache.length} cliente${clientesCache.length === 1 ? '' : 's'} registrado${clientesCache.length === 1 ? '' : 's'}`;
+
     const q = document.getElementById('clBuscar').value.trim().toLowerCase();
     const lista = clientesCache.filter(c=>{
       if(!q) return true;
@@ -10275,18 +10278,27 @@
   document.getElementById('clGuardar').addEventListener('click', async ()=>{
     const nombre = document.getElementById('clNombre').value.trim();
     if(!nombre) return showToast('Escribe el nombre');
-    const id = 'c' + Date.now();
-    const nuevo = {
-      id, nombre,
+    const telefono = document.getElementById('clTelefono').value.trim();
+    const datos = {
+      nombre,
       apellido: document.getElementById('clApellido').value.trim(),
       email: document.getElementById('clCorreo').value.trim(),
-      telefono: document.getElementById('clTelefono').value.trim(),
+      telefono,
       rut: document.getElementById('clRut').value.trim(),
-      createdAt: new Date().toISOString(),
     };
-    try{ await db.collection('clientes').doc(id).set(nuevo); }
+    // Si ya existe un cliente con este mismo teléfono, se actualiza en vez
+    // de crear un duplicado (mismo criterio que usan las reservas).
+    const existente = telefono ? clientesCache.find(c=> c.telefono === telefono) : null;
+    try{
+      if(existente){
+        await db.collection('clientes').doc(existente.id).set(datos, { merge:true });
+      } else {
+        const id = 'c' + Date.now();
+        await db.collection('clientes').doc(id).set({ id, ...datos, createdAt: new Date().toISOString() });
+      }
+    }
     catch(e){ return showToast('No se pudo guardar: ' + e.message); }
-    showToast('Cliente agregado');
+    showToast(existente ? 'Ya existía un cliente con ese teléfono -- se actualizaron sus datos' : 'Cliente agregado');
     cerrarModales();
     await clCargar();
   });
@@ -10373,20 +10385,54 @@
 
     if(!datos.length){ showToast('No se encontraron clientes válidos en el archivo'); ev.target.value=''; return; }
 
-    showToast(`Importando ${datos.length} clientes...`);
+    // Sin duplicar por teléfono: si ya existe un cliente con ese teléfono
+    // (cargado antes o repetido dentro del mismo archivo) se actualiza en
+    // vez de crear uno nuevo -- sin teléfono no hay con qué comparar, esos
+    // siempre se crean.
+    const idPorTelefono = new Map(clientesCache.filter(c=> c.telefono).map(c=> [c.telefono, c.id]));
+    const telefonosDeEsteArchivo = new Set();
+    const aCrear = [];
+    const aActualizar = [];
+    let duplicadosOmitidos = 0;
+    for(const c of datos){
+      if(c.telefono){
+        if(idPorTelefono.has(c.telefono)){ aActualizar.push({ id: idPorTelefono.get(c.telefono), datos: c }); continue; }
+        if(telefonosDeEsteArchivo.has(c.telefono)){ duplicadosOmitidos++; continue; }
+        telefonosDeEsteArchivo.add(c.telefono);
+      }
+      aCrear.push(c);
+    }
+    const operaciones = [
+      ...aCrear.map(c=> ({ tipo:'crear', datos:c })),
+      ...aActualizar.map(a=> ({ tipo:'actualizar', id:a.id, datos:a.datos })),
+    ];
+    if(!operaciones.length){ showToast('No hay clientes nuevos para importar (todos ya existían)'); ev.target.value=''; return; }
+
+    // No pisa un dato ya cargado (ej. de una importación anterior) con uno
+    // vacío que venga en esta fila del archivo.
+    const quitarVacios = obj=> Object.fromEntries(Object.entries(obj).filter(([,v])=> v));
+
+    showToast(`Importando ${aCrear.length} nuevos${aActualizar.length ? ` y actualizando ${aActualizar.length}` : ''}...`);
     const LOTE = 400; // margen bajo el límite de 500 escrituras por batch de Firestore
-    let importados = 0;
-    for(let i=0; i<datos.length; i+=LOTE){
-      const tanda = datos.slice(i, i+LOTE);
+    let procesados = 0;
+    for(let i=0; i<operaciones.length; i+=LOTE){
+      const tanda = operaciones.slice(i, i+LOTE);
       const batch = db.batch();
-      tanda.forEach(c=>{
-        const id = 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
-        batch.set(db.collection('clientes').doc(id), { id, ...c, createdAt: new Date().toISOString() });
+      tanda.forEach(op=>{
+        if(op.tipo === 'actualizar'){
+          batch.set(db.collection('clientes').doc(op.id), quitarVacios(op.datos), { merge:true });
+        } else {
+          const id = 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+          batch.set(db.collection('clientes').doc(id), { id, ...op.datos, createdAt: new Date().toISOString() });
+        }
       });
-      try{ await batch.commit(); importados += tanda.length; showToast(`Importando... ${importados}/${datos.length}`); }
+      try{ await batch.commit(); procesados += tanda.length; showToast(`Importando... ${procesados}/${operaciones.length}`); }
       catch(err){ showToast('Error importando: ' + err.message); break; }
     }
-    showToast(`${importados} clientes importados`);
+    let resumen = `${aCrear.length} clientes nuevos`;
+    if(aActualizar.length) resumen += `, ${aActualizar.length} actualizados`;
+    if(duplicadosOmitidos) resumen += ` (se omitieron ${duplicadosOmitidos} filas repetidas del archivo)`;
+    showToast(resumen);
     ev.target.value = '';
     await clCargar();
   });
