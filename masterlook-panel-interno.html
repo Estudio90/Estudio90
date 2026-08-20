@@ -4786,10 +4786,14 @@
 
   function nrBuscarClientes(q){
     const query = q.trim().toLowerCase();
-    if(query.length < 2) return [];
+    if(!query) return [];
     return clientesCache.filter(c=>{
-      const nombreCompleto = ((c.nombre||'') + ' ' + (c.apellido||'')).trim().toLowerCase();
-      return nombreCompleto.includes(query)
+      const nombre = (c.nombre||'').toLowerCase();
+      const apellido = (c.apellido||'').toLowerCase();
+      // desde la primera letra: nombre o apellido que EMPIECEN por lo escrito
+      // (no en cualquier parte, para que no aparezcan resultados random con
+      // solo una letra) -- teléfono y correo sí se buscan en cualquier parte.
+      return nombre.startsWith(query) || apellido.startsWith(query)
         || (c.telefono||'').toLowerCase().includes(query)
         || (c.email||'').toLowerCase().includes(query);
     }).slice(0, 6);
