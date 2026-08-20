@@ -1245,6 +1245,11 @@
   .pc-illus img{position:absolute;left:50%;bottom:16%;transform:translateX(-50%);
     max-width:52%;max-height:60%;width:auto;height:auto;object-fit:contain;
     filter:drop-shadow(0 12px 18px rgba(0,0,0,.15));}
+  .pc-illus-cam{position:absolute;right:12px;top:12px;width:32px;height:32px;border-radius:50%;
+    background:#fff;border:1px solid var(--border);box-shadow:var(--shadow-sm);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--text-hi);}
+  .pc-illus-cam:hover{border-color:var(--border-strong);}
+  .pc-illus-cam:disabled{opacity:.5;cursor:default;}
 
   .pc-cat-card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);padding:26px 28px;}
   .pc-cat-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
@@ -1295,18 +1300,35 @@
   .pc-pager .cur{width:32px;height:32px;border-radius:8px;background:#1A1815;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;}
 
   @media (max-width:900px){
-    .pc-add-card{grid-template-columns:1fr;}
+    .pc-add-card{grid-template-columns:1fr;padding:20px;}
     .pc-add-grid{grid-template-columns:1fr;}
+    .pc-cat-card{padding:18px 16px;}
     .pc-cat-head{flex-direction:column;align-items:flex-start;}
-    .pc-cat-tools{width:100%;}
-    .pc-search{flex:1;}
+    .pc-cat-tools{width:100%;flex-wrap:wrap;}
+    .pc-search{flex:1;min-width:0;}
     .pc-search input{width:100%;}
+    .pc-filter{flex:0 0 auto;}
+
+    /* Cada producto pasa a ser una sola tarjeta compacta, en vez de una
+       fila de tabla -- foto+nombre arriba, precio/stock en una línea con
+       etiqueta, descripción abajo, acciones al final. */
     .pc-table thead{display:none;}
-    .pc-table, .pc-table tbody, .pc-table tr, .pc-table td{display:block;width:100%;}
-    .pc-table tr{border-bottom:1px solid var(--border);padding:12px 0;}
-    .pc-table td{border-bottom:none;padding:4px 0;}
-    .pc-prod-cell{margin-bottom:8px;}
-    .pc-actions{justify-content:flex-start;margin-top:8px;}
+    .pc-table, .pc-table tbody{display:block;width:100%;}
+    .pc-table tbody tr{display:block;width:100%;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+    .pc-table tbody tr:last-child{margin-bottom:0;}
+    .pc-table tbody td{display:block;width:100%;border-bottom:none;padding:0;}
+    .pc-prod-cell{margin-bottom:10px;}
+    .pc-thumb{width:84px;height:84px;}
+    .pc-name{font-size:14.5px;}
+
+    .pc-table tbody td:nth-child(2),.pc-table tbody td:nth-child(3){
+      display:inline-flex;align-items:center;gap:6px;margin:0 16px 8px 0;}
+    .pc-table tbody td:nth-child(2)::before,.pc-table tbody td:nth-child(3)::before{
+      content:attr(data-label);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-low);}
+    .pc-table tbody td:nth-child(4){margin-bottom:10px;}
+    .pc-table tbody td:nth-child(4):empty{display:none;margin:0;}
+    .pc-desc{max-width:none;}
+    .pc-actions{justify-content:flex-start;}
   }
 </style>
 </head>
@@ -8677,11 +8699,24 @@
   /** Ilustración decorativa (misma tarjeta que "Agregar nuevo producto") --
    *  se pinta una sola vez; usa la foto real del primer producto activo con
    *  foto si existe, para que no quede un dibujo genérico sin sentido. */
-  function pcPintarIlustracion(){
+  let pcIlustracionUrl = null;
+  let pcIlustracionCargada = false;
+
+  const PC_ICONO_CAMARA = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+
+  async function pcPintarIlustracion(){
     const cont = document.getElementById('pcIlustracion');
-    if(!cont || cont.dataset.pintado) return;
-    cont.dataset.pintado = '1';
-    const conFoto = productsCache.find(p=> p.active !== false && p.photoUrl);
+    if(!cont) return;
+
+    if(!pcIlustracionCargada){
+      pcIlustracionCargada = true;
+      try{
+        const doc = await db.collection('settings').doc('negocio').get();
+        pcIlustracionUrl = doc.data()?.catalogoIlustracionUrl || null;
+      }catch(e){ pcIlustracionUrl = null; }
+    }
+
+    const conFoto = pcIlustracionUrl || productsCache.find(p=> p.active !== false && p.photoUrl)?.photoUrl;
     cont.innerHTML = `
       <svg width="100%" height="100%" viewBox="0 0 260 220" style="position:absolute;inset:0;">
         <circle cx="60" cy="40" r="90" fill="#eceef0"/>
@@ -8691,12 +8726,44 @@
         <path d="M232 60 C 224 30, 244 18, 250 30 C 258 20, 272 30, 262 46 C 256 56, 240 60, 232 60 Z" fill="#8fae86"/>
         <path d="M232 60 C 234 45, 240 34, 250 30" stroke="#7a9a71" stroke-width="1.4" fill="none"/>
       </svg>
-      ${conFoto ? `<img src="${conFoto.photoUrl}" alt="">` : `
+      ${conFoto ? `<img src="${conFoto}" alt="">` : `
       <svg width="72" height="92" viewBox="0 0 72 92" style="position:absolute;left:50%;bottom:22%;transform:translateX(-50%);filter:drop-shadow(0 10px 14px rgba(0,0,0,.14));">
         <rect x="4" y="14" width="64" height="70" rx="10" fill="#1A1815"/>
         <rect x="14" y="0" width="44" height="18" rx="6" fill="#1A1815"/>
       </svg>`}
+      <button class="pc-illus-cam" id="pcIlustracionBtn" title="${pcIlustracionUrl ? 'Cambiar foto' : 'Agregar foto'}">${PC_ICONO_CAMARA}</button>
     `;
+    document.getElementById('pcIlustracionBtn').addEventListener('click', subirFotoIlustracionCatalogo);
+  }
+
+  /** Foto opcional para la ilustración de "Agregar nuevo producto" -- si no
+   *  se sube ninguna, sigue usando la foto del primer producto activo o el
+   *  dibujo genérico, como antes. */
+  function subirFotoIlustracionCatalogo(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const btn = document.getElementById('pcIlustracionBtn');
+      if(btn) btn.disabled = true;
+      try{
+        const blob = await redimensionarImagen(file);
+        const ruta = `catalogoIlustracion/${Date.now()}.jpg`;
+        const ref = storage.ref(ruta);
+        await ref.put(blob, { contentType:'image/jpeg' });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ catalogoIlustracionUrl: url }, { merge:true });
+        pcIlustracionUrl = url;
+        showToast('Foto actualizada');
+        pcPintarIlustracion();
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        if(btn) btn.disabled = false;
+      }
+    });
+    input.click();
   }
 
   function pcProductosFiltrados(){
@@ -8762,8 +8829,8 @@
             ${nombreCelda}
           </div>
         </td>
-        <td>${precioCelda}</td>
-        <td><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
+        <td data-label="Precio: ">${precioCelda}</td>
+        <td data-label="Stock: "><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
         <td>${descCelda}</td>
         <td><div class="pc-actions">${accionEditar}${accionEliminar}</div></td>
       </tr>`;
