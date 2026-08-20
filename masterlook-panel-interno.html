@@ -7246,7 +7246,7 @@
       <div class="sus-pay-row">
         <span class="cu-video-badge cu-video-badge--${estado.clase}">${estado.texto}</span>
         <div>
-          <div class="sus-pay-nombre">${escapeHTML(s.name)}</div>
+          <div class="sus-pay-nombre">${escapeHTML(s.name)}${s.providerUrl ? ` <a href="${escapeHTML(s.providerUrl)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#4a5cf0;">↗ Ir al proveedor</a>` : ''}</div>
           <div class="sus-pay-fecha">${susFormatFecha(s.nextChargeDate)}</div>
         </div>
         <div class="sus-pay-monto">${s.currency} ${Number(s.price).toLocaleString('es-CL')}${clp!=null ? `<small>≈ ${formatCLP(clp)}</small>` : ''}</div>
@@ -7330,6 +7330,7 @@
         ${s.notes ? `<div class="sus-card-desc" style="margin-top:8px;"><i>${escapeHTML(s.notes)}</i></div>` : ''}
         <div class="sus-card-foot">
           <div class="sus-card-links">
+            ${s.providerUrl ? `<a class="cu-card-link" href="${escapeHTML(s.providerUrl)}" target="_blank" rel="noopener" style="color:#4a5cf0;">↗ Ir al proveedor</a>` : ''}
             <button class="cu-card-link edit" data-sus-editar>✎ Editar</button>
             <button class="cu-card-link" data-sus-pagado style="color:#189d79;">✓ Marcar como pagado</button>
             ${s.status === 'cancelled'
