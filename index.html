@@ -848,6 +848,66 @@
   /* ===== vista de tienda ===== */
   .tienda-vista{position:fixed; inset:0; background:var(--bg); z-index:70; overflow-y:auto; display:none;}
   .tienda-vista.open{display:block;}
+
+  /* ===== comprobante de pago de curso -- réplica exacta del diseño de
+     referencia, paleta forzada a claro (como #vistaTienda) sin importar
+     el tema del sitio. ===== */
+  #vistaComprobante{
+    --bg:#FFFFFF; --panel:#FFFFFF; --panel-2:#F5F5F7;
+    --border:rgba(20,20,25,.08); --border-strong:rgba(20,20,25,.16);
+    --text-hi:#17171B; --text-mid:#5B5A62; --text-low:#8B8A91;
+    background:var(--bg); color:var(--text-hi);
+  }
+  .cp-wrap{max-width:620px; margin:0 auto; padding:32px 20px 60px;}
+  .cp-head{display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:26px;}
+  .cp-logo{font-size:1.3rem; font-weight:800; letter-spacing:.5px;}
+  .cp-logo small{display:block; font-size:.6rem; font-weight:600; letter-spacing:3px; color:var(--text-mid); margin-top:3px;}
+  .cp-doc{text-align:right;}
+  .cp-doc b{display:block; font-size:.92rem;}
+  .cp-doc span{font-size:.78rem; color:var(--text-mid);}
+
+  .cp-estado{text-align:center; margin-bottom:28px;}
+  .cp-check{width:60px; height:60px; border-radius:50%; background:#111; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:1.7rem; margin:0 auto 14px;}
+  .cp-estado h2{font-size:1.35rem; margin-bottom:6px;}
+  .cp-estado p{font-size:.85rem; color:var(--text-mid);}
+  .cp-badge{display:inline-flex; align-items:center; gap:6px; margin-top:14px; padding:9px 20px;
+    border-radius:99px; background:#111; color:#fff; font-size:.82rem; font-weight:700;}
+
+  .cp-card{border:1px solid var(--border); border-radius:14px; padding:20px 22px; margin-bottom:16px;}
+  .cp-card-title{font-weight:700; font-size:.98rem; margin-bottom:14px;}
+  .cp-linea{display:flex; justify-content:space-between; align-items:center; padding:9px 0; font-size:.85rem;}
+  .cp-linea span:first-child{color:var(--text-mid);}
+  .cp-linea.total{font-weight:700; font-size:1rem;}
+  .cp-hr{border:none; border-top:1px solid var(--border); margin:6px 0;}
+
+  .cp-curso{display:flex; gap:14px; align-items:center;}
+  .cp-curso-foto{width:56px; height:56px; border-radius:10px; background:#111 center/cover no-repeat;
+    color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; flex:0 0 auto;}
+  .cp-curso-info{flex:1; min-width:0;}
+  .cp-curso-info b{display:block; font-size:.95rem;}
+  .cp-curso-info span{font-size:.78rem; color:var(--text-mid);}
+  .cp-curso-precio{font-weight:700; white-space:nowrap;}
+  .cp-pill{display:inline-block; margin-top:6px; padding:3px 10px; border-radius:99px;
+    background:var(--panel-2); font-size:.7rem; color:var(--text-mid);}
+
+  .cp-acceso{background:var(--panel-2); border-radius:14px; padding:20px 22px; margin-bottom:16px;
+    display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;}
+  .cp-acceso b{display:block; margin-bottom:4px;}
+  .cp-acceso p{font-size:.82rem; color:var(--text-mid);}
+  .cp-acceso .btn-dark{white-space:nowrap;}
+
+  .cp-foot{text-align:center; font-size:.8rem; color:var(--text-mid); border-top:1px solid var(--border); padding-top:18px;}
+  .cp-foot .cp-logo{margin-top:12px; font-size:.9rem;}
+
+  .cp-loader{text-align:center; padding:80px 20px; color:var(--text-mid); font-size:.9rem;}
+
+  @media(max-width:520px){
+    .cp-wrap{padding:22px 14px 44px;}
+    .cp-card{padding:16px;}
+    .cp-acceso{flex-direction:column; align-items:flex-start;}
+  }
   .tv-head{position:sticky; top:0; background:var(--glass); backdrop-filter:blur(14px);
     border-bottom:1px solid var(--linea); z-index:5;}
   .tv-head-in{display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
@@ -3085,6 +3145,14 @@
   </div>
 </div>
 
+<!-- ===== Comprobante de pago de curso -- solo se pinta con datos ya
+     verificados por el backend (obtenerComprobanteCompra), nunca antes. ===== -->
+<div id="vistaComprobante" class="tienda-vista">
+  <div class="cp-wrap" id="cpContenido">
+    <div class="cp-loader">Verificando tu pago…</div>
+  </div>
+</div>
+
 <!-- Reproductor de video compartido: portada de Academy y clases de "Mis
      cursos" -- posición fija, funciona igual sin importar qué vista esté
      abierta detrás. -->
@@ -3116,13 +3184,16 @@
       <h2>Finalizar compra</h2>
       <p class="modal-sub">Te enviaremos el comprobante a tu correo.</p>
 
-      <span class="field-label">Nombre completo</span>
-      <input type="text" id="ckNombre" placeholder="Ej: Ana Torres">
+      <span class="field-label">Nombre</span>
+      <input type="text" id="ckNombre" placeholder="Ej: Ana">
+
+      <span class="field-label">Apellido</span>
+      <input type="text" id="ckApellido" placeholder="Ej: Torres">
 
       <span class="field-label">Correo</span>
       <input type="email" id="ckCorreo" placeholder="tu@correo.cl">
 
-      <span class="field-label">Teléfono <span style="text-transform:none;">(opcional)</span></span>
+      <span class="field-label">Celular</span>
       <input type="tel" id="ckFono" placeholder="+56 9 1234 5678">
 
       <div id="ckEnvio" style="display:none;">
@@ -4242,9 +4313,21 @@
     return customerProfile;
   }
 
+  // El comprobante de curso necesita saber si hay sesión ANTES de llamar
+  // obtenerComprobanteCompra (si se llama antes de que Firebase Auth
+  // resuelva su estado inicial, iría sin token y fallaría como "sin
+  // sesión" aunque el cliente sí esté logueado) -- se resuelve una sola
+  // vez, en el primer disparo real de onAuthStateChanged.
+  let resolverAuthListo;
+  const authListo = new Promise(r=> resolverAuthListo = r);
+
   auth.onAuthStateChanged(async user=>{
-    if(MODE === 'api') return; // ese modo maneja su propia sesión por token
-    if(!user){ customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); actualizarLinkPanelInterno(null); reiniciarTimerInactividad(); return; }
+    if(MODE === 'api') { if(resolverAuthListo) resolverAuthListo(); resolverAuthListo = null; return; } // ese modo maneja su propia sesión por token
+    if(!user){
+      customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); actualizarLinkPanelInterno(null); reiniciarTimerInactividad();
+      if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
+      return;
+    }
     try{
       const doc = await db.collection('customers').doc(user.uid).get();
       customerProfile = doc.exists
@@ -4255,6 +4338,7 @@
     actualizarChipMisCursos(user.uid);
     actualizarLinkPanelInterno(user.uid);
     reiniciarTimerInactividad();
+    if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
   });
 
   function initials(name){
@@ -5101,6 +5185,7 @@
     const user = currentUser();
     if(user){
       document.getElementById('ckNombre').value = user.name || '';
+      document.getElementById('ckApellido').value = user.lastName || '';
       document.getElementById('ckCorreo').value = user.email || '';
       document.getElementById('ckFono').value = user.phone || '';
     }
@@ -5157,11 +5242,18 @@
   document.getElementById('ckPagar').addEventListener('click', async ()=>{
     const btn = document.getElementById('ckPagar');
     const nombre = document.getElementById('ckNombre').value.trim();
+    const apellido = document.getElementById('ckApellido').value.trim();
     const correo = document.getElementById('ckCorreo').value.trim();
+    const fono = document.getElementById('ckFono').value.trim();
     const direccion = document.getElementById('ckDir').value.trim();
 
+    // Cursos y productos (los dos únicos tipos que usan este formulario --
+    // reservas pide sus datos en su propio paso) siempre piden los 4 datos
+    // completos del comprador, aunque compre como invitado sin cuenta.
     if(!nombre) return toast('Escribe tu nombre');
+    if(!apellido) return toast('Escribe tu apellido');
     if(!/^\S+@\S+\.\S+$/.test(correo)) return toast('Necesitamos un correo válido para el comprobante');
+    if(!fono) return toast('Escribe tu número celular');
     if(metodoEnvio === 'delivery' && !direccion) return toast('Indica la dirección de envío');
     if(medioPago === 'mercadopago') return toast('MercadoPago todavía no está disponible: elige Webpay para pagar.');
 
@@ -5231,8 +5323,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo, datos,
-          buyerName: nombre, buyerEmail: correo,
-          buyerPhone: document.getElementById('ckFono').value.trim(),
+          buyerName: nombre, buyerLastName: apellido, buyerEmail: correo,
+          buyerPhone: fono,
         }),
       });
       const pago = await resp.json();
@@ -5244,32 +5336,139 @@
     }
   });
 
+  /** Comprobante de pago de un curso -- pinta EXACTAMENTE los datos que
+   *  devolvió obtenerComprobanteCompra (ya verificados: pago confirmado
+   *  de verdad + dueño real por UID). Nunca se arma con datos propios. */
+  function pintarComprobante(datos){
+    const fila = (label, val)=> val
+      ? `<div class="cp-linea"><span>${escapeHTML(label)}</span><span>${escapeHTML(String(val))}</span></div>` : '';
+    document.getElementById('cpContenido').innerHTML = `
+      <div class="cp-head">
+        <div class="cp-logo">MASTERLOOK<small>BARBERÍA &amp; ACADEMY</small></div>
+        <div class="cp-doc"><b>Comprobante de pago</b><span>N° ${escapeHTML(datos.numero)}</span></div>
+      </div>
+      <div class="cp-estado">
+        <div class="cp-check">✓</div>
+        <h2>¡Pago realizado con éxito!</h2>
+        <p>Gracias por tu compra. Tu pago ha sido procesado correctamente.</p>
+        <div class="cp-badge">✓ Pago aprobado</div>
+      </div>
+      <div class="cp-card">
+        <div class="cp-card-title">Resumen de la compra</div>
+        <div class="cp-curso">
+          <div class="cp-curso-foto" style="${datos.curso.photoUrl ? `background-image:url('${datos.curso.photoUrl}');` : ''}">${datos.curso.photoUrl ? '' : 'M'}</div>
+          <div class="cp-curso-info">
+            <b>${escapeHTML(datos.curso.nombre)}</b>
+            <span>Curso Online</span>
+            <span class="cp-pill">1 acceso</span>
+          </div>
+          <div class="cp-curso-precio">${datos.montoTexto}</div>
+        </div>
+        <hr class="cp-hr">
+        <div class="cp-linea"><span>Subtotal</span><span>${datos.subtotalTexto}</span></div>
+        <div class="cp-linea"><span>Descuento</span><span>-${datos.descuentoTexto}</span></div>
+        <hr class="cp-hr">
+        <div class="cp-linea total"><span>Total pagado</span><span>${datos.montoTexto}</span></div>
+      </div>
+      <div class="cp-card">
+        <div class="cp-card-title">Información del pago</div>
+        ${fila('Fecha y hora', datos.fecha)}
+        ${fila('Método de pago', datos.metodoPago)}
+        ${fila('Tarjeta', datos.tarjetaUltimos4 ? '•••• ' + datos.tarjetaUltimos4 : '')}
+        ${fila('Código de autorización', datos.codigoAutorizacion)}
+        ${fila('Número de operación', datos.numeroOperacion)}
+        ${fila('Estado', datos.estado)}
+      </div>
+      <div class="cp-card">
+        <div class="cp-card-title">Datos del comprador</div>
+        ${fila('Nombre', datos.comprador.nombre)}
+        ${fila('Email', datos.comprador.email)}
+        ${fila('Teléfono', datos.comprador.telefono)}
+      </div>
+      <div class="cp-acceso">
+        <div>
+          <b>¿Dónde accedo a mi curso?</b>
+          <p>Puedes acceder a tu curso desde tu cuenta en Masterlook Academy → Mis cursos, o haciendo clic en el botón.</p>
+        </div>
+        <button class="btn-dark" id="cpIrCursos">Ir a mis cursos</button>
+      </div>
+      <div class="cp-foot">
+        ¿Necesitas ayuda?<br>+56 9 4912 4645 | @Masterlook.cl
+        <div class="cp-logo">MASTERLOOK<br><small>BARBERÍA &amp; ACADEMY</small></div>
+      </div>`;
+    document.getElementById('cpIrCursos').addEventListener('click', ()=>{ cerrarComprobante(true); abrirMisCursos(); });
+  }
+
+  /** Abre la vista del comprobante y trae los datos reales desde
+   *  obtenerComprobanteCompra (exige sesión + dueño real por UID) --
+   *  nunca se pinta nada mientras se está verificando. `actualizarUrl`
+   *  deja el buyOrder en el hash (sin el token, que ya cumplió su único
+   *  uso) para poder recargar/volver a esta misma pantalla más tarde sin
+   *  depender del token opaco -- obtenerComprobanteCompra ya protege el
+   *  acceso por sí sola. */
+  async function abrirComprobante(buyOrder, actualizarUrl){
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true);
+    document.getElementById('vistaComprobante').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">Verificando tu pago…</div>';
+
+    await authListo;
+    if(!currentUser()){
+      document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">Inicia sesión con la misma cuenta con la que compraste para ver tu comprobante.</div>';
+      return;
+    }
+    try{
+      const r = await functions.httpsCallable('obtenerComprobanteCompra')({ buyOrder });
+      pintarComprobante(r.data);
+      if(actualizarUrl !== false && hashActual() !== '#comprobante=' + buyOrder){
+        irHistorial('push', 'comprobante=' + buyOrder);
+      }
+      const u = currentUser();
+      if(u) actualizarChipMisCursos(u.uid);
+    }catch(e){
+      document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">No pudimos verificar tu pago. Escríbenos si el cargo aparece en tu cuenta.</div>';
+    }
+  }
+  function cerrarComprobante(desdeHistorial){
+    document.getElementById('vistaComprobante').classList.remove('open');
+    document.body.style.overflow = '';
+    if(!desdeHistorial && hashActual().indexOf('#comprobante=') === 0) irHistorial('back');
+  }
+
   /** Al volver de Webpay (confirmado por el servidor en webpayConfirmar),
-   *  se lee el resultado REAL desde Firestore -- nunca se asume éxito solo
-   *  por haber llegado a esta página. */
+   *  se verifica el resultado REAL contra el backend -- nunca se asume
+   *  éxito solo por haber llegado a esta página con ?pago=confirmado, eso
+   *  es solo la señal para ir a preguntar. La consulta ya no lee
+   *  `pagosWebpay` directo de Firestore (esa colección no debe ser legible
+   *  por cualquiera que conozca un buyOrder ajeno): pasa por
+   *  obtenerEstadoPago, con el buyOrder MÁS el token opaco que solo
+   *  webpayConfirmar entrega -- nunca solo el buyOrder. Devuelve
+   *  únicamente estado/tipo, nunca datos personales. */
   async function manejarRetornoWebpay(){
     const params = new URLSearchParams(location.search);
     const resultado = params.get('pago');
     const orden = params.get('orden');
+    const token = params.get('t');
     if(!resultado) return;
 
     // limpiamos la URL de inmediato para que un refresco no vuelva a procesar
+    // (y para que el token nunca quede visible en la barra más que este instante)
     history.replaceState(null, '', location.pathname + location.hash);
 
     if(resultado === 'confirmado' && orden){
       try{
-        const doc = await db.collection('pagosWebpay').doc(orden).get();
-        const p = doc.exists ? doc.data() : null;
-        if(p && p.estado === 'confirmado'){
+        const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerEstadoPago', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ buyOrder: orden, t: token }),
+        });
+        const p = resp.ok ? await resp.json() : null;
+        if(p && p.estado === 'confirmado' && p.tipo === 'COURSE_PURCHASE'){
+          await abrirComprobante(orden);
+        } else if(p && p.estado === 'confirmado'){
           const codigo = 'ML-' + orden.slice(-6).toUpperCase();
-          const mensajes = {
-            COURSE_PURCHASE: ' Ya puedes ver el curso en "Mis cursos".',
-            RESERVATION_DEPOSIT: ' Tu reserva quedó confirmada.',
-            PRODUCT_ORDER: '',
-          };
-          toast(`Pago confirmado (orden ${codigo}). Enviamos el comprobante a ${p.buyerEmail}.${mensajes[p.tipo] || ''}`);
+          const mensajes = { RESERVATION_DEPOSIT: ' Tu reserva quedó confirmada.', PRODUCT_ORDER: '' };
+          toast(`Pago confirmado (orden ${codigo}). Enviamos el comprobante a tu correo.${mensajes[p.tipo] || ''}`);
           if(p.tipo === 'RESERVATION_DEPOSIT') await renderAccount();
-          if(p.tipo === 'COURSE_PURCHASE'){ const u = currentUser(); if(u) actualizarChipMisCursos(u.uid); abrirMisCursos(); }
         } else {
           toast('No pudimos verificar tu pago. Escríbenos si el cargo aparece en tu cuenta.');
         }
@@ -6842,16 +7041,18 @@
     else if(document.getElementById('vistaAcademia').classList.contains('open')) cerrarAcademia();
     else if(document.getElementById('vistaReservas').classList.contains('open')) cerrarReservas();
     else if(document.getElementById('vistaMisCursos').classList.contains('open')) cerrarMisCursos();
+    else if(document.getElementById('vistaComprobante').classList.contains('open')) cerrarComprobante();
   });
 
   // el botón atrás del navegador cierra la vista abierta
   window.addEventListener('popstate', ()=>{
     const h = hashActual();
-    if(h === '#tienda'){ cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); abrirTienda(true); }
-    else if(h === '#reservas'){ cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); abrirReservas(true); }
-    else if(h === '#academia'){ cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); abrirAcademia(true); }
-    else if(h === '#mis-cursos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); abrirMisCursos(true); }
-    else { cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); }
+    if(h === '#tienda'){ cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); abrirTienda(true); }
+    else if(h === '#reservas'){ cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); abrirReservas(true); }
+    else if(h === '#academia'){ cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); cerrarComprobante(true); abrirAcademia(true); }
+    else if(h === '#mis-cursos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarComprobante(true); abrirMisCursos(true); }
+    else if(h.indexOf('#comprobante=') === 0){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); abrirComprobante(h.slice('#comprobante='.length), false); }
+    else { cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); }
   });
 
   document.querySelectorAll('.tv-chip').forEach(c=>
@@ -7067,6 +7268,7 @@
     if(hashActual() === '#reservas') abrirReservas(true);
     if(hashActual() === '#academia') abrirAcademia(true);
     if(hashActual() === '#mis-cursos') abrirMisCursos(true);
+    if(hashActual().indexOf('#comprobante=') === 0) abrirComprobante(hashActual().slice('#comprobante='.length), false);
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }
     });
