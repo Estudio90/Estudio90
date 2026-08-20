@@ -10316,13 +10316,17 @@
 
   function clMapearEncabezados(headers){
     const idx = {};
+    // Si hay más de una columna que coincide (ej. "Teléfono" y "Teléfono
+    // secundario del cliente", como exporta AgendaPro), se queda con la
+    // PRIMERA -- si no, la última pisaba a la primera y terminaba tomando
+    // una columna secundaria casi siempre vacía.
     headers.forEach((h,i)=>{
       const n = h.trim().toLowerCase();
-      if(/apellido/.test(n)) idx.apellido = i;
-      else if(/nombre/.test(n)) idx.nombre = i;
-      else if(/correo|email/.test(n)) idx.email = i;
-      else if(/tel[eé]fono|celular|fono/.test(n)) idx.telefono = i;
-      else if(/rut/.test(n)) idx.rut = i;
+      if(idx.apellido === undefined && /apellido/.test(n)) idx.apellido = i;
+      else if(idx.nombre === undefined && /nombre/.test(n)) idx.nombre = i;
+      else if(idx.email === undefined && /correo|email/.test(n)) idx.email = i;
+      else if(idx.telefono === undefined && /tel[eé]fono|celular|fono/.test(n)) idx.telefono = i;
+      else if(idx.rut === undefined && /rut/.test(n)) idx.rut = i;
     });
     return idx;
   }
