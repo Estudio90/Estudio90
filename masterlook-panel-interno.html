@@ -751,8 +751,9 @@
     padding:10px; border:1px solid #e2e2e6; border-radius:10px;
   }
   .mg-row.off{opacity:.45;}
-  .mg-row input{border:1px solid transparent; background:#f8f8fa; padding:7px 9px; border-radius:7px; font-family:inherit; font-size:13px; width:100%;}
-  .mg-row input:focus{outline:none; border-color:#4a5cf0; background:#fff;}
+  .mg-row input, .mg-row textarea{border:1px solid transparent; background:#f8f8fa; padding:7px 9px; border-radius:7px; font-family:inherit; font-size:13px; width:100%;}
+  .mg-row input:focus, .mg-row textarea:focus{outline:none; border-color:#4a5cf0; background:#fff;}
+  .mg-row textarea{resize:vertical; min-height:34px; font-size:12.5px;}
   .mg-row .mg-unit{font-size:11px; color:#a3a2ab; text-align:center;}
   .mg-del{background:none; border:none; cursor:pointer; color:#c0392b; font-size:15px; padding:4px 6px;}
 
@@ -2675,6 +2676,9 @@
       <div></div><div></div><div>Precio</div><div>Duración</div><div>Anticipo</div><div></div>
     </div>
     <div class="mg-list" id="cfgServicios"></div>
+    <datalist id="cfgCategoriasServicio">
+      <option value="Cortes"><option value="Barba"><option value="Ondulación"><option value="Facial">
+    </datalist>
     <button class="mg-btn ghost full" id="cfgAddServicio">+ Agregar servicio</button>
   </div>
 
@@ -5887,10 +5891,15 @@
         <input type="number" value="${s.minutes}" data-f="minutes" min="5" step="5" title="Duración (min)">
         <input type="number" value="${s.anticipo ?? 5000}" data-f="anticipo" min="0" step="500" title="Anticipo para reservar (Webpay)">
         <button class="mg-del" title="Desactivar">✕</button>
+        <div style="grid-column:1/-1;display:flex;gap:8px;">
+          <input type="text" value="${s.cat || ''}" data-f="cat" list="cfgCategoriasServicio" placeholder="Categoría"
+            title="Agrupa este servicio en la reserva del cliente (ej: Cortes, Barba, Ondulación)" style="flex:0 0 130px;">
+          <textarea data-f="description" placeholder="Descripción del servicio (qué incluye) -- se muestra al cliente al reservar" style="flex:1;">${s.description || ''}</textarea>
+        </div>
       </div>`).join('');
 
     cont.querySelectorAll('.mg-row').forEach(row=>{
-      row.querySelectorAll('input').forEach(inp=>
+      row.querySelectorAll('input, textarea').forEach(inp=>
         inp.addEventListener('change', ()=> guardarServicio(row)));
       row.querySelector('.mg-del').addEventListener('click', ()=> desactivarServicio(row));
       row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoServicio(row.dataset.id));
