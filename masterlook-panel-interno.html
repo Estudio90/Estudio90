@@ -1226,6 +1226,85 @@
   .sus-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .sus-chart-title{font-size:12.5px;font-weight:600;margin-bottom:10px;}
   .sus-menu-badge{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c0392b;margin-left:6px;vertical-align:middle;}
+
+  /* ---------- Catálogo de productos (rediseño) ---------- */
+  .pc-add-card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);
+    padding:26px 28px;display:grid;grid-template-columns:3fr 1fr;gap:28px;align-items:stretch;margin-bottom:20px;}
+  .pc-add-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .pc-add-icon{width:38px;height:38px;border-radius:50%;background:#1A1815;color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .pc-add-title{font-family:var(--font-primary);font-size:15.5px;font-weight:600;}
+  .pc-add-sub{font-size:12px;color:var(--text-mid);margin-top:2px;}
+  .pc-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;}
+  .pc-field label{display:block;font-size:12px;font-weight:600;color:var(--text-hi);margin-bottom:7px;}
+  .pc-field input,.pc-field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;background:#fff;}
+  .pc-field textarea{resize:vertical;min-height:52px;}
+  .pc-field .hint{font-size:11px;color:var(--text-low);margin-top:5px;}
+  .pc-add-btn{margin-top:18px;background:#1A1815;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .pc-add-btn:hover{background:#000;}
+  .pc-illus{position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,#f4f4f6,#eceef0);min-height:220px;}
+
+  .pc-cat-card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);padding:26px 28px;}
+  .pc-cat-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
+  .pc-cat-head-l{display:flex;align-items:center;gap:12px;}
+  .pc-cat-icon{width:38px;height:38px;border-radius:50%;background:var(--panel-2);color:var(--text-hi);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .pc-cat-title{font-family:var(--font-primary);font-size:15.5px;font-weight:600;}
+  .pc-cat-sub{font-size:12px;color:var(--text-mid);margin-top:2px;}
+  .pc-cat-tools{display:flex;gap:10px;}
+  .pc-search{position:relative;display:flex;align-items:center;}
+  .pc-search svg{position:absolute;left:11px;color:var(--text-low);pointer-events:none;}
+  .pc-search input{padding:9px 14px 9px 34px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;width:220px;}
+  .pc-filter{padding:9px 30px 9px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;background:#fff;cursor:pointer;color:var(--text-hi);font-family:inherit;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236c6b74' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;}
+
+  .pc-table{width:100%;border-collapse:collapse;}
+  .pc-table thead th{text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-low);
+    padding:0 10px 12px;border-bottom:1px solid var(--border);}
+  .pc-table thead th.r{text-align:right;}
+  .pc-table tbody td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .pc-table tbody tr:last-child td{border-bottom:none;}
+  .pc-row.off{opacity:.5;}
+  .pc-prod-cell{display:flex;align-items:center;gap:16px;}
+  .pc-thumb{width:148px;height:70px;border-radius:12px;background:var(--panel-2);flex:0 0 auto;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .pc-thumb img{width:100%;height:100%;object-fit:contain;}
+  .pc-thumb .ph{font-size:22px;color:var(--text-low);}
+  .pc-name-wrap input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13.5px;font-weight:600;}
+  .pc-name{font-size:14px;font-weight:600;color:var(--text-hi);}
+  .pc-price-cell input{width:100px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13px;}
+  .pc-price{font-family:var(--font-primary);font-size:13.5px;font-weight:600;color:var(--text-hi);}
+  .pc-stock-pill{display:inline-flex;min-width:34px;justify-content:center;padding:4px 10px;border-radius:99px;font-size:12.5px;font-weight:600;}
+  .pc-stock-pill.ok{background:#e7f6f1;color:#189d79;}
+  .pc-stock-pill.low{background:#fff4e0;color:#b8790a;}
+  .pc-desc{font-size:12.5px;color:var(--text-mid);max-width:280px;}
+  .pc-desc-cell textarea{width:100%;min-width:220px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;resize:vertical;min-height:40px;}
+  .pc-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .pc-ib{width:34px;height:34px;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--text-hi);flex:0 0 auto;}
+  .pc-ib:hover{border-color:var(--border-strong);}
+  .pc-ib.del{color:#c0392b;}
+  .pc-ib.save{color:#189d79;border-color:#189d79;}
+  .pc-cat-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+  .pc-cat-count{font-size:12.5px;color:var(--text-mid);}
+  .pc-pager{display:flex;align-items:center;gap:8px;}
+  .pc-pager button{width:32px;height:32px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;color:var(--text-hi);font-family:inherit;}
+  .pc-pager button:disabled{opacity:.35;cursor:default;}
+  .pc-pager .cur{width:32px;height:32px;border-radius:8px;background:#1A1815;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;}
+
+  @media (max-width:900px){
+    .pc-add-card{grid-template-columns:1fr;}
+    .pc-add-grid{grid-template-columns:1fr;}
+    .pc-cat-head{flex-direction:column;align-items:flex-start;}
+    .pc-cat-tools{width:100%;}
+    .pc-search{flex:1;}
+    .pc-search input{width:100%;}
+    .pc-table thead{display:none;}
+    .pc-table, .pc-table tbody, .pc-table tr, .pc-table td{display:block;width:100%;}
+    .pc-table tr{border-bottom:1px solid var(--border);padding:12px 0;}
+    .pc-table td{border-bottom:none;padding:4px 0;}
+    .pc-prod-cell{margin-bottom:8px;}
+    .pc-actions{justify-content:flex-start;margin-top:8px;}
+  }
 </style>
 </head>
 <body>
@@ -2147,35 +2226,101 @@
 
       <!-- Panel: Catálogo -->
       <div id="pvCatalogo" style="display:none;">
-        <div class="cx-panel">
-          <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;">Agregar producto</h3>
-          <p class="mg-note" style="margin-bottom:12px;">
-            El nombre, precio y descripción se actualizan al instante en el sitio web y en el panel.
-          </p>
-          <div class="mg-two">
-            <div>
-              <label class="mg-label">Nombre</label>
-              <input type="text" id="pcNombre" class="mg-input" placeholder="Ej: Cera mate">
-            </div>
-            <div>
-              <label class="mg-label">Precio</label>
-              <input type="number" id="pcPrecio" class="mg-input" min="0">
-            </div>
-          </div>
-          <div class="mg-two" style="margin-top:12px;">
-            <div>
-              <label class="mg-label">Stock inicial</label>
-              <input type="number" id="pcStock" class="mg-input" min="0" value="0">
-            </div>
-            <div>
-              <label class="mg-label">Descripción <span class="mg-opt">(se muestra en el sitio)</span></label>
-              <input type="text" id="pcDescripcion" class="mg-input" placeholder="Opcional">
-            </div>
-          </div>
-          <button class="mg-btn solid" id="pcAgregar" style="margin-top:12px;">+ Agregar producto</button>
 
-          <h3 style="font-size:14px;font-weight:600;margin:22px 0 12px;">Catálogo actual</h3>
-          <div id="pcLista"></div>
+        <div class="pc-add-card">
+          <div>
+            <div class="pc-add-head">
+              <div class="pc-add-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+                </svg>
+              </div>
+              <div>
+                <div class="pc-add-title">Agregar nuevo producto</div>
+                <div class="pc-add-sub">Completa la información para agregar un producto a tu catálogo.</div>
+              </div>
+            </div>
+
+            <div class="pc-add-grid">
+              <div class="pc-field">
+                <label>Nombre del producto</label>
+                <input type="text" id="pcNombre" placeholder="Ej: Cera mate">
+              </div>
+              <div class="pc-field">
+                <label>Precio</label>
+                <input type="number" id="pcPrecio" min="0" placeholder="$ 0">
+              </div>
+              <div class="pc-field">
+                <label>Stock inicial</label>
+                <input type="number" id="pcStock" min="0" value="0">
+                <div class="hint">Cantidad disponible en inventario</div>
+              </div>
+              <div class="pc-field">
+                <label>Descripción (opcional)</label>
+                <textarea id="pcDescripcion" placeholder="Ej: Fijación fuerte con acabado natural"></textarea>
+                <div class="hint">Se mostrará en el sitio web</div>
+              </div>
+            </div>
+
+            <button class="pc-add-btn" id="pcAgregar">+ Agregar producto</button>
+          </div>
+
+          <div class="pc-illus" id="pcIlustracion"></div>
+        </div>
+
+        <div class="pc-cat-card">
+          <div class="pc-cat-head">
+            <div class="pc-cat-head-l">
+              <div class="pc-cat-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              </div>
+              <div>
+                <div class="pc-cat-title">Catálogo actual</div>
+                <div class="pc-cat-sub">Productos disponibles en tu catálogo</div>
+              </div>
+            </div>
+            <div class="pc-cat-tools">
+              <div class="pc-search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+                </svg>
+                <input type="text" id="pcBuscar" placeholder="Buscar producto...">
+              </div>
+              <select class="pc-filter" id="pcFiltro">
+                <option value="all">Filtrar ⌄</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="pc-table">
+              <thead>
+                <tr>
+                  <th>Producto</th><th>Precio</th><th>Stock</th><th>Descripción</th><th class="r">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="pcLista"></tbody>
+            </table>
+          </div>
+
+          <div class="pc-cat-foot">
+            <div class="pc-cat-count" id="pcConteo"></div>
+            <div class="pc-pager" id="pcPager"></div>
+          </div>
+        </div>
+
+        <div class="mg-modal" id="modalPcEliminar">
+          <div class="mg-head">
+            <h3>Desactivar producto</h3>
+            <button class="mg-close" data-close>✕</button>
+          </div>
+          <p class="mg-note" id="pcEliminarTexto" style="margin-bottom:16px;"></p>
+          <button class="mg-btn solid full" id="pcEliminarConfirmar" style="background:#c0392b;">Desactivar</button>
         </div>
       </div>
     </div>
@@ -8515,28 +8660,138 @@
       if(v === 'catalogo') pintarCatalogoProductos();
     }));
 
-  function pintarCatalogoProductos(){
-    const cont = document.getElementById('pcLista');
-    if(!productsCache.length){ cont.innerHTML = '<div class="us-vacio">Todavía no hay productos.</div>'; return; }
-    cont.innerHTML = productsCache.map(p=> `
-      <div class="mg-row ${p.active === false ? 'off' : ''}" data-id="${p.id}" style="grid-template-columns:38px 1fr 92px 1fr auto;">
-        <div class="svc-thumb" data-fotoprod="${p.id}" title="Subir foto del producto"
-             style="width:36px;height:36px;border-radius:8px;cursor:pointer;background-color:#eee;
-               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:14px;
-               ${p.photoUrl ? `background-image:url('${p.photoUrl}');` : ''}">${p.photoUrl ? '' : '📷'}</div>
-        <input type="text" value="${escapeHTML(p.name)}" data-f="name" placeholder="Nombre">
-        <input type="number" value="${p.price}" data-f="price" min="0" step="500">
-        <input type="text" value="${escapeHTML(p.description || '')}" data-f="description" placeholder="Descripción (sitio web)">
-        <button class="mg-del" title="${p.active === false ? 'Reactivar' : 'Desactivar'}">${p.active === false ? '↺' : '✕'}</button>
-      </div>`).join('');
+  const PC_POR_PAGINA = 10;
+  let pcPagina = 1;
+  let pcEditando = null; // id del producto cuya fila está en modo edición
+  let pcAEliminar = null;
 
-    cont.querySelectorAll('.mg-row').forEach(row=>{
-      row.querySelectorAll('input').forEach(inp=>
-        inp.addEventListener('change', ()=> guardarProductoCatalogo(row)));
-      row.querySelector('.mg-del').addEventListener('click', ()=> alternarActivoProducto(row));
-      row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoProducto(row.dataset.id));
+  const PC_ICONO_LAPIZ = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  const PC_ICONO_CHECK = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+  const PC_ICONO_PAPELERA = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`;
+  const PC_ICONO_REACTIVAR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`;
+  const PC_UMBRAL_STOCK_BAJO = 5;
+
+  /** Ilustración decorativa (misma tarjeta que "Agregar nuevo producto") --
+   *  se pinta una sola vez; usa la foto real del primer producto activo con
+   *  foto si existe, para que no quede un dibujo genérico sin sentido. */
+  function pcPintarIlustracion(){
+    const cont = document.getElementById('pcIlustracion');
+    if(!cont || cont.dataset.pintado) return;
+    cont.dataset.pintado = '1';
+    const conFoto = productsCache.find(p=> p.active !== false && p.photoUrl);
+    cont.innerHTML = `
+      <svg width="100%" height="100%" viewBox="0 0 260 220" style="position:absolute;inset:0;">
+        <circle cx="60" cy="40" r="90" fill="#eceef0"/>
+        <circle cx="230" cy="60" r="60" fill="#f4f4f6"/>
+        <ellipse cx="150" cy="188" rx="85" ry="14" fill="#e3e5e8"/>
+        <rect x="95" y="150" width="110" height="40" rx="8" fill="#ffffff"/>
+        <path d="M232 60 C 224 30, 244 18, 250 30 C 258 20, 272 30, 262 46 C 256 56, 240 60, 232 60 Z" fill="#8fae86"/>
+        <path d="M232 60 C 234 45, 240 34, 250 30" stroke="#7a9a71" stroke-width="1.4" fill="none"/>
+      </svg>
+      ${conFoto ? `<img src="${conFoto.photoUrl}" alt="">` : `
+      <svg width="72" height="92" viewBox="0 0 72 92" style="position:absolute;left:50%;bottom:22%;transform:translateX(-50%);filter:drop-shadow(0 10px 14px rgba(0,0,0,.14));">
+        <rect x="4" y="14" width="64" height="70" rx="10" fill="#1A1815"/>
+        <rect x="14" y="0" width="44" height="18" rx="6" fill="#1A1815"/>
+      </svg>`}
+    `;
+  }
+
+  function pcProductosFiltrados(){
+    const q = (document.getElementById('pcBuscar')?.value || '').trim().toLowerCase();
+    const f = document.getElementById('pcFiltro')?.value || 'all';
+    return productsCache.filter(p=>{
+      if(f === 'active' && p.active === false) return false;
+      if(f === 'inactive' && p.active !== false) return false;
+      if(!q) return true;
+      return p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q);
     });
   }
+
+  function pintarCatalogoProductos(){
+    pcPintarIlustracion();
+    const cont = document.getElementById('pcLista');
+    const lista = pcProductosFiltrados();
+
+    if(!productsCache.length){
+      cont.innerHTML = '<tr><td colspan="5" class="us-vacio">Todavía no hay productos.</td></tr>';
+      document.getElementById('pcConteo').textContent = '';
+      document.getElementById('pcPager').innerHTML = '';
+      return;
+    }
+    if(!lista.length){
+      cont.innerHTML = '<tr><td colspan="5" class="us-vacio">Ningún producto coincide con la búsqueda.</td></tr>';
+      document.getElementById('pcConteo').textContent = '';
+      document.getElementById('pcPager').innerHTML = '';
+      return;
+    }
+
+    const totalPaginas = Math.max(1, Math.ceil(lista.length / PC_POR_PAGINA));
+    pcPagina = Math.min(pcPagina, totalPaginas);
+    const desde = (pcPagina - 1) * PC_POR_PAGINA;
+    const pagina = lista.slice(desde, desde + PC_POR_PAGINA);
+
+    cont.innerHTML = pagina.map(p=>{
+      const editando = pcEditando === p.id;
+      const stockBajo = (p.stock ?? 0) <= PC_UMBRAL_STOCK_BAJO;
+      const nombreCelda = editando
+        ? `<div class="pc-name-wrap"><input type="text" value="${escapeHTML(p.name)}" data-f="name" placeholder="Nombre"></div>`
+        : `<div class="pc-name">${escapeHTML(p.name)}</div>`;
+      const precioCelda = editando
+        ? `<div class="pc-price-cell"><input type="number" value="${p.price}" data-f="price" min="0" step="500"></div>`
+        : `<div class="pc-price">${cxClp(p.price)}</div>`;
+      const descCelda = editando
+        ? `<div class="pc-desc-cell"><textarea data-f="description" placeholder="Descripción (sitio web)">${escapeHTML(p.description || '')}</textarea></div>`
+        : `<div class="pc-desc">${escapeHTML(p.description || '')}</div>`;
+      const accionEditar = editando
+        ? `<button class="pc-ib save" data-pc-guardar title="Guardar">${PC_ICONO_CHECK}</button>`
+        : `<button class="pc-ib" data-pc-editar title="Editar">${PC_ICONO_LAPIZ}</button>`;
+      const accionEliminar = p.active === false
+        ? `<button class="pc-ib" data-pc-reactivar title="Reactivar">${PC_ICONO_REACTIVAR}</button>`
+        : `<button class="pc-ib del" data-pc-eliminar title="Eliminar">${PC_ICONO_PAPELERA}</button>`;
+
+      return `
+      <tr class="pc-row ${p.active === false ? 'off' : ''}" data-id="${p.id}">
+        <td>
+          <div class="pc-prod-cell">
+            <div class="pc-thumb" data-fotoprod="${p.id}" title="Subir foto del producto">
+              ${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : `<span class="ph">📷</span>`}
+            </div>
+            ${nombreCelda}
+          </div>
+        </td>
+        <td>${precioCelda}</td>
+        <td><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
+        <td>${descCelda}</td>
+        <td><div class="pc-actions">${accionEditar}${accionEliminar}</div></td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('pcConteo').textContent =
+      `Mostrando ${desde + 1} a ${Math.min(desde + PC_POR_PAGINA, lista.length)} de ${lista.length} productos`;
+
+    const pager = document.getElementById('pcPager');
+    pager.innerHTML = `
+      <button id="pcPagAnt" ${pcPagina <= 1 ? 'disabled' : ''}>←</button>
+      <span class="cur">${pcPagina}</span>
+      <button id="pcPagSig" ${pcPagina >= totalPaginas ? 'disabled' : ''}>→</button>`;
+    pager.querySelector('#pcPagAnt').addEventListener('click', ()=>{ pcPagina--; pintarCatalogoProductos(); });
+    pager.querySelector('#pcPagSig').addEventListener('click', ()=>{ pcPagina++; pintarCatalogoProductos(); });
+
+    cont.querySelectorAll('.pc-row').forEach(row=>{
+      row.querySelector('.pc-thumb').addEventListener('click', ()=> subirFotoProducto(row.dataset.id));
+      const btnEditar = row.querySelector('[data-pc-editar]');
+      if(btnEditar) btnEditar.addEventListener('click', ()=>{ pcEditando = row.dataset.id; pintarCatalogoProductos(); });
+      const btnGuardar = row.querySelector('[data-pc-guardar]');
+      if(btnGuardar) btnGuardar.addEventListener('click', async ()=>{ await guardarProductoCatalogo(row); pcEditando = null; pintarCatalogoProductos(); });
+      const btnEliminar = row.querySelector('[data-pc-eliminar]');
+      if(btnEliminar) btnEliminar.addEventListener('click', ()=> pedirEliminarProducto(row.dataset.id));
+      const btnReactivar = row.querySelector('[data-pc-reactivar]');
+      if(btnReactivar) btnReactivar.addEventListener('click', ()=> alternarActivoProducto(row.dataset.id));
+    });
+  }
+
+  document.getElementById('pcBuscar').addEventListener('input', ()=>{ pcPagina = 1; pintarCatalogoProductos(); });
+  document.getElementById('pcFiltro').addEventListener('change', ()=>{ pcPagina = 1; pintarCatalogoProductos(); });
 
   /** Sube (o reemplaza) la foto de un producto y la deja lista para la tienda del sitio. */
   function subirFotoProducto(productoId){
@@ -8546,8 +8801,8 @@
     input.addEventListener('change', async ()=>{
       const file = input.files[0];
       if(!file) return;
-      const thumb = document.querySelector(`.svc-thumb[data-fotoprod="${productoId}"]`);
-      if(thumb) thumb.textContent = '…';
+      const thumb = document.querySelector(`.pc-thumb[data-fotoprod="${productoId}"]`);
+      if(thumb) thumb.innerHTML = '<span class="ph">…</span>';
       try{
         const blob = await redimensionarImagen(file);
         const ruta = `productPhotos/${productoId}/${Date.now()}.jpg`;
@@ -8563,7 +8818,7 @@
         pintarCatalogoProductos();
       }catch(e){
         showToast('No se pudo subir la foto: ' + e.message);
-        if(thumb) thumb.textContent = '📷';
+        if(thumb) thumb.innerHTML = '<span class="ph">📷</span>';
       }
     });
     input.click();
@@ -8573,7 +8828,7 @@
     const id = row.dataset.id;
     const p = productsCache.find(x=> x.id === id);
     if(!p) return;
-    row.querySelectorAll('input').forEach(inp=>{
+    row.querySelectorAll('[data-f]').forEach(inp=>{
       p[inp.dataset.f] = inp.type === 'number' ? Number(inp.value) : inp.value.trim();
     });
     try{
@@ -8582,16 +8837,32 @@
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   }
 
-  async function alternarActivoProducto(row){
-    const id = row.dataset.id;
+  /** El botón de eliminar en realidad desactiva (mismo comportamiento de
+   *  siempre: deja de ofrecerse pero conserva el historial de ventas) --
+   *  se pide confirmación con el modal del panel, nunca con confirm() nativo. */
+  function pedirEliminarProducto(id){
     const p = productsCache.find(x=> x.id === id);
     if(!p) return;
-    const activo = p.active !== false;
-    if(activo && !confirm(`¿Desactivar "${p.name}"?\n\nDeja de ofrecerse en el sitio y en el panel, pero el historial de ventas se conserva.`)) return;
-    p.active = !activo;
+    pcAEliminar = id;
+    document.getElementById('pcEliminarTexto').textContent =
+      `¿Desactivar "${p.name}"? Deja de ofrecerse en el sitio y en el panel, pero el historial de ventas se conserva.`;
+    abrirModal('modalPcEliminar');
+  }
+  document.getElementById('pcEliminarConfirmar').addEventListener('click', async ()=>{
+    if(!pcAEliminar) return;
+    await alternarActivoProducto(pcAEliminar);
+    pcAEliminar = null;
+    cerrarModales();
+  });
+
+  async function alternarActivoProducto(id){
+    const p = productsCache.find(x=> x.id === id);
+    if(!p) return;
+    p.active = p.active === false ? true : false;
     try{
       await db.collection('products').doc(id).set(p);
       showToast(p.active ? 'Producto reactivado' : 'Producto desactivado');
+      pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   }
 
@@ -8614,6 +8885,8 @@
       document.getElementById('pcPrecio').value = '';
       document.getElementById('pcStock').value = '0';
       document.getElementById('pcDescripcion').value = '';
+      productsCache.push(nuevo);
+      pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
     btn.disabled = false; btn.textContent = '+ Agregar producto';
   });
