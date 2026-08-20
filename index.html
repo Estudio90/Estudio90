@@ -1859,11 +1859,6 @@
           <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>
         </svg>
       </button>
-      <button class="icon-btn" id="misCursosChip" aria-label="Mis cursos" onclick="abrirMisCursos()" style="display:none;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none"/>
-        </svg>
-      </button>
       <button class="icon-btn campana" aria-label="Notificaciones" onclick="abrirCarrito()">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M18 8A6 6 0 1 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>
@@ -1894,10 +1889,11 @@
     <a href="#" onclick="cerrarMenu();abrirReservas();return false;">Reservar hora</a>
     <a href="#servicios" onclick="cerrarMenu();">Servicios</a>
     <a href="#" onclick="cerrarMenu();abrirAcademia();return false;">Academy</a>
+    <a href="#" id="misCursosMenuLink" onclick="cerrarMenu();abrirMisCursos();return false;" style="display:none;">Mis cursos</a>
     <a href="#" onclick="cerrarMenu();abrirTienda();return false;">Tienda</a>
     <a href="#promos" onclick="cerrarMenu();">Promociones</a>
     <a href="#" onclick="cerrarMenu();onAccountChipClick();return false;">Mi cuenta</a>
-    <a href="masterlook-panel-interno.html">Panel interno</a>
+    <a href="masterlook-panel-interno.html" id="panelInternoMenuLink" style="display:none;">Panel interno</a>
   </nav>
   <div class="menu-pie">
     <div>Lun a Vie · <span id="horLVMenu">11:00–21:00</span></div>
@@ -2257,6 +2253,7 @@
       <div class="field-err" id="loginErr"></div>
       <button class="btn-full" onclick="doLogin()">Ingresar</button>
       <p class="auth-hint">¿No tienes cuenta? <span class="auth-switch" onclick="switchTab('register')">Créala aquí</span></p>
+      <p class="auth-hint">¿Eres del equipo? <a href="masterlook-panel-interno.html" class="auth-switch">Entra al panel interno</a></p>
     </div>
 
     <div class="auth-form" data-form="register">
@@ -3885,7 +3882,7 @@
 
   auth.onAuthStateChanged(async user=>{
     if(MODE === 'api') return; // ese modo maneja su propia sesión por token
-    if(!user){ customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); reiniciarTimerInactividad(); return; }
+    if(!user){ customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); actualizarLinkPanelInterno(null); reiniciarTimerInactividad(); return; }
     try{
       const doc = await db.collection('customers').doc(user.uid).get();
       customerProfile = doc.exists
@@ -3894,6 +3891,7 @@
     }catch(e){ customerProfile = null; }
     await renderAccount();
     actualizarChipMisCursos(user.uid);
+    actualizarLinkPanelInterno(user.uid);
     reiniciarTimerInactividad();
   });
 
@@ -6384,14 +6382,29 @@
 
   /** El ícono de "Mis cursos" del header solo se muestra a clientes con al
    *  menos un curso vigente -- para el resto queda oculto, no solo inerte. */
+  /** "Panel interno" solo debe verse en el menú de cuentas del equipo, nunca
+   *  a un cliente. Se apoya en la misma regla de Firestore que ya protege
+   *  la colección `staff` (isStaff() en firestore.rules): un cliente no
+   *  puede ni leer su propio documento ahí, así que la lectura falla sola
+   *  y basta con tratar cualquier error como "no es del equipo". */
+  async function actualizarLinkPanelInterno(uid){
+    const link = document.getElementById('panelInternoMenuLink');
+    if(!link) return;
+    if(!uid){ link.style.display = 'none'; return; }
+    try{
+      const doc = await db.collection('staff').doc(uid).get();
+      link.style.display = doc.exists ? '' : 'none';
+    }catch(e){ link.style.display = 'none'; }
+  }
+
   async function actualizarChipMisCursos(uid){
-    const btn = document.getElementById('misCursosChip');
-    if(!btn) return;
-    if(!uid){ btn.style.display = 'none'; return; }
+    const link = document.getElementById('misCursosMenuLink');
+    if(!link) return;
+    if(!uid){ link.style.display = 'none'; return; }
     try{
       const entitlements = await obtenerEntitlementsActivos(uid);
-      btn.style.display = entitlements.length ? 'flex' : 'none';
-    }catch(e){ btn.style.display = 'none'; }
+      link.style.display = entitlements.length ? '' : 'none';
+    }catch(e){ link.style.display = 'none'; }
   }
 
   async function pintarMisCursos(){
