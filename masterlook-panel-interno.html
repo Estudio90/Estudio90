@@ -1484,6 +1484,11 @@
         </div>
       </div>
 
+      <!-- Solo administrador: anticipos de reserva ya APROBADOS por Webpay
+           (dinero efectivamente recibido) -- nunca rechazados/abandonados/
+           vencidos. Distinto de Comisiones (lo que gana cada profesional). -->
+      <button class="menu-panel-item" id="btnAbonos" style="display:none;">Abonos</button>
+
       <div class="nav-group" id="grupoClientesDatos" style="display:none;">
         <button class="nav-group-head" type="button">Clientes y datos</button>
         <div class="nav-group-items">
@@ -1522,6 +1527,67 @@
   <div class="content">
 
     <div class="kpi-row" id="kpiRow"></div>
+
+    <!-- ===== VISTA: ABONOS -- SOLO anticipos de reserva ya APROBADOS por
+         Webpay (dinero efectivamente recibido). Nunca rechazados,
+         abandonados, vencidos ni iniciados -- esos quedan solo en el
+         historial de actividad de cada cliente, nunca acá. Proyección de
+         solo lectura de `reservationDeposits` -- solo ADMIN. ===== -->
+    <div id="vistaAbonos" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Abonos</h2>
+          <p class="cx-sub">Anticipos de reserva recibidos por la página vía Webpay.</p>
+        </div>
+      </div>
+
+      <div class="cx-filtros-box">
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Selecciona una opción</label>
+          <div class="cx-f" style="display:flex;gap:10px;">
+            <div class="cx-f"><label>Desde</label><input type="date" class="mg-input" id="abDesde"></div>
+            <div class="cx-f"><label>Hasta</label><input type="date" class="mg-input" id="abHasta"></div>
+          </div>
+        </div>
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Locales</label>
+          <select class="mg-input" id="abLocal" disabled><option>MASTERLOOK</option></select>
+        </div>
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Métodos de pago</label>
+          <select class="mg-input" id="abMetodoPago" disabled><option>Webpay</option></select>
+        </div>
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Tipo de comprobante</label>
+          <select class="mg-input" id="abTipoComprobante" disabled><option>Todos</option></select>
+        </div>
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Buscar por…</label>
+          <input type="text" class="mg-input" id="abBuscarCliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="cx-filtros-col" style="display:flex;align-items:flex-end;">
+          <button class="ctrl-btn primary" id="abBuscar">Buscar</button>
+        </div>
+      </div>
+
+      <div class="cx-nav" style="justify-content:space-between; align-items:center;">
+        <h3 class="cx-tbl-title" style="margin:0;">Abonos recibidos</h3>
+        <button class="ctrl-btn" id="abDescargar">⬇️ Descargar abonos</button>
+      </div>
+
+      <div class="cx-tablebox">
+        <table class="cx-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Fecha de abono</th><th>Local</th><th>Nº de abono</th>
+              <th>Cliente</th><th>Detalle</th><th class="r">Monto total</th><th class="r">Monto abonado</th>
+              <th class="r">% abonado</th><th>Opciones</th>
+            </tr>
+          </thead>
+          <tbody id="abTablaBody"><tr><td colspan="10">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- ===== VISTA: COMISIONES (dentro del panel) ===== -->
     <div id="vistaComisiones" style="display:none;">
@@ -2012,6 +2078,15 @@
         <button class="mg-close" data-close>✕</button>
       </div>
       <div id="acHistorialLista" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Detalle de un Abono (Ver) -->
+    <div class="mg-modal" id="modalAbonoDetalle">
+      <div class="mg-head">
+        <h3>Detalle del abono</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div id="abDetalleBody" style="display:flex;flex-direction:column;gap:10px;white-space:pre-line;"></div>
     </div>
 
     <!-- Mi perfil -->
@@ -3648,6 +3723,134 @@
   document.getElementById('btnComBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
   document.getElementById('btnComPropinas').addEventListener('click', mostrarPropinas);
   document.getElementById('btnComProductos').addEventListener('click', mostrarProductos);
+  document.getElementById('btnAbonos').addEventListener('click', mostrarAbonos);
+
+  /**
+   * Módulo Abonos -- SOLO anticipos de reserva ya APROBADOS por Webpay
+   * (dinero efectivamente recibido). Nunca rechazados/abandonados/
+   * vencidos/iniciados -- esos quedan solo en el historial de actividad
+   * de cada cliente (clientes/{id}/actividad), nunca acá. Proyección de
+   * solo lectura de `reservationDeposits` (ver database/functions/abonos.js);
+   * este archivo nunca escribe en esa colección, solo la consulta.
+   */
+  function mostrarAbonos(){
+    document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
+    document.getElementById('vistaUsuarios').style.display = 'none';
+    document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = 'none';
+    document.getElementById('vistaClientes').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
+    document.getElementById('vistaComisiones').style.display = 'none';
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaAbonos').style.display = '';
+    ocultarFlotante(true);
+
+    if(!document.getElementById('abHasta').value){
+      const hoy = new Date();
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      document.getElementById('abDesde').value = inicioMes.toISOString().slice(0,10);
+      document.getElementById('abHasta').value = hoy.toISOString().slice(0,10);
+    }
+    abCargar();
+  }
+
+  let abFilasActuales = [];
+
+  async function abCargar(){
+    const tbody = document.getElementById('abTablaBody');
+    tbody.innerHTML = '<tr><td colspan="10">Cargando…</td></tr>';
+
+    const desde = document.getElementById('abDesde').value;
+    const hasta = document.getElementById('abHasta').value;
+    const busqueda = (document.getElementById('abBuscarCliente').value || '').trim().toLowerCase();
+
+    try{
+      let q = db.collection('reservationDeposits').orderBy('fecha','desc').limit(200);
+      if(desde) q = q.where('fecha','>=', desde);
+      if(hasta) q = q.where('fecha','<=', hasta + 'T23:59:59.999Z');
+      const snap = await q.get();
+      let filas = snap.docs.map(d=> d.data());
+      if(busqueda) filas = filas.filter(r=> (r.clienteNombre||'').toLowerCase().includes(busqueda));
+      abFilasActuales = filas;
+
+      if(!filas.length){
+        tbody.innerHTML = '<tr><td colspan="10">No hay abonos en el rango seleccionado.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = filas.map(r=>{
+        const detalle = (r.citas||[]).map(c=> `${c.servicio} — ${c.profesional}`).join(', ') || '—';
+        return `
+        <tr>
+          <td class="mono">${r.idCorto||''}</td>
+          <td>${abFmtFecha(r.fecha)}</td>
+          <td>MASTERLOOK</td>
+          <td class="mono">${r.numeroAbono||''}</td>
+          <td>${r.clienteNombre||'—'}</td>
+          <td>${detalle}</td>
+          <td class="r">${money(r.montoServicioTotal||0)}</td>
+          <td class="r">${money(r.montoAbonadoTotal||0)}</td>
+          <td class="r">${r.porcentajeAbonado||0}%</td>
+          <td><button class="ctrl-btn ab-ver" data-buyorder="${r.buyOrder}">Ver</button></td>
+        </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('.ab-ver').forEach(btn=>
+        btn.addEventListener('click', ()=> abVerDetalle(btn.dataset.buyorder)));
+    }catch(e){
+      console.error('abCargar', e);
+      tbody.innerHTML = '<tr><td colspan="10">No se pudo cargar. ' + (e.message||'') + '</td></tr>';
+    }
+  }
+
+  function abFmtFecha(iso){
+    if(!iso) return '—';
+    try{ return new Date(iso).toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+    catch(e){ return iso; }
+  }
+
+  function abVerDetalle(buyOrder){
+    const r = abFilasActuales.find(x=> x.buyOrder === buyOrder);
+    if(!r) return;
+    const detalle = (r.citas||[]).map(c=>
+      `• ${c.servicio} con ${c.profesional} — total ${money(c.montoServicio)}, abonado ${money(c.montoAbonado)}`
+    ).join('\n');
+    // Detalle administrativo -- el buyOrder completo (identificador
+    // técnico real) solo se ve acá, nunca en la tabla principal.
+    document.getElementById('abDetalleBody').textContent =
+      `Nº de abono: ${r.numeroAbono}\nCliente: ${r.clienteNombre}\nFecha: ${abFmtFecha(r.fecha)}\n` +
+      `Grupo de reserva: ${r.grupo}\nOrden Webpay (buyOrder): ${r.buyOrder}\n\n${detalle}\n\n` +
+      `Monto total: ${money(r.montoServicioTotal||0)}\nMonto abonado: ${money(r.montoAbonadoTotal||0)}\n% abonado: ${r.porcentajeAbonado||0}%`;
+    abrirModal('modalAbonoDetalle');
+  }
+
+  document.getElementById('abBuscar').addEventListener('click', abCargar);
+  document.getElementById('abBuscarCliente').addEventListener('keydown', e=>{ if(e.key==='Enter') abCargar(); });
+
+  function abDescargar(){
+    const filas = [
+      ['ID','Fecha de abono','Local','Nº de abono','Cliente','Detalle','Monto total','Monto abonado','% abonado'],
+    ];
+    abFilasActuales.forEach(r=>{
+      const detalle = (r.citas||[]).map(c=> `${c.servicio} — ${c.profesional}`).join(' | ');
+      filas.push([
+        r.idCorto||'', abFmtFecha(r.fecha), 'MASTERLOOK', r.numeroAbono||'', r.clienteNombre||'',
+        detalle, r.montoServicioTotal||0, r.montoAbonadoTotal||0, (r.porcentajeAbonado||0)+'%',
+      ]);
+    });
+    const csv = '﻿' + filas.map(f=> f.map(cell=> `"${String(cell ?? '')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const a = document.createElement('a');
+    const desde = document.getElementById('abDesde').value;
+    const hasta = document.getElementById('abHasta').value;
+    a.href = url; a.download = `abonos_${desde}_a_${hasta}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Abonos descargados (Excel/CSV)');
+  }
+  document.getElementById('abDescargar').addEventListener('click', abDescargar);
   ['lgUser','lgPass'].forEach(id=>
     document.getElementById(id).addEventListener('keydown', e=>{
       if(e.key === 'Enter') intentarIngreso();
@@ -4250,7 +4453,7 @@
     // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
     // Servicios staff, Mi equipo, y el grupo "Más".
     ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
-     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo',
+     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo', 'btnAbonos',
      'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
@@ -4686,7 +4889,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -6369,6 +6572,7 @@
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaPropinas').style.display = 'none';
+    document.getElementById('vistaAbonos').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';

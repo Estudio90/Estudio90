@@ -3871,12 +3871,33 @@
   // para que quede claro que es una decisión y no el valor por defecto del SDK.
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
-  /** Refleja en vivo las reservas guardadas en Firestore, visibles desde cualquier dispositivo. */
-  let bookingsCache = [];
-  db.collection('bookings').onSnapshot(snap=>{
-    bookingsCache = snap.docs.map(d=> d.data());
-    renderAccount().catch(()=>{});
-  });
+  // `bookings` ya no es una colección pública (ver firestore.rules) --
+  // antes acá había un onSnapshot() sin filtro sobre TODA la colección,
+  // que exponía nombre/precio/método de pago de cada reserva de cada
+  // cliente a cualquier visitante anónimo. La disponibilidad pública
+  // ahora se consulta vía obtenerOcupacionDia (Cloud Function, solo
+  // intervalos ocupados, nunca un documento de reserva completo) y "Mi
+  // cuenta" vía obtenerMisReservas (ver renderAccount()).
+  /** Última lista de reservas propias traída por obtenerMisReservas --
+   *  la reutiliza chatUltimaReservaDe() para no llamar la función de
+   *  nuevo en cada mensaje del chat. */
+  let misReservasCache = [];
+
+  /** Ocupación real por fecha, traída de obtenerOcupacionDia (Cloud
+   *  Function) -- reemplaza el cálculo local que antes dependía del
+   *  onSnapshot() sin filtro de bookings. Solo intervalos ocupados por
+   *  nombre de profesional: nunca nombre de cliente, precio, ni ID de
+   *  reserva. Cacheada por fecha ya consultada en esta sesión. */
+  let ocupacionPorFecha = {};
+  async function asegurarOcupacion(fecha){
+    if(ocupacionPorFecha[fecha]) return ocupacionPorFecha[fecha];
+    try{
+      const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
+      const data = await resp.json();
+      ocupacionPorFecha[fecha] = (resp.ok && data.ocupacion) ? data.ocupacion : {};
+    }catch(e){ ocupacionPorFecha[fecha] = {}; }
+    return ocupacionPorFecha[fecha];
+  }
 
   /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
   function plantillaCorreoReserva(reserva, estado, motivo){
@@ -4151,12 +4172,6 @@
   db.collection('services').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
   db.collection('barbers').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
 
-  /** Horarios bloqueados desde el panel (almuerzo, día libre, etc.), en vivo. */
-  let bloqueosCache = [];
-  db.collection('blocks').onSnapshot(snap=>{
-    bloqueosCache = snap.docs.map(d=> d.data());
-  });
-
   /** Cursos de la Academy, editados desde el panel, en vivo. */
   let cursosCache = [];
   let cursosListos = false;
@@ -4365,9 +4380,20 @@
         // bloquea la hora (10 min) mientras se paga -- el navegador nunca
         // decide por si solo si el horario sigue libre.
         try{
+          // Si el cliente ya tiene sesión (registrado antes, o recién
+          // creó su cuenta), se manda su token junto a la reserva -- el
+          // servidor la vincula de inmediato a "Mi cuenta" SOLO si el
+          // correo de la cuenta está verificado y coincide exacto con el
+          // correo de contacto de esta reserva (ver reservas.js). Sin
+          // sesión, no se manda nada -- la reserva de invitado sigue
+          // igual que siempre.
+          const holdHeaders = { 'Content-Type': 'application/json' };
+          if(auth.currentUser){
+            try{ holdHeaders['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken(); }catch(e){}
+          }
           const holdResp = await fetch('https://us-central1-estudio90.cloudfunctions.net/crearHoldReserva', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: holdHeaders,
             body: JSON.stringify({
               fecha: state.fecha,
               client: datos.name, phone: datos.phone, email: datos.email,
@@ -4465,6 +4491,21 @@
         ? { uid:user.uid, ...doc.data() }
         : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
     }catch(e){ customerProfile = null; }
+
+    // Vincula reservas hechas como invitado con el mismo correo, SOLO si
+    // Firebase Auth ya confirmó que ese correo está verificado (si no,
+    // vincularMisReservas no hace nada -- se reintenta solo en el próximo
+    // login, ej. después de hacer clic en el enlace del correo). Si algo
+    // se vinculó, se vuelve a leer el perfil para que "Mi cuenta" muestre
+    // el historial real de una vez.
+    try{
+      const r = await functions.httpsCallable('vincularMisReservas')();
+      if(r?.data?.vinculadas > 0){
+        const doc2 = await db.collection('customers').doc(user.uid).get();
+        if(doc2.exists) customerProfile = { uid:user.uid, ...doc2.data() };
+      }
+    }catch(e){ /* no crítico -- "Mi cuenta" igual funciona con lo que ya tenía */ }
+
     await renderAccount();
     actualizarChipMisCursos(user.uid);
     actualizarLinkPanelInterno(user.uid);
@@ -4578,6 +4619,12 @@
         await db.collection('customers').doc(cred.user.uid).set({
           name, email, phone, since: new Date().toISOString(), bookingIds: [],
         });
+        // Necesario para que, más adelante, tus reservas hechas como
+        // invitado con este mismo correo puedan vincularse a tu cuenta
+        // (ver vincularMisReservas) -- no bloquea el registro ni el uso
+        // del sitio, solo habilita esa vinculación cuando confirmes tu
+        // correo.
+        cred.user.sendEmailVerification().catch(()=>{});
       }catch(e){
         let msg = 'No se pudo crear la cuenta.';
         if(e.code === 'auth/email-already-in-use') msg = 'Ya existe una cuenta con ese correo. Inicia sesión.';
@@ -4595,7 +4642,7 @@
     }
     closeAuth();
     await renderAccount();
-    toast('¡Cuenta creada! Bienvenido, ' + name.split(' ')[0]);
+    toast('¡Cuenta creada! Te enviamos un correo para verificarla, ' + name.split(' ')[0]);
     document.getElementById('cuenta').scrollIntoView({behavior:'smooth'});
   }
 
@@ -4724,16 +4771,15 @@
     window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
-  /** Trae la última reserva del cliente, con el estado real que tiene guardado el local. */
+  /** Trae la última reserva del cliente, con el estado real -- usa la
+   *  misma lista que ya trajo renderAccount() de obtenerMisReservas (se
+   *  refresca cada vez que esa función corre), para no hacer una llamada
+   *  extra a la Cloud Function por cada mensaje del chat. */
   function chatUltimaReservaDe(user){
-    if(!user || !(user.bookingIds || []).length) return null;
-    const ultimoId = user.bookingIds[user.bookingIds.length - 1];
-    const rec = bookingsCache.find(r=> r.id === ultimoId);
+    if(!user || !misReservasCache.length) return null;
+    const rec = misReservasCache[misReservasCache.length - 1];
     if(!rec) return null;
-    return Object.assign({}, rec, {
-      decision: rec.decision || 'pendiente',
-      reason: rec.reason
-    });
+    return Object.assign({}, rec, { decision: rec.decision || 'pendiente' });
   }
 
   function chatListaPrecios(){
@@ -5043,13 +5089,19 @@
       return;
     }
 
-    // ---- modo demo: datos compartidos vía Firestore ----
-    // las reservas del cliente son las que su cuenta tiene enlazadas por id;
-    // el detalle y el estado siempre se leen en vivo desde bookingsCache
-    const misReservas = (user.bookingIds || [])
-      .map(id=> bookingsCache.find(r=> r.id === id))
-      .filter(Boolean);
-    const decisionOf = id => (bookingsCache.find(r=> r.id === id) || {}).decision || 'pendiente';
+    // ---- modo demo: historial real vía obtenerMisReservas ----
+    // Ya no se lee de un listener abierto sobre TODA la colección
+    // bookings (eso exponía nombre/precio/pago de todos los clientes a
+    // cualquier visitante anónimo) -- se llama a la Cloud Function, que
+    // solo trae, con Admin SDK, los IDs que ya están en el propio
+    // documento `customers/{uid}.bookingIds` del usuario autenticado.
+    let misReservas = [];
+    try{
+      const r = await functions.httpsCallable('obtenerMisReservas')();
+      misReservas = (r?.data?.reservas || []);
+    }catch(e){ /* sin conexión momentánea -- se vuelve a intentar en el próximo render */ }
+    misReservasCache = misReservas;
+    const decisionOf = id => (misReservas.find(r=> r.id === id) || {}).decision || 'pendiente';
 
     // los puntos y visitas solo cuentan reservas confirmadas por el local
     const confirmadas = misReservas.filter(b=> decisionOf(b.id) === 'aprobada');
@@ -5084,7 +5136,7 @@
     } else {
       // estados decididos por el panel del local
       list.innerHTML = misReservas.slice().reverse().map(b=>{
-        const rec = bookingsCache.find(r=> r.id === b.id) || {};
+        const rec = b;
         const decision = rec.decision || 'pendiente';
 
         const label = {
@@ -6210,6 +6262,10 @@
     const horario = horarioDelDia(fecha);
     if(!horario) return [];
 
+    // Trae (o reusa del caché) la ocupación real de este día ANTES de
+    // seguir -- planificarCitas()/pintarPlan() para esta misma fecha
+    // corren siempre después de esto, así que ya la encuentran cacheada.
+    await asegurarOcupacion(fecha);
     const barberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO);
     const ocupacion = ocupacionDelDia(fecha);
 
@@ -6575,48 +6631,15 @@
      bloque disponible.
      ========================================================== */
 
-  /** Convierte "HH:MM" a minutos desde medianoche. */
-  function minsOfHHMM(hhmm){ const [h,m] = String(hhmm).split(':').map(Number); return h*60+m; }
-
+  /** Ya no recalcula nada localmente a partir de reservas crudas (esa
+   *  lógica -- bookings + bloqueos + horario propio de cada barbero --
+   *  vive ahora en un solo lugar: disponibilidad.js/ocupacionDelDia,
+   *  server-side, la misma que ya usaba la IA de reservas). Solo lee el
+   *  resultado ya cacheado por asegurarOcupacion(fecha) -- por eso los
+   *  llamadores (calcularSlots, buscarPrimerHorario) deben haber hecho
+   *  `await asegurarOcupacion(fecha)` antes de llegar acá. */
   function ocupacionDelDia(fecha){
-    const mapa = {};
-    bookingsCache.filter(r=> r.decision !== 'rechazada' && r.fecha === fecha).forEach(r=>{
-      if(typeof r.startMin !== 'number') return;
-      (mapa[r.barbero || r.barber] = mapa[r.barbero || r.barber] || [])
-        .push([r.startMin, r.startMin + (r.duracion || 45)]);
-    });
-
-    // horarios bloqueados desde el panel (almuerzo, vacaciones, etc.)
-    const todosLosBarberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO).map(b=> b.name);
-    const diaSemana = new Date(fecha + 'T12:00:00').getDay();
-    bloqueosCache.forEach(bl=>{
-      const aplicaHoy = bl.recurring ? (!bl.days || bl.days.includes(diaSemana)) : bl.date === fecha;
-      if(!aplicaHoy) return;
-      const ini = bl.allDay ? 0 : minsOfHHMM(bl.start);
-      const fin = bl.allDay ? 24*60 : minsOfHHMM(bl.end);
-      const nombres = bl.scope === 'all' ? todosLosBarberos : [bl.barberName];
-      nombres.forEach(nombre=>{
-        if(!nombre) return;
-        (mapa[nombre] = mapa[nombre] || []).push([ini, fin]);
-      });
-    });
-
-    // horario semanal propio de cada barbero, configurado desde el panel.
-    // si un barbero no tiene horario propio configurado (schedules vacío),
-    // sigue el horario general del local como hasta ahora.
-    (catalog.barbers.length ? catalog.barbers : BARB_DEMO).forEach(b=>{
-      const bloques = b.schedules || [];
-      if(!bloques.length) return;
-      const hoy = bloques.find(s=> s.weekday === diaSemana);
-      if(!hoy){
-        (mapa[b.name] = mapa[b.name] || []).push([0, 24*60]);
-        return;
-      }
-      if(hoy.startMin > 0) (mapa[b.name] = mapa[b.name] || []).push([0, hoy.startMin]);
-      if(hoy.endMin < 24*60) (mapa[b.name] = mapa[b.name] || []).push([hoy.endMin, 24*60]);
-    });
-
-    return mapa;
+    return ocupacionPorFecha[fecha] || {};
   }
 
   function estaLibre(ocupado, ini, fin){
