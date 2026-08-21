@@ -2733,23 +2733,35 @@
     </div>
     <button class="mg-btn solid full" id="cfgGuardarHeroTexto" style="margin-top:10px;">Guardar textos y colores de portada</button>
 
-    <p class="mg-note" style="margin-top:24px;">Foto de fondo de la portada del sitio (arriba de "Reservar hora"). Si no subes una, se muestra el diseño por defecto.</p>
-    <div class="svc-thumb" id="cfgPortadaThumb" title="Subir foto de portada"
+    <p class="mg-note" style="margin-top:26px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Hero — Computador</p>
+    <p class="mg-note" style="margin-top:2px;">Configuración exclusiva de computador -- nunca se muestra en celular. Si hay video, reemplaza la foto por completo (nunca se ven juntos); si no hay video, se ve la foto; si no hay ninguno, el diseño por defecto.</p>
+
+    <p class="mg-note" style="margin-top:14px;">Foto de fondo (computador). Si no subes una, se muestra el diseño por defecto.</p>
+    <div class="svc-thumb" id="cfgPortadaThumb" title="Subir foto de portada (computador)"
          style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
            background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:26px;">📷</div>
-    <button class="mg-btn ghost full" id="cfgQuitarPortada" style="margin-top:10px;">Quitar foto (volver al diseño por defecto)</button>
+    <button class="mg-btn ghost full" id="cfgQuitarPortada" style="margin-top:10px;">Quitar foto de computador (volver al diseño por defecto)</button>
 
-    <p class="mg-note" style="margin-top:24px;">Video de fondo para <strong>celular</strong> (opcional). Se reproduce en bucle, sin sonido, encima de la foto. Ideal menos de 15 MB para que cargue rápido.</p>
-    <div class="svc-thumb" id="cfgPortadaVideoThumb" title="Subir video de portada (celular)"
-         style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
-           display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;">🎬</div>
-    <button class="mg-btn ghost full" id="cfgQuitarPortadaVideo" style="margin-top:10px;">Quitar video de celular (mostrar solo la foto)</button>
-
-    <p class="mg-note" style="margin-top:24px;">Video de fondo para <strong>computador</strong> (opcional, independiente del de celular). El recorte del hero en escritorio es mucho más ancho que en celular, así que conviene un video con la escena más "abierta" para que no se vea forzado.</p>
+    <p class="mg-note" style="margin-top:20px;">Video de fondo (computador, opcional, independiente del de celular). El recorte del hero en escritorio es mucho más ancho que en celular, así que conviene un video con la escena más "abierta" para que no se vea forzado.</p>
     <div class="svc-thumb" id="cfgPortadaVideoDesktopThumb" title="Subir video de portada (computador)"
          style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
            display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;">🖥️</div>
-    <button class="mg-btn ghost full" id="cfgQuitarPortadaVideoDesktop" style="margin-top:10px;">Quitar video de computador (mostrar solo la foto)</button>
+    <button class="mg-btn ghost full" id="cfgQuitarPortadaVideoDesktop" style="margin-top:10px;">Quitar video de computador (volver a la foto de computador)</button>
+
+    <p class="mg-note" style="margin-top:30px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Hero — Celular</p>
+    <p class="mg-note" style="margin-top:2px;">Configuración exclusiva de celular -- nunca se muestra en computador. Si hay video, reemplaza la foto por completo (nunca se ven juntos); si no hay video, se ve la foto; si no hay ninguno, el diseño por defecto.</p>
+
+    <p class="mg-note" style="margin-top:14px;">Foto de fondo (celular). Si no subes una, se muestra el diseño por defecto.</p>
+    <div class="svc-thumb" id="cfgPortadaMobileThumb" title="Subir foto de portada (celular)"
+         style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
+           background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:26px;">📷</div>
+    <button class="mg-btn ghost full" id="cfgQuitarPortadaMobile" style="margin-top:10px;">Quitar foto de celular (volver al diseño por defecto)</button>
+
+    <p class="mg-note" style="margin-top:20px;">Video de fondo (celular, opcional). Se reproduce en bucle, sin sonido. Ideal menos de 15 MB para que cargue rápido.</p>
+    <div class="svc-thumb" id="cfgPortadaVideoThumb" title="Subir video de portada (celular)"
+         style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
+           display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;">🎬</div>
+    <button class="mg-btn ghost full" id="cfgQuitarPortadaVideo" style="margin-top:10px;">Quitar video de celular (volver a la foto de celular)</button>
   </div>
 </div>
 
@@ -4146,7 +4158,7 @@
     // Clientes/Horarios/Reseñas/ARCO: administrador y recepción sí, barbero no.
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
     ['btnClientes','btnHorarios','btnServiciosCatalogo','btnResenas','btnArco',
-     'btnArchivosMultimedia','btnVentasServicios'].forEach(id=>{
+     'btnArchivosMultimedia'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = cliOn;
     });
 
@@ -4155,6 +4167,12 @@
     // en el servidor exige lo mismo, esto solo evita mostrar el botón.
     const accesosOn = (userRole === 'ADMIN' || userPermissions.includes('CURSOS_ACCESOS')) ? '' : 'none';
     document.getElementById('btnAccesosCursos').style.display = accesosOn;
+
+    // Ventas facturadas de servicios: administrador siempre, o staff con
+    // el permiso VENTAS_SERVICIOS_VER otorgado a mano (nunca automático
+    // por rol) -- la regla de Firestore de pagosWebpay exige lo mismo.
+    const ventasServiciosOn = (userRole === 'ADMIN' || userPermissions.includes('VENTAS_SERVICIOS_VER')) ? '' : 'none';
+    document.getElementById('btnVentasServicios').style.display = ventasServiciosOn;
 
     // Campañas: por ahora solo administrador (envío masivo de correo).
     const campanasEl = document.getElementById('btnCampanas');
@@ -5257,6 +5275,7 @@
       document.getElementById('cfgHeroColorTitulo').value = d.heroColorTitulo || '#DFC08A';
       document.getElementById('cfgHeroColorTexto').value = d.heroColorTexto || '#9A9691';
       pintarPortadaThumb(d.portadaUrl || '');
+      pintarPortadaMobileThumb(d.portadaUrlMobile || '');
       pintarPortadaVideoThumb(d.heroStreamVideoId || '', d.heroStreamStatus || '');
       pintarPortadaVideoDesktopThumb(d.heroStreamVideoIdDesktop || '', d.heroStreamStatusDesktop || '');
       document.getElementById('cfgNombreNegocio').value = d.nombre || 'MASTERLOOK';
@@ -5833,7 +5852,50 @@
     try{
       await db.collection('settings').doc('negocio').set({ portadaUrl: '' }, { merge:true });
       pintarPortadaThumb('');
-      showToast('Portada del sitio restablecida al diseño por defecto');
+      showToast('Foto de computador restablecida al diseño por defecto');
+    }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
+  });
+
+  /* Foto de celular: mismo mecanismo que la de computador, pero en su
+     propio campo (portadaUrlMobile) -- configuración completamente
+     independiente, nunca comparte valor con la de computador. */
+  function pintarPortadaMobileThumb(url){
+    const thumb = document.getElementById('cfgPortadaMobileThumb');
+    if(!thumb) return;
+    thumb.style.backgroundImage = url ? `url('${url}')` : '';
+    thumb.textContent = url ? '' : '📷';
+  }
+
+  document.getElementById('cfgPortadaMobileThumb').addEventListener('click', ()=>{
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('cfgPortadaMobileThumb');
+      thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file);
+        const ref = storage.ref(`heroPhotos/${Date.now()}-mobile.jpg`);
+        await ref.put(blob, { contentType:'image/jpeg' });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ portadaUrlMobile: url }, { merge:true });
+        pintarPortadaMobileThumb(url);
+        showToast('Foto de celular actualizada');
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pintarPortadaMobileThumb('');
+      }
+    });
+    input.click();
+  });
+
+  document.getElementById('cfgQuitarPortadaMobile').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({ portadaUrlMobile: '' }, { merge:true });
+      pintarPortadaMobileThumb('');
+      showToast('Foto de celular restablecida al diseño por defecto');
     }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
   });
 
@@ -8692,10 +8754,13 @@
     { id:'COMISIONES_EDITAR', nombre:'Cambiar porcentajes',        grupo:'Dinero', sensible:true },
     { id:'USUARIOS_EDITAR',   nombre:'Dar acceso a otros',         grupo:'Dinero', sensible:true },
     { id:'CURSOS_ACCESOS',    nombre:'Otorgar, extender o revocar acceso a cursos', grupo:'Dinero', sensible:true },
+    { id:'VENTAS_SERVICIOS_VER', nombre:'Ver ventas facturadas de servicios', grupo:'Dinero', sensible:true },
   ];
 
   const PERMISOS_ROL = {
     ADMIN: PERMISOS.map(p=> p.id),
+    // VENTAS_SERVICIOS_VER queda afuera a propósito -- nunca se otorga
+    // automático por rol, solo si la dueña lo activa a mano por persona.
     RECEPTION: ['AGENDA_PROPIA','AGENDA_TODOS','AGENDA_EDITAR','RESERVAS_APROBAR',
                 'CLIENTES_VER','CLIENTES_EDITAR','TIENDA_EDITAR'],
     BARBER: ['AGENDA_PROPIA'],

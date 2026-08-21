@@ -2110,21 +2110,43 @@
     if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
   }catch(e){}
 
-  /* La foto de portada real vive en Firestore y tarda un poco en llegar --
-     mientras tanto se veía primero el diseño por defecto (degradado +
-     botellas) y luego "saltaba" a la foto. Guardamos la última foto
-     confirmada (ver pintarFondoHero más abajo) y la aplicamos aquí mismo,
-     antes de que se pinte nada, para que no se note el salto en las
-     próximas visitas. */
+  /* Hero de computador y hero de celular son dos configuraciones
+     completamente independientes (foto propia, video propio, caché propia
+     -- ver pintarFondoHeroDesktop()/pintarFondoHeroMobile() más abajo en el
+     archivo). Acá, antes del primer pintado, se determina la plataforma
+     actual UNA sola vez y solo se lee la caché de ESA plataforma -- nunca
+     la de la otra, para que un recurso de computador no pueda aparecer en
+     celular ni viceversa.
+
+     Si la plataforma actual ya tiene un VIDEO confirmado en una visita
+     anterior, la foto ni se intenta pintar: el video manda, siempre, sin
+     excepción (ver el <script> de más abajo, después de .hero-bg, que es
+     el que efectivamente adelanta ese video). Solo si NO hay video
+     confirmado para esta plataforma se aplica su propia foto en caché,
+     para no repetir el salto "diseño por defecto -> foto" en visitas
+     siguientes -- exactamente lo que ya existía para la foto, ahora
+     separado de verdad por plataforma. */
   try{
-    var portadaCache = localStorage.getItem('masterlook_portada');
-    if(portadaCache){
-      var stPortada = document.createElement('style');
-      stPortada.textContent =
-        ".hero-bg{background-image:url('" + portadaCache.replace(/'/g, "\\'") + "'); background-size:cover; background-position:center 20%;}" +
-        ".hero-bg::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg, rgba(10,10,11,.97) 0%, rgba(10,10,11,.9) 38%, rgba(10,10,11,.55) 62%, rgba(10,10,11,.28) 100%);}" +
-        ".hero-productos{display:none;}";
-      document.head.appendChild(stPortada);
+    var esMovilPre = !window.matchMedia('(min-width:901px)').matches;
+    var prefijoHeroPre = esMovilPre ? 'mobile' : 'desktop';
+    window.__heroPlataforma = prefijoHeroPre;
+    var videoCachePre = localStorage.getItem('masterlook_video_' + prefijoHeroPre);
+    if(!videoCachePre){
+      var portadaCache = localStorage.getItem('masterlook_portada_' + prefijoHeroPre);
+      if(portadaCache){
+        var stPortada = document.createElement('style');
+        stPortada.textContent =
+          ".hero-bg{background-image:url('" + portadaCache.replace(/'/g, "\\'") + "'); background-size:cover; background-position:center 20%;}" +
+          ".hero-bg::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg, rgba(10,10,11,.97) 0%, rgba(10,10,11,.9) 38%, rgba(10,10,11,.55) 62%, rgba(10,10,11,.28) 100%);}" +
+          ".hero-productos{display:none;}" +
+          // en computador, .hero.tiene-foto sube el alto mínimo del hero
+          // (ver CSS más arriba); como el HTML ya no trae esa clase escrita
+          // a mano, se repite acá el mismo alto para que no haya un salto
+          // de tamaño mientras se espera a que pintarFondoHeroDesktop() la
+          // agregue de vuelta.
+          (esMovilPre ? '' : '@media (min-width:901px){ .hero{min-height:400px;} }');
+        document.head.appendChild(stPortada);
+      }
     }
   }catch(e){}
 </script>
@@ -2195,76 +2217,56 @@
   </div>
 </aside>
 
-<!-- ===== Hero de productos ===== -->
-<!-- La foto de portada real (subida desde el panel) queda escrita acá directo,
-     no solo por JS/Firestore: algunos navegadores integrados (como el de
-     WhatsApp) no guardan localStorage de forma confiable entre visitas, así
-     que dependiendo solo de eso, esos casos siguen viendo el diseño por
-     defecto (degradado + botellas) antes de que cargue la foto real. Si la
-     foto de portada cambia desde el panel, actualizar también esta línea
-     para que coincida (pintarFondoHero() ya la mantiene igual para todos
-     los visitantes normales; esto es el respaldo para el primer pintado).
-
-     Mismo problema con el VIDEO de fondo en celular (heroStreamVideoId):
-     antes de este cambio, el <video> recién se creaba por JS después de que
-     Firestore confirmara el ID, así que siempre se alcanzaba a ver la foto
-     de portada un instante antes de que apareciera el video encima -- un
-     salto FOTO -> VIDEO visible en cada visita, no solo la primera. El
-     <video> ahora existe desde este mismo primer render (vacío, sin src) y
-     el script de abajo le asigna el ID conocido de inmediato en celular, sin
-     esperar a Firestore. Si el video de portada cambia desde el panel,
-     actualizar también el atributo data-hero-video-fallback de más abajo
-     para que coincida (igual que con la foto). -->
-<section class="hero tiene-foto">
-  <div class="hero-bg tiene-foto" style="background-image:url('https://firebasestorage.googleapis.com/v0/b/estudio90.firebasestorage.app/o/heroPhotos%2F1786812317013.jpg?alt=media&token=5cd0b83d-64d0-40f4-b185-598fbf96ff09');">
-    <video class="hero-video" id="heroVideoFallback" muted loop playsinline autoplay preload="none"
-      data-hero-video-fallback="09ef6a54-4b98-4332-87ec-c56a78973cfd"></video>
+<!-- ===== Hero de productos =====
+     Computador y celular son dos configuraciones completamente
+     independientes (foto propia, video propio -- ver settings/negocio:
+     portadaUrl/heroStreamVideoIdDesktop para computador,
+     portadaUrlMobile/heroStreamVideoId para celular). Nada queda escrito
+     a mano acá: ni una foto ni un ID de video fijos, porque eso se
+     desactualiza en cuanto alguien cambia el archivo desde el panel (video
+     A -> video viejo hardcodeado -> video B, exactamente lo que no se
+     quiere). El primer pintado se resuelve con la caché dinámica que
+     pintarFondoHeroDesktop()/pintarFondoHeroMobile() van dejando en
+     localStorage cada vez que confirman un valor real de Firestore (ver el
+     script de arriba, justo después de <body>, y el de abajo) -- siempre
+     el último valor real, nunca un dato fijo. -->
+<section class="hero">
+  <div class="hero-bg">
+    <video class="hero-video" id="heroVideo" muted loop playsinline autoplay preload="none"></video>
   </div>
   <script>
-    /* En celular, si ya sabemos que hay un video de fondo configurado (el
-       ID de respaldo de abajo), la FOTO no debe verse ni un instante --
-       aunque el video mismo (que se transmite por red, HLS real) todavía
-       tarde en traer su primer segmento, no importa cuál navegador sea. Se
-       quita la foto de inmediato acá y el fondo queda con el degradado
-       oscuro propio de .hero-bg (su estado por defecto, no una foto ni una
-       pantalla negra) mientras el video termina de cargar.
+    /* Adelanta el video de fondo de ESTA plataforma (la que ya se resolvió
+       arriba, justo después de <body>, en window.__heroPlataforma) sin
+       esperar a Firestore ni a hls.js (que carga con defer): si hay un
+       video confirmado en una visita anterior para esta misma plataforma,
+       se asigna acá mismo. En iOS/Safari (y los navegadores basados en
+       WebKit de iOS, que comparten el mismo soporte nativo de HLS) eso
+       alcanza para empezar a reproducir de inmediato, sin esperar nada más.
+       pintarFondoHeroDesktop()/pintarFondoHeroMobile() (más abajo en el
+       archivo) revisan video.dataset.src antes de reintentar adjuntar, así
+       que si el valor real de Firestore coincide con esta caché, no hay
+       reinicio ni salto.
 
-       Además, en iOS/Safari (y los navegadores basados en WebKit de iOS,
-       que comparten el mismo soporte nativo de HLS) se puede asignar el
-       .src directo al m3u8 y empezar a cargarlo de inmediato, sin esperar a
-       Firestore ni a hls.js (que carga con defer) -- ahí el video mismo
-       también arranca lo antes posible, no solo se oculta la foto.
-       pintarFondoHero() (ver más abajo en el archivo) revisa
-       video.dataset.src antes de reintentar adjuntar, así que si el ID real
-       de Firestore coincide con este de respaldo, no hay reinicio ni salto.
-
-       En Android/Chrome NO se asigna src acá: su propio comentario en
+       En Android/Chrome NO se asigna .src acá: el comentario de
        adjuntarHls() explica que canPlayType() miente en esos navegadores,
-       así que ahí se deja el <video> ya creado (cumple con que exista desde
-       el primer render, y ya sin la foto detrás) pero la conexión HLS real
-       la sigue haciendo pintarFondoHero() con hls.js, exactamente como
-       antes -- lo único nuevo para ese caso es que ya no se ve la foto
-       mientras tanto. */
+       así que ahí se deja el <video> ya creado (cumple con que exista
+       desde el primer render) pero la conexión HLS real la sigue haciendo
+       pintarFondoHeroDesktop()/pintarFondoHeroMobile() con hls.js, sin
+       cambios respecto a ese caso. */
     try{
-      var esMovilHero = !window.matchMedia('(min-width:901px)').matches;
-      var vHeroFallback = document.getElementById('heroVideoFallback');
-      var idHeroFallback = vHeroFallback.dataset.heroVideoFallback;
-      if(esMovilHero && idHeroFallback){
-        var bgHero = document.querySelector('.hero-bg');
-        bgHero.style.backgroundImage = 'none';
-        bgHero.classList.remove('tiene-foto');
-        bgHero.classList.add('tiene-video');
-        document.querySelector('.hero').classList.remove('tiene-foto');
+      var vHero = document.getElementById('heroVideo');
+      var videoCacheHero = localStorage.getItem('masterlook_video_' + window.__heroPlataforma);
+      if(videoCacheHero){
+        document.querySelector('.hero-bg').classList.add('tiene-video');
         document.querySelector('.hero').classList.add('tiene-video');
 
         var esIOSHero = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         if(esIOSHero){
-          var urlHeroFallback = 'https://vz-3106d8eb-0d1.b-cdn.net/' + idHeroFallback + '/playlist.m3u8';
-          vHeroFallback.preload = 'auto';
-          vHeroFallback.dataset.src = urlHeroFallback;
-          vHeroFallback.src = urlHeroFallback;
-          vHeroFallback.play().catch(function(){});
+          vHero.preload = 'auto';
+          vHero.dataset.src = videoCacheHero;
+          vHero.src = videoCacheHero;
+          vHero.play().catch(function(){});
         }
       }
     }catch(e){}
@@ -3968,45 +3970,47 @@
   }
   // mismo punto de corte que el CSS de escritorio del hero (@media min-width:901px)
   const mqHeroDesktop = window.matchMedia('(min-width:901px)');
-  /** Foto (y opcionalmente video) de fondo del hero principal, subidos desde el panel; si no hay, se ve el diseño por defecto. */
+  /** Hero de computador y hero de celular son DOS configuraciones
+   *  completamente independientes -- cada una con su propia foto, su propio
+   *  video, y su propia caché -- sin ningún fallback entre ellas. Si
+   *  celular tiene video, celular es video, punto: no importa qué haya
+   *  configurado (o no) en computador. Comparten el mismo <div class=
+   *  "hero-bg"> como lugar donde pintarse (no hay necesidad de dos
+   *  elementos paralelos con uno oculto por CSS), pero cada función de
+   *  abajo SOLO lee los campos de Firestore de su propia plataforma. */
   function pintarFondoHero(){
+    if(mqHeroDesktop.matches) pintarFondoHeroDesktop();
+    else pintarFondoHeroMobile();
+  }
+  function pintarFondoHeroDesktop(){
     const hero = document.querySelector('.hero');
     const bg = document.querySelector('.hero-bg');
     const productos = document.querySelector('.hero-productos');
     if(!bg) return;
     const url = horarioNegocio.portadaUrl;
-
-    // video de fondo, opcional: se calcula ANTES que la foto porque, si hay
-    // video para el viewport actual, la foto no debe pintarse -- ni como
-    // respaldo mientras el video carga -- para no repetir el salto
-    // foto->video (ver el <script> justo después de .hero-bg más abajo, que
-    // ya la oculta en el primer render; esto es lo que la mantenía oculta
-    // una vez Firestore respondía). Celular y computador usan videos
-    // independientes porque el recorte del hero es muy distinto entre los
-    // dos (ver mqHeroDesktop mas abajo).
-    const heroVideoId = mqHeroDesktop.matches
-      ? (horarioNegocio.heroStreamStatusDesktop === 'ready' ? horarioNegocio.heroStreamVideoIdDesktop : '')
-      : (horarioNegocio.heroStreamStatus === 'ready' ? horarioNegocio.heroStreamVideoId : '');
-    const videoUrl = heroVideoId ? bunnyPlaylistUrl(heroVideoId) : '';
+    const videoId = horarioNegocio.heroStreamStatusDesktop === 'ready' ? horarioNegocio.heroStreamVideoIdDesktop : '';
+    const videoUrl = videoId ? bunnyPlaylistUrl(videoId) : '';
 
     const mostrarFoto = !!url && !videoUrl;
     if(hero) hero.classList.toggle('tiene-foto', mostrarFoto);
     bg.classList.toggle('tiene-foto', mostrarFoto);
     bg.style.backgroundImage = mostrarFoto ? `url('${url}')` : '';
-    if(productos) productos.style.display = url ? 'none' : '';
-    // guardamos la foto ya confirmada para que la próxima visita no tenga
-    // que esperar a Firestore para mostrarla (ver el <script> justo después de <body>)
+    if(productos) productos.style.display = (url || videoUrl) ? 'none' : '';
+    // guardamos la foto de COMPUTADOR ya confirmada para que la próxima
+    // visita no tenga que esperar a Firestore para mostrarla (ver el
+    // <script> justo después de <body>) -- clave separada de la de celular.
     try{
-      if(url) localStorage.setItem('masterlook_portada', url);
-      else localStorage.removeItem('masterlook_portada');
+      if(mostrarFoto) localStorage.setItem('masterlook_portada_desktop', url);
+      else localStorage.removeItem('masterlook_portada_desktop');
     }catch(e){}
+
     let video = bg.querySelector('.hero-video');
     bg.classList.toggle('tiene-video', !!videoUrl);
     if(hero) hero.classList.toggle('tiene-video', !!videoUrl);
     if(videoUrl){
       if(!video){
         video = document.createElement('video');
-        video.className = 'hero-video';
+        video.className = 'hero-video'; video.id = 'heroVideo';
         video.autoplay = true; video.muted = true; video.loop = true; video.playsInline = true;
         video.setAttribute('preload', 'auto');
         bg.appendChild(video);
@@ -4016,8 +4020,60 @@
         adjuntarHls(video, videoUrl);
         video.play().catch(()=>{});
       }
-    }else if(video){
-      video.remove();
+      try{ localStorage.setItem('masterlook_video_desktop', videoUrl); }catch(e){}
+    }else{
+      if(video) video.remove();
+      try{ localStorage.removeItem('masterlook_video_desktop'); }catch(e){}
+    }
+  }
+  function pintarFondoHeroMobile(){
+    const hero = document.querySelector('.hero');
+    const bg = document.querySelector('.hero-bg');
+    const productos = document.querySelector('.hero-productos');
+    if(!bg) return;
+    const url = horarioNegocio.portadaUrlMobile;
+    const videoId = horarioNegocio.heroStreamStatus === 'ready' ? horarioNegocio.heroStreamVideoId : '';
+    const videoUrl = videoId ? bunnyPlaylistUrl(videoId) : '';
+
+    const mostrarFoto = !!url && !videoUrl;
+    if(hero) hero.classList.toggle('tiene-foto', mostrarFoto);
+    bg.classList.toggle('tiene-foto', mostrarFoto);
+    bg.style.backgroundImage = mostrarFoto ? `url('${url}')` : '';
+    if(productos) productos.style.display = (url || videoUrl) ? 'none' : '';
+    // guardamos la foto de CELULAR ya confirmada para que la próxima visita
+    // no tenga que esperar a Firestore para mostrarla (ver el <script>
+    // justo después de <body>) -- clave separada de la de computador.
+    try{
+      if(mostrarFoto) localStorage.setItem('masterlook_portada_mobile', url);
+      else localStorage.removeItem('masterlook_portada_mobile');
+    }catch(e){}
+
+    let video = bg.querySelector('.hero-video');
+    bg.classList.toggle('tiene-video', !!videoUrl);
+    if(hero) hero.classList.toggle('tiene-video', !!videoUrl);
+    if(videoUrl){
+      if(!video){
+        video = document.createElement('video');
+        video.className = 'hero-video'; video.id = 'heroVideo';
+        video.autoplay = true; video.muted = true; video.loop = true; video.playsInline = true;
+        video.setAttribute('preload', 'auto');
+        bg.appendChild(video);
+      }
+      if(video.dataset.src !== videoUrl){
+        video.dataset.src = videoUrl;
+        adjuntarHls(video, videoUrl);
+        video.play().catch(()=>{});
+      }
+      // guardamos el video de CELULAR ya confirmado: es lo que el <script>
+      // justo después de <body> usa para asignar el video de inmediato en
+      // la próxima visita, sin esperar a Firestore -- nunca un ID fijo
+      // escrito a mano en el HTML (eso sí quedaba desactualizado si se
+      // cambiaba el video desde el panel; esta caché siempre refleja el
+      // último video real confirmado).
+      try{ localStorage.setItem('masterlook_video_mobile', videoUrl); }catch(e){}
+    }else{
+      if(video) video.remove();
+      try{ localStorage.removeItem('masterlook_video_mobile'); }catch(e){}
     }
   }
   /** Textos del hero (ojo, titulo, parrafo), editables desde el panel; si no
