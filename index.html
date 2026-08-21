@@ -2197,9 +2197,53 @@
      defecto (degradado + botellas) antes de que cargue la foto real. Si la
      foto de portada cambia desde el panel, actualizar también esta línea
      para que coincida (pintarFondoHero() ya la mantiene igual para todos
-     los visitantes normales; esto es el respaldo para el primer pintado). -->
+     los visitantes normales; esto es el respaldo para el primer pintado).
+
+     Mismo problema con el VIDEO de fondo en celular (heroStreamVideoId):
+     antes de este cambio, el <video> recién se creaba por JS después de que
+     Firestore confirmara el ID, así que siempre se alcanzaba a ver la foto
+     de portada un instante antes de que apareciera el video encima -- un
+     salto FOTO -> VIDEO visible en cada visita, no solo la primera. El
+     <video> ahora existe desde este mismo primer render (vacío, sin src) y
+     el script de abajo le asigna el ID conocido de inmediato en celular, sin
+     esperar a Firestore. Si el video de portada cambia desde el panel,
+     actualizar también el atributo data-hero-video-fallback de más abajo
+     para que coincida (igual que con la foto). -->
 <section class="hero tiene-foto">
-  <div class="hero-bg tiene-foto" style="background-image:url('https://firebasestorage.googleapis.com/v0/b/estudio90.firebasestorage.app/o/heroPhotos%2F1786812317013.jpg?alt=media&token=5cd0b83d-64d0-40f4-b185-598fbf96ff09');"></div>
+  <div class="hero-bg tiene-foto" style="background-image:url('https://firebasestorage.googleapis.com/v0/b/estudio90.firebasestorage.app/o/heroPhotos%2F1786812317013.jpg?alt=media&token=5cd0b83d-64d0-40f4-b185-598fbf96ff09');">
+    <video class="hero-video" id="heroVideoFallback" muted loop playsinline autoplay preload="none"
+      data-hero-video-fallback="09ef6a54-4b98-4332-87ec-c56a78973cfd"></video>
+  </div>
+  <script>
+    /* Adelanta el video de fondo del hero en celular, sin esperar a
+       Firestore ni a hls.js (que carga con defer): en iOS/Safari (y los
+       navegadores basados en WebKit de iOS, que comparten el mismo soporte
+       nativo de HLS) se puede asignar el .src directo al m3u8 y reproducir
+       de inmediato. pintarFondoHero() (ver más abajo en el archivo) revisa
+       video.dataset.src antes de reintentar adjuntar, así que si el ID real
+       de Firestore coincide con este de respaldo, no hay reinicio ni salto.
+       En Android/Chrome NO se asigna src acá: su propio comentario en
+       adjuntarHls() explica que canPlayType() miente en esos navegadores,
+       así que ahí se deja el <video> ya creado (cumple con que exista desde
+       el primer render) pero la conexión HLS real la sigue haciendo
+       pintarFondoHero() con hls.js, exactamente como antes. */
+    try{
+      var esMovilHero = !window.matchMedia('(min-width:901px)').matches;
+      var esIOSHero = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if(esMovilHero && esIOSHero){
+        var vHeroFallback = document.getElementById('heroVideoFallback');
+        var idHeroFallback = vHeroFallback.dataset.heroVideoFallback;
+        var urlHeroFallback = 'https://vz-3106d8eb-0d1.b-cdn.net/' + idHeroFallback + '/playlist.m3u8';
+        vHeroFallback.preload = 'auto';
+        vHeroFallback.dataset.src = urlHeroFallback;
+        vHeroFallback.src = urlHeroFallback;
+        vHeroFallback.play().catch(function(){});
+        document.querySelector('.hero-bg').classList.add('tiene-video');
+        document.querySelector('.hero').classList.add('tiene-video');
+      }
+    }catch(e){}
+  </script>
   <div class="hero-in">
     <div class="hero-txt">
       <div class="hero-eyebrow" id="heroEyebrow">Cuidado que</div>
