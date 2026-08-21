@@ -1417,7 +1417,18 @@
     <div class="stock-chips" id="stockChips"></div>
     <div class="topbar-right">
       <div class="period-pill">Ago 2026</div>
-      <div class="avatar-round" id="who" title="Menú">AD</div>
+      <div class="user-menu-wrap">
+        <div class="avatar-round" id="who" title="Mi cuenta">AD</div>
+        <div class="user-menu" id="userMenu">
+          <button class="user-menu-item" id="btnEquipoVer">Ver equipo</button>
+          <button class="user-menu-item" id="btnEquipoNuevo">Registrar nuevo</button>
+          <div class="user-menu-sep" id="userMenuSepEquipo"></div>
+          <button class="user-menu-item" id="btnMiPerfil">Mi perfil</button>
+          <button class="user-menu-item" id="btnConfig">Configurar</button>
+          <div class="user-menu-sep"></div>
+          <button class="user-menu-item danger" id="btnSalir">Cerrar sesión</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1519,19 +1530,6 @@
         </div>
       </div>
     </nav>
-    <div class="menu-pie">
-      <div class="nav-section-label">Cuenta</div>
-      <div class="nav-group" id="grupoMiEquipo" style="display:none;">
-        <button class="nav-group-head" type="button">Mi equipo</button>
-        <div class="nav-group-items">
-          <button class="menu-panel-item" id="btnEquipoVer">Ver equipo</button>
-          <button class="menu-panel-item" id="btnEquipoNuevo">Registrar nuevo</button>
-        </div>
-      </div>
-      <button class="menu-panel-item" id="btnMiPerfil">Mi perfil</button>
-      <button class="menu-panel-item" id="btnConfig">Configurar</button>
-      <button class="menu-panel-item danger" id="btnSalir">Cerrar sesión</button>
-    </div>
   </aside>
 
   <div class="content">
@@ -3708,15 +3706,29 @@
   document.getElementById('lgEntrar').addEventListener('click', intentarIngreso);
   document.getElementById('btnSalir')?.addEventListener('click', salirDelPanel);
 
-  // ---------- Menú lateral (único: hamburguesa y avatar abren lo mismo) ----------
+  // ---------- Menú lateral (hamburguesa: secciones del negocio) ----------
   const menuLateralOverlay = document.getElementById('menuLateralOverlay');
   const menuLateralPanel = document.getElementById('menuLateralPanel');
   function abrirMenuLateral(){ menuLateralOverlay.classList.add('open'); menuLateralPanel.classList.add('open'); }
   function cerrarMenuLateral(){ menuLateralOverlay.classList.remove('open'); menuLateralPanel.classList.remove('open'); }
   document.getElementById('btnMenuLateral').addEventListener('click', abrirMenuLateral);
-  document.getElementById('who').addEventListener('click', abrirMenuLateral);
   document.getElementById('cerrarMenuLateral').addEventListener('click', cerrarMenuLateral);
   menuLateralOverlay.addEventListener('click', cerrarMenuLateral);
+
+  // ---------- Menú de cuenta (avatar): Mi equipo/Mi perfil/Configurar/Cerrar sesión ----------
+  const userMenu = document.getElementById('userMenu');
+  document.getElementById('who').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    userMenu.classList.toggle('open');
+  });
+  userMenu.querySelectorAll('.user-menu-item').forEach(item=>{
+    item.addEventListener('click', ()=> userMenu.classList.remove('open'));
+  });
+  document.addEventListener('click', (e)=>{
+    if(userMenu.classList.contains('open') && !e.target.closest('.user-menu-wrap')){
+      userMenu.classList.remove('open');
+    }
+  });
 
   // Grupos expandibles (Reservas, Servicios, Academy, Tienda, Equipo barberos,
   // Clientes y datos, Mi equipo, Más): un clic en el título abre/cierra el
@@ -4478,6 +4490,9 @@
      'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
+    // El separador de "Mi equipo" en el menú de cuenta solo tiene sentido si
+    // esos dos ítems están visibles -- evita dejar una línea suelta sin nada arriba.
+    document.getElementById('userMenuSepEquipo').style.display = soloAdmin;
 
     // Mis comisiones: SOLO barbero (su propio resumen) -- el administrador ya
     // no usa este botón, usa el grupo "Comisiones" de abajo (información de
