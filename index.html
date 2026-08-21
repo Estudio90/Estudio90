@@ -22,24 +22,24 @@
   :root{
     --font-primary:'General Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
-    --negro:#0A0A0B;
+    --negro:#000000;
     --carbon:#121214;
     --grafito:#191919;
     --humo:#232326;
     --linea:rgba(255,255,255,.14);
     --linea-fuerte:rgba(255,255,255,.22);
 
-    --hueso:#F2F0EC;
+    --hueso:#f5f5f5;
     --gris:#9A9691;
     --gris-tenue:#6B6862;
 
-    --oro:#C9A76A;
+    --oro:#e9eceb;
     --oro-claro:#DFC08A;
-    --oro-tenue:rgba(201,167,106,.14);
+    --oro-tenue:rgba(233,236,235,.14);
 
     --ok:#5C8A63;
     --glass:rgba(11,11,12,.9);
-    --glass-nav:rgba(14,13,12,.62);
+    --glass-nav:rgba(14,13,12,.24);
 
     --bg:var(--negro);
     --panel:var(--carbon);
@@ -65,22 +65,22 @@
      banner de Academy se anclan a sus propios valores oscuros más abajo,
      porque su fondo es una ilustración fija que no cambia con el tema. */
   :root[data-theme="light"]{
-    --negro:#FFFFFF;
+    --negro:#fcfcfc;
     --carbon:#FFFFFF;
     --grafito:#F5F5F7;
     --humo:#EBEBEE;
     --linea:rgba(20,20,25,.14);
     --linea-fuerte:rgba(20,20,25,.22);
 
-    --hueso:#17171B;
+    --hueso:#1c1c1c;
     --gris:#5B5A62;
     --gris-tenue:#8B8A91;
 
-    --oro:#96731F;
-    --oro-tenue:rgba(150,115,31,.13);
+    --oro:#adadad;
+    --oro-tenue:rgba(173,173,173,.13);
 
     --glass:rgba(255,255,255,.86);
-    --glass-nav:rgba(255,255,255,.62);
+    --glass-nav:rgba(255,255,255,.7);
     --shadow-sm:0 1px 2px rgba(20,20,25,.06);
     --shadow-md:0 14px 40px rgba(20,20,25,.10);
     --shadow-hover:0 18px 46px rgba(20,20,25,.14);
@@ -154,10 +154,10 @@
     /* el fondo del hero es una ilustración oscura fija: sus hijos siguen
        usando estos mismos nombres de variable, pero ancladas al valor
        oscuro para que el texto no se rompa si el sitio está en tema claro */
-    --hueso:#F2F0EC; --gris:#9A9691; --gris-tenue:#6B6862;
+    --hueso:#F2F0EC; --gris:#f1f4f9; --gris-tenue:#6B6862;
     --linea:rgba(255,255,255,.08); --linea-fuerte:rgba(255,255,255,.16);
-    --oro:#C9A76A; --oro-tenue:rgba(201,167,106,.14);
-    --hero-titulo-color:var(--oro-claro);
+    --oro:#e9eceb; --oro-tenue:rgba(233,236,235,.14);
+    --hero-titulo-color:#8c8c8c;
   }
   .hero-bg{position:absolute; inset:0;
     background:
