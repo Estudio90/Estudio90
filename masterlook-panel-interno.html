@@ -21,6 +21,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+<!-- Generador de PDF para la cartola de comisiones (Comisiones > Comisiones barberos) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -337,34 +340,6 @@
   .now-badge{position:absolute;left:8px;top:-9px;font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:9.5px;color:#fff;background:var(--onda);padding:1px 6px;border-radius:3px;font-weight:600;z-index:6;}
 
   /* ---------- Appointment cards ---------- */
-  .web-actions{
-    display:none; margin-top:18px; padding:16px;
-    border:1px solid rgba(74,92,240,0.28); background:rgba(74,92,240,0.05); border-radius:12px;
-  }
-  .web-actions.show{display:block;}
-  .web-actions-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; flex-wrap:wrap;}
-  .web-tag{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:9px; letter-spacing:0.08em; background:#4a5cf0; color:#fff; padding:3px 8px; border-radius:5px;}
-  .web-state{font-size:11px; font-weight:600;}
-  .web-state.aprobada{color:#189d79;}
-  .web-state.rechazada{color:#c0392b;}
-  .web-actions-note{font-size:11.5px; color:var(--text-mid); line-height:1.5; margin-bottom:12px;}
-  .web-actions-btns{display:flex; gap:8px;}
-  .btn-approve, .btn-reject, .btn-cancel-rej{
-    flex:1; padding:10px; border-radius:9px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid transparent;
-    font-family:inherit;
-  }
-  .btn-approve{background:#189d79; color:#fff;}
-  .btn-approve:hover{background:#148465;}
-  .btn-reject{background:#fff; color:#c0392b; border-color:rgba(192,57,43,0.35);}
-  .btn-reject:hover{background:#fdf0ef;}
-  .btn-cancel-rej{background:var(--panel-2, #f1f1f4); color:var(--text-mid); border-color:var(--border);}
-  .web-reject-box{display:none; margin-top:10px;}
-  .web-reject-box.show{display:block;}
-  .reject-select{
-    width:100%; padding:9px 11px; border-radius:9px; border:1px solid var(--border);
-    font-family:inherit; font-size:12px; margin-bottom:10px; background:#fff;
-  }
-  .appt.web-rejected{opacity:0.45; text-decoration:line-through;}
 
   /* ===== barra de semana ===== */
   .week-strip{display:flex; gap:6px; padding:12px 16px; border-bottom:1px solid var(--border); overflow-x:auto;}
@@ -645,6 +620,48 @@
   .cx-det td{background:#f8f8fa;padding:10px 13px;font-size:12px;}
   .cx-drow{display:flex;justify-content:space-between;padding:5px 0;color:#6c6b74;gap:12px;}
 
+  /* filtros de periodo/profesional de Comisiones barberos y Propinas */
+  .cx-apartados{margin-bottom:16px;}
+  .cx-filtros-box{display:flex;gap:22px;flex-wrap:wrap;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;background:#fafafb;}
+  .cx-filtros-col{flex:1;min-width:220px;}
+  .cx-flabel{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6c6b74;margin-bottom:8px;}
+  .cx-periodo-info{font-size:13px;font-weight:600;color:#1A1815;}
+  .cx-periodo-info .cx-flabel{color:#6c6b74;font-weight:700;}
+  #cxPeriodoTxt,#tpPeriodoTxt{font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
+  .cx-tbl-title{font-size:15px;font-weight:600;margin:4px 0 12px;}
+  select.mg-input#cxFiltroPro,select.mg-input#tpFiltroPro{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:#fff;}
+
+  /* botón "Descargar cartola" con menú desplegable PDF/Excel */
+  .cx-dl-wrap{position:relative;}
+  .cx-dl-menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--border);
+    border-radius:10px;box-shadow:0 8px 24px rgba(20,19,17,.14);padding:6px;z-index:20;min-width:200px;}
+  .cx-dl-menu button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 11px;
+    border:none;background:none;border-radius:7px;font-size:13px;font-family:inherit;cursor:pointer;color:#1A1815;}
+  .cx-dl-menu button:hover{background:#f8f8fa;}
+
+  /* Estado (Pendiente/Pagado) y menú de acciones por fila */
+  .cx-estado{display:inline-block;padding:4px 11px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+  .cx-estado.pendiente{background:#fdf1e0;color:#a3690f;}
+  .cx-estado.pagado{background:#e3f3ea;color:#1e7e4c;}
+  .cx-acciones-wrap{position:relative;}
+  .cx-acciones-btn{border:none;background:none;cursor:pointer;font-size:16px;color:#6c6b74;padding:4px 8px;border-radius:6px;}
+  .cx-acciones-btn:hover{background:#f0f0f2;}
+  .cx-acciones-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);
+    border-radius:9px;box-shadow:0 8px 24px rgba(20,19,17,.14);padding:5px;z-index:20;min-width:180px;}
+  .cx-acciones-menu button{display:block;width:100%;text-align:left;padding:8px 10px;border:none;background:none;
+    border-radius:6px;font-size:12.5px;font-family:inherit;cursor:pointer;color:#1A1815;}
+  .cx-acciones-menu button:hover{background:#f8f8fa;}
+  #cxTotalesFila td,#tpTotalesFila td{font-weight:700;border-top:2px solid #1A1815;font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
+
+  @media (max-width:760px){
+    .cx-filtros-box{flex-direction:column;gap:14px;}
+  }
+  @media print{
+    .menu-panel,.kpi-row,.cx-head .ctrl-btn,.cx-apartados,#cxAccionesReporte,.cx-acciones-wrap,#tpAccionesReporte{display:none!important;}
+    .cx-panel{box-shadow:none;border:none;}
+    body{background:#fff;}
+  }
+
   .cx-bulk{display:flex;gap:8px;align-items:center;background:#eef0fd;border:1px solid #d9ddfb;border-radius:9px;padding:11px 13px;margin-bottom:16px;flex-wrap:wrap;}
   .cx-bulk .lbl{font-size:12.5px;font-weight:600;flex:1;min-width:150px;}
   .cx-sgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -662,6 +679,14 @@
     .cx-sgrid{grid-template-columns:1fr;}
     .cx-pros{grid-template-columns:1fr;}
     .cx-table td:nth-child(3),.cx-table th:nth-child(3){display:none;}
+    /* la tabla de Comisiones barberos/Propinas tiene más columnas que las
+       demás .cx-table (Hora/Cliente/Servicio de "Mis comisiones", Fecha/
+       Producto/... de Productos) -- en vez de ocultar una columna más,
+       queda con scroll horizontal propio para no perder datos financieros. */
+    #cxReporte .cx-tablebox,#vistaPropinas .cx-tablebox{overflow-x:auto;}
+    #cxReporte .cx-table,#vistaPropinas .cx-table{min-width:680px;}
+    #cxReporte .cx-table td:nth-child(3),#cxReporte .cx-table th:nth-child(3),
+    #vistaPropinas .cx-table td:nth-child(3),#vistaPropinas .cx-table th:nth-child(3){display:table-cell;}
   }
 
   .rc-summary{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;}
@@ -1398,11 +1423,10 @@
       <button class="menu-panel-item" id="btnRecordatorios">Recordatorios</button>
 
       <div class="nav-section-label">Vista cliente</div>
-      <button class="menu-panel-item" id="btnVistaPrevia">Vista previa</button>
       <button class="menu-panel-item" id="btnMensajeriaWhatsapp">Mensajería WhatsApp</button>
 
       <div class="nav-group" id="grupoReservas">
-        <button class="nav-group-head" type="button">Reservas <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Reservas</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnReservasVer">Ver todas las reservas</button>
           <button class="menu-panel-item" id="btnReservaNueva">Nueva reserva</button>
@@ -1410,7 +1434,7 @@
       </div>
 
       <div class="nav-group" id="grupoServicios" style="display:none;">
-        <button class="nav-group-head" type="button">Servicios <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Servicios</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnServiciosCatalogo">Panel · catálogo</button>
           <button class="menu-panel-item" id="btnVentasServicios">Ventas facturadas</button>
@@ -1418,7 +1442,7 @@
       </div>
 
       <div class="nav-group" id="grupoAcademy" style="display:none;">
-        <button class="nav-group-head" type="button">Academy <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Academy</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnAcademyVideos">Videos de cursos</button>
           <button class="menu-panel-item" id="btnAcademyPanel">Panel · cursos</button>
@@ -1428,7 +1452,7 @@
       </div>
 
       <div class="nav-group" id="grupoTienda" style="display:none;">
-        <button class="nav-group-head" type="button">Tienda <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Tienda</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnProductos">Panel · inventario</button>
           <button class="menu-panel-item" id="btnTiendaVer">Ver productos</button>
@@ -1439,17 +1463,29 @@
       <button class="menu-panel-item" id="btnResenas" style="display:none;">Reseñas</button>
 
       <div class="nav-group" id="grupoEquipo" style="display:none;">
-        <button class="nav-group-head" type="button">Equipo barberos <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Equipo barberos</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnHorarios">Horarios</button>
           <button class="menu-panel-item" id="btnEquipoServicios">Servicios staff</button>
-          <button class="menu-panel-item" id="btnComisiones">Comisiones</button>
-          <button class="menu-panel-item" id="btnInformeComisiones">Informe comisiones</button>
+          <button class="menu-panel-item" id="btnComisiones">Mis comisiones</button>
+        </div>
+      </div>
+
+      <!-- Solo administrador: información financiera de comisiones de TODOS
+           los profesionales. btnComisiones (arriba) es distinto -- esa es la
+           puerta de un barbero a su propio resumen, nunca al de los demás. -->
+      <div class="nav-group" id="grupoComisiones" style="display:none;">
+        <button class="nav-group-head" type="button">Comisiones</button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnComProfesionales">Profesionales</button>
+          <button class="menu-panel-item" id="btnComBarberos">Comisiones barberos</button>
+          <button class="menu-panel-item" id="btnComPropinas">Propinas</button>
+          <button class="menu-panel-item" id="btnComProductos">Productos vendidos por los profesionales</button>
         </div>
       </div>
 
       <div class="nav-group" id="grupoClientesDatos" style="display:none;">
-        <button class="nav-group-head" type="button">Clientes y datos <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Clientes y datos</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnArchivosMultimedia">Archivos multimedia</button>
           <button class="menu-panel-item" id="btnClientes">Clientes</button>
@@ -1459,7 +1495,7 @@
       </div>
 
       <div class="nav-group" id="grupoMas" style="display:none;">
-        <button class="nav-group-head" type="button">Más <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Más</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnColores">Colores del sitio</button>
           <button class="menu-panel-item" id="btnPromos">Promociones</button>
@@ -1471,7 +1507,7 @@
     <div class="menu-pie">
       <div class="nav-section-label">Cuenta</div>
       <div class="nav-group" id="grupoMiEquipo" style="display:none;">
-        <button class="nav-group-head" type="button">Mi equipo <span class="chev">▾</span></button>
+        <button class="nav-group-head" type="button">Mi equipo</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnEquipoVer">Ver equipo</button>
           <button class="menu-panel-item" id="btnEquipoNuevo">Registrar nuevo</button>
@@ -1494,11 +1530,27 @@
           <h2 class="cx-title" id="cxTitulo">Comisiones</h2>
           <p class="cx-sub" id="cxSub">Define cuánto gana cada profesional por servicio.</p>
         </div>
-        <div class="cx-nav">
-          <button class="ctrl-btn cx-navbtn on" data-cxv="config">Por servicio</button>
-          <button class="ctrl-btn cx-navbtn" data-cxv="reporte">Reporte</button>
-          <button class="ctrl-btn" id="cxVolver">← Volver a la agenda</button>
+        <div class="cx-nav" id="cxAccionesReporte" style="display:none;">
+          <button class="ctrl-btn" id="cxImprimir">🖨️ Imprimir</button>
+          <div class="cx-dl-wrap">
+            <button class="ctrl-btn primary" id="cxDescargarCartola">⬇ Descargar cartola ▾</button>
+            <div class="cx-dl-menu" id="cxDlMenu" style="display:none;">
+              <button data-cxdl="pdf">📄 Descargar en PDF</button>
+              <button data-cxdl="csv">📊 Descargar en Excel (CSV)</button>
+            </div>
+          </div>
         </div>
+        <button class="ctrl-btn" id="cxVolver">← Volver a la agenda</button>
+      </div>
+
+      <!-- Apartados de Comisiones -- 4 independientes, sin mezclar información
+           (ver también Propinas/Productos, que son vistas propias fuera de
+           este contenedor). -->
+      <div class="cx-nav cx-apartados">
+        <button class="ctrl-btn cx-navbtn on" data-cxv="config">Profesionales</button>
+        <button class="ctrl-btn cx-navbtn" data-cxv="reporte">Comisiones barberos</button>
+        <button class="ctrl-btn cx-navbtn" id="cxTabPropinas">Propinas</button>
+        <button class="ctrl-btn cx-navbtn" id="cxTabProductos">Productos vendidos por los profesionales</button>
       </div>
 
       <!-- Configuración por servicio -->
@@ -1507,45 +1559,58 @@
         <div class="cx-pros" id="cxPros"></div>
       </div>
 
-      <!-- Reporte -->
+      <!-- Reporte: "Comisiones barberos" -->
       <div class="cx-panel" id="cxReporte" style="display:none;">
-        <div class="cx-filters">
-          <div class="cx-f"><label>Desde</label><input type="date" id="cxDesde"></div>
-          <div class="cx-f"><label>Hasta</label><input type="date" id="cxHasta"></div>
-          <button class="ctrl-btn primary" id="cxBuscarRep" style="padding:10px 20px;">Buscar</button>
-        </div>
-
         <div class="cx-regla">
           Solo se paga comisión por <b>servicios efectivamente realizados</b>.
           Si el cliente no asiste, el barbero no recibe comisión aunque haya
           anticipo pagado: ese dinero queda para la barbería.
         </div>
 
-        <div class="cx-chips">
-          <button class="cx-chip" data-cxr="hoy">Hoy</button>
-          <button class="cx-chip" data-cxr="semana">Esta semana</button>
-          <button class="cx-chip on" data-cxr="mes">Este mes</button>
-          <button class="cx-chip" data-cxr="mesPasado">Mes pasado</button>
+        <div class="cx-filtros-box">
+          <div class="cx-filtros-col">
+            <label class="cx-flabel">Período</label>
+            <div class="cx-chips">
+              <button class="cx-chip on" data-cxr="15">15 días</button>
+              <button class="cx-chip" data-cxr="20">20 días</button>
+              <button class="cx-chip" data-cxr="30">30 días</button>
+              <button class="cx-chip" data-cxr="mes">Mes completo</button>
+              <button class="cx-chip" data-cxr="custom">📅 Personalizado</button>
+            </div>
+            <div class="cx-f" id="cxCustomBox" style="display:none;margin-top:10px;">
+              <div class="cx-f"><label>Desde</label><input type="date" id="cxDesde"></div>
+              <div class="cx-f"><label>Hasta</label><input type="date" id="cxHasta"></div>
+              <button class="ctrl-btn primary" id="cxBuscarRep">Buscar</button>
+            </div>
+          </div>
+          <div class="cx-filtros-col">
+            <label class="cx-flabel">Profesional</label>
+            <select class="mg-input" id="cxFiltroPro"><option value="">Todos los profesionales</option></select>
+          </div>
+          <div class="cx-filtros-col cx-periodo-info">
+            <label class="cx-flabel">📅 Período seleccionado</label>
+            <div id="cxPeriodoTxt">—</div>
+          </div>
         </div>
 
         <div class="cx-kpis">
-          <div class="cx-kpi"><div class="k">Servicios realizados</div><div class="v" id="cxServicios">0</div></div>
-          <div class="cx-kpi"><div class="k">Ventas realizadas</div><div class="v" id="cxVentas">$0</div></div>
-          <div class="cx-kpi pay"><div class="k">Comisiones a pagar</div><div class="v" id="cxComision">$0</div></div>
-          <div class="cx-kpi net"><div class="k">Queda para el local</div><div class="v" id="cxNeto">$0</div></div>
-          <div class="cx-kpi hold"><div class="k">Retenido por no show</div><div class="v" id="cxRetenido">$0</div><div class="k2" id="cxNoShows"></div></div>
+          <div class="cx-kpi"><div class="k">Total generado (servicios)</div><div class="v" id="cxVentas">$0</div><div class="k2" id="cxVentasPct">100% del total</div></div>
+          <div class="cx-kpi pay"><div class="k">Comisión total</div><div class="v" id="cxComision">$0</div><div class="k2" id="cxComisionPct">Promedio</div></div>
+          <div class="cx-kpi net"><div class="k">Total a pagar</div><div class="v" id="cxAPagar">$0</div><div class="k2">A profesionales</div></div>
+          <div class="cx-kpi"><div class="k">Profesionales activos</div><div class="v" id="cxServicios">0</div><div class="k2">Con comisiones</div></div>
         </div>
 
+        <h3 class="cx-tbl-title">Comisiones por profesional</h3>
         <div class="cx-tablebox">
           <table class="cx-table">
             <thead><tr>
-              <th>Profesional</th><th class="r">Ventas totales</th><th class="r">Comisión</th><th class="r">Monto a pagar</th>
+              <th>Profesional</th><th class="r">Total generado (servicios)</th><th class="r">% Comisión</th><th class="r">Comisión</th><th class="r">Total a pagar al profesional</th><th>Estado</th><th></th>
             </tr></thead>
             <tbody id="cxTabla"></tbody>
+            <tfoot><tr id="cxTotalesFila"></tr></tfoot>
           </table>
         </div>
-
-        <button class="ctrl-btn" id="cxExportar" style="width:100%;margin-top:12px;padding:11px;">Descargar planilla (CSV)</button>
+        <p class="mg-note" style="margin-top:14px;">Las comisiones se calculan sobre el total de servicios realizados en el período seleccionado.</p>
       </div>
 
       <!-- Resumen personal para cuentas de barbero: solo ven lo suyo -->
@@ -1567,6 +1632,67 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ===== VISTA: PROPINAS (apartado propio de Comisiones, independiente
+         de las comisiones por servicio y de los productos vendidos) ===== -->
+    <div id="vistaPropinas" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Propinas</h2>
+          <p class="cx-sub">Propinas recibidas por cada profesional.</p>
+        </div>
+        <button class="ctrl-btn" id="tpVolver">← Volver a la agenda</button>
+      </div>
+
+      <div class="cx-nav cx-apartados">
+        <button class="ctrl-btn cx-navbtn" id="tpTabProfesionales">Profesionales</button>
+        <button class="ctrl-btn cx-navbtn" id="tpTabBarberos">Comisiones barberos</button>
+        <button class="ctrl-btn cx-navbtn on">Propinas</button>
+        <button class="ctrl-btn cx-navbtn" id="tpTabProductos">Productos vendidos por los profesionales</button>
+      </div>
+
+      <div class="cx-filtros-box">
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Período</label>
+          <div class="cx-chips">
+            <button class="cx-chip on" data-tpr="15">15 días</button>
+            <button class="cx-chip" data-tpr="20">20 días</button>
+            <button class="cx-chip" data-tpr="30">30 días</button>
+            <button class="cx-chip" data-tpr="mes">Mes completo</button>
+            <button class="cx-chip" data-tpr="custom">📅 Personalizado</button>
+          </div>
+          <div class="cx-f" id="tpCustomBox" style="display:none;margin-top:10px;">
+            <div class="cx-f"><label>Desde</label><input type="date" id="tpDesde"></div>
+            <div class="cx-f"><label>Hasta</label><input type="date" id="tpHasta"></div>
+            <button class="ctrl-btn primary" id="tpBuscarRep">Buscar</button>
+          </div>
+        </div>
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Profesional</label>
+          <select class="mg-input" id="tpFiltroPro"><option value="">Todos los profesionales</option></select>
+        </div>
+        <div class="cx-filtros-col cx-periodo-info">
+          <label class="cx-flabel">📅 Período seleccionado</label>
+          <div id="tpPeriodoTxt">—</div>
+        </div>
+      </div>
+
+      <div class="cx-kpis">
+        <div class="cx-kpi pay"><div class="k">Total propinas</div><div class="v" id="tpTotal">$0</div></div>
+        <div class="cx-kpi"><div class="k">Servicios con propina</div><div class="v" id="tpServicios">0</div></div>
+        <div class="cx-kpi"><div class="k">Profesionales activos</div><div class="v" id="tpProfesionales">0</div></div>
+      </div>
+
+      <h3 class="cx-tbl-title">Propinas por profesional</h3>
+      <div class="cx-tablebox">
+        <table class="cx-table">
+          <thead><tr><th>Profesional</th><th class="r">Servicios con propina</th><th class="r">Total propinas</th></tr></thead>
+          <tbody id="tpTabla"></tbody>
+          <tfoot><tr id="tpTotalesFila"></tr></tfoot>
+        </table>
+      </div>
+      <p class="mg-note" style="margin-top:14px;">Las propinas son un registro independiente de las comisiones por servicio: nunca se suman entre sí en esta pantalla.</p>
     </div>
 
     <!-- ===== VISTA: CURSOS (Academy) ===== -->
@@ -3102,29 +3228,6 @@
       </button>
     </div>
 
-    <div class="web-actions" id="webActions">
-      <div class="web-actions-head">
-        <span class="web-tag">RESERVA ONLINE</span>
-        <span class="web-state" id="webState">Pendiente de aprobación</span>
-      </div>
-      <p class="web-actions-note" id="webNote">El cliente reservó desde el sitio web. Confirma o rechaza para notificarle en su cuenta.</p>
-      <div class="web-actions-btns" id="webBtns">
-        <button class="btn-approve" id="btnAprobar">✓ Confirmar reserva</button>
-        <button class="btn-reject" id="btnRechazar">✕ Rechazar</button>
-      </div>
-      <div class="web-reject-box" id="webRejectBox">
-        <select id="rejectReason" class="reject-select">
-          <option value="Horario ya no disponible">Horario ya no disponible</option>
-          <option value="Barbero no disponible ese día">Barbero no disponible ese día</option>
-          <option value="Local cerrado en ese horario">Local cerrado en ese horario</option>
-          <option value="Servicio requiere evaluación previa">Servicio requiere evaluación previa</option>
-        </select>
-        <div class="web-actions-btns">
-          <button class="btn-reject" id="btnRechazarConfirm">Confirmar rechazo</button>
-          <button class="btn-cancel-rej" id="btnCancelarRech">Volver</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ============ VIEW 3: Editar cita ============ -->
@@ -3537,13 +3640,14 @@
     irAlInicio();
     document.getElementById('btnNuevaReserva')?.click();
   });
-  document.getElementById('btnVistaPrevia').addEventListener('click', ()=>
-    window.open('masterlook-sitio.html', '_blank'));
   document.getElementById('btnTiendaVer').addEventListener('click', ()=>
     window.open('masterlook-sitio.html#tienda', '_blank'));
   document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarHorariosPage);
   document.getElementById('btnEquipoServicios').addEventListener('click', mostrarHorariosPage);
-  document.getElementById('btnInformeComisiones').addEventListener('click', ()=> mostrarComisiones('reporte'));
+  document.getElementById('btnComProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
+  document.getElementById('btnComBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
+  document.getElementById('btnComPropinas').addEventListener('click', mostrarPropinas);
+  document.getElementById('btnComProductos').addEventListener('click', mostrarProductos);
   ['lgUser','lgPass'].forEach(id=>
     document.getElementById(id).addEventListener('keydown', e=>{
       if(e.key === 'Enter') intentarIngreso();
@@ -4144,16 +4248,24 @@
   function mostrarControlesAdmin(){
     const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
     // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
-    // Servicios staff/Informe comisiones, Mi equipo, y el grupo "Más".
+    // Servicios staff, Mi equipo, y el grupo "Más".
     ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
-     'btnEquipoServicios','btnInformeComisiones','btnEquipoVer','btnEquipoNuevo',
+     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo',
      'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
 
-    // Comisiones: administrador ve todo, barbero ve su propio resumen, recepción no ve nada.
-    const comOn = (userRole === 'ADMIN' || userRole === 'BARBER') ? '' : 'none';
-    document.getElementById('btnComisiones').style.display = comOn;
+    // Mis comisiones: SOLO barbero (su propio resumen) -- el administrador ya
+    // no usa este botón, usa el grupo "Comisiones" de abajo (información de
+    // TODOS los profesionales). Recepción no ve ninguno de los dos.
+    document.getElementById('btnComisiones').style.display = (userRole === 'BARBER') ? '' : 'none';
+
+    // Comisiones (grupo administrativo): información financiera de todos los
+    // profesionales -- únicamente administrador, nunca un barbero ni recepción,
+    // igual que ya protege pagosWebpay/staff del lado del servidor.
+    ['btnComProfesionales','btnComBarberos','btnComPropinas','btnComProductos'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
+    });
 
     // Clientes/Horarios/Reseñas/ARCO: administrador y recepción sí, barbero no.
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
@@ -4259,32 +4371,6 @@
   }
 
   /** Aviso flotante con un botón para mandar el WhatsApp de una reserva nueva, sin tener que buscarla. */
-  async function mostrarAlertaWhatsApp(a){
-    // el teléfono vive aparte y solo lo puede leer Admin/Recepción: si esta
-    // cuenta no tiene permiso, la carga no trae nada y el aviso no aparece.
-    await cargarContactoPrivado(a);
-    const waNum = (a.phone || '').replace(/[^0-9]/g,'');
-    if(!waNum) return;
-    const cont = document.getElementById('waAlerts');
-    if(!cont) return;
-
-    const card = document.createElement('div');
-    card.className = 'wa-alert';
-    card.innerHTML = `
-      <div class="wa-alert-row" style="justify-content:space-between;">
-        <p class="wa-alert-title">Nueva reserva web</p>
-        <button class="wa-alert-x" type="button" aria-label="Cerrar">✕</button>
-      </div>
-      <p class="wa-alert-sub">${a.client} · ${a.service}</p>
-      <button class="wa-alert-btn" type="button">Enviar WhatsApp</button>
-    `;
-    card.querySelector('.wa-alert-x').addEventListener('click', ()=> card.remove());
-    card.querySelector('.wa-alert-btn').addEventListener('click', ()=>{
-      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(construirMensajeWhatsApp(a))}`, '_blank');
-      card.remove();
-    });
-    agregarAlertaFlotante(cont, card);
-  }
   const SERVICE_TYPE = [
     {re:/ondulaci/i,               type:'svc-onda',    mins:180},
     {re:/combo|tratamiento/i,      type:'svc-combo',   mins:60},
@@ -4338,7 +4424,6 @@
 
     const existing = new Set(appointments.map(a=> a.webId).filter(Boolean));
     let added = 0;
-    const nuevasWeb = [];
 
     incoming.forEach(r=>{
       if(existing.has(r.id)) return;
@@ -4374,7 +4459,6 @@
       appointments.push(appt);
       const el = renderAppointment(appt, appointments.length - 1);
       el.classList.add('appt-web-new');
-      nuevasWeb.push(appt);
       added++;
     });
 
@@ -4385,7 +4469,6 @@
         : `${added} nuevas reservas desde la web`);
       refreshBarberCounts();
       if(typeof applyFilters === 'function') applyFilters();
-      nuevasWeb.forEach(mostrarAlertaWhatsApp);
       if(userRole === 'BARBER' && document.getElementById('vistaBarbero').style.display !== 'none'){
         pintarVistaBarbero();
       }
@@ -4603,7 +4686,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -5311,7 +5394,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
-    ['vistaAgenda','vistaComisiones','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5489,7 +5572,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5515,7 +5598,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -5640,7 +5723,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones'].forEach(id=>{
+    ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6285,6 +6368,7 @@
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
@@ -6345,6 +6429,7 @@
   function mostrarVistaBarbero(){
     document.getElementById('vistaAgenda').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
     document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
@@ -6424,13 +6509,14 @@
     b.addEventListener('click', ()=> cxIrA(b.dataset.cxv)));
 
   async function cxIrA(v){
-    document.querySelectorAll('.cx-navbtn').forEach(b=> b.classList.toggle('on', b.dataset.cxv === v));
+    document.querySelectorAll('#vistaComisiones .cx-navbtn').forEach(b=> b.classList.toggle('on', b.dataset.cxv === v));
     const rep = v === 'reporte';
     document.getElementById('cxConfig').style.display = rep ? 'none' : '';
     document.getElementById('cxReporte').style.display = rep ? '' : 'none';
-    document.getElementById('cxTitulo').textContent = rep ? 'Reporte de comisiones' : 'Comisiones';
+    document.getElementById('cxAccionesReporte').style.display = rep ? '' : 'none';
+    document.getElementById('cxTitulo').textContent = rep ? 'Comisiones barberos' : 'Profesionales';
     document.getElementById('cxSub').textContent = rep
-      ? 'Cuánto debes pagarle a cada profesional según las ventas del período.'
+      ? 'Resumen de comisiones generadas por cada profesional.'
       : 'Define cuánto gana cada profesional por servicio. Puedes usar porcentaje o monto fijo.';
     if(rep) await cxCargarReporte(); else await cxCargarPros();
   }
@@ -6633,25 +6719,36 @@
     await cxCargarPros();
   });
 
-  /* ---------- reporte ---------- */
+  /* ---------- reporte: "Comisiones barberos" ---------- */
+  /** Rango de fechas para los períodos de Comisiones barberos/Propinas --
+   *  compartido entre ambas vistas porque el significado de cada período
+   *  (15/20/30 días, mes completo) es el mismo en las dos, no un dato de
+   *  comisiones en sí. */
   function cxRango(tipo){
     const h = new Date(), iso = d=> d.toISOString().slice(0,10);
-    if(tipo === 'hoy') return [iso(h), iso(h)];
-    if(tipo === 'semana'){ const i = new Date(h); i.setDate(h.getDate()-h.getDay()+1); return [iso(i), iso(h)]; }
-    if(tipo === 'mesPasado')
-      return [iso(new Date(h.getFullYear(), h.getMonth()-1, 1)), iso(new Date(h.getFullYear(), h.getMonth(), 0))];
-    return [iso(new Date(h.getFullYear(), h.getMonth(), 1)), iso(h)];
+    if(tipo === '15'){ const i = new Date(h); i.setDate(h.getDate()-14); return [iso(i), iso(h)]; }
+    if(tipo === '20'){ const i = new Date(h); i.setDate(h.getDate()-19); return [iso(i), iso(h)]; }
+    if(tipo === '30'){ const i = new Date(h); i.setDate(h.getDate()-29); return [iso(i), iso(h)]; }
+    return [iso(new Date(h.getFullYear(), h.getMonth(), 1)), iso(h)]; // 'mes' (mes completo)
+  }
+  function cxFmtFechaCorta(iso){
+    if(!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d} ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][Number(m)-1]} ${y}`;
   }
 
-  document.querySelectorAll('.cx-chip').forEach(c=>
+  document.querySelectorAll('#cxReporte .cx-chip').forEach(c=>
     c.addEventListener('click', ()=>{
-      document.querySelectorAll('.cx-chip').forEach(x=> x.classList.toggle('on', x===c));
+      document.querySelectorAll('#cxReporte .cx-chip').forEach(x=> x.classList.toggle('on', x===c));
+      document.getElementById('cxCustomBox').style.display = c.dataset.cxr === 'custom' ? 'flex' : 'none';
+      if(c.dataset.cxr === 'custom') return; // espera que se elijan fechas y se presione "Buscar"
       const [d,h] = cxRango(c.dataset.cxr);
       document.getElementById('cxDesde').value = d;
       document.getElementById('cxHasta').value = h;
       cxCargarReporte();
     }));
   document.getElementById('cxBuscarRep').addEventListener('click', cxCargarReporte);
+  document.getElementById('cxFiltroPro').addEventListener('change', cxCargarReporte);
 
   /**
    * En modo demo calculamos con las reservas del calendario.
@@ -6660,6 +6757,9 @@
    */
   function cxReporteDemo(){
     const mapa = new Map();
+    const from = document.getElementById('cxDesde').value;
+    const to = document.getElementById('cxHasta').value;
+    const soloBarberId = document.getElementById('cxFiltroPro').value;
 
     const fila = (barbero)=>{
       if(!mapa.has(barbero.id)){
@@ -6673,17 +6773,25 @@
       return mapa.get(barbero.id);
     };
 
+    // Todos los profesionales activos aparecen en la tabla, aunque su
+    // comisión del período sea $0 -- no solo los que tuvieron servicios.
+    cfgBarberos.filter(b=> b.active && (!soloBarberId || b.id === soloBarberId)).forEach(fila);
+
     for(const a of appointments){
       if(!['done','no'].includes(a.status)) continue;
+      // Comisiones barberos: solo cuentan los servicios REALIZADOS dentro
+      // del período elegido (mismo campo a.fecha que usa el calendario).
+      if(from && a.fecha && a.fecha < from) continue;
+      if(to && a.fecha && a.fecha > to) continue;
 
       const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || cxPrecioServicio(a.service);
       const barbero = cfgBarberos.find(b=> b.name === a.barber)
         || { id:'x'+a.col, name:a.barber || 'Sin asignar' };
+      if(soloBarberId && barbero.id !== soloBarberId) continue;
       const row = fila(barbero);
 
       if(a.status === 'no'){
         row.noShows++;
-        // en la demo consideramos retenido lo que tenga abono registrado
         if(a.abono) row.noShowRetained += parseInt(String(a.abono).replace(/[^0-9]/g,''),10) || 0;
         continue;
       }
@@ -6693,41 +6801,72 @@
       row.totalSales += precio;
       row.totalCommission += c.amount;
       row.rates.add(c.type === 'FIXED' ? 'fijo' : c.value);
-      row.items.push({ service:a.service, client:a.client, price:precio,
+      const hora = Array.isArray(a.start) ? String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0') : '';
+      row.items.push({ date:a.fecha, hora, service:a.service, client:a.client, price:precio,
                        commission:c.amount, commissionPct:c.value, commissionType:c.type });
     }
 
     const rows = [...mapa.values()].map(r=> ({
       ...r,
-      commissionPct: r.rates.size === 1 && typeof [...r.rates][0] === 'number' ? [...r.rates][0] : null,
+      // sin servicios en el período, se muestra el % por defecto configurado
+      // para ese profesional (settings/comisiones) -- nunca "varios" ni "—".
+      commissionPct: r.rates.size === 1 && typeof [...r.rates][0] === 'number' ? [...r.rates][0]
+        : (r.services === 0 ? (cxDemoDefault[r.barberId] ?? 42) : null),
       appliedRates: [...r.rates],
-      netForShop: r.totalSales - r.totalCommission,
       avgTicket: r.services ? Math.round(r.totalSales / r.services) : 0,
+      items: r.items.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||'') || (a.hora||'').localeCompare(b.hora||'')),
     })).sort((a,b)=> b.totalSales - a.totalSales);
 
     const sales = rows.reduce((s,r)=> s + r.totalSales, 0);
     const commission = rows.reduce((s,r)=> s + r.totalCommission, 0);
-    const retained = rows.reduce((s,r)=> s + r.noShowRetained, 0);
 
     return {
-      from: document.getElementById('cxDesde').value,
-      to: document.getElementById('cxHasta').value,
+      from, to,
       rows,
       totals: {
-        sales, commission,
-        netForShop: sales - commission + retained,
-        services: rows.reduce((s,r)=> s + r.services, 0),
-        noShows: rows.reduce((s,r)=> s + r.noShows, 0),
-        noShowRetained: retained,
+        sales, commission, aPagar: commission,
+        profesionalesActivos: rows.filter(r=> r.services > 0).length,
         effectivePct: sales ? Number(((commission/sales)*100).toFixed(2)) : 0,
       }
     };
   }
 
+  /** Estado de pago (Pendiente/Pagado) por profesional+período -- lo único
+   *  de esta pantalla que no se deriva de reservas/servicios ya existentes:
+   *  es un registro real que la dueña genera al presionar "Marcar pagado",
+   *  guardado en su propia colección para que sobreviva recargas y quede
+   *  igual en cualquier dispositivo. Sin registro, el estado es "Pendiente"
+   *  por defecto (nunca se inventa un "Pagado"). */
+  function cxIdEstadoPago(barberId, from, to){
+    return `${barberId}_${from}_${to}`;
+  }
+  async function cxCargarEstados(rows, from, to){
+    const estados = {};
+    await Promise.all(rows.map(async r=>{
+      try{
+        const doc = await db.collection('commissionPayments').doc(cxIdEstadoPago(r.barberId, from, to)).get();
+        estados[r.barberId] = doc.exists ? (doc.data().estado || 'pendiente') : 'pendiente';
+      }catch(e){ estados[r.barberId] = 'pendiente'; }
+    }));
+    return estados;
+  }
+  async function cxAlternarEstadoPago(barberId, from, to, nuevoEstado){
+    const id = cxIdEstadoPago(barberId, from, to);
+    try{
+      await db.collection('commissionPayments').doc(id).set({
+        barberId, from, to, estado: nuevoEstado,
+        actualizadoEn: new Date().toISOString(), actualizadoPor: auth.currentUser?.uid || null,
+      }, { merge:true });
+      showToast(nuevoEstado === 'pagado' ? 'Marcado como pagado' : 'Marcado como pendiente');
+      await cxCargarReporte();
+    }catch(e){ showToast('No se pudo actualizar: ' + e.message); }
+  }
+
   async function cxCargarReporte(){
     const tb = document.getElementById('cxTabla');
-    tb.innerHTML = '<tr><td colspan="4" class="cx-empty">Calculando...</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="cx-empty">Calculando...</td></tr>';
     await cargarCatalogo();
+    cxPintarFiltroProfesionales();
 
     let d;
     if(MODE === 'api'){
@@ -6738,7 +6877,7 @@
         });
         d = await api('/reports/commissions?' + p.toString());
       }catch(e){
-        tb.innerHTML = `<tr><td colspan="4" class="cx-empty">${e.message}</td></tr>`;
+        tb.innerHTML = `<tr><td colspan="7" class="cx-empty">${e.message}</td></tr>`;
         return;
       }
     } else {
@@ -6746,20 +6885,29 @@
     }
     cxRep = d;
 
+    document.getElementById('cxPeriodoTxt').textContent =
+      `${cxFmtFechaCorta(d.from)} - ${cxFmtFechaCorta(d.to)}`;
     document.getElementById('cxVentas').textContent = cxClp(d.totals.sales);
+    document.getElementById('cxVentasPct').textContent = '100% del total';
     document.getElementById('cxComision').textContent = cxClp(d.totals.commission);
-    document.getElementById('cxNeto').textContent = cxClp(d.totals.netForShop);
-    document.getElementById('cxServicios').textContent = d.totals.services;
-    document.getElementById('cxRetenido').textContent = cxClp(d.totals.noShowRetained || 0);
-    document.getElementById('cxNoShows').textContent =
-      d.totals.noShows ? `${d.totals.noShows} no show` : 'Sin ausencias';
+    document.getElementById('cxComisionPct').textContent = 'Promedio ' + d.totals.effectivePct + '%';
+    document.getElementById('cxAPagar').textContent = cxClp(d.totals.aPagar);
+    document.getElementById('cxServicios').textContent = d.totals.profesionalesActivos;
+
+    const totales = document.getElementById('cxTotalesFila');
+    totales.innerHTML = `<td><b>Totales</b></td><td class="r">${cxClp(d.totals.sales)}</td><td class="r">-</td>
+      <td class="r">${cxClp(d.totals.commission)}</td><td class="r">${cxClp(d.totals.aPagar)}</td><td></td><td></td>`;
 
     if(!d.rows.length){
-      tb.innerHTML = '<tr><td colspan="4" class="cx-empty">No hay servicios realizados en este período.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="7" class="cx-empty">No hay servicios realizados en este período.</td></tr>';
       return;
     }
 
-    tb.innerHTML = d.rows.map(r=>`
+    const estados = await cxCargarEstados(d.rows, d.from, d.to);
+
+    tb.innerHTML = d.rows.map(r=>{
+      const estado = estados[r.barberId] || 'pendiente';
+      return `
       <tr data-cxid="${r.barberId}">
         <td><div class="cx-cell"><div class="cx-cav">${r.initials}</div>
           <div><div style="font-weight:600;">${r.name}</div>
@@ -6769,10 +6917,43 @@
         <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;">${cxClp(r.totalSales)}</td>
         <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;color:#6c6b74;font-size:12px;">${r.commissionPct !== null ? r.commissionPct + '%' : (r.services ? 'varios' : '—')}</td>
         <td class="r cx-pay">${cxClp(r.totalCommission)}</td>
-      </tr>`).join('');
+        <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;">${cxClp(r.totalCommission)}</td>
+        <td><span class="cx-estado ${estado}">${estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span></td>
+        <td class="cx-acciones-wrap" data-cxacciones="${r.barberId}">
+          <button class="cx-acciones-btn" data-cxaccbtn>⋮</button>
+        </td>
+      </tr>`;
+    }).join('');
 
     tb.querySelectorAll('tr[data-cxid]').forEach(tr=>
-      tr.addEventListener('click', ()=> cxVerDetalle(tr)));
+      tr.querySelector('td').addEventListener('click', ()=> cxVerDetalle(tr)));
+
+    tb.querySelectorAll('[data-cxacciones]').forEach(td=>{
+      const barberId = td.dataset.cxacciones;
+      td.querySelector('[data-cxaccbtn]').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        document.querySelectorAll('.cx-acciones-menu').forEach(m=> m.remove());
+        const estadoActual = estados[barberId] || 'pendiente';
+        const menu = document.createElement('div');
+        menu.className = 'cx-acciones-menu';
+        const nuevo = estadoActual === 'pagado' ? 'pendiente' : 'pagado';
+        menu.innerHTML = `<button data-cxmarcar>${nuevo === 'pagado' ? '✓ Marcar como pagado' : '↩ Marcar como pendiente'}</button>`;
+        td.appendChild(menu);
+        menu.querySelector('[data-cxmarcar]').addEventListener('click', (ev)=>{
+          ev.stopPropagation();
+          cxAlternarEstadoPago(barberId, d.from, d.to, nuevo);
+        });
+      });
+    });
+    document.addEventListener('click', ()=> document.querySelectorAll('.cx-acciones-menu').forEach(m=> m.remove()), { once:true });
+  }
+
+  function cxPintarFiltroProfesionales(){
+    const sel = document.getElementById('cxFiltroPro');
+    if(sel.dataset.listo) return;
+    sel.innerHTML = '<option value="">Todos los profesionales</option>' +
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    sel.dataset.listo = '1';
   }
 
   async function cxVerDetalle(tr){
@@ -6807,31 +6988,254 @@
     }catch(e){ row.querySelector('td').textContent = e.message; }
   }
 
-  document.getElementById('cxExportar').addEventListener('click', ()=>{
-    if(!cxRep?.rows?.length) return showToast('No hay datos para exportar');
-    const filas = [
-      ['Profesional','Servicios realizados','Ventas realizadas','Comisión','Monto a pagar','No show','Retenido por no show'],
-      ...cxRep.rows.map(r=> [r.name, r.services, r.totalSales,
-        r.commissionPct !== null ? r.commissionPct + '%' : (r.services ? r.appliedRates.join('/') : '-'),
-        r.totalCommission, r.noShows || 0, r.noShowRetained || 0]),
-      [],
-      ['TOTAL', cxRep.totals.services, cxRep.totals.sales, cxRep.totals.effectivePct + '%',
-       cxRep.totals.commission, cxRep.totals.noShows || 0, cxRep.totals.noShowRetained || 0],
-      [],
-      ['Nota','Solo se paga comision por servicios efectivamente realizados. Los no show no generan comision.'],
-    ];
-    const csv = '\uFEFF' + filas.map(f=> f.map(c=> `"${String(c ?? '')}"`).join(';')).join('\n');
-    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
-    const a = document.createElement('a');
-    a.href = url; a.download = `comisiones_${cxRep.from}_a_${cxRep.to}.csv`; a.click();
-    URL.revokeObjectURL(url);
-    showToast('Planilla descargada');
+  /* ---------- Cartola: desglose de servicios que respeta los filtros
+     activos (período + profesional), nunca la pantalla principal. ---------- */
+  function cxNombreProfesionalFiltro(){
+    const id = document.getElementById('cxFiltroPro').value;
+    if(!id) return null;
+    return cxRep?.rows?.find(r=> r.barberId === id)?.name
+      || cfgBarberos.find(b=> b.id === id)?.name || null;
+  }
+  function cxArmarCartola(){
+    const soloUno = cxNombreProfesionalFiltro();
+    return {
+      generadoEn: new Date().toLocaleString('es-CL'),
+      periodo: `${cxFmtFechaCorta(cxRep.from)} - ${cxFmtFechaCorta(cxRep.to)}`,
+      from: cxRep.from, to: cxRep.to,
+      // la pantalla principal lista todos los profesionales activos aunque
+      // no hayan generado comisión en el período; la cartola es un desglose
+      // de servicios, así que solo incluye a quienes de verdad tuvieron uno.
+      profesionales: cxRep.rows.filter(r=> r.items.length > 0),
+      soloUno,
+      totales: cxRep.totals,
+    };
+  }
+
+  document.getElementById('cxDescargarCartola').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const menu = document.getElementById('cxDlMenu');
+    menu.style.display = menu.style.display === 'none' ? '' : 'none';
+  });
+  document.addEventListener('click', (e)=>{
+    const menu = document.getElementById('cxDlMenu');
+    if(menu && menu.style.display !== 'none' && !e.target.closest('.cx-dl-wrap')) menu.style.display = 'none';
   });
 
+  document.getElementById('cxDlMenu').addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-cxdl]');
+    if(!btn) return;
+    document.getElementById('cxDlMenu').style.display = 'none';
+    if(!cxRep?.rows?.length) return showToast('No hay datos para la cartola en este período');
+    if(btn.dataset.cxdl === 'csv') cxDescargarCartolaCSV(); else cxDescargarCartolaPDF();
+  });
+
+  function cxDescargarCartolaCSV(){
+    const c = cxArmarCartola();
+    const filas = [
+      [c.soloUno ? `Cartola de ${c.soloUno}` : 'Cartola de comisiones (todos los profesionales)'],
+      ['Período', c.periodo], ['Generado el', c.generadoEn], [],
+    ];
+    c.profesionales.forEach(r=>{
+      filas.push([r.name]);
+      filas.push(['Fecha','Hora','Servicio','Valor','% Comisión','Comisión']);
+      r.items.forEach(i=> filas.push([i.date||'', i.hora||'', i.service, i.price,
+        i.commissionType === 'FIXED' ? 'fijo' : i.commissionPct + '%', i.commission]));
+      filas.push(['', '', '', 'Total generado', 'Total comisión', 'Total a pagar']);
+      filas.push(['', '', '', r.totalSales, r.totalCommission, r.totalCommission]);
+      filas.push([]);
+    });
+    filas.push(['TOTAL GENERAL', '', '', c.totales.sales, c.totales.commission, c.totales.aPagar]);
+    const csv = '\uFEFF' + filas.map(f=> f.map(cell=> `"${String(cell ?? '')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = `cartola_comisiones_${c.from}_a_${c.to}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Cartola descargada (Excel/CSV)');
+  }
+
+  async function cxDescargarCartolaPDF(){
+    if(!window.jspdf){ return showToast('No se pudo cargar el generador de PDF, intenta de nuevo.'); }
+    const c = cxArmarCartola();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(14); doc.text('MASTERLOOK — Cartola de comisiones', 14, 16);
+    doc.setFontSize(10); doc.setTextColor(100);
+    doc.text(c.soloUno ? `Profesional: ${c.soloUno}` : 'Todos los profesionales', 14, 23);
+    doc.text(`Período: ${c.periodo}`, 14, 28);
+    doc.text(`Generado el: ${c.generadoEn}`, 14, 33);
+
+    let y = 42;
+    c.profesionales.forEach(r=>{
+      if(y > 265){ doc.addPage(); y = 16; }
+      doc.setTextColor(20); doc.setFontSize(11); doc.text(r.name, 14, y);
+      y += 4;
+      doc.autoTable({
+        startY: y,
+        margin: { left:14, right:14 },
+        head: [['Fecha','Hora','Servicio','Valor','% Comisión','Comisión']],
+        body: r.items.map(i=> [i.date||'', i.hora||'', i.service, cxClp(i.price),
+          i.commissionType === 'FIXED' ? 'fijo' : i.commissionPct + '%', cxClp(i.commission)]),
+        foot: [['', '', '', 'Total generado: ' + cxClp(r.totalSales), '', 'Total a pagar: ' + cxClp(r.totalCommission)]],
+        styles: { fontSize:8 }, headStyles: { fillColor:[26,24,21] }, footStyles: { fillColor:[248,248,250], textColor:20 },
+      });
+      y = doc.lastAutoTable.finalY + 12;
+    });
+
+    if(y > 265){ doc.addPage(); y = 16; }
+    doc.setFontSize(11); doc.setTextColor(20);
+    doc.text(`Total general del período: ${cxClp(c.totales.sales)} generado · ${cxClp(c.totales.aPagar)} a pagar`, 14, y);
+
+    doc.save(`cartola_comisiones_${c.from}_a_${c.to}.pdf`);
+    showToast('Cartola descargada (PDF)');
+  }
+
+  document.getElementById('cxImprimir').addEventListener('click', ()=>{
+    if(!cxRep?.rows?.length) return showToast('No hay datos para imprimir en este período');
+    cxImprimirCartola();
+  });
+  function cxImprimirCartola(){
+    const c = cxArmarCartola();
+    const cont = document.createElement('div');
+    cont.id = 'cxImprimible';
+    cont.innerHTML = `
+      <h2 style="font-family:var(--font-primary);">MASTERLOOK — Cartola de comisiones</h2>
+      <p>${c.soloUno ? `Profesional: <b>${escapeHTML(c.soloUno)}</b>` : '<b>Todos los profesionales</b>'}</p>
+      <p>Período: ${c.periodo} · Generado el ${c.generadoEn}</p>
+      ${c.profesionales.map(r=> `
+        <h3 style="margin-top:18px;">${escapeHTML(r.name)}</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:#f0f0f0;">
+            <th style="text-align:left;padding:5px;">Fecha</th><th style="text-align:left;padding:5px;">Hora</th>
+            <th style="text-align:left;padding:5px;">Servicio</th><th style="text-align:right;padding:5px;">Valor</th>
+            <th style="text-align:right;padding:5px;">% Comisión</th><th style="text-align:right;padding:5px;">Comisión</th>
+          </tr></thead>
+          <tbody>${r.items.map(i=> `<tr>
+            <td style="padding:5px;border-top:1px solid #ddd;">${i.date||''}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;">${i.hora||''}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;">${escapeHTML(i.service)}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${cxClp(i.price)}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${i.commissionType === 'FIXED' ? 'fijo' : i.commissionPct + '%'}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${cxClp(i.commission)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+        <p style="text-align:right;font-weight:600;margin-top:6px;">Total generado: ${cxClp(r.totalSales)} · Total a pagar: ${cxClp(r.totalCommission)}</p>
+      `).join('')}
+      <h3 style="margin-top:22px;">Total general del período</h3>
+      <p>${cxClp(c.totales.sales)} generado en servicios · ${cxClp(c.totales.aPagar)} a pagar en comisiones.</p>
+    `;
+    cont.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:9999;padding:24px;overflow:auto;color:#111;';
+    document.body.appendChild(cont);
+    window.print();
+    document.body.removeChild(cont);
+  }
+
   (function cxInit(){
-    const [d,h] = cxRango('mes');
+    const [d,h] = cxRango('15'); // coincide con el chip "15 días" que parte activo en el HTML
     document.getElementById('cxDesde').value = d;
     document.getElementById('cxHasta').value = h;
+  })();
+
+  /* ---------- Propinas: apartado propio de Comisiones, con los mismos
+     filtros de período/profesional -- nunca mezcla comisiones ni productos
+     vendidos, aunque usa el mismo arreglo de reservas ya cargado. ---------- */
+  let tpRep = null;
+  function mostrarPropinas(){
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = '';
+    ocultarFlotante(true);
+    tpPintarFiltroProfesionales();
+    cargarCatalogo().then(pintarPropinas);
+  }
+  function tpVolverAgenda(){
+    document.getElementById('vistaPropinas').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+  document.getElementById('tpVolver').addEventListener('click', tpVolverAgenda);
+  document.getElementById('tpTabProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
+  document.getElementById('tpTabBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
+  document.getElementById('tpTabProductos').addEventListener('click', mostrarProductos);
+  document.getElementById('cxTabPropinas').addEventListener('click', mostrarPropinas);
+  document.getElementById('cxTabProductos').addEventListener('click', mostrarProductos);
+
+  function tpPintarFiltroProfesionales(){
+    const sel = document.getElementById('tpFiltroPro');
+    if(sel.dataset.listo) return;
+    sel.innerHTML = '<option value="">Todos los profesionales</option>' +
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    sel.dataset.listo = '1';
+  }
+
+  function pintarPropinas(){
+    const from = document.getElementById('tpDesde').value;
+    const to = document.getElementById('tpHasta').value;
+    const soloBarberId = document.getElementById('tpFiltroPro').value;
+    const mapa = new Map();
+
+    for(const a of appointments){
+      if(a.status !== 'done') continue;
+      if(from && a.fecha && a.fecha < from) continue;
+      if(to && a.fecha && a.fecha > to) continue;
+      const propina = Number(a.propina) || 0;
+      if(propina <= 0) continue;
+      const barbero = cfgBarberos.find(b=> b.name === a.barber) || { id:'x'+a.col, name:a.barber || 'Sin asignar' };
+      if(soloBarberId && barbero.id !== soloBarberId) continue;
+      if(!mapa.has(barbero.id)){
+        mapa.set(barbero.id, {
+          barberId: barbero.id, name: barbero.name,
+          initials: (barbero.name||'??').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(),
+          servicios:0, totalPropinas:0,
+        });
+      }
+      const row = mapa.get(barbero.id);
+      row.servicios++;
+      row.totalPropinas += propina;
+    }
+
+    const rows = [...mapa.values()].sort((a,b)=> b.totalPropinas - a.totalPropinas);
+    tpRep = { from, to, rows };
+
+    document.getElementById('tpPeriodoTxt').textContent = `${cxFmtFechaCorta(from)} - ${cxFmtFechaCorta(to)}`;
+    const total = rows.reduce((s,r)=> s + r.totalPropinas, 0);
+    const servicios = rows.reduce((s,r)=> s + r.servicios, 0);
+    document.getElementById('tpTotal').textContent = cxClp(total);
+    document.getElementById('tpServicios').textContent = servicios;
+    document.getElementById('tpProfesionales').textContent = rows.length;
+
+    const totales = document.getElementById('tpTotalesFila');
+    totales.innerHTML = `<td><b>Totales</b></td><td class="r">${servicios}</td><td class="r">${cxClp(total)}</td>`;
+
+    const tb = document.getElementById('tpTabla');
+    tb.innerHTML = rows.length ? rows.map(r=> `
+      <tr><td><div class="cx-cell"><div class="cx-cav">${r.initials}</div><div style="font-weight:600;">${escapeHTML(r.name)}</div></div></td>
+        <td class="r">${r.servicios}</td>
+        <td class="r cx-pay">${cxClp(r.totalPropinas)}</td>
+      </tr>`).join('') : '<tr><td colspan="3" class="cx-empty">No hay propinas registradas en este período.</td></tr>';
+  }
+
+  document.querySelectorAll('#vistaPropinas .cx-chip').forEach(c=>
+    c.addEventListener('click', ()=>{
+      document.querySelectorAll('#vistaPropinas .cx-chip').forEach(x=> x.classList.toggle('on', x===c));
+      document.getElementById('tpCustomBox').style.display = c.dataset.tpr === 'custom' ? 'flex' : 'none';
+      if(c.dataset.tpr === 'custom') return;
+      const [d,h] = cxRango(c.dataset.tpr);
+      document.getElementById('tpDesde').value = d;
+      document.getElementById('tpHasta').value = h;
+      pintarPropinas();
+    }));
+  document.getElementById('tpBuscarRep').addEventListener('click', pintarPropinas);
+  document.getElementById('tpFiltroPro').addEventListener('change', pintarPropinas);
+
+  (function tpInit(){
+    const [d,h] = cxRango('15');
+    document.getElementById('tpDesde').value = d;
+    document.getElementById('tpHasta').value = h;
   })();
 
   /* ==========================================================
@@ -6895,6 +7299,7 @@
     document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
@@ -6918,6 +7323,7 @@
     document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
     document.getElementById('vistaProductos').style.display = 'none';
     document.getElementById('vistaClientes').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = 'none';
@@ -7134,7 +7540,7 @@
 
   /* ===== Archivos multimedia: todas las fotos de clientes ===== */
   function mostrarArchivosMultimedia(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
      'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
@@ -7171,7 +7577,7 @@
   let ventasTipoActual = 'servicios';
   function mostrarVentas(tipo){
     ventasTipoActual = tipo;
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
      'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaCampanas'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
@@ -7242,7 +7648,7 @@
 
   /* ===== Campañas: envío masivo de correo ===== */
   function mostrarCampanas(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
      'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
@@ -7413,7 +7819,7 @@
   }
 
   function mostrarSuscripciones(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia',
      'vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
@@ -8784,7 +9190,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -8809,7 +9215,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -9946,34 +10352,6 @@
     payView.classList.remove('open');
     detailView.classList.add('open');
 
-    // acciones de reserva web
-    const webBox = document.getElementById('webActions');
-    const webState = document.getElementById('webState');
-    const webBtns = document.getElementById('webBtns');
-    const webNote = document.getElementById('webNote');
-    document.getElementById('webRejectBox').classList.remove('show');
-
-    if(a.fromWeb){
-      webBox.classList.add('show');
-      const decision = a.webDecision || 'pendiente';
-      webState.className = 'web-state ' + (decision === 'pendiente' ? '' : decision);
-      if(decision === 'aprobada'){
-        webState.textContent = '✓ Confirmada al cliente';
-        webNote.textContent = 'El cliente ya ve esta reserva como confirmada en su cuenta.';
-        webBtns.style.display = 'none';
-      } else if(decision === 'rechazada'){
-        webState.textContent = '✕ Rechazada';
-        webNote.textContent = 'Motivo enviado al cliente: ' + (a.webReason || '—');
-        webBtns.style.display = 'none';
-      } else {
-        webState.textContent = 'Pendiente de aprobación';
-        webNote.textContent = 'El cliente reservó desde el sitio web. Confirma o rechaza para notificarle en su cuenta.';
-        webBtns.style.display = puedeGestionarCita ? 'flex' : 'none';
-      }
-    } else {
-      webBox.classList.remove('show');
-    }
-
     overlay.classList.add('open');
     drawer.classList.add('open');
 
@@ -9988,90 +10366,6 @@
     }
   }
 
-  /* ---------------- Decisiones sobre reservas web ---------------- */
-  function updateBridgeRecord(webId, changes){
-    db.collection('bookings').doc(webId).update(changes).catch(()=>{});
-  }
-
-  async function decideWebBooking(decision, reason){
-    const a = currentAppt;
-    if(!a || !a.fromWeb) return;
-
-    if(MODE === 'api' && a.apiId){
-      try{
-        await api(`/admin/bookings/${a.apiId}/decide`, {
-          method:'POST',
-          body: JSON.stringify({
-            decision: decision === 'aprobada' ? 'CONFIRMED' : 'REJECTED',
-            reason: reason || undefined
-          })
-        });
-      }catch(e){
-        showToast('No se pudo guardar: ' + e.message);
-        return;
-      }
-    }
-
-    a.webDecision = decision;
-    a.webReason = reason || '';
-    a.status = decision === 'aprobada' ? 'ok' : 'no';
-
-    if(MODE !== 'api'){
-      updateBridgeRecord(a.webId, {
-        decision, reason: reason || '',
-        decidedAt: new Date().toISOString(),
-        etiqueta: a.status,
-      });
-      enviarCorreoReserva(a, decision === 'aprobada' ? 'aprobada' : 'rechazada', reason);
-    }
-
-    const idx = appointments.indexOf(a);
-    const el = document.querySelector(`.appt[data-idx="${idx}"]`);
-    if(decision === 'rechazada'){
-      // se saca del calendario para no estorbar; el registro queda guardado (el cliente lo ve en "Mis reservas")
-      if(el) el.remove();
-      layoutAllColumns();
-      refreshBarberCounts();
-    } else if(el){
-      const dot = el.querySelector('.status-dot');
-      const txt = el.querySelector('.status-txt');
-      if(dot) dot.className = 'status-dot ' + a.status;
-      if(txt) txt.textContent = 'Confirmado';
-    }
-
-    showToast(decision === 'aprobada'
-      ? `Reserva de ${a.client} confirmada`
-      : `Reserva de ${a.client} rechazada`);
-
-    // Con API conectada, el correo y el WhatsApp salen solos desde el servidor.
-    // En modo demo abrimos WhatsApp con el mensaje listo.
-    if(MODE !== 'api'){
-      const waNum = (a.phone || '').replace(/[^0-9]/g,'');
-      if(waNum){
-        const corto = a.client.split(' ')[0];
-        const hora = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
-        const msg = decision === 'aprobada'
-          ? construirMensajeWhatsApp(a)
-          : `Hola ${corto}, lamentamos avisarte que no pudimos tomar tu reserva en MASTERLOOK.\n\nServicio: ${a.service}\nHora solicitada: ${hora}\nMotivo: ${reason}\n\nEscríbenos y te ofrecemos otro horario.`;
-        window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
-      }
-    }
-
-    closeDrawer();
-  }
-
-  document.getElementById('btnAprobar').addEventListener('click', ()=> decideWebBooking('aprobada'));
-  document.getElementById('btnRechazar').addEventListener('click', ()=>{
-    document.getElementById('webRejectBox').classList.add('show');
-    document.getElementById('webBtns').style.display = 'none';
-  });
-  document.getElementById('btnCancelarRech').addEventListener('click', ()=>{
-    document.getElementById('webRejectBox').classList.remove('show');
-    document.getElementById('webBtns').style.display = 'flex';
-  });
-  document.getElementById('btnRechazarConfirm').addEventListener('click', ()=>{
-    decideWebBooking('rechazada', document.getElementById('rejectReason').value);
-  });
   function closeDrawer(){
     overlay.classList.remove('open');
     drawer.classList.remove('open');
@@ -10386,7 +10680,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
