@@ -450,9 +450,17 @@
   .dp-field{display:flex; align-items:center; gap:12px; border:1px solid var(--border);
     border-radius:var(--radius-sm); padding:2px 16px; margin-bottom:14px; background:var(--panel);}
   .dp-field:focus-within{border-color:var(--accent);}
+  .dp-field-alerta{animation:dpFieldAlerta 1.2s ease;}
+  @keyframes dpFieldAlerta{
+    0%, 100%{border-color:var(--border);}
+    15%, 45%, 75%{border-color:#c0392b;}
+  }
   .dp-field svg{flex:0 0 auto; color:var(--text-low);}
   .dp-field input[type=text], .dp-field input[type=tel], .dp-field input[type=email]{
     flex:1; min-width:0; border:none; background:none; padding:12px 0; margin:0;
+  }
+  .dp-field input[type=text]:focus-visible, .dp-field input[type=tel]:focus-visible, .dp-field input[type=email]:focus-visible{
+    outline:none;
   }
   .dp-lock-note{display:flex; align-items:center; gap:8px; color:var(--text-low); font-size:.76rem; margin:2px 0 26px;}
   .dp-lock-note svg{flex:0 0 auto;}
@@ -485,6 +493,7 @@
     position:relative; z-index:1;}
   .dp-bar button:hover{background:var(--oro-claro); border-color:var(--oro-claro);}
   .dp-bar button:disabled{opacity:.35; cursor:not-allowed;}
+  .dp-bar button.not-ready{opacity:.55;}
   .dp-back{display:block; width:100%; text-align:center; margin-top:12px; background:none; border:none;
     color:var(--text-mid); font-size:.82rem; cursor:pointer; padding:8px;}
   .dp-back:hover{color:var(--text-hi);}
@@ -1448,22 +1457,29 @@
   .rv-pronto-txt span{font-size:.78rem; opacity:.72;}
   .rv-pronto-go{font-size:1.1rem; opacity:.6;}
 
-  /* barberos: tarjetas chicas, ni más grandes que una tarjeta de servicio */
-  .barbers{display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:7px; margin-bottom:18px;}
+  /* barberos: fotos grandes, look elegante con brillo tipo gota de agua detrás */
+  .barbers{display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:10px; margin-bottom:18px;}
   .barber-opt{display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    border:1px solid var(--border); border-radius:10px; padding:9px 5px; min-height:82px; min-width:0;
-    cursor:pointer; text-align:center; background:var(--panel); transition:border-color .18s;}
-  .barber-opt:hover{border-color:var(--border-strong);}
-  .barber-opt.selected{border-color:var(--border-strong); box-shadow:0 0 0 1px var(--border-strong); background:var(--panel-2);}
+    border:1px solid var(--border); border-radius:16px; padding:16px 6px 14px; min-height:148px; min-width:0;
+    cursor:pointer; text-align:center; background:var(--panel); transition:border-color .18s, transform .18s, box-shadow .18s;}
+  .barber-opt:hover{border-color:var(--border-strong); transform:translateY(-2px);}
+  .barber-opt.selected{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); background:var(--panel-2);}
   .barber-opt.no-disponible{opacity:.4; cursor:not-allowed;}
   .barber-opt.no-disponible .b-libre{color:var(--text-low);}
-  .b-foto{width:32px; height:32px; border-radius:50%; margin:0 auto 6px;
+  .b-foto{position:relative; width:68px; height:68px; border-radius:50%; margin:0 auto 10px;
     background:linear-gradient(150deg,#6f6c63,#26241f); color:#fff;
     display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-primary); font-weight:600; font-size:.72rem;
-    background-size:cover; background-position:center; overflow:hidden;}
-  .b-name{font-size:.68rem; font-weight:600; line-height:1.2; word-break:break-word; hyphens:auto;}
-  .b-libre{font-size:.6rem; color:var(--text-low); margin-top:2px;}
+    font-family:var(--font-primary); font-weight:600; font-size:1.05rem;
+    background-size:cover; background-position:center; overflow:hidden;
+    box-shadow:0 10px 22px -8px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.07);}
+  .b-foto::before{content:''; position:absolute; inset:-9px; z-index:-1; border-radius:50%;
+    background:radial-gradient(circle at 30% 26%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 62%);
+    filter:blur(7px);}
+  .b-foto::after{content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle at 32% 22%, rgba(255,255,255,.5), rgba(255,255,255,0) 42%);
+    mix-blend-mode:overlay;}
+  .b-name{font-size:.88rem; font-weight:600; line-height:1.25; word-break:break-word; hyphens:auto;}
+  .b-libre{font-size:.68rem; color:var(--text-low); margin-top:3px;}
   .b-libre.lleno{color:var(--text-low);}
 
   /* días */
@@ -1563,8 +1579,8 @@
     #barberPick{min-width:0;}
     .barbers{grid-template-columns:repeat(4,1fr)!important;}
     .rv-modo{grid-template-columns:1fr;}
-    .b-foto{width:30px; height:30px; font-size:.68rem;}
-    .barber-opt{min-height:76px; padding:8px 4px;}
+    .b-foto{width:50px; height:50px; font-size:.84rem;}
+    .barber-opt{min-height:120px; padding:12px 4px;}
     .slots{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));}
     .tv-head-in{padding:14px 16px; grid-template-columns:auto 1fr auto; gap:8px;}
     .tv-back{font-size:.74rem; padding:6px 8px;}
@@ -1911,10 +1927,10 @@
     .rv-pronto-txt span{font-size:.7rem;}
     .rv-pronto-go{font-size:.98rem;}
 
-    .barbers{grid-template-columns:repeat(4,1fr)!important; gap:5px; margin-bottom:10px;}
-    .barber-opt{padding:5px 3px; min-height:48px!important; border-radius:8px;}
-    .b-foto{width:18px; height:18px; margin:0 auto 3px; font-size:.52rem!important;}
-    .b-name{font-size:.54rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+    .barbers{grid-template-columns:repeat(4,1fr)!important; gap:6px; margin-bottom:10px;}
+    .barber-opt{padding:8px 3px; min-height:96px!important; border-radius:12px;}
+    .b-foto{width:42px; height:42px; margin:0 auto 6px; font-size:.66rem!important;}
+    .b-name{font-size:.64rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
     .b-libre{display:none;}
 
     .rv-dias{gap:6px; margin-bottom:14px;}
@@ -2837,7 +2853,7 @@
                   <b id="dpTotal">$0</b>
                   <small>con Webpay</small>
                 </div>
-                <button id="confirmBtn" disabled>Pagar y agendar</button>
+                <button id="confirmBtn" class="not-ready">Pagar y agendar</button>
               </div>
               <button class="dp-back" data-back="3">← Volver</button>
             </div>
@@ -2873,7 +2889,6 @@
           </div>
           <div class="rv-garantia">
             <div class="rv-g-item">✓ Puedes cambiar la hora una vez, hasta 4 h antes</div>
-            <div class="rv-g-item">✓ Sin costo por reservar</div>
           </div>
         </div>
       </div>
@@ -3838,9 +3853,24 @@
   const nameInput = document.getElementById('cName');
   const phoneInput = document.getElementById('cPhone');
   [nameInput, phoneInput].forEach(inp=> inp.addEventListener('input', checkConfirmar));
+  function datosListos(){ return !!(nameInput.value.trim() && phoneInput.value.trim() && payMethod); }
   function checkConfirmar(){
-    document.getElementById('confirmBtn').disabled = !(nameInput.value.trim() && phoneInput.value.trim() && payMethod);
+    document.getElementById('confirmBtn').classList.toggle('not-ready', !datosListos());
     actualizarBarra();
+  }
+  /** Si falta un dato obligatorio, sube la vista hasta ese campo y lo enfoca
+   *  en vez de dejar el botón inerte sin ninguna pista de qué falta. */
+  function llevarAlDatoFaltante(){
+    const falta = !nameInput.value.trim() ? nameInput : !phoneInput.value.trim() ? phoneInput : null;
+    if(!falta) return false;
+    falta.closest('.dp-field')?.scrollIntoView({ behavior:'smooth', block:'center' });
+    falta.focus();
+    const campo = falta.closest('.dp-field');
+    if(campo){
+      campo.classList.add('dp-field-alerta');
+      setTimeout(()=> campo.classList.remove('dp-field-alerta'), 1200);
+    }
+    return true;
   }
 
   // ===== puente hacia el panel del administrador, vía Firestore =====
@@ -4321,6 +4351,7 @@
   });
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
+    if(llevarAlDatoFaltante()) return;
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
     btn.textContent = 'Reservando...';
@@ -4456,7 +4487,8 @@
     nameInput.value=''; phoneInput.value=''; document.getElementById('cEmail').value='';
     document.getElementById('toStep2').disabled = true;
     document.getElementById('toStep3').disabled = true;
-    document.getElementById('confirmBtn').disabled = true;
+    document.getElementById('confirmBtn').disabled = false;
+    checkConfirmar();
     document.getElementById('formZone').style.display = 'block';
     document.getElementById('confirmMsg').classList.remove('show');
     updateSummary(); goToStep(1);
@@ -6282,7 +6314,7 @@
 
     const libres = [];
     for(let min = inicioGrilla; min + durMin <= cierre; min += 60){
-      if(esHoy && min < ahora + 60) continue;
+      if(esHoy && min < ahora + 5) continue;
 
       // barberos realmente libres en ese bloque
       let disponibles;
@@ -6519,7 +6551,7 @@
     } else {
       svcTxt.textContent = 'Total a pagar ahora';
       btn.textContent = 'Pagar y agendar';
-      btn.disabled = document.getElementById('confirmBtn').disabled;
+      btn.disabled = false;
       btn.onclick = ()=> document.getElementById('confirmBtn').click();
     }
   }
