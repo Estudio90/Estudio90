@@ -144,7 +144,12 @@
   .menu-panel .menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
   .menu-panel .wordmark{font-size:14px;}
   .x-round{background:var(--panel-2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;color:var(--text-mid);}
-  .menu-links{display:flex;flex-direction:column;flex:1;overflow-y:auto;}
+  .menu-links{display:flex;flex-direction:column;flex:1;overflow-y:auto;
+    scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
+  .menu-links::-webkit-scrollbar{width:6px;}
+  .menu-links::-webkit-scrollbar-button{display:none;width:0;height:0;}
+  .menu-links::-webkit-scrollbar-track{background:transparent;}
+  .menu-links::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
   .menu-panel-item{
     display:flex;align-items:center;gap:9px;width:100%;text-align:left;
     padding:13px 4px;border:none;background:none;border-bottom:1px solid var(--border);
@@ -1437,7 +1442,6 @@
         <button class="nav-group-head" type="button">Servicios</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnServiciosCatalogo">Panel · catálogo</button>
-          <button class="menu-panel-item" id="btnVentasServicios">Ventas facturadas</button>
         </div>
       </div>
 
@@ -1481,13 +1485,14 @@
           <button class="menu-panel-item" id="btnComBarberos">Comisiones barberos</button>
           <button class="menu-panel-item" id="btnComPropinas">Propinas</button>
           <button class="menu-panel-item" id="btnComProductos">Productos vendidos por los profesionales</button>
+          <!-- Anticipos de reserva ya APROBADOS por Webpay (dinero
+               efectivamente recibido) -- nunca rechazados/abandonados/
+               vencidos. Distinto de Comisiones (lo que gana cada
+               profesional), pero vive en el mismo grupo del menú para no
+               ocupar una fila propia. -->
+          <button class="menu-panel-item" id="btnComAbonos">Abonos</button>
         </div>
       </div>
-
-      <!-- Solo administrador: anticipos de reserva ya APROBADOS por Webpay
-           (dinero efectivamente recibido) -- nunca rechazados/abandonados/
-           vencidos. Distinto de Comisiones (lo que gana cada profesional). -->
-      <button class="menu-panel-item" id="btnAbonos" style="display:none;">Abonos</button>
 
       <div class="nav-group" id="grupoClientesDatos" style="display:none;">
         <button class="nav-group-head" type="button">Clientes y datos</button>
@@ -1539,27 +1544,36 @@
           <h2 class="cx-title">Abonos</h2>
           <p class="cx-sub">Anticipos de reserva recibidos por la página vía Webpay.</p>
         </div>
+        <button class="ctrl-btn" id="abVolver">← Volver a la agenda</button>
+      </div>
+
+      <div class="cx-nav cx-apartados">
+        <button class="ctrl-btn cx-navbtn" id="abTabProfesionales">Profesionales</button>
+        <button class="ctrl-btn cx-navbtn" id="abTabBarberos">Comisiones barberos</button>
+        <button class="ctrl-btn cx-navbtn" id="abTabPropinas">Propinas</button>
+        <button class="ctrl-btn cx-navbtn" id="abTabProductos">Productos vendidos por los profesionales</button>
+        <button class="ctrl-btn cx-navbtn on">Abonos</button>
       </div>
 
       <div class="cx-filtros-box" style="align-items:flex-end;">
         <div class="cx-filtros-col">
           <label class="cx-flabel">Selecciona una opción</label>
           <div style="display:flex;gap:10px;">
-            <div class="cx-f"><label>Desde</label><input type="date" class="mg-input" id="abDesde"></div>
-            <div class="cx-f"><label>Hasta</label><input type="date" class="mg-input" id="abHasta"></div>
+            <div class="cx-f" style="min-width:0;"><label>Desde</label><input type="date" class="mg-input" id="abDesde" style="width:100%;"></div>
+            <div class="cx-f" style="min-width:0;"><label>Hasta</label><input type="date" class="mg-input" id="abHasta" style="width:100%;"></div>
           </div>
         </div>
         <div class="cx-filtros-col">
           <label class="cx-flabel">Locales</label>
-          <select class="mg-input" id="abLocal" disabled><option>MASTERLOOK</option></select>
+          <select class="mg-input" id="abLocal"><option>MASTERLOOK</option></select>
         </div>
         <div class="cx-filtros-col">
           <label class="cx-flabel">Métodos de pago</label>
-          <select class="mg-input" id="abMetodoPago" disabled><option>Webpay</option></select>
+          <select class="mg-input" id="abMetodoPago"><option>Webpay</option></select>
         </div>
         <div class="cx-filtros-col">
           <label class="cx-flabel">Tipo de comprobante</label>
-          <select class="mg-input" id="abTipoComprobante" disabled><option>Todos</option></select>
+          <select class="mg-input" id="abTipoComprobante"><option>Todos</option></select>
         </div>
         <div class="cx-filtros-col">
           <label class="cx-flabel">Buscar por…</label>
@@ -1617,6 +1631,7 @@
         <button class="ctrl-btn cx-navbtn" data-cxv="reporte">Comisiones barberos</button>
         <button class="ctrl-btn cx-navbtn" id="cxTabPropinas">Propinas</button>
         <button class="ctrl-btn cx-navbtn" id="cxTabProductos">Productos vendidos por los profesionales</button>
+        <button class="ctrl-btn cx-navbtn" id="cxTabAbonos">Abonos</button>
       </div>
 
       <!-- Configuración por servicio -->
@@ -1716,6 +1731,7 @@
         <button class="ctrl-btn cx-navbtn" id="tpTabBarberos">Comisiones barberos</button>
         <button class="ctrl-btn cx-navbtn on">Propinas</button>
         <button class="ctrl-btn cx-navbtn" id="tpTabProductos">Productos vendidos por los profesionales</button>
+        <button class="ctrl-btn cx-navbtn" id="tpTabAbonos">Abonos</button>
       </div>
 
       <div class="cx-filtros-box">
@@ -3723,7 +3739,7 @@
   document.getElementById('btnComBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
   document.getElementById('btnComPropinas').addEventListener('click', mostrarPropinas);
   document.getElementById('btnComProductos').addEventListener('click', mostrarProductos);
-  document.getElementById('btnAbonos').addEventListener('click', mostrarAbonos);
+  document.getElementById('btnComAbonos').addEventListener('click', mostrarAbonos);
 
   /**
    * Módulo Abonos -- SOLO anticipos de reserva ya APROBADOS por Webpay
@@ -4453,7 +4469,7 @@
     // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
     // Servicios staff, Mi equipo, y el grupo "Más".
     ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
-     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo', 'btnAbonos',
+     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo',
      'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
@@ -4466,7 +4482,7 @@
     // Comisiones (grupo administrativo): información financiera de todos los
     // profesionales -- únicamente administrador, nunca un barbero ni recepción,
     // igual que ya protege pagosWebpay/staff del lado del servidor.
-    ['btnComProfesionales','btnComBarberos','btnComPropinas','btnComProductos'].forEach(id=>{
+    ['btnComProfesionales','btnComBarberos','btnComPropinas','btnComProductos','btnComAbonos'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
 
@@ -4482,12 +4498,6 @@
     // en el servidor exige lo mismo, esto solo evita mostrar el botón.
     const accesosOn = (userRole === 'ADMIN' || userPermissions.includes('CURSOS_ACCESOS')) ? '' : 'none';
     document.getElementById('btnAccesosCursos').style.display = accesosOn;
-
-    // Ventas facturadas de servicios: administrador siempre, o staff con
-    // el permiso VENTAS_SERVICIOS_VER otorgado a mano (nunca automático
-    // por rol) -- la regla de Firestore de pagosWebpay exige lo mismo.
-    const ventasServiciosOn = (userRole === 'ADMIN' || userPermissions.includes('VENTAS_SERVICIOS_VER')) ? '' : 'none';
-    document.getElementById('btnVentasServicios').style.display = ventasServiciosOn;
 
     // Campañas: por ahora solo administrador (envío masivo de correo).
     const campanasEl = document.getElementById('btnCampanas');
@@ -7361,12 +7371,25 @@
     document.getElementById('kpiRow').style.display = '';
     ocultarFlotante(false);
   }
+  function abVolverAgenda(){
+    document.getElementById('vistaAbonos').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
   document.getElementById('tpVolver').addEventListener('click', tpVolverAgenda);
   document.getElementById('tpTabProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
   document.getElementById('tpTabBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
   document.getElementById('tpTabProductos').addEventListener('click', mostrarProductos);
   document.getElementById('cxTabPropinas').addEventListener('click', mostrarPropinas);
   document.getElementById('cxTabProductos').addEventListener('click', mostrarProductos);
+  document.getElementById('cxTabAbonos').addEventListener('click', mostrarAbonos);
+  document.getElementById('tpTabAbonos').addEventListener('click', mostrarAbonos);
+  document.getElementById('abTabProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
+  document.getElementById('abTabBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
+  document.getElementById('abTabPropinas').addEventListener('click', mostrarPropinas);
+  document.getElementById('abTabProductos').addEventListener('click', mostrarProductos);
+  document.getElementById('abVolver').addEventListener('click', abVolverAgenda);
 
   function tpPintarFiltroProfesionales(){
     const sel = document.getElementById('tpFiltroPro');
@@ -7774,11 +7797,10 @@
 
   /* ===== Ventas facturadas (Servicios / Academy / Tienda) ===== */
   const VENTAS_CONFIG = {
-    servicios: { titulo:'Ventas facturadas · Servicios', sub:'Reservas con anticipo pagado por Webpay, por rango de fechas.' },
     academy:   { titulo:'Ventas facturadas · Academy', sub:'Cursos comprados por Webpay, por rango de fechas.' },
     tienda:    { titulo:'Ventas facturadas · Tienda', sub:'Ventas de productos, por rango de fechas.' },
   };
-  let ventasTipoActual = 'servicios';
+  let ventasTipoActual = 'academy';
   function mostrarVentas(tipo){
     ventasTipoActual = tipo;
     ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
@@ -7798,7 +7820,6 @@
     document.getElementById('vtKpis').innerHTML = '';
     document.getElementById('vtTabla').innerHTML = '<div class="cx-empty">Elige un rango de fechas y presiona Filtrar.</div>';
   }
-  document.getElementById('btnVentasServicios').addEventListener('click', ()=> mostrarVentas('servicios'));
   document.getElementById('btnVentasAcademy').addEventListener('click', ()=> mostrarVentas('academy'));
   document.getElementById('btnVentasTienda').addEventListener('click', ()=> mostrarVentas('tienda'));
   document.getElementById('vtVolver').addEventListener('click', irAlInicio);
@@ -7817,13 +7838,7 @@
     try{
       let filas = [];
       const fechaDeTimestamp = (ts)=> ts?.toDate ? ts.toDate().toISOString().slice(0,10) : '';
-      if(ventasTipoActual === 'servicios'){
-        const snap = await db.collection('pagosWebpay')
-          .where('tipo', '==', 'RESERVATION_DEPOSIT').where('estado', '==', 'confirmado').get();
-        filas = snap.docs.map(d=> d.data())
-          .map(p=> ({ fecha: fechaDeTimestamp(p.confirmedAt), detalle: p.buyerName || p.buyerEmail || '', monto: p.amount || 0 }))
-          .filter(f=> f.fecha >= desde && f.fecha <= hasta);
-      } else if(ventasTipoActual === 'academy'){
+      if(ventasTipoActual === 'academy'){
         const snap = await db.collection('pagosWebpay')
           .where('tipo', '==', 'COURSE_PURCHASE').where('estado', '==', 'confirmado').get();
         filas = snap.docs.map(d=> d.data())
@@ -9364,13 +9379,10 @@
     { id:'COMISIONES_EDITAR', nombre:'Cambiar porcentajes',        grupo:'Dinero', sensible:true },
     { id:'USUARIOS_EDITAR',   nombre:'Dar acceso a otros',         grupo:'Dinero', sensible:true },
     { id:'CURSOS_ACCESOS',    nombre:'Otorgar, extender o revocar acceso a cursos', grupo:'Dinero', sensible:true },
-    { id:'VENTAS_SERVICIOS_VER', nombre:'Ver ventas facturadas de servicios', grupo:'Dinero', sensible:true },
   ];
 
   const PERMISOS_ROL = {
     ADMIN: PERMISOS.map(p=> p.id),
-    // VENTAS_SERVICIOS_VER queda afuera a propósito -- nunca se otorga
-    // automático por rol, solo si la dueña lo activa a mano por persona.
     RECEPTION: ['AGENDA_PROPIA','AGENDA_TODOS','AGENDA_EDITAR','RESERVAS_APROBAR',
                 'CLIENTES_VER','CLIENTES_EDITAR','TIENDA_EDITAR'],
     BARBER: ['AGENDA_PROPIA'],
