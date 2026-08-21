@@ -9,6 +9,12 @@
 <title>MASTERLOOK — Barbería</title>
 <link rel="preconnect" href="https://api.fontshare.com">
 <link href="https://api.fontshare.com/v2/css?f[]=general-sans@700,600,500,400&display=swap" rel="stylesheet">
+<!-- video de fondo del Hero en celular (Bunny Stream): abre la conexión
+     (DNS+TLS) desde ya, para que cuando el <video> pida el m3u8 no tenga
+     que esperar ese primer viaje de red -- ver el script justo después de
+     .hero-bg más abajo. -->
+<link rel="preconnect" href="https://vz-3106d8eb-0d1.b-cdn.net" crossorigin>
+<link rel="dns-prefetch" href="https://vz-3106d8eb-0d1.b-cdn.net">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -2215,32 +2221,51 @@
       data-hero-video-fallback="09ef6a54-4b98-4332-87ec-c56a78973cfd"></video>
   </div>
   <script>
-    /* Adelanta el video de fondo del hero en celular, sin esperar a
-       Firestore ni a hls.js (que carga con defer): en iOS/Safari (y los
-       navegadores basados en WebKit de iOS, que comparten el mismo soporte
-       nativo de HLS) se puede asignar el .src directo al m3u8 y reproducir
-       de inmediato. pintarFondoHero() (ver más abajo en el archivo) revisa
+    /* En celular, si ya sabemos que hay un video de fondo configurado (el
+       ID de respaldo de abajo), la FOTO no debe verse ni un instante --
+       aunque el video mismo (que se transmite por red, HLS real) todavía
+       tarde en traer su primer segmento, no importa cuál navegador sea. Se
+       quita la foto de inmediato acá y el fondo queda con el degradado
+       oscuro propio de .hero-bg (su estado por defecto, no una foto ni una
+       pantalla negra) mientras el video termina de cargar.
+
+       Además, en iOS/Safari (y los navegadores basados en WebKit de iOS,
+       que comparten el mismo soporte nativo de HLS) se puede asignar el
+       .src directo al m3u8 y empezar a cargarlo de inmediato, sin esperar a
+       Firestore ni a hls.js (que carga con defer) -- ahí el video mismo
+       también arranca lo antes posible, no solo se oculta la foto.
+       pintarFondoHero() (ver más abajo en el archivo) revisa
        video.dataset.src antes de reintentar adjuntar, así que si el ID real
        de Firestore coincide con este de respaldo, no hay reinicio ni salto.
+
        En Android/Chrome NO se asigna src acá: su propio comentario en
        adjuntarHls() explica que canPlayType() miente en esos navegadores,
        así que ahí se deja el <video> ya creado (cumple con que exista desde
-       el primer render) pero la conexión HLS real la sigue haciendo
-       pintarFondoHero() con hls.js, exactamente como antes. */
+       el primer render, y ya sin la foto detrás) pero la conexión HLS real
+       la sigue haciendo pintarFondoHero() con hls.js, exactamente como
+       antes -- lo único nuevo para ese caso es que ya no se ve la foto
+       mientras tanto. */
     try{
       var esMovilHero = !window.matchMedia('(min-width:901px)').matches;
-      var esIOSHero = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      if(esMovilHero && esIOSHero){
-        var vHeroFallback = document.getElementById('heroVideoFallback');
-        var idHeroFallback = vHeroFallback.dataset.heroVideoFallback;
-        var urlHeroFallback = 'https://vz-3106d8eb-0d1.b-cdn.net/' + idHeroFallback + '/playlist.m3u8';
-        vHeroFallback.preload = 'auto';
-        vHeroFallback.dataset.src = urlHeroFallback;
-        vHeroFallback.src = urlHeroFallback;
-        vHeroFallback.play().catch(function(){});
-        document.querySelector('.hero-bg').classList.add('tiene-video');
+      var vHeroFallback = document.getElementById('heroVideoFallback');
+      var idHeroFallback = vHeroFallback.dataset.heroVideoFallback;
+      if(esMovilHero && idHeroFallback){
+        var bgHero = document.querySelector('.hero-bg');
+        bgHero.style.backgroundImage = 'none';
+        bgHero.classList.remove('tiene-foto');
+        bgHero.classList.add('tiene-video');
+        document.querySelector('.hero').classList.remove('tiene-foto');
         document.querySelector('.hero').classList.add('tiene-video');
+
+        var esIOSHero = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if(esIOSHero){
+          var urlHeroFallback = 'https://vz-3106d8eb-0d1.b-cdn.net/' + idHeroFallback + '/playlist.m3u8';
+          vHeroFallback.preload = 'auto';
+          vHeroFallback.dataset.src = urlHeroFallback;
+          vHeroFallback.src = urlHeroFallback;
+          vHeroFallback.play().catch(function(){});
+        }
       }
     }catch(e){}
   </script>
@@ -3950,9 +3975,24 @@
     const productos = document.querySelector('.hero-productos');
     if(!bg) return;
     const url = horarioNegocio.portadaUrl;
-    if(hero) hero.classList.toggle('tiene-foto', !!url);
-    bg.classList.toggle('tiene-foto', !!url);
-    bg.style.backgroundImage = url ? `url('${url}')` : '';
+
+    // video de fondo, opcional: se calcula ANTES que la foto porque, si hay
+    // video para el viewport actual, la foto no debe pintarse -- ni como
+    // respaldo mientras el video carga -- para no repetir el salto
+    // foto->video (ver el <script> justo después de .hero-bg más abajo, que
+    // ya la oculta en el primer render; esto es lo que la mantenía oculta
+    // una vez Firestore respondía). Celular y computador usan videos
+    // independientes porque el recorte del hero es muy distinto entre los
+    // dos (ver mqHeroDesktop mas abajo).
+    const heroVideoId = mqHeroDesktop.matches
+      ? (horarioNegocio.heroStreamStatusDesktop === 'ready' ? horarioNegocio.heroStreamVideoIdDesktop : '')
+      : (horarioNegocio.heroStreamStatus === 'ready' ? horarioNegocio.heroStreamVideoId : '');
+    const videoUrl = heroVideoId ? bunnyPlaylistUrl(heroVideoId) : '';
+
+    const mostrarFoto = !!url && !videoUrl;
+    if(hero) hero.classList.toggle('tiene-foto', mostrarFoto);
+    bg.classList.toggle('tiene-foto', mostrarFoto);
+    bg.style.backgroundImage = mostrarFoto ? `url('${url}')` : '';
     if(productos) productos.style.display = url ? 'none' : '';
     // guardamos la foto ya confirmada para que la próxima visita no tenga
     // que esperar a Firestore para mostrarla (ver el <script> justo después de <body>)
@@ -3960,15 +4000,6 @@
       if(url) localStorage.setItem('masterlook_portada', url);
       else localStorage.removeItem('masterlook_portada');
     }catch(e){}
-
-    // video de fondo, opcional: se reproduce en bucle encima de la foto (que
-    // queda como respaldo mientras el video carga o si el video no existe).
-    // celular y computador usan videos independientes porque el recorte del
-    // hero es muy distinto entre los dos (ver mqHeroDesktop mas abajo).
-    const heroVideoId = mqHeroDesktop.matches
-      ? (horarioNegocio.heroStreamStatusDesktop === 'ready' ? horarioNegocio.heroStreamVideoIdDesktop : '')
-      : (horarioNegocio.heroStreamStatus === 'ready' ? horarioNegocio.heroStreamVideoId : '');
-    const videoUrl = heroVideoId ? bunnyPlaylistUrl(heroVideoId) : '';
     let video = bg.querySelector('.hero-video');
     bg.classList.toggle('tiene-video', !!videoUrl);
     if(hero) hero.classList.toggle('tiene-video', !!videoUrl);
