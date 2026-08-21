@@ -4356,7 +4356,15 @@
     switchTab(tab || 'login');
     document.getElementById('authModal').classList.add('open');
   }
-  function closeAuth(){ document.getElementById('authModal').classList.remove('open'); }
+  function closeAuth(){
+    document.getElementById('authModal').classList.remove('open');
+    // si se cerró sin completar login/registro estando a mitad de una
+    // compra de curso, se vuelve a mostrar el checkout (los datos ya
+    // escritos siguen ahí, nunca se pierden) en vez de dejar al cliente
+    // sin ningún modal visible.
+    if(cursoEsperandoAuth) document.getElementById('checkoutModal').classList.add('open');
+    cursoEsperandoAuth = false;
+  }
   document.getElementById('authModal').addEventListener('click', e=>{
     if(e.target.id === 'authModal') closeAuth();
   });
@@ -4448,6 +4456,12 @@
       }
     }
 
+    if(cursoEsperandoAuth){
+      closeAuth(); // ya deja cursoEsperandoAuth en false
+      toast('¡Cuenta creada! Continuando con tu compra...');
+      intentarPagarCheckout();
+      return;
+    }
     closeAuth();
     await renderAccount();
     toast('¡Cuenta creada! Bienvenido, ' + name.split(' ')[0]);
@@ -4480,6 +4494,12 @@
       return;
     }
 
+    if(cursoEsperandoAuth){
+      closeAuth(); // ya deja cursoEsperandoAuth en false
+      toast('Sesión iniciada. Continuando con tu compra...');
+      intentarPagarCheckout();
+      return;
+    }
     closeAuth();
     await renderAccount();
     const nombre = (sessionUser?.name || currentUser()?.name || '').split(' ')[0];
@@ -5239,7 +5259,29 @@
       document.querySelectorAll('[data-pago]').forEach(x=> x.classList.toggle('selected', x===o));
     }));
 
-  document.getElementById('ckPagar').addEventListener('click', async ()=>{
+  /** Compra de un curso: a diferencia de reservas y productos, exige sesión
+   *  real ANTES de ir a Webpay (el acceso en "Mis cursos" tiene que quedar
+   *  asociado a un UID de Firebase Auth real, verificado en el servidor --
+   *  ver webpayCrearTransaccion). Si no hay sesión, no se pierde la compra:
+   *  se abre el modal de siempre (#authModal, mismo doLogin/doRegister que
+   *  ya existía) encima del checkout, con el correo ya precargado, y al
+   *  iniciar sesión o crear la cuenta se reintenta el pago solo. */
+  let cursoEsperandoAuth = false;
+  function abrirAuthParaCurso(){
+    cursoEsperandoAuth = true;
+    const nombreCompleto = (document.getElementById('ckNombre').value.trim() + ' ' + document.getElementById('ckApellido').value.trim()).trim();
+    const correo = document.getElementById('ckCorreo').value.trim();
+    document.getElementById('regName').value = nombreCompleto;
+    document.getElementById('regEmail').value = correo;
+    document.getElementById('regPhone').value = document.getElementById('ckFono').value.trim();
+    document.getElementById('loginEmail').value = correo;
+    switchTab('register');
+    document.getElementById('checkoutModal').classList.remove('open'); // mismos datos, se muestran de nuevo al volver
+    document.getElementById('authModal').classList.add('open');
+  }
+
+  document.getElementById('ckPagar').addEventListener('click', intentarPagarCheckout);
+  async function intentarPagarCheckout(){
     const btn = document.getElementById('ckPagar');
     const nombre = document.getElementById('ckNombre').value.trim();
     const apellido = document.getElementById('ckApellido').value.trim();
@@ -5312,15 +5354,34 @@
           ciudad: document.getElementById('ckCiudad').value.trim() || null,
         };
 
+    // Comprar un curso exige sesión real -- no se manda a Webpay todavía,
+    // se pide iniciar sesión/crear cuenta sin perder esta compra (ver
+    // abrirAuthParaCurso más arriba). Se revisa auth.currentUser (el
+    // propio estado del SDK de Firebase, disponible al instante apenas
+    // termina el login/registro) y no currentUser()/customerProfile, que
+    // se actualiza por el listener onAuthStateChanged y podría no haber
+    // alcanzado a refrescarse todavía en este mismo instante.
+    if(tipo === 'COURSE_PURCHASE' && !auth.currentUser){
+      btn.disabled = false; btn.textContent = 'Pagar';
+      abrirAuthParaCurso();
+      return;
+    }
+
     // Webpay real: la transacción se crea en el servidor (Cloud Function),
     // que recalcula el monto real leyendo Firestore -- nunca confía en lo
     // que mande el navegador. Transbank confirma el pago del lado del
     // servidor al volver (ver manejarRetornoWebpay, que lee el resultado
     // ya confirmado en Firestore, nunca decide por sí solo que se pagó).
     try{
+      const headers = { 'Content-Type': 'application/json' };
+      if(tipo === 'COURSE_PURCHASE'){
+        // el UID real lo verifica el servidor a partir de este token --
+        // nunca se manda un UID suelto en el body.
+        headers['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken();
+      }
       const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/webpayCrearTransaccion', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           tipo, datos,
           buyerName: nombre, buyerLastName: apellido, buyerEmail: correo,
@@ -5334,7 +5395,7 @@
       btn.disabled = false; btn.textContent = 'Pagar';
       toast(e.message);
     }
-  });
+  }
 
   /** Comprobante de pago de un curso -- pinta EXACTAMENTE los datos que
    *  devolvió obtenerComprobanteCompra (ya verificados: pago confirmado
