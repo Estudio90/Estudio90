@@ -11151,6 +11151,34 @@
       paymentBtn.classList.add('paid');
       document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
 
+      // Cobrar el pago completo (abono + restante) significa que el servicio
+      // ya se hizo -- se marca "Completado" solo (para que Comisiones
+      // barberos lo cuente sin un paso manual aparte), salvo que la cita sea
+      // de una fecha futura: ahí ya está pagada pero el corte todavía no
+      // ocurre, así que no correspondería contarla como realizada todavía.
+      const hoyIso = new Date().toISOString().slice(0,10);
+      if(currentAppt.status !== 'done' && (!currentAppt.fecha || currentAppt.fecha <= hoyIso)){
+        const estadoAnterior = currentAppt.status;
+        currentAppt.status = 'done';
+        if(currentAppt.fromWeb && currentAppt.webId){
+          try{
+            await db.collection('bookings').doc(currentAppt.webId).update({ etiqueta: 'done' });
+          }catch(e){ currentAppt.status = estadoAnterior; }
+        }
+        if(currentAppt.status === 'done'){
+          document.querySelectorAll('.tag-dot').forEach(x=> x.classList.toggle('selected', x.dataset.s === 'done'));
+          placeTagLabel();
+          const idx = appointments.indexOf(currentAppt);
+          const elCita = document.querySelector(`.appt[data-idx="${idx}"]`);
+          if(elCita){
+            const dot = elCita.querySelector('.status-dot');
+            const txt = elCita.querySelector('.status-txt');
+            if(dot) dot.className = 'status-dot done';
+            if(txt) txt.textContent = tagLabels.done || 'Completado';
+          }
+        }
+      }
+
       enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt);
       mostrarAlertaComprobante(currentAppt, metodoLabel, totalTxt);
       enviarCorreoCalificacion(currentAppt);
