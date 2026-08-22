@@ -797,7 +797,7 @@
     display:flex; flex-direction:column; justify-content:space-between;
     background:linear-gradient(150deg,#4a453d,#191713);
   }
-  .cc-video{position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover;}
+  .cc-video{position:absolute; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; object-position:center top;}
   .cc-photo::before{
     content:""; position:absolute; inset:0; z-index:1;
     background:linear-gradient(180deg, rgba(0,0,0,.15) 0%, transparent 40%, rgba(0,0,0,.55) 100%);
@@ -1231,7 +1231,7 @@
   .ac-course-photo{height:128px; flex-shrink:0; position:relative;
     background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
   .ac-course-photo svg{position:absolute; inset:0; width:34%; height:34%; margin:auto; color:rgba(255,255,255,.55);}
-  .ac-course-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .ac-course-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center top;}
   /* Columna flex: el cuerpo se estira a lo que sobre de alto (todas las
      tarjetas de una fila miden igual, por el stretch por defecto del
      carrusel), y los botones quedan siempre pegados abajo -- así una
@@ -1295,7 +1295,7 @@
     .ac-detail-card{border-radius:16px; max-height:80vh;}
   }
   .ac-detail-photo{height:190px; position:relative; background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
-  .ac-detail-photo video, .ac-detail-photo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .ac-detail-photo video, .ac-detail-photo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center top;}
   .ac-detail-photo svg{position:absolute; inset:0; width:30%; height:30%; margin:auto; color:rgba(255,255,255,.55);}
   .ac-detail-close{position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:50%;
     background:rgba(0,0,0,.45); color:#fff; border:none; font-size:15px; cursor:pointer; z-index:2;}
@@ -5991,10 +5991,16 @@
 
         return `
         <div class="course-card reveal in">
-          <div class="cc-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId)
-              : (c.photoUrl || ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? bunnyThumbUrl(c.trailerStreamVideoId) : ''));
-            return img ? `background-image:url('${img}');background-size:cover;background-position:center;` : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`; })()}">
-            ${(c.streamVideoId && c.streamStatus==='ready') ? `<video class="cc-video" data-src="${bunnyPlaylistUrl(c.streamVideoId)}" muted loop playsinline preload="none"></video>` : ''}
+          <div class="cc-photo" style="${(()=>{
+              const videoIdReal = (c.streamVideoId && c.streamStatus==='ready') ? c.streamVideoId
+                : ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? c.trailerStreamVideoId : '');
+              const img = videoIdReal ? bunnyThumbUrl(videoIdReal) : c.photoUrl;
+            return img ? `background-image:url('${img}');background-size:cover;background-position:center top;` : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`; })()}">
+            ${(()=>{
+              const videoIdReal = (c.streamVideoId && c.streamStatus==='ready') ? c.streamVideoId
+                : ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? c.trailerStreamVideoId : '');
+              return videoIdReal ? `<video class="cc-video" data-src="${bunnyPlaylistUrl(videoIdReal)}" muted loop playsinline preload="none"></video>` : '';
+            })()}
             <div class="cc-kicker">${kicker}</div>
             ${c.featured ? '<span class="cc-badge">Recomendado</span>' : '<span></span>'}
             ${c.priceUsd ? `<span class="cc-usd">◇ $${c.priceUsd}</span>` : '<span></span>'}
@@ -6061,9 +6067,15 @@
       const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
       return `
       <div class="ac-course">
-        <div class="ac-course-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId)
-              : (c.photoUrl || ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? bunnyThumbUrl(c.trailerStreamVideoId) : ''));
-            return img ? `background-image:url('${img}');background-size:cover;background-position:center;` : ''; })()}">${(c.streamVideoId && c.streamStatus==='ready') ? `<video class="ac-course-video" data-src="${bunnyPlaylistUrl(c.streamVideoId)}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
+        <div class="ac-course-photo" style="${(()=>{
+              const videoIdReal = (c.streamVideoId && c.streamStatus==='ready') ? c.streamVideoId
+                : ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? c.trailerStreamVideoId : '');
+              const img = videoIdReal ? bunnyThumbUrl(videoIdReal) : c.photoUrl;
+              return img ? `background-image:url('${img}');background-size:cover;background-position:center top;` : ''; })()}">${(()=>{
+              const videoIdReal = (c.streamVideoId && c.streamStatus==='ready') ? c.streamVideoId
+                : ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? c.trailerStreamVideoId : '');
+              return videoIdReal ? `<video class="ac-course-video" data-src="${bunnyPlaylistUrl(videoIdReal)}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c));
+            })()}</div>
         <div class="ac-course-body">
           <h3>${c.name}</h3>
           <p>${c.description || 'Curso online, a tu ritmo.'}</p>
@@ -6104,14 +6116,15 @@
     const precio = c.priceUsd && c.currency === 'USD' ? 'US$' + c.priceUsd : money(c.priceClp);
 
     const foto = document.getElementById('acDetailPhoto');
-    const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId)
-              : (c.photoUrl || ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? bunnyThumbUrl(c.trailerStreamVideoId) : ''));
-    foto.innerHTML = (c.streamVideoId && c.streamStatus==='ready')
-      ? `<video muted loop playsinline autoplay data-src="${bunnyPlaylistUrl(c.streamVideoId)}"></video>`
+    const videoIdReal = (c.streamVideoId && c.streamStatus==='ready') ? c.streamVideoId
+      : ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? c.trailerStreamVideoId : '');
+    const img = videoIdReal ? bunnyThumbUrl(videoIdReal) : c.photoUrl;
+    foto.innerHTML = videoIdReal
+      ? `<video muted loop playsinline autoplay data-src="${bunnyPlaylistUrl(videoIdReal)}"></video>`
       : (img ? `<img src="${img}" alt="">` : iconoDeCurso(c));
-    if(c.streamVideoId && c.streamStatus==='ready'){
+    if(videoIdReal){
       const v = foto.querySelector('video');
-      adjuntarHls(v, bunnyPlaylistUrl(c.streamVideoId));
+      adjuntarHls(v, bunnyPlaylistUrl(videoIdReal));
     }
 
     document.getElementById('acDetailNombre').textContent = c.name;
