@@ -5991,7 +5991,8 @@
 
         return `
         <div class="course-card reveal in">
-          <div class="cc-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId) : c.photoUrl;
+          <div class="cc-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId)
+              : (c.photoUrl || ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? bunnyThumbUrl(c.trailerStreamVideoId) : ''));
             return img ? `background-image:url('${img}');background-size:cover;background-position:center;` : `background:linear-gradient(150deg,${c.tono || '#4a453d'},#191713);`; })()}">
             ${(c.streamVideoId && c.streamStatus==='ready') ? `<video class="cc-video" data-src="${bunnyPlaylistUrl(c.streamVideoId)}" muted loop playsinline preload="none"></video>` : ''}
             <div class="cc-kicker">${kicker}</div>
@@ -6060,7 +6061,8 @@
       const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
       return `
       <div class="ac-course">
-        <div class="ac-course-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId) : c.photoUrl;
+        <div class="ac-course-photo" style="${(()=>{ const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId)
+              : (c.photoUrl || ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? bunnyThumbUrl(c.trailerStreamVideoId) : ''));
             return img ? `background-image:url('${img}');background-size:cover;background-position:center;` : ''; })()}">${(c.streamVideoId && c.streamStatus==='ready') ? `<video class="ac-course-video" data-src="${bunnyPlaylistUrl(c.streamVideoId)}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c))}</div>
         <div class="ac-course-body">
           <h3>${c.name}</h3>
@@ -6102,7 +6104,8 @@
     const precio = c.priceUsd && c.currency === 'USD' ? 'US$' + c.priceUsd : money(c.priceClp);
 
     const foto = document.getElementById('acDetailPhoto');
-    const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId) : c.photoUrl;
+    const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId)
+              : (c.photoUrl || ((c.trailerStreamVideoId && c.trailerStreamStatus==='ready') ? bunnyThumbUrl(c.trailerStreamVideoId) : ''));
     foto.innerHTML = (c.streamVideoId && c.streamStatus==='ready')
       ? `<video muted loop playsinline autoplay data-src="${bunnyPlaylistUrl(c.streamVideoId)}"></video>`
       : (img ? `<img src="${img}" alt="">` : iconoDeCurso(c));

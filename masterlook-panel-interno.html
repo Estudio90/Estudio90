@@ -9466,9 +9466,14 @@
     const { curso, clases } = cuActual;
     const media = document.getElementById('cuPreviewMedia');
     if(media){
+      // Portada principal primero (video listo, o foto); si el curso no
+      // tiene ninguna de las dos, se usa el video breve de vista previa
+      // como respaldo -- así la vista previa no se queda con el ícono
+      // vacío cuando lo único que hay cargado es ese video.
       const url = curso.streamVideoId && curso.streamStatus === 'ready'
         ? `https://${BUNNY_CDN_PUBLIC}/${curso.streamVideoId}/thumbnail.jpg`
-        : curso.photoUrl;
+        : curso.photoUrl || (curso.trailerStreamVideoId && curso.trailerStreamStatus === 'ready'
+            ? `https://${BUNNY_CDN_PUBLIC}/${curso.trailerStreamVideoId}/thumbnail.jpg` : '');
       media.style.backgroundImage = url ? `url('${url}')` : '';
       media.textContent = url ? '' : '🎬';
     }
