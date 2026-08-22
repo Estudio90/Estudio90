@@ -1452,6 +1452,7 @@
           <div class="user-menu-sep" id="userMenuSepEquipo"></div>
           <button class="user-menu-item" id="btnMiPerfil">Mi perfil</button>
           <button class="user-menu-item" id="btnConfig">Configurar</button>
+          <button class="user-menu-item" id="btnHorarios">Horarios</button>
           <div class="user-menu-sep"></div>
           <button class="user-menu-item danger" id="btnSalir">Cerrar sesión</button>
         </div>
@@ -1506,7 +1507,6 @@
       <div class="nav-group" id="grupoEquipo" style="display:none;">
         <button class="nav-group-head" type="button">Equipo barberos</button>
         <div class="nav-group-items">
-          <button class="menu-panel-item" id="btnHorarios">Horarios</button>
           <button class="menu-panel-item" id="btnEquipoServicios">Servicios staff</button>
           <button class="menu-panel-item" id="btnComisiones">Mis comisiones</button>
         </div>
@@ -11023,19 +11023,18 @@
     const finMin = h*60 + m + servicio.minutes;
 
     if(a.fromWeb && a.webId){
+      // Pasa por la MISMA validación atómica real que crearReservaLocal:
+      // horario del local, horario especial, horario del profesional,
+      // bloqueos y slotLocks -- nunca decide el frontend si el horario
+      // nuevo es válido. Sin límite de veces (reagendo de administración).
       try{
-        const docRef = db.collection('bookings').doc(a.webId);
-        const snap = await docRef.get();
-        const actual = snap.exists ? snap.data() : {};
-        const horaTexto = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-        const slotNuevo = actual.slot ? actual.slot.replace(/\d{1,2}:\d{2}/, horaTexto) : horaTexto;
-        await docRef.update({
-          svc: servicio.name, price: servicio.priceClp, barber: barbero.name,
-          startMin: h*60+m, duracion: servicio.minutes, slot: slotNuevo
+        await functions.httpsCallable('reagendarReservaAdmin')({
+          bookingId: a.webId, barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
+          serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
         });
       }catch(e){
         btn.disabled = false; btn.textContent = 'Guardar cambios';
-        showToast('No se pudo guardar: ' + e.message);
+        showToast('No se pudo guardar: ' + (e.message || 'Ese horario ya no está disponible.'));
         return;
       }
     }
