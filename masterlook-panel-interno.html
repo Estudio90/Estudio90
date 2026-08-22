@@ -1446,13 +1446,6 @@
       <div class="nav-section-label">Vista cliente</div>
       <button class="menu-panel-item" id="btnMensajeriaWhatsapp">Mensajería WhatsApp</button>
 
-      <div class="nav-group" id="grupoReservas">
-        <button class="nav-group-head" type="button">Reservas</button>
-        <div class="nav-group-items">
-          <button class="menu-panel-item" id="btnReservasVer">Ver todas las reservas</button>
-          <button class="menu-panel-item" id="btnReservaNueva">Nueva reserva</button>
-        </div>
-      </div>
 
       <div class="nav-group" id="grupoServicios" style="display:none;">
         <button class="nav-group-head" type="button">Servicios</button>
@@ -3743,11 +3736,6 @@
 
   // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
   document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
-  document.getElementById('btnReservasVer').addEventListener('click', irAlInicio);
-  document.getElementById('btnReservaNueva').addEventListener('click', ()=>{
-    irAlInicio();
-    document.getElementById('btnNuevaReserva')?.click();
-  });
   document.getElementById('btnTiendaVer').addEventListener('click', ()=>
     window.open('masterlook-sitio.html#tienda', '_blank'));
   document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarHorariosPage);
