@@ -1424,6 +1424,72 @@
     .pc-desc{max-width:none;}
     .pc-actions{justify-content:flex-start;}
   }
+
+  /* ===== Resumen de Ventas ===== */
+  .rv-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+  .rv-title{font-size:26px;font-weight:700;margin:0;color:#1A1815;}
+  .rv-sub{font-size:13px;color:#8a8a92;margin:4px 0 0;}
+  .rv-head-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .rv-pill-input{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e7e7ec;border-radius:10px;padding:8px 12px;font-size:13px;color:#333;}
+  .rv-pill-input input[type=date]{border:none;background:transparent;font-size:12.5px;color:#333;padding:0;width:104px;}
+  .rv-select{background:#fff;border:1px solid #e7e7ec;border-radius:10px;padding:9px 14px;font-size:13px;color:#333;min-width:150px;}
+  .rv-btn-primary{background:linear-gradient(180deg,#8477f2,#6a5adf);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 10px rgba(108,92,231,0.25);white-space:nowrap;}
+  .rv-btn-primary:hover{filter:brightness(1.05);}
+  .rv-btn-primary:disabled{opacity:.6;cursor:default;}
+  .rv-btn-ghost{background:#fff;border:1px solid #e7e7ec;color:#4a4a52;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+
+  .rv-kpi-card{display:flex;background:#fff;border:1px solid #eee;border-radius:16px;padding:22px 26px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.03);flex-wrap:wrap;}
+  .rv-kpi-block{display:flex;align-items:center;gap:12px;flex:1;min-width:150px;padding:0 20px;}
+  .rv-kpi-block+.rv-kpi-block{border-left:1px solid #f0f0f0;}
+  .rv-kpi-block.rv-kpi-main{flex-direction:column;align-items:flex-start;gap:6px;padding-left:0;}
+  .rv-kpi-label{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.04em;color:#9a9aa2;text-transform:uppercase;}
+  .rv-kpi-value-lg{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;color:#1A1815;line-height:1.1;letter-spacing:-.01em;}
+  .rv-kpi-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;color:#1A1815;letter-spacing:-.01em;}
+  .rv-kpi-sub{font-family:var(--font-body);font-size:11px;color:#9a9aa2;margin-top:2px;}
+  .rv-kpi-delta{font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-block;}
+  .rv-kpi-delta.up{color:#1f9d55;background:#e8f8ee;}
+  .rv-kpi-delta.down{color:#c0455e;background:#fbeaec;}
+  .rv-icon-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+
+  .rv-filtros-card{display:flex;align-items:flex-end;gap:16px;background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 22px;margin-bottom:16px;flex-wrap:wrap;}
+  .rv-filtro-col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:170px;}
+  .rv-filtro-col label{font-size:12px;font-weight:600;color:#6b6b74;}
+
+  .rv-charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+  .rv-chart-card{background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 20px;}
+  .rv-chart-title{font-size:14px;font-weight:700;margin:0 0 12px;color:#1A1815;display:flex;justify-content:space-between;align-items:center;}
+  .rv-chip-select{border:1px solid #e7e7ec;border-radius:20px;padding:5px 12px;font-size:12px;background:#fff;}
+
+  .rv-tablebox-wrap{background:#fff;border:1px solid #eee;border-radius:16px;overflow:hidden;}
+  .rv-tabla-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;}
+  .rv-tabs{display:flex;gap:22px;}
+  .rv-tab{background:none;border:none;padding:8px 2px 12px;font-size:14px;font-weight:600;color:#9a9aa2;cursor:pointer;border-bottom:2px solid transparent;}
+  .rv-tab.on{color:#6a5adf;border-bottom-color:#6a5adf;}
+  .rv-total-general{font-family:var(--font-body);font-size:14px;color:#6b6b74;}
+  .rv-total-general b{font-family:var(--font-primary);font-variant-numeric:tabular-nums;color:#1f9d55;}
+  .rv-tablebox-wrap table.cx-table td,.rv-tablebox-wrap table.cx-table th{font-family:var(--font-body);}
+  .rv-tablebox-wrap table.cx-table td.r{font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
+  .rv-tablebox-wrap table.cx-table{border:none;border-radius:0;}
+
+  .rv-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .rv-pill-servicio{background:#fde3e8;color:#c0455e;}
+  .rv-pill-producto{background:#fdecd6;color:#b3721f;}
+  .rv-pill-curso{background:#e1f5e9;color:#1f9d55;}
+  .rv-pill-metodo{background:#eef1fb;color:#4a5bd0;}
+
+  .rv-bottom-card{display:flex;background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 24px;flex-wrap:wrap;margin-top:16px;}
+  .rv-bottom-item{display:flex;align-items:center;gap:12px;flex:1;min-width:150px;padding:0 16px;}
+  .rv-bottom-item+.rv-bottom-item{border-left:1px solid #f0f0f0;}
+  .rv-bottom-label{font-family:var(--font-body);font-size:12px;color:#9a9aa2;}
+  .rv-bottom-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:16px;font-weight:700;color:#1A1815;letter-spacing:-.005em;}
+
+  @media (max-width: 980px){
+    .rv-charts-row{grid-template-columns:1fr;}
+    .rv-kpi-card,.rv-bottom-card{flex-direction:column;}
+    .rv-kpi-block,.rv-bottom-item{border-left:none!important;padding:10px 0;border-top:1px solid #f0f0f0;}
+    .rv-kpi-block:first-child,.rv-bottom-item:first-child{border-top:none;}
+    .rv-filtros-card{flex-direction:column;align-items:stretch;}
+  }
 </style>
 </head>
 <body>
@@ -1544,6 +1610,17 @@
         </div>
       </div>
 
+      <!-- Centro general de todas las ventas del negocio (servicios +
+           productos + cursos), ADMIN-only -- ver database/functions/resumenVentas.js.
+           Independiente de Abonos: no comparte datos ni colección con esa
+           vista, solo el mismo lenguaje visual del panel. -->
+      <div class="nav-group" id="grupoResumenVentas" style="display:none;">
+        <button class="nav-group-head" type="button">Ventas</button>
+        <div class="nav-group-items">
+          <button class="menu-panel-item" id="btnResumenVentas">Resumen de ventas</button>
+        </div>
+      </div>
+
       <div class="nav-group" id="grupoClientesDatos" style="display:none;">
         <button class="nav-group-head" type="button">Clientes y datos</button>
         <div class="nav-group-items">
@@ -1569,6 +1646,96 @@
   <div class="content">
 
     <div class="kpi-row" id="kpiRow"></div>
+
+    <!-- ===== VISTA: RESUMEN DE VENTAS -- centro general de todas las
+         ventas (servicios+productos+cursos), ADMIN-only. Fuente única:
+         paymentMovements, vía la Cloud Function obtenerResumenVentas
+         (nunca lectura directa del cliente). Independiente de Abonos:
+         no comparte datos ni colección, solo el mismo lenguaje visual. ===== -->
+    <div id="vistaResumenVentas" style="display:none;">
+      <div class="rv-head">
+        <div>
+          <h2 class="rv-title">Resumen de Ventas</h2>
+          <p class="rv-sub">Vista general de todas tus ventas en un solo lugar</p>
+        </div>
+        <div class="rv-head-actions">
+          <label class="rv-pill-input">📅
+            <input type="date" id="rvDesde">
+            <span>-</span>
+            <input type="date" id="rvHasta">
+          </label>
+          <select class="rv-select" id="rvLocal"><option>Todos los locales</option></select>
+          <button class="rv-btn-primary" id="rvDescargar">⬇ Descargar reporte</button>
+        </div>
+      </div>
+
+      <div class="rv-kpi-card" id="rvKpis"></div>
+      <div style="display:flex;justify-content:flex-end;margin:-8px 0 16px;">
+        <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:8px 16px;font-size:12.5px;color:#6b6b74;display:flex;gap:10px;align-items:center;">
+          <span>🧧 <b id="rvPropinasValor" style="color:#1A1815;">$0</b> Propinas recibidas</span>
+          <span style="color:#c7c7cf;">·</span>
+          <span title="Total Facturado + Propinas -- solo para conciliación interna, nunca reemplaza Total Facturado">Dinero total ingresado: <b id="rvDineroTotalValor" style="color:#1A1815;">$0</b></span>
+        </div>
+      </div>
+
+      <div class="rv-filtros-card">
+        <div class="rv-filtro-col">
+          <label>Locales</label>
+          <select class="rv-select" id="rvLocal2"><option>Todos seleccionados</option></select>
+        </div>
+        <div class="rv-filtro-col">
+          <label>Métodos de pago</label>
+          <select class="rv-select" id="rvMetodoPago"><option value="">Todos seleccionados</option></select>
+        </div>
+        <div class="rv-filtro-col">
+          <label>Tipo de comprobante</label>
+          <select class="rv-select" id="rvTipoComprobante"><option>Todos seleccionados</option></select>
+        </div>
+        <button class="rv-btn-primary" id="rvFiltrar">▽ Filtrar</button>
+        <button class="rv-btn-ghost" id="rvVolver">← Volver a la agenda</button>
+      </div>
+
+      <div id="rvIncidenciasAviso" style="display:none;margin-bottom:16px;padding:10px 14px;border-radius:10px;background:#fff4e5;color:#8a5a00;font-size:13px;"></div>
+
+      <div class="rv-charts-row">
+        <div class="rv-chart-card">
+          <h3 class="rv-chart-title">Ventas por tipo</h3>
+          <div id="rvDonutTipo"></div>
+        </div>
+        <div class="rv-chart-card">
+          <h3 class="rv-chart-title">Ventas por método de pago</h3>
+          <div id="rvDonutMetodo"></div>
+        </div>
+        <div class="rv-chart-card">
+          <h3 class="rv-chart-title">Ventas por día <select class="rv-chip-select" id="rvPeriodoChips"><option value="dia">Por día</option></select></h3>
+          <div id="rvLinea"></div>
+        </div>
+      </div>
+
+      <div class="rv-tablebox-wrap">
+        <div class="rv-tabla-head">
+          <div class="rv-tabs">
+            <button class="rv-tab on" id="rvTabVentas">Ventas</button>
+            <button class="rv-tab" id="rvTabInternas">Ventas internas</button>
+          </div>
+          <span class="rv-total-general" id="rvTotalGeneral"></span>
+        </div>
+        <div class="cx-tablebox" style="border:none;border-radius:0;margin-top:10px;">
+          <table class="cx-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>Fecha y hora</th><th>Local</th><th>Comprobante</th><th>Cliente</th>
+                <th>Detalle</th><th>Tipo</th><th>Método de pago</th>
+                <th class="r">Monto</th><th class="r">Descuento</th><th class="r">Total</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="rvTablaBody"><tr><td colspan="12">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="rv-bottom-card" id="rvResumenInferior"></div>
+    </div>
 
     <!-- ===== VISTA: ABONOS -- SOLO anticipos de reserva ya APROBADOS por
          Webpay (dinero efectivamente recibido). Nunca rechazados,
@@ -2213,6 +2380,15 @@
         <button class="mg-close" data-close>✕</button>
       </div>
       <div id="abDetalleBody" style="display:flex;flex-direction:column;gap:10px;white-space:pre-line;"></div>
+    </div>
+
+    <!-- Detalle de una venta (Resumen de Ventas → Ver) -->
+    <div class="mg-modal" id="modalRvDetalle">
+      <div class="mg-head">
+        <h3>Detalle de la venta</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div id="rvDetalleBody" style="display:flex;flex-direction:column;gap:10px;white-space:pre-line;"></div>
     </div>
 
     <!-- Mi perfil -->
@@ -4061,6 +4237,7 @@
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaPropinas').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAbonos').style.display = '';
@@ -4168,6 +4345,321 @@
     showToast('Abonos descargados (Excel/CSV)');
   }
   document.getElementById('abDescargar').addEventListener('click', abDescargar);
+
+  /**
+   * Resumen de Ventas -- ADMIN-only. Toda la pantalla se pinta desde UNA
+   * sola respuesta de obtenerResumenVentas (Cloud Function, única fuente:
+   * paymentMovements) por cada click en "Filtrar" -- nunca hay lecturas
+   * directas a Firestore acá. Totalmente independiente de Abonos: no lee
+   * `reservationDeposits`, no toca `abonos.js`.
+   */
+  let rvUltimoResultado = null;
+  let rvTabActiva = 'ventas'; // 'ventas' | 'internas' -- filtra SOLO la tabla, nunca los KPIs/donas/línea
+  const RV_COLORES_TIPO = { servicio:'#e0526b', producto:'#e0a23d', curso:'#2fa360' };
+  const RV_PALETA_METODO = ['#f0b13d','#9aa0ae','#e0526b','#5b6bd9','#2fa360','#3b8fa3','#a3702f','#7a4fa3'];
+
+  function mostrarResumenVentas(){
+    document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
+    document.getElementById('vistaUsuarios').style.display = 'none';
+    document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = 'none';
+    document.getElementById('vistaClientes').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
+    document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaAbonos').style.display = 'none';
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = '';
+    ocultarFlotante(true);
+
+    if(!document.getElementById('rvHasta').value){
+      const hoy = new Date();
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      document.getElementById('rvDesde').value = inicioMes.toISOString().slice(0,10);
+      document.getElementById('rvHasta').value = hoy.toISOString().slice(0,10);
+    }
+    rvCargar();
+  }
+  function rvVolverAgenda(){
+    document.getElementById('vistaResumenVentas').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+  document.getElementById('btnResumenVentas').addEventListener('click', mostrarResumenVentas);
+  document.getElementById('rvVolver').addEventListener('click', rvVolverAgenda);
+  document.getElementById('rvFiltrar').addEventListener('click', rvCargar);
+
+  async function rvCargar(){
+    const tbody = document.getElementById('rvTablaBody');
+    tbody.innerHTML = '<tr><td colspan="8">Cargando…</td></tr>';
+    const desde = document.getElementById('rvDesde').value;
+    const hasta = document.getElementById('rvHasta').value;
+    const metodo = document.getElementById('rvMetodoPago').value || null;
+    if(!desde || !hasta) return;
+
+    try{
+      const r = await functions.httpsCallable('obtenerResumenVentas')({ desde, hasta, metodo });
+      rvUltimoResultado = r.data;
+      rvPintarMetodosDisponibles(r.data.metodosDisponibles || []);
+      rvPintarKpis(r.data);
+      rvPintarDonutTipo(r.data);
+      rvPintarDonutMetodo(r.data);
+      rvPintarLinea(r.data);
+      rvPintarTabla(r.data);
+      rvPintarIncidencias(r.data);
+      rvPintarResumenInferior(r.data);
+    }catch(e){
+      tbody.innerHTML = '<tr><td colspan="8">No se pudo cargar. ' + (e.message||'') + '</td></tr>';
+      console.error('rvCargar', e);
+    }
+  }
+
+  function rvPintarMetodosDisponibles(metodos){
+    const sel = document.getElementById('rvMetodoPago');
+    const actual = sel.value;
+    sel.innerHTML = '<option value="">Todos</option>' + metodos.map(m=> `<option value="${m}">${m}</option>`).join('');
+    sel.value = metodos.includes(actual) ? actual : '';
+  }
+
+  function rvBottomItem(icono, label, valor){
+    return `<div class="rv-bottom-item"><span class="rv-icon-circle" style="background:#f2f0fb;">${icono}</span>
+      <div><div class="rv-bottom-label">${label}</div><div class="rv-bottom-value">${valor}</div></div></div>`;
+  }
+  function rvPintarResumenInferior(d){
+    const pct = (v)=> d.totalFacturado ? Math.round(v/d.totalFacturado*100) : 0;
+    document.getElementById('rvResumenInferior').innerHTML = [
+      rvBottomItem('💰','Total facturado', money(d.totalFacturado)),
+      rvBottomItem('✂️','Ventas servicios', `${money(d.servicios)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.servicios)}%)</span>`),
+      rvBottomItem('🛒','Ventas productos', `${money(d.productos)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.productos)}%)</span>`),
+      rvBottomItem('🎓','Ventas cursos', `${money(d.cursos)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.cursos)}%)</span>`),
+      rvBottomItem('🎫','Tickets', d.cantidadVentas),
+      rvBottomItem('🏅','Ticket promedio', money(d.ticketPromedio)),
+    ].join('');
+  }
+
+  function rvPintarIncidencias(d){
+    const aviso = document.getElementById('rvIncidenciasAviso');
+    if(d.cantidadIncidencias > 0){
+      aviso.style.display = '';
+      aviso.textContent = `⚠ ${money(d.pendienteRevision)} en ${d.cantidadIncidencias} venta(s) histórica(s) pendiente(s) de revisión manual -- no incluidos en Total Facturado.`;
+    } else {
+      aviso.style.display = 'none';
+    }
+  }
+
+  function rvKpiBlock({label, valor, sub, icono, bg}){
+    return `<div class="rv-kpi-block">
+      <span class="rv-icon-circle" style="background:${bg};">${icono}</span>
+      <div><div class="rv-kpi-label">${label}</div><div class="rv-kpi-value">${valor}</div><div class="rv-kpi-sub">${sub}</div></div>
+    </div>`;
+  }
+
+  function rvPintarKpis(d){
+    const filtrado = !!d.metodoFiltro;
+    const variacion = d.totalFacturadoVariacion;
+    const variacionHtml = filtrado ? '' : `<div class="rv-kpi-delta ${variacion>=0?'up':'down'}">${variacion>=0?'▲':'▼'} ${Math.abs(variacion)}% vs período anterior</div>`;
+    document.getElementById('rvKpis').innerHTML = `
+      <div class="rv-kpi-block rv-kpi-main">
+        <div class="rv-kpi-label">TOTAL FACTURADO${filtrado?` (solo ${d.metodoFiltro})`:''}</div>
+        <div class="rv-kpi-value-lg">${money(d.totalFacturado)}</div>
+        ${variacionHtml}
+      </div>
+      ${rvKpiBlock({label:'Ventas', valor:d.cantidadVentas, sub:'Total de ventas', icono:'🛍️', bg:'#efeafc'})}
+      ${rvKpiBlock({label:'Ticket promedio', valor:money(d.ticketPromedio), sub:filtrado?'Parcial (método filtrado)':'Por transacción', icono:'🎖️', bg:'#e5f0fb'})}
+      ${rvKpiBlock({label:'Servicios', valor:money(d.servicios), sub:(d.totalFacturado?Math.round(d.servicios/d.totalFacturado*100):0)+'% del total', icono:'✂️', bg:'#fde3e8'})}
+      ${rvKpiBlock({label:'Productos', valor:money(d.productos), sub:(d.totalFacturado?Math.round(d.productos/d.totalFacturado*100):0)+'% del total', icono:'🛒', bg:'#fdecd6'})}
+      ${rvKpiBlock({label:'Cursos', valor:money(d.cursos), sub:(d.totalFacturado?Math.round(d.cursos/d.totalFacturado*100):0)+'% del total', icono:'🎓', bg:'#e1f5e9'})}
+    `;
+    document.getElementById('rvTotalGeneral').innerHTML = `Total general: <b>${money(rvTotalTabla(d))}</b>`;
+    document.getElementById('rvPropinasValor').textContent = money(d.totalPropinas);
+    document.getElementById('rvDineroTotalValor').textContent = money(d.dineroTotalIngresado);
+  }
+
+  function rvTotalTabla(d){
+    const filas = (d.filas||[]).filter(f=> rvTabActiva==='internas' ? f.esInterna : true);
+    return filas.reduce((s,f)=> s+f.total, 0);
+  }
+
+  function rvSvgDonut(entries, totalTexto){
+    const total = entries.reduce((s,e)=> s+e.value, 0);
+    const r = 70, cx = 90, cy = 90, grosor = 26;
+    const circunferencia = 2*Math.PI*r;
+    let acumulado = 0;
+    const arcos = entries.filter(e=> e.value > 0).map(e=>{
+      const frac = total > 0 ? e.value/total : 0;
+      const largo = frac*circunferencia;
+      const dashoffset = -acumulado*circunferencia;
+      acumulado += frac;
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${e.color}" stroke-width="${grosor}" stroke-dasharray="${largo} ${circunferencia-largo}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
+    }).join('');
+    const svg = `<svg viewBox="0 0 180 180" width="180" height="180">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#ececec" stroke-width="${grosor}"></circle>
+      ${arcos}
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="600">${totalTexto}</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="10" fill="#888">Total</text>
+    </svg>`;
+    const leyenda = entries.map(e=>{
+      const pct = total > 0 ? Math.round(e.value/total*100) : 0;
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${e.color};display:inline-block;flex-shrink:0;"></span>
+        <span style="flex:1;">${e.label}</span><span style="font-weight:600;">${money(e.value)}</span>
+        <span style="color:#888;width:40px;text-align:right;">${pct}%</span>
+      </div>`;
+    }).join('');
+    return `<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+      <div style="flex-shrink:0;">${svg}</div><div style="flex:1;min-width:180px;">${leyenda || '<p class="cx-empty">Sin datos.</p>'}</div></div>`;
+  }
+
+  function rvPintarDonutTipo(d){
+    const entries = [
+      { label:'Servicios', value:d.servicios, color:RV_COLORES_TIPO.servicio },
+      { label:'Productos', value:d.productos, color:RV_COLORES_TIPO.producto },
+      { label:'Cursos', value:d.cursos, color:RV_COLORES_TIPO.curso },
+    ];
+    document.getElementById('rvDonutTipo').innerHTML = rvSvgDonut(entries, money(d.totalFacturado));
+  }
+
+  function rvPintarDonutMetodo(d){
+    const metodos = Object.keys(d.donaPorMetodo||{});
+    const entries = metodos.map((m,i)=> ({ label:m, value:d.donaPorMetodo[m], color: RV_PALETA_METODO[i % RV_PALETA_METODO.length] }));
+    document.getElementById('rvDonutMetodo').innerHTML = rvSvgDonut(entries, money(d.totalFacturado));
+  }
+
+  function rvSvgLinea(serie){
+    if(!serie.length) return '<p class="cx-empty">Sin datos en el rango.</p>';
+    const w = 760, h = 220, padL = 54, padR = 14, padT = 14, padB = 26;
+    const max = Math.max(...serie.map(x=> x.monto), 1);
+    const stepX = serie.length > 1 ? (w-padL-padR)/(serie.length-1) : 0;
+    const puntos = serie.map((x,i)=>{
+      const px = padL + i*stepX;
+      const py = h-padB - (x.monto/max)*(h-padT-padB);
+      return { x:px, y:py, d:x };
+    });
+    const path = puntos.map((p,i)=> (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const area = path + ` L${puntos[puntos.length-1].x.toFixed(1)},${h-padB} L${puntos[0].x.toFixed(1)},${h-padB} Z`;
+    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#6a5adf"><title>${p.d.fecha}: ${money(p.d.monto)}</title></circle>`).join('');
+    const saltoEje = Math.max(1, Math.ceil(puntos.length/8));
+    const ejeX = puntos.filter((_,i)=> i % saltoEje === 0).map(p=>
+      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" fill="#9a9aa2">${p.d.fecha.slice(5)}</text>`).join('');
+    const pasosY = 4;
+    const ejeY = Array.from({length:pasosY+1}, (_, i)=>{
+      const valor = Math.round(max*i/pasosY);
+      const y = h-padB - (i/pasosY)*(h-padT-padB);
+      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" fill="#9a9aa2">${money(valor)}</text>
+              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#f2f2f5" stroke-width="1"></line>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="max-width:100%;">
+      ${ejeY}
+      <path d="${area}" fill="#6a5adf1f"></path>
+      <path d="${path}" fill="none" stroke="#6a5adf" stroke-width="2.5"></path>
+      ${puntosSvg}${ejeX}
+    </svg>`;
+  }
+
+  function rvPintarLinea(d){
+    document.getElementById('rvLinea').innerHTML = rvSvgLinea(d.serieDiaria || []);
+  }
+
+  function rvFmtFechaHora(ms){
+    if(!ms) return '—';
+    return new Date(ms).toLocaleString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+
+  const RV_LABEL_TIPO = { servicio:'Servicio', producto:'Producto', curso:'Curso' };
+  const RV_PILL_TIPO = { servicio:'rv-pill-servicio', producto:'rv-pill-producto', curso:'rv-pill-curso' };
+
+  function rvPintarTabla(d){
+    const tbody = document.getElementById('rvTablaBody');
+    const filas = (d.filas||[]).filter(f=> rvTabActiva==='internas' ? f.esInterna : true);
+    document.getElementById('rvTotalGeneral').innerHTML = `Total general: <b>${money(rvTotalTabla(d))}</b>`;
+    if(!filas.length){
+      tbody.innerHTML = '<tr><td colspan="12">No hay ventas en el rango seleccionado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filas.map(f=>{
+      const conceptosVenta = f.conceptos.filter(c=> c!=='propina');
+      const tiposHtml = conceptosVenta.map(c=> `<span class="rv-pill ${RV_PILL_TIPO[c]||''}">${RV_LABEL_TIPO[c]||c}</span>`).join(' ');
+      const metodosHtml = f.metodos.map(m=> `<span class="rv-pill rv-pill-metodo">${m}</span>`).join(' ');
+      return `<tr>
+        <td class="mono">${f.id}</td>
+        <td>${rvFmtFechaHora(f.fechaMs)}</td>
+        <td>MASTERLOOK</td>
+        <td class="mono">${f.comprobante}</td>
+        <td>${escapeHTML(f.cliente || '—')}</td>
+        <td>${escapeHTML(f.detalle || conceptosVenta.map(c=>RV_LABEL_TIPO[c]||c).join(' + ')).toUpperCase()}${f.cantidadMovimientos>1?` <span style="color:#9a9aa2;">(${f.cantidadMovimientos} pagos)</span>`:''}</td>
+        <td>${tiposHtml}</td>
+        <td>${metodosHtml}</td>
+        <td class="r">${money(f.total)}</td>
+        <td class="r">$0</td>
+        <td class="r">${money(f.total)}</td>
+        <td><button class="ctrl-btn rv-ver" data-saleid="${f.saleId}">👁 Ver</button></td>
+      </tr>`;
+    }).join('');
+    tbody.querySelectorAll('.rv-ver').forEach(btn=> btn.addEventListener('click', ()=> rvVerDetalle(btn.dataset.saleid)));
+  }
+
+  function rvVerDetalle(saleId){
+    const f = (rvUltimoResultado?.filas||[]).find(x=> x.saleId === saleId);
+    if(!f) return;
+    document.getElementById('rvDetalleBody').textContent =
+      `ID: ${f.id}\nComprobante: ${f.comprobante}\nFecha y hora: ${rvFmtFechaHora(f.fechaMs)}\nLocal: MASTERLOOK\n` +
+      `Cliente: ${f.cliente || '—'}\nDetalle: ${f.detalle || '—'}\n` +
+      `Tipo: ${f.conceptos.filter(c=>c!=='propina').map(c=> RV_LABEL_TIPO[c]||c).join(', ')}\n` +
+      `Método de pago: ${f.metodos.join(', ')}\nMonto: ${money(f.total)}\nDescuento: $0\nTotal: ${money(f.total)}\n` +
+      (f.propina ? `Propina asociada: ${money(f.propina)} (no forma parte de este monto de venta)\n` : '') +
+      `Cantidad de movimientos: ${f.cantidadMovimientos}\nOrigen: ${f.esInterna ? 'Interna (presencial)' : 'Online / mixta'}\n\n` +
+      (f.bookingId ? `Reserva: ${f.bookingId}\n` : '') +
+      (f.productOrderId ? `Orden de producto: ${f.productOrderId}\n` : '') +
+      (f.coursePurchaseId ? `Compra de curso: ${f.coursePurchaseId}\n` : '');
+    abrirModal('modalRvDetalle');
+  }
+
+  document.getElementById('rvTabVentas').addEventListener('click', ()=>{
+    rvTabActiva = 'ventas';
+    document.getElementById('rvTabVentas').classList.add('on');
+    document.getElementById('rvTabInternas').classList.remove('on');
+    if(rvUltimoResultado) rvPintarTabla(rvUltimoResultado);
+  });
+  document.getElementById('rvTabInternas').addEventListener('click', ()=>{
+    rvTabActiva = 'internas';
+    document.getElementById('rvTabInternas').classList.add('on');
+    document.getElementById('rvTabVentas').classList.remove('on');
+    if(rvUltimoResultado) rvPintarTabla(rvUltimoResultado);
+  });
+
+  function rvDescargar(){
+    if(!rvUltimoResultado) return;
+    const filas = (rvUltimoResultado.filas||[]).filter(f=> rvTabActiva==='internas' ? f.esInterna : true);
+    const filasCsv = [['ID','Fecha y hora','Local','Comprobante','Cliente','Detalle','Tipo','Método de pago','Monto','Descuento','Total']];
+    filas.forEach(f=>{
+      filasCsv.push([
+        f.id, rvFmtFechaHora(f.fechaMs), 'MASTERLOOK', f.comprobante, f.cliente||'', f.detalle||'',
+        f.conceptos.filter(c=>c!=='propina').map(c=> RV_LABEL_TIPO[c]||c).join(' + '), f.metodos.join(' + '),
+        f.total, 0, f.total,
+      ]);
+    });
+    const csv = '﻿' + filasCsv.map(f=> f.map(cell=> `"${String(cell ?? '')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const a = document.createElement('a');
+    const desde = document.getElementById('rvDesde').value;
+    const hasta = document.getElementById('rvHasta').value;
+    a.href = url; a.download = `resumen_ventas_${desde}_a_${hasta}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Reporte descargado (Excel/CSV)');
+  }
+  document.getElementById('rvDescargar').addEventListener('click', rvDescargar);
+
+  // Migración histórica: por decisión explícita de la dueña, el dashboard
+  // arranca en cero (sin migrar reservas antiguas) -- por eso no hay botón
+  // en la interfaz. La Cloud Function `migrarHistorialPagos` sigue
+  // desplegada (one-time, idempotente) por si más adelante se pide migrar
+  // el histórico; se puede invocar entonces desde la consola de Firebase
+  // o reincorporando este botón, sin volver a tocar el resto del sistema.
+
   ['lgUser','lgPass'].forEach(id=>
     document.getElementById(id).addEventListener('keydown', e=>{
       if(e.key === 'Enter') intentarIngreso();
@@ -4489,11 +4981,15 @@
     }, 0);
   }
 
+  // Saldo real del servicio: viene de paymentMovements (única fuente
+  // financiera, ver obtenerHistorialPagosReserva), nunca de un campo local
+  // como `abono`/`montoAnticipo` -- eso era exactamente el bug que
+  // duplicaba el anticipo Webpay al cobrar en persona. Se carga al abrir
+  // la pantalla de cobro (goToPayView) y se cachea en currentAppt._saldo.
   function baseServicePrice(){
     if(!currentAppt) return 0;
-    const total = parsePrice(currentAppt.price);
-    const abono = currentAppt.abono ? parsePrice(currentAppt.abono) : 0;
-    return Math.max(0, total - abono);
+    if(typeof currentAppt._saldoServicio === 'number') return currentAppt._saldoServicio;
+    return parsePrice(currentAppt.price); // aún no cargó el saldo real -- ver goToPayView
   }
 
   function tipAmount(){
@@ -4790,6 +5286,11 @@
     ['btnComProfesionales','btnComBarberos','btnComPropinas','btnComProductos','btnComAbonos'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
+
+    // Resumen de Ventas: ADMIN-only, sin excepción -- la protección real
+    // está en el backend (obtenerResumenVentas exige verificarAdmin), esto
+    // solo evita mostrar el botón a quien de todas formas no podría usarlo.
+    document.getElementById('btnResumenVentas').style.display = soloAdmin;
 
     // Clientes/Horarios/Reseñas/ARCO: administrador y recepción sí, barbero no.
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
@@ -6915,6 +7416,7 @@
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaPropinas').style.display = 'none';
     document.getElementById('vistaAbonos').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
@@ -7686,7 +8188,7 @@
      vendidos, aunque usa el mismo arreglo de reservas ya cargado. ---------- */
   let tpRep = null;
   function mostrarPropinas(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -10292,7 +10794,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -12013,31 +12515,53 @@
   document.addEventListener('click', ()=> paymentMenu.classList.remove('open'));
   paymentMenu.addEventListener('click', (e)=> e.stopPropagation());
 
-  function goToPayView(){
+  // Carga (o recarga) el saldo real y el historial de pagos de la reserva
+  // abierta desde paymentMovements -- fuente única, nunca un campo local.
+  async function cargarHistorialPagos(){
+    if(!currentAppt || !currentAppt.fromWeb || !currentAppt.webId) return;
+    try{
+      const r = await functions.httpsCallable('obtenerHistorialPagosReserva')({ bookingId: currentAppt.webId });
+      currentAppt._saldoServicio = r.data.saldoPendiente;
+      currentAppt._historialPagos = r.data.movimientos || [];
+    }catch(e){
+      showToast('No se pudo cargar el historial de pagos: ' + e.message);
+    }
+  }
+
+  async function goToPayView(){
     paymentMenu.classList.remove('open');
     detailView.classList.remove('open');
     payView.classList.add('open');
     document.getElementById('paySeccionProductos').style.display = userRole === 'BARBER' ? 'none' : '';
+    document.getElementById('payContinue').disabled = true;
+    updateTotals();
+    await cargarHistorialPagos();
+    document.getElementById('payContinue').disabled = false;
     updateTotals();
   }
   document.getElementById('menuComplete').addEventListener('click', goToPayView);
 
   function pintarAbonoView(){
     const est = document.getElementById('abonoEstado');
-    est.textContent = currentAppt?.abono
-      ? `${currentAppt.abono} · ${currentAppt.abonoMetodo || ''} · ${currentAppt.abonoFecha || ''}`
-      : 'Sin abonos registrados';
+    const hist = currentAppt?._historialPagos || [];
+    est.textContent = hist.length
+      ? hist.map(m=> `${formatCLP(m.monto)} · ${m.metodo} (${m.tipo})`).join(' — ') + ` · Saldo: ${formatCLP(currentAppt._saldoServicio ?? 0)}`
+      : 'Sin pagos registrados';
     llenarSelect(document.getElementById('abonoMetodo'),
       Object.entries(METODOS_PAGO).map(([id,name])=> ({id,name})), 'id', m=> m.name);
     document.getElementById('abonoMonto').value = '';
   }
 
-  function abrirAbonoView(){
+  async function abrirAbonoView(){
     paymentMenu.classList.remove('open');
-    pintarAbonoView();
     detailView.classList.remove('open');
     payView.classList.remove('open');
     abonoView.classList.add('open');
+    document.getElementById('abonoGuardar').disabled = true;
+    pintarAbonoView();
+    await cargarHistorialPagos();
+    document.getElementById('abonoGuardar').disabled = false;
+    pintarAbonoView();
   }
   document.getElementById('menuAbono').addEventListener('click', abrirAbonoView);
   document.getElementById('rowAbono').addEventListener('click', abrirAbonoView);
@@ -12049,28 +12573,34 @@
 
   document.getElementById('abonoGuardar').addEventListener('click', async ()=>{
     const a = currentAppt;
-    if(!a) return;
+    if(!a || !a.fromWeb || !a.webId) return;
     const monto = parseInt(document.getElementById('abonoMonto').value, 10);
     if(!monto || monto <= 0){ showToast('Ingresa un monto válido'); return; }
     const metodoKey = document.getElementById('abonoMetodo').value;
     const metodoLabel = METODOS_PAGO[metodoKey] || metodoKey;
-    const fecha = new Date().toLocaleDateString('es-CL');
 
-    if(a.fromWeb && a.webId){
-      try{
-        await db.collection('bookings').doc(a.webId).update({
-          abono: monto, abonoMetodo: metodoLabel, abonoFecha: fecha
-        });
-      }catch(e){ showToast('No se pudo guardar: ' + e.message); return; }
+    const btn = document.getElementById('abonoGuardar');
+    if(btn.disabled) return; // ya hay una operación en curso -- nunca un segundo click genera otro operationId
+    btn.disabled = true;
+    // operationId: se genera UNA vez por click, antes de la llamada de red --
+    // un reintento (timeout, doble click bloqueado por el propio disabled)
+    // nunca produce un id distinto para la misma acción del usuario.
+    const operationId = 'abono-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
+
+    try{
+      const r = await functions.httpsCallable('registrarCobroReserva')({
+        operationId, bookingId: a.webId, tipoOperacion: 'abono',
+        legs: [{ metodo: metodoLabel, monto }],
+      });
+      a._saldoServicio = r.data.saldoPendienteServicio;
+      showToast(`Abono registrado · ${formatCLP(monto)}`);
+      await cargarHistorialPagos();
+      pintarAbonoView();
+    }catch(e){
+      showToast('No se pudo guardar: ' + (e.message || e));
+    }finally{
+      btn.disabled = false;
     }
-
-    a.abono = formatCLP(monto);
-    a.abonoMetodo = metodoLabel;
-    a.abonoFecha = fecha;
-    document.getElementById('payLast').textContent = `Último abono: ${fecha}, ${metodoLabel}, ${a.abono}`;
-
-    showToast(`Abono registrado · ${a.abono}`);
-    pintarAbonoView();
   });
 
   document.getElementById('menuWa').addEventListener('click', ()=>{
@@ -12156,9 +12686,10 @@
 
   document.getElementById('payContinue').addEventListener('click', async ()=>{
     const btn = document.getElementById('payContinue');
+    if(btn.disabled) return; // ya hay una operación en curso -- nunca un segundo click genera otro operationId
     const totalTxt = document.getElementById('payTotal').textContent;
 
-    let pagos = null;
+    let legs = null;
     if(multiPagoActivo){
       const total = parsePrice(totalTxt);
       const m1 = parseInt(document.getElementById('multiMonto1').value, 10) || 0;
@@ -12167,62 +12698,42 @@
       if(!m1 || !m2) return showToast('Ingresa un monto para cada método de pago');
       const metodo1 = document.getElementById('multiMetodo1').value;
       const metodo2 = document.getElementById('multiMetodo2').value;
-      pagos = [
+      legs = [
         { metodo: METODOS_PAGO[metodo1] || metodo1, monto: m1 },
         { metodo: METODOS_PAGO[metodo2] || metodo2, monto: m2 },
       ];
+    } else {
+      legs = [{ metodo: METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado, monto: parsePrice(totalTxt) }];
     }
 
     const numeroTransaccion = document.getElementById('numeroTransaccionInput').value.trim();
 
-    if(currentAppt){
-      const metodoLabel = pagos
-        ? pagos.map(p=> p.metodo).join(' + ')
-        : (METODOS_PAGO[metodoPagoSeleccionado] || metodoPagoSeleccionado);
-      const productos = Object.keys(cart).filter(id=> cart[id] > 0).map(id=>{
-        const p = productsCache.find(x=> x.id === id);
-        return { id, name:p.name, qty:cart[id], price:p.price, subtotal:p.price*cart[id] };
-      });
+    if(currentAppt && currentAppt.fromWeb && currentAppt.webId){
+      const metodoLabel = legs.map(l=> l.metodo).join(' + ');
+      const productos = Object.keys(cart).filter(id=> cart[id] > 0).map(id=> ({ productId:id, qty:cart[id] }));
+      // operationId: se genera UNA vez por click, antes de la llamada de red --
+      // el botón queda deshabilitado de inmediato, así un reintento (timeout,
+      // doble click) nunca produce un id distinto para la misma acción.
+      const operationId = 'cobro-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
 
-      // descontamos del stock lo que se acaba de vender, y lo dejamos
-      // anotado en el registro de Productos con la comisión del barbero
-      productos.forEach(item=>{
-        const p = productsCache.find(x=> x.id === item.id);
-        const nuevoStock = Math.max(0, (p?.stock ?? 0) - item.qty);
-        db.collection('products').doc(item.id).update({ stock: nuevoStock }).catch(()=>{});
-        db.collection('productSales').add({
-          productId: item.id, productName: item.name, qty: item.qty,
-          price: item.price, subtotal: item.subtotal,
-          origen: 'barbero', barberName: currentAppt.barber, bookingId: currentAppt.webId || null,
-          comision: Math.round(item.subtotal * 0.10),
-          fecha: currentAppt.fecha || new Date().toISOString().slice(0,10),
-          createdAt: new Date().toISOString(),
-        }).catch(()=>{});
-      });
-
-      if(currentAppt.fromWeb && currentAppt.webId){
-        btn.disabled = true; btn.textContent = 'Guardando...';
-        try{
-          await db.collection('bookings').doc(currentAppt.webId).update({
-            pagado: true,
-            metodoPago: metodoLabel,
-            montoPagado: parsePrice(totalTxt),
-            propina: tipAmount(),
-            productosVendidos: productos,
-            fechaPago: new Date().toISOString(),
-            ...(pagos ? { pagos } : {}),
-            ...(numeroTransaccion ? { numeroTransaccion } : {}),
-          });
-        }catch(e){
-          btn.disabled = false; btn.textContent = 'Continuar';
-          return showToast('No se pudo guardar el cobro: ' + e.message);
-        }
+      btn.disabled = true; btn.textContent = 'Guardando...';
+      let r;
+      try{
+        r = await functions.httpsCallable('registrarCobroReserva')({
+          operationId, bookingId: currentAppt.webId, tipoOperacion: 'cobro_final',
+          legs, productos, propina: tipAmount(),
+          ...(numeroTransaccion ? { numeroTransaccion } : {}),
+        });
+      }catch(e){
         btn.disabled = false; btn.textContent = 'Continuar';
+        return showToast('No se pudo guardar el cobro: ' + (e.message || e));
       }
+      btn.disabled = false; btn.textContent = 'Continuar';
+      currentAppt._saldoServicio = r.data.saldoPendienteServicio;
 
       currentAppt.pagado = true;
       currentAppt.metodoPago = metodoLabel;
-      if(pagos) currentAppt.pagos = pagos;
+      if(legs.length > 1) currentAppt.pagos = legs;
       if(numeroTransaccion) currentAppt.numeroTransaccion = numeroTransaccion;
       paymentBtn.classList.add('paid');
       document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
