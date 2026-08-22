@@ -26,6 +26,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Vista previa de video (clases de Academy): mismo reproductor que usa el sitio público -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
 <style>
   :root{
     /* Bricolage Grotesque para títulos/números (mismo aire que Clash Display,
@@ -746,6 +748,16 @@
     z-index:88; display:none;
   }
   .mg-overlay.open{display:block;}
+
+  /* Vista previa de video (clases de Academy): overlay grande dedicado,
+     no encaja en el ancho fijo de .mg-modal (pensado para diálogos chicos). */
+  .pv-video-modal{position:fixed; inset:0; z-index:400; background:rgba(0,0,0,.92);
+    display:none; align-items:center; justify-content:center; padding:24px;}
+  .pv-video-modal.open{display:flex;}
+  .pv-video-modal video{max-width:920px; width:100%; max-height:82vh; border-radius:12px; background:#000;}
+  .pv-video-close{position:absolute; top:22px; right:22px; width:40px; height:40px; border-radius:50%;
+    background:rgba(255,255,255,.14); color:#fff; border:none; font-size:16px; cursor:pointer;}
+  .pv-video-close:hover{background:rgba(255,255,255,.24);}
   .mg-modal{
     position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
     width:min(440px, calc(100vw - 32px)); max-height:88vh; overflow-y:auto;
@@ -2058,6 +2070,11 @@
     </div>
 
     <!-- Otorgar acceso manual (transferencia, efectivo, etc) -->
+    <div class="pv-video-modal" id="pvVideoModal" onclick="if(event.target===this) cerrarVistaPreviaVideo()">
+      <button class="pv-video-close" onclick="cerrarVistaPreviaVideo()" aria-label="Cerrar">✕</button>
+      <video id="pvVideoPlayer" controls playsinline></video>
+    </div>
+
     <div class="mg-modal" id="modalCuBorrarClase">
       <div class="mg-head">
         <h3>Quitar clase</h3>
@@ -9049,6 +9066,7 @@
                       <input type="text" class="cu-clase-in" data-cl-titulo value="${(l.title||'').replace(/"/g,'&quot;')}">
                       ${badgeEstadoVideo(l.streamStatus)}
                       ${l.streamVideoId && l.streamStatus === 'processing' ? `<button type="button" class="cu-card-link" data-cl-refrescar title="Verificar si ya terminó de procesarse" style="margin-left:4px;">🔄</button>` : ''}
+                      ${l.streamVideoId && l.streamStatus === 'ready' ? `<button type="button" class="cu-card-link" data-cl-ver title="Ver el video" style="margin-left:4px;">▶ Ver</button>` : ''}
                     </div>
                     <div class="cu-curl" style="display:flex;align-items:center;gap:10px;">
                       <input type="number" class="cu-clase-in cu-clase-in--min" data-cl-min placeholder="min" min="0" value="${l.durationMin ?? ''}">
@@ -9157,6 +9175,7 @@
         cuGuardarClasesSilencioso();
       });
       row.querySelector('[data-cl-refrescar]')?.addEventListener('click', ()=> cuRefrescarEstadoClase(i));
+      row.querySelector('[data-cl-ver]')?.addEventListener('click', ()=> cuVerVideoClase(i));
     });
 
     document.getElementById('clAgregar').addEventListener('click', cuAgregarClase);
@@ -9187,6 +9206,55 @@
    *  miniatura de vista previa acá en el panel (no son secretos). */
   const BUNNY_CDN_PUBLIC = 'vz-3106d8eb-0d1.b-cdn.net';
   const BUNNY_CDN_PRIVATE = 'vz-77fac3a5-715.b-cdn.net';
+
+  /** Vista previa de un video ya subido (clase de curso, o el video de
+   *  presentación de Academy) -- deja que quien lo sube confirme que quedó
+   *  bien sin tener que ir al sitio público. Mismo patrón de reproducción
+   *  que usa el sitio (hls.js con fallback nativo para Safari/iOS), pero
+   *  pidiendo la URL firmada a `obtenerTokenReproduccionAdmin` (sin pasar
+   *  por `entitlements`, porque acá quien pide es quien administra el
+   *  curso, no un alumno). */
+  function adjuntarHlsPanel(video, src){
+    if(window.Hls && Hls.isSupported()){
+      if(video._hls) video._hls.destroy();
+      const hls = new Hls();
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      video._hls = hls;
+    } else {
+      video.src = src;
+    }
+  }
+  function abrirVistaPreviaVideo(url){
+    const player = document.getElementById('pvVideoPlayer');
+    adjuntarHlsPanel(player, url);
+    player.currentTime = 0;
+    document.getElementById('pvVideoModal').classList.add('open');
+    player.play().catch(()=>{});
+  }
+  function cerrarVistaPreviaVideo(){
+    const player = document.getElementById('pvVideoPlayer');
+    player.pause();
+    if(player._hls){ player._hls.destroy(); player._hls = null; }
+    player.removeAttribute('src');
+    player.load();
+    document.getElementById('pvVideoModal').classList.remove('open');
+  }
+  async function verVideoSubido(videoId, isFree){
+    try{
+      const r = await functions.httpsCallable('obtenerTokenReproduccionAdmin')({
+        videoId, libreria: isFree ? 'public' : 'private',
+      });
+      abrirVistaPreviaVideo(r.data.playbackUrl);
+    }catch(e){
+      showToast(e.message || 'No se pudo abrir el video.');
+    }
+  }
+  function cuVerVideoClase(i){
+    const l = cuActual.clases[i];
+    if(!l || !l.streamVideoId) return;
+    verVideoSubido(l.streamVideoId, l.isFree);
+  }
 
   function badgeEstadoVideo(status){
     const info = {
