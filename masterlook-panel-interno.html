@@ -9217,7 +9217,24 @@
   function adjuntarHlsPanel(video, src){
     if(window.Hls && Hls.isSupported()){
       if(video._hls) video._hls.destroy();
-      const hls = new Hls();
+      // El token de Bunny firma toda la carpeta del video (manifest + listas
+      // de calidad + segmentos), pero hls.js solo lo lleva en la primera
+      // petición -- las sub-listas (360p/720p/...) las pide sin el query
+      // string y Bunny las rechaza con 403. Se reenvía a mano en cada
+      // petición que haga hls.js (mismo criterio que adjuntarHls() del sitio).
+      const srcUrl = new URL(src, location.href);
+      const token = srcUrl.searchParams.get('token');
+      const expires = srcUrl.searchParams.get('expires');
+      const hls = new Hls(token ? {
+        xhrSetup(xhr, url){
+          const u = new URL(url, location.href);
+          if(!u.searchParams.has('token')){
+            u.searchParams.set('token', token);
+            u.searchParams.set('expires', expires);
+          }
+          xhr.open('GET', u.href, true);
+        }
+      } : {});
       hls.loadSource(src);
       hls.attachMedia(video);
       video._hls = hls;
