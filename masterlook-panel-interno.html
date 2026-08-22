@@ -2323,6 +2323,22 @@
       </div>
 
       <div class="cx-panel" style="margin-top:16px;">
+        <h3 style="font-size:14px;margin:0 0 4px;">Horario especial de una fecha puntual</h3>
+        <p class="mg-note">Para un feriado, una apertura excepcional o un cierre extraordinario -- sin cambiar el horario semanal de siempre. Manda por sobre el horario semanal solo esa fecha.</p>
+        <div id="cfgEspecialesLista" style="margin-bottom:10px;"></div>
+        <label class="mg-label">Fecha</label>
+        <input type="date" id="cfgEspecialFecha" class="mg-input">
+        <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px;color:var(--text-hi);">
+          <input type="checkbox" id="cfgEspecialCerrado" style="width:auto;"> Cerrado todo el día
+        </label>
+        <div id="cfgEspecialHoras">
+          <label class="mg-label">Horario ese día (ej. 14:00–18:00)</label>
+          <input type="text" id="cfgEspecialTexto" class="mg-input" placeholder="Ej: 14:00–18:00">
+        </div>
+        <button class="mg-btn solid full" id="cfgEspecialGuardar" style="margin-top:10px;">+ Agregar horario especial</button>
+      </div>
+
+      <div class="cx-panel" style="margin-top:16px;">
         <h3 style="font-size:14px;margin:0 0 4px;">Horario por barbero</h3>
         <p class="mg-note">Define las horas de trabajo de cada barbero, para calcular las horas disponibles al reservar.</p>
         <label class="mg-label">Barbero</label>
@@ -5140,29 +5156,12 @@
         db.collection('barbers').get()
       ]);
 
-      if(!svcSnap.empty){
-        cfgServicios = svcSnap.docs.map(d=> d.data());
-      } else {
-        cfgServicios = [
-          {id:'d1', name:'Corte de cabello', priceClp:14000, minutes:45, active:true, featured:true},
-          {id:'d2', name:'Corte + perfilado de cejas', priceClp:18000, minutes:60, active:true, featured:true},
-          {id:'d3', name:'Corte + barba', priceClp:19000, minutes:60, active:true, featured:true},
-          {id:'d4', name:'Peinado especial', priceClp:22000, minutes:45, active:true, featured:false},
-          {id:'d5', name:'Combo recomendado', priceClp:28000, minutes:60, active:true, featured:true},
-          {id:'d6', name:'Ondulación permanente', priceClp:45000, minutes:180, active:true, featured:false},
-        ];
-        cfgServicios.forEach(s=> db.collection('services').doc(s.id).set(s).catch(()=>{}));
-      }
-
-      if(!barSnap.empty){
-        cfgBarberos = barSnap.docs.map(d=> d.data());
-      } else {
-        cfgBarberos = barbers.map(b=> ({
-          id:'d'+b.id, calId:b.id, name:b.name, initials:b.initials,
-          active: b.active !== false, schedules:[],
-        }));
-        cfgBarberos.forEach(b=> db.collection('barbers').doc(b.id).set(b).catch(()=>{}));
-      }
+      // Fail closed: si "services"/"barbers" está vacío de verdad, se deja
+      // vacío -- nunca se inventan datos de ejemplo ni se escriben solos a
+      // Firestore como si fueran reales (eso ya causó que un negocio real
+      // terminara con un catálogo fantasma). Configúralos desde el panel.
+      cfgServicios = svcSnap.docs.map(d=> d.data());
+      cfgBarberos = barSnap.docs.map(d=> d.data());
     }catch(e){}
   }
 
@@ -5189,6 +5188,17 @@
   ['nrServicio','nrBarbero','nrFecha'].forEach(id=>
     document.getElementById(id).addEventListener('change', cargarHorasLibres));
 
+  /** Ocupación real por fecha -- MISMA fuente que usa el sitio público
+   *  (Cloud Function `obtenerOcupacionDia`), nunca un horario propio del
+   *  panel: ya incluye horario real del local, horario especial de esa
+   *  fecha si existe, bloqueos, y horario propio de cada profesional --
+   *  todo calculado una sola vez en el servidor (ver disponibilidad.js). */
+  async function nrObtenerOcupacionReal(fecha){
+    const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
+    if(!resp.ok) throw new Error('No se pudo consultar la disponibilidad real.');
+    return resp.json(); // { horario: {abre,cierra} | null, ocupacion: {nombreBarbero: [[ini,fin],...]} }
+  }
+
   async function cargarHorasLibres(){
     const cont = document.getElementById('nrHoras');
     nrSeleccion.startsAt = null;
@@ -5200,36 +5210,34 @@
       const barbero = cfgBarberos.find(b=> b.id === barberoId);
       const servicio = cfgServicios.find(s=> s.id === document.getElementById('nrServicio').value);
       const dur = servicio?.minutes || 45;
+      const dia = new Date(fecha + 'T12:00:00').getDay();
 
-      // reservas ya tomadas ese día por ese barbero
-      const delDia = fecha === currentDate ? appointments : (demoAgenda[fecha] || []);
-      const ocupados = delDia
-        .filter(a=> a.barber === barbero?.name)
-        .map(a=> [a.start[0]*60 + a.start[1], a.end[0]*60 + a.end[1]]);
+      cont.innerHTML = '<div class="mg-msg">Buscando horarios reales...</div>';
+      let real;
+      try{
+        real = await nrObtenerOcupacionReal(fecha);
+      }catch(e){
+        // FAIL CLOSED: si no se puede confirmar el horario real, no se
+        // inventa disponibilidad -- nunca ofrecer horas "por si acaso".
+        cont.innerHTML = '<div class="mg-msg">No se pudo confirmar el horario real del local. Intenta de nuevo en un momento.</div>';
+        return;
+      }
+      if(!real.horario){
+        cont.innerHTML = '<div class="mg-msg">El local no atiende ese día.</div>';
+        return;
+      }
 
+      const ocupados = (real.ocupacion[barbero?.name] || []).slice();
       const esHoy = fecha === new Date().toISOString().slice(0,10);
       const ahora = new Date().getHours() * 60 + new Date().getMinutes();
-      const dia = new Date(fecha + 'T12:00:00').getDay();
-      const cierre = dia === 6 ? 18*60 : 20*60;
-
-      // horario semanal propio del barbero, si lo configuraron desde "Equipo"
-      const bloquesBarbero = barbero?.schedules || [];
-      if(bloquesBarbero.length){
-        const hoyBloque = bloquesBarbero.find(s=> s.weekday === dia);
-        if(!hoyBloque){
-          ocupados.push([0, 24*60]);
-        } else {
-          if(hoyBloque.startMin > 0) ocupados.push([0, hoyBloque.startMin]);
-          if(hoyBloque.endMin < 24*60) ocupados.push([hoyBloque.endMin, 24*60]);
-        }
-      }
+      const inicioGrilla = Math.ceil(real.horario.abre / 60) * 60;
 
       const libres = [];
       let bloqueadosPorHora = 0, bloqueadosPorCita = 0;
 
-      for(let min = 10*60; min + dur <= cierre; min += 60){
+      for(let min = inicioGrilla; min + dur <= real.horario.cierra; min += 60){
         const choca = ocupados.some(([ini,fin])=> min < fin && (min + dur) > ini);
-        const muyPronto = esHoy && min < ahora + 60;
+        const muyPronto = esHoy && min < ahora + 5;
         if(choca){ bloqueadosPorCita++; continue; }
         if(muyPronto){ bloqueadosPorHora++; continue; }
         libres.push(String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0'));
@@ -5239,9 +5247,7 @@
         // Explicamos el motivo real y ofrecemos la salida, en vez de
         // dejar al usuario pensando que el barbero está mal configurado.
         let motivo, accion = '';
-        if(dia === 0){
-          motivo = 'Los domingos el local está cerrado.';
-        } else if(bloqueadosPorCita && !bloqueadosPorHora){
+        if(bloqueadosPorCita && !bloqueadosPorHora){
           motivo = 'Ese barbero ya tiene el día completo.';
         } else if(esHoy){
           motivo = 'Ya pasó el horario de atención de hoy.';
@@ -5369,34 +5375,6 @@
     setTimeout(()=>{ document.getElementById('nrSugerencias').style.display = 'none'; }, 150);
   });
 
-  /** Igual criterio que las reservas del sitio (ver database/functions/
-   *  clientes.js): al confirmar una reserva de administración, se busca un
-   *  cliente existente por teléfono y se actualiza, o se crea uno nuevo --
-   *  nunca se duplica. Si falla, no bloquea la reserva (ya quedó guardada). */
-  async function nrSincronizarCliente(nombreCompleto, telefono){
-    const tel = (telefono || '').trim();
-    if(!tel) return;
-    const partes = nombreCompleto.trim().split(/\s+/).filter(Boolean);
-    const nombre = partes[0] || '', apellido = partes.slice(1).join(' ');
-    try{
-      const snap = await db.collection('clientes').where('telefono','==',tel).limit(1).get();
-      if(!snap.empty){
-        const doc = snap.docs[0];
-        const previo = doc.data();
-        await doc.ref.set({
-          nombre: previo.nombre || nombre,
-          apellido: previo.apellido || apellido,
-          telefono: tel,
-          email: previo.email || '',
-          rut: previo.rut || '',
-        }, { merge:true });
-      } else {
-        const id = 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
-        await db.collection('clientes').doc(id).set({ id, nombre, apellido, telefono:tel, email:'', rut:'', createdAt: new Date().toISOString() });
-      }
-    }catch(e){ /* no bloquea la reserva si esto falla */ }
-  }
-
   document.getElementById('nrGuardar').addEventListener('click', async ()=>{
     const btn = document.getElementById('nrGuardar');
     btn.disabled = true; btn.textContent = 'Agendando...';
@@ -5426,33 +5404,34 @@
         return;
       }
     } else {
-      // guardamos en Firestore, igual que las reservas web, para que el cobro
-      // y las comisiones de esta cita también queden registrados de verdad.
+      // Pasa por la MISMA función atómica que ya protege las reservas web
+      // (crearReservaLocal -> crearReservaTransaccional): revalida el
+      // horario real y reclama el slotLock dentro de una transacción, así
+      // dos personas del staff nunca pueden ganar la misma hora del mismo
+      // profesional -- nunca más una escritura directa a Firestore acá.
       const fecha = document.getElementById('nrFecha').value;
       const [h,m] = nrSeleccion.hora.split(':').map(Number);
-      const finMin = h*60 + m + servicio.minutes;
-      const col = cfgBarberos.filter(b=> b.active).findIndex(b=> b.id === barbero.id) + 1 || 1;
       const fono = document.getElementById('nrFono').value.trim();
       const notas = document.getElementById('nrNota').value.trim() || 'Reserva tomada en el local';
-      const bookingId = 'panel-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
 
       try{
-        await db.collection('bookings').doc(bookingId).set({
-          id: bookingId, client: nombre, svc: servicio.name, barber: barbero.name,
-          fecha, startMin: h*60+m, duracion: servicio.minutes,
-          price: servicio.priceClp, decision: 'aprobada',
-          slot: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
-          pay: '', notes: notas, createdAt: new Date().toISOString(),
+        await functions.httpsCallable('crearReservaLocal')({
+          fecha, client: nombre, phone: fono, email: '', pay: 'Efectivo en local', notaAdmin: notas,
+          citas: [{
+            serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
+            barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
+            label: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
+          }],
         });
-        await db.collection('bookings').doc(bookingId).collection('private').doc('contact')
-          .set({ phone: fono, email: '' });
       }catch(e){
         btn.disabled = false; btn.textContent = 'Agendar';
-        showToast('No se pudo guardar: ' + e.message);
+        showToast('No se pudo guardar: ' + (e.message || 'Ese horario ya no está disponible.'));
+        cargarHorasLibres(); // por si alguien más se adelantó a ese mismo horario
         return;
       }
 
-      await nrSincronizarCliente(nombre, fono);
+      // (la ficha del cliente ya se creó/actualizó del lado del servidor,
+      // dentro de crearReservaLocal -- una sola fuente para ese upsert)
       nrClientesListos = false; // para que la próxima vez que se use el campo traiga este cliente ya cargado
 
       // No la dibujamos a mano acá: el listener en vivo de "bookings" (el mismo
@@ -5805,6 +5784,61 @@
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
+  /* ---------- Horario especial por fecha puntual (feriado, apertura o
+     cierre excepcional) -- manda por sobre el horario semanal SOLO esa
+     fecha (ver horarioDelDia en disponibilidad.js/masterlook-sitio.html). */
+  let cfgEspecialesCache = {};
+  async function cfgCargarEspeciales(){
+    try{
+      const doc = await db.collection('settings').doc('negocio').get();
+      cfgEspecialesCache = (doc.exists && doc.data().horariosEspeciales) || {};
+    }catch(e){ cfgEspecialesCache = {}; }
+    cfgPintarEspeciales();
+  }
+  function cfgPintarEspeciales(){
+    const cont = document.getElementById('cfgEspecialesLista');
+    const fechas = Object.keys(cfgEspecialesCache).sort();
+    if(!fechas.length){ cont.innerHTML = '<p class="mg-note" style="margin:0;">Sin horarios especiales configurados.</p>'; return; }
+    cont.innerHTML = fechas.map(f=> `
+      <div class="bl-item" data-especial="${f}">
+        <span>${f} — ${escapeHTML(cfgEspecialesCache[f].texto || 'Cerrado')}</span>
+        <button type="button" data-especial-borrar="${f}">Quitar</button>
+      </div>`).join('');
+    cont.querySelectorAll('[data-especial-borrar]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const f = btn.dataset.especialBorrar;
+        try{
+          await db.collection('settings').doc('negocio').update({ [`horariosEspeciales.${f}`]: firebase.firestore.FieldValue.delete() });
+          delete cfgEspecialesCache[f];
+          cfgPintarEspeciales();
+          showToast('Horario especial eliminado');
+        }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+      });
+    });
+  }
+  document.getElementById('cfgEspecialCerrado').addEventListener('change', (e)=>{
+    document.getElementById('cfgEspecialHoras').style.display = e.target.checked ? 'none' : '';
+  });
+  document.getElementById('cfgEspecialGuardar').addEventListener('click', async ()=>{
+    const fecha = document.getElementById('cfgEspecialFecha').value;
+    const cerrado = document.getElementById('cfgEspecialCerrado').checked;
+    const texto = cerrado ? 'Cerrado' : document.getElementById('cfgEspecialTexto').value.trim();
+    if(!fecha) return showToast('Elige una fecha');
+    if(!texto) return showToast('Escribe el horario de ese día (ej. 14:00–18:00) o marca "Cerrado"');
+    try{
+      await db.collection('settings').doc('negocio').set({
+        horariosEspeciales: { [fecha]: { texto } }
+      }, { mergeFields: [`horariosEspeciales.${fecha}`] });
+      cfgEspecialesCache[fecha] = { texto };
+      cfgPintarEspeciales();
+      document.getElementById('cfgEspecialFecha').value = '';
+      document.getElementById('cfgEspecialTexto').value = '';
+      document.getElementById('cfgEspecialCerrado').checked = false;
+      document.getElementById('cfgEspecialHoras').style.display = '';
+      showToast(`Horario especial guardado para ${fecha}`);
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
   /* ---------- Página "Colores del sitio": propia, con vista previa en vivo de celular y computador ---------- */
   const COLORES_ORIGINALES = {
     colorAcentoOscuro:'#C9A76A', colorTextoOscuro:'#F2F0EC', colorFondoOscuro:'#0A0A0B',
@@ -6008,6 +6042,7 @@
     llenarSelect(document.getElementById('cfgBarberoHorario'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
     pintarHorarioSemanal();
     cargarHorarioLocal();
+    cfgCargarEspeciales();
   }
 
   function hrVolverAgenda(){

@@ -4008,10 +4008,13 @@
    * reservar — y vuelve a cerrar apenas se deja el texto en "Cerrado".
    */
   function horarioDelDia(fecha){
-    const dia = new Date(fecha + 'T12:00:00').getDay();
-    const texto = dia === 0 ? horarioNegocio.horarioDomingo
-      : dia === 6 ? horarioNegocio.horarioSabado
-      : horarioNegocio.horarioSemana;
+    // Horario especial para ESA fecha exacta (feriado, apertura excepcional,
+    // cierre extraordinario) manda por sobre el horario semanal recurrente.
+    const especial = horarioNegocio.horariosEspeciales && horarioNegocio.horariosEspeciales[fecha];
+    const texto = especial ? especial.texto
+      : (new Date(fecha + 'T12:00:00').getDay() === 0 ? horarioNegocio.horarioDomingo
+      : new Date(fecha + 'T12:00:00').getDay() === 6 ? horarioNegocio.horarioSabado
+      : horarioNegocio.horarioSemana);
     const m = String(texto || '').trim().match(/^(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})$/);
     if(!m) return null;
     const abre = Number(m[1])*60 + Number(m[2]);
