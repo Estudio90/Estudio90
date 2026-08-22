@@ -9325,6 +9325,7 @@
             ${cuMediaThumbHtml(curso)}
             <button type="button" class="mg-btn ghost" id="cuMediaBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
             ${curso.streamVideoId ? badgeEstadoVideo(curso.streamStatus) : ''}
+            ${curso.streamVideoId && curso.streamStatus === 'processing' ? `<button type="button" class="cu-card-link" id="cuRefrescarMedia" title="Verificar si ya terminó de procesarse">🔄</button>` : ''}
             ${(curso.photoUrl || curso.streamVideoId) ? `<button type="button" class="cu-card-link del" id="cuQuitarMedia">Quitar</button>` : ''}
           </div>
 
@@ -9334,6 +9335,7 @@
             ${cuTrailerThumbHtml(curso)}
             <button type="button" class="mg-btn ghost" id="cuTrailerBtn" style="flex:none;padding:8px 14px;">⬆ Elegir video</button>
             ${curso.trailerStreamVideoId ? badgeEstadoVideo(curso.trailerStreamStatus) : ''}
+            ${curso.trailerStreamVideoId && curso.trailerStreamStatus === 'processing' ? `<button type="button" class="cu-card-link" id="cuRefrescarTrailer" title="Verificar si ya terminó de procesarse">🔄</button>` : ''}
             ${curso.trailerStreamVideoId ? `<button type="button" class="cu-card-link del" id="cuQuitarTrailer">Quitar</button>` : ''}
           </div>
 
@@ -9518,9 +9520,11 @@
     document.getElementById('cuMediaThumb').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
     document.getElementById('cuMediaBtn').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
     document.getElementById('cuQuitarMedia')?.addEventListener('click', ()=> cuQuitarMedia(cuActual.curso.id));
+    document.getElementById('cuRefrescarMedia')?.addEventListener('click', ()=> cuRefrescarEstadoMedia(cuActual.curso.id));
     document.getElementById('cuTrailerThumb').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
     document.getElementById('cuTrailerBtn').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
     document.getElementById('cuQuitarTrailer')?.addEventListener('click', ()=> cuQuitarTrailer(cuActual.curso.id));
+    document.getElementById('cuRefrescarTrailer')?.addEventListener('click', ()=> cuRefrescarEstadoTrailer(cuActual.curso.id));
     document.getElementById('cuRecomendado').addEventListener('change', (e)=> cuCambiarRecomendacion(cuActual.curso.id, e.target.checked));
     document.getElementById('cuRecursoBtn').addEventListener('click', cuSubirRecurso);
     document.getElementById('cuAgregarRecurso').addEventListener('click', cuAgregarRecurso);
@@ -9827,6 +9831,38 @@
       }
     });
     input.click();
+  }
+
+  /** Verificación manual del estado real en Bunny -- el webhook automático
+   *  puede llegar a avisar "procesando" ANTES de que este mismo panel
+   *  termine de guardar el streamVideoId en Firestore (la subida real del
+   *  archivo tarda más que los primeros avisos de Bunny), y entonces ese
+   *  aviso no encuentra a qué curso pertenece y el estado se queda pegado
+   *  en "Procesando…" para siempre aunque el video ya esté listo. Mismo
+   *  mecanismo que ya existe para las clases (🔄 en "Lecciones en video"). */
+  async function cuRefrescarEstadoMedia(cursoId){
+    const c = cuCursos.find(x=> x.id === cursoId);
+    if(!c || !c.streamVideoId) return;
+    try{
+      const r = await functions.httpsCallable('obtenerEstadoVideo')({ videoId: c.streamVideoId, libreria: 'public' });
+      c.streamStatus = r.data.estado;
+      if(cuActual?.curso?.id === cursoId) cuActual.curso.streamStatus = r.data.estado;
+      await publicarCursos();
+      cuPintarDetalle();
+      showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
+    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
+  }
+  async function cuRefrescarEstadoTrailer(cursoId){
+    const c = cuCursos.find(x=> x.id === cursoId);
+    if(!c || !c.trailerStreamVideoId) return;
+    try{
+      const r = await functions.httpsCallable('obtenerEstadoVideo')({ videoId: c.trailerStreamVideoId, libreria: 'public' });
+      c.trailerStreamStatus = r.data.estado;
+      if(cuActual?.curso?.id === cursoId) cuActual.curso.trailerStreamStatus = r.data.estado;
+      await publicarCursos();
+      cuPintarDetalle();
+      showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
+    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
   }
 
   async function cuQuitarTrailer(cursoId){
