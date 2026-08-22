@@ -180,6 +180,25 @@
   .nav-group-items{display:none;flex-direction:column;padding:0 0 4px 14px;}
   .nav-group.open .nav-group-items{display:flex;}
   .nav-group-items .menu-panel-item{border-bottom:none;padding:6px 4px;font-size:13px;color:var(--text-mid);}
+
+  /* ---------- Ordenar menú (modo edición) ---------- */
+  .btn-ordenar-menu{
+    display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+    padding:9px 4px;border:none;border-bottom:1px solid var(--border);background:none;
+    font-family:inherit;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;
+    margin-bottom:2px;
+  }
+  .menu-links.reordering .menu-panel-item,
+  .menu-links.reordering .nav-group-head{cursor:grab;user-select:none;-webkit-user-select:none;}
+  .menu-links.reordering .menu-panel-item::after,
+  .menu-links.reordering .nav-group-head::after{content:'⠿';margin-left:auto;color:var(--text-low);font-size:14px;flex:0 0 auto;}
+  .menu-links.reordering .menu-panel-item:hover,
+  .menu-links.reordering .nav-group-head:hover{color:inherit;}
+  .menu-links.reordering .nav-group.open .nav-group-head .chev{display:none;}
+  .menu-dragging{
+    position:relative;z-index:5;cursor:grabbing!important;touch-action:none;
+    background:var(--panel-2);box-shadow:var(--shadow-hover);border-radius:8px;opacity:.96;
+  }
   .nav-group-items .menu-panel-item:hover{color:var(--accent);}
 
   .content{padding:22px 32px 0;}
@@ -526,6 +545,14 @@
   .cu-recurso-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8f8fa;border-radius:8px;margin-bottom:6px;font-size:12.5px;}
   .cu-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .cu-archivo-nombre{font-size:11.5px;color:#57565f;}
+  .cl-upload-estado{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:#fafafb;}
+  .cl-upload-info{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--text-hi);margin-bottom:7px;}
+  .cl-upload-info span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cl-upload-info span:last-child{flex:0 0 auto;color:#57565f;}
+  .cl-upload-bar{height:6px;border-radius:99px;background:#e2e2e6;overflow:hidden;}
+  .cl-upload-bar-fill{height:100%;background:var(--accent, #4a5cf0);border-radius:99px;transition:width .2s ease;}
+  .cl-upload-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:7px;font-size:11.5px;color:#57565f;}
+  .cl-upload-fila.error #clUploadTexto, .cl-upload-estado.error #clUploadTexto{color:#B03A2E;}
 
   .cu-preview{background:#17171B;border-radius:14px;overflow:hidden;color:#fff;position:sticky;top:14px;}
   .cu-preview-head{background:#0e0e10;padding:9px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8b8a91;font-weight:600;}
@@ -1438,7 +1465,8 @@
       <div class="wordmark"><span class="dot"></span>Master Look</div>
       <button class="x-round" id="cerrarMenuLateral" aria-label="Cerrar menú">×</button>
     </div>
-    <nav class="menu-links">
+    <nav class="menu-links" id="menuLinks">
+      <button class="btn-ordenar-menu" id="btnOrdenarMenu" type="button" style="display:none;">↕ Ordenar menú</button>
       <div class="nav-section-label">Panel</div>
       <button class="menu-panel-item" id="btnAgendaNav">Agenda</button>
       <button class="menu-panel-item" id="btnRecordatorios">Recordatorios</button>
@@ -3734,6 +3762,172 @@
     btn.addEventListener('click', cerrarMenuLateral);
   });
 
+  // ---------- Ordenar menú (solo ADMIN): flechas ↑↓ para acomodar el orden
+  // de las secciones principales y de los ítems dentro de cada grupo
+  // desplegable, guardado en settings/negocio para que se vea igual desde
+  // cualquier dispositivo. Nunca se cruza de una sección a otra (Panel /
+  // Vista cliente son anclas fijas), solo se reordena dentro de cada una. ----------
+  const menuLinks = document.getElementById('menuLinks');
+  let menuReorderMode = false;
+  let guardarOrdenMenuTimer = null;
+
+  function ordenActualDelMenu(){
+    const secciones = {};
+    let seccionActual = null;
+    [...menuLinks.children].forEach(el=>{
+      if(el.classList.contains('nav-section-label')){
+        seccionActual = el.textContent.trim();
+        secciones[seccionActual] = [];
+      } else if(seccionActual && el.id && (el.classList.contains('menu-panel-item') || el.classList.contains('nav-group'))){
+        secciones[seccionActual].push(el.id);
+      }
+    });
+    const subgrupos = {};
+    menuLinks.querySelectorAll('.nav-group').forEach(g=>{
+      const items = g.querySelector('.nav-group-items');
+      if(items) subgrupos[g.id] = [...items.children].filter(el=> el.id).map(el=> el.id);
+    });
+    return { secciones, subgrupos };
+  }
+
+  function guardarOrdenMenuDebounced(){
+    clearTimeout(guardarOrdenMenuTimer);
+    guardarOrdenMenuTimer = setTimeout(async ()=>{
+      try{
+        await db.collection('settings').doc('negocio').set({ menuOrden: ordenActualDelMenu() }, { merge:true });
+      }catch(e){ console.error('guardarOrdenMenu', e); }
+    }, 500);
+  }
+
+  /** Deja presionado y arrastra `agarre` (el propio ítem, o su cabecera si
+   *  es un grupo) para reordenar `el` dentro de `contenedor` -- nunca cruza
+   *  un .nav-section-label. Usa Pointer Events (funciona igual con mouse
+   *  y con el dedo en el celular). Un tap corto (sin mantener presionado)
+   *  no hace nada -- ya lo bloquea el listener de click de más abajo. */
+  function habilitarDragMenu(el, contenedor, agarre){
+    if(agarre.dataset.dragListo) return; // no duplicar listeners si ya se activó antes
+    agarre.dataset.dragListo = '1';
+    let pressTimer = null, dragging = false, pointerId = null, startY = 0;
+
+    agarre.addEventListener('pointerdown', (e)=>{
+      if(!menuReorderMode || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      pointerId = e.pointerId;
+      startY = e.clientY;
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(()=>{
+        dragging = true;
+        el.classList.add('menu-dragging');
+        try{ agarre.setPointerCapture(pointerId); }catch(err){}
+      }, 160);
+    });
+
+    agarre.addEventListener('pointermove', (e)=>{
+      if(e.pointerId !== pointerId) return;
+      if(!dragging){ return; }
+      e.preventDefault();
+      const dy = e.clientY - startY;
+      el.style.transform = `translateY(${dy}px)`;
+      const rect = el.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      const next = el.nextElementSibling;
+      if(next && !next.classList.contains('nav-section-label')){
+        const r = next.getBoundingClientRect();
+        if(centerY > r.top + r.height / 2){
+          contenedor.insertBefore(next, el);
+          startY = e.clientY;
+          el.style.transform = 'translateY(0px)';
+          return;
+        }
+      }
+      const prev = el.previousElementSibling;
+      if(prev && !prev.classList.contains('nav-section-label')){
+        const r = prev.getBoundingClientRect();
+        if(centerY < r.top + r.height / 2){
+          contenedor.insertBefore(el, prev);
+          startY = e.clientY;
+          el.style.transform = 'translateY(0px)';
+        }
+      }
+    });
+
+    function soltar(e){
+      if(e.pointerId !== pointerId) return;
+      clearTimeout(pressTimer);
+      if(dragging){
+        el.classList.remove('menu-dragging');
+        el.style.transform = '';
+        guardarOrdenMenuDebounced();
+      }
+      dragging = false;
+      pointerId = null;
+    }
+    agarre.addEventListener('pointerup', soltar);
+    agarre.addEventListener('pointercancel', soltar);
+  }
+
+  function activarOrdenarMenu(){
+    menuReorderMode = true;
+    menuLinks.classList.add('reordering');
+    menuLinks.querySelectorAll('.nav-group').forEach(g=> g.classList.add('open'));
+    [...menuLinks.children].forEach(el=>{
+      if(el.id && el.classList.contains('menu-panel-item')) habilitarDragMenu(el, menuLinks, el);
+      else if(el.id && el.classList.contains('nav-group')) habilitarDragMenu(el, menuLinks, el.querySelector('.nav-group-head'));
+    });
+    menuLinks.querySelectorAll('.nav-group-items').forEach(items=>{
+      [...items.children].forEach(el=>{ if(el.id) habilitarDragMenu(el, items, el); });
+    });
+    document.getElementById('btnOrdenarMenu').textContent = '✓ Listo';
+  }
+  function desactivarOrdenarMenu(){
+    menuReorderMode = false;
+    menuLinks.classList.remove('reordering');
+    document.getElementById('btnOrdenarMenu').textContent = '↕ Ordenar menú';
+  }
+  document.getElementById('btnOrdenarMenu').addEventListener('click', ()=>{
+    if(menuReorderMode) desactivarOrdenarMenu(); else activarOrdenarMenu();
+  });
+  // Mientras se está ordenando, ningún clic en un ítem debe navegar ni
+  // abrir/cerrar un grupo -- solo presionar y arrastrar hace algo.
+  menuLinks.addEventListener('click', (e)=>{
+    if(menuReorderMode && e.target.id !== 'btnOrdenarMenu'){
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+  }, true);
+
+  /** Aplica el orden guardado en settings/negocio.menuOrden (si existe) al
+   *  abrir el panel -- se llama una vez, después de cargar la config del
+   *  negocio. Si algún id guardado ya no existe (función eliminada del
+   *  menú), simplemente se ignora. */
+  function aplicarOrdenMenuGuardado(orden){
+    if(!orden) return;
+    const labels = [...menuLinks.querySelectorAll(':scope > .nav-section-label')];
+    labels.forEach((label, i)=>{
+      const guardado = orden.secciones?.[label.textContent.trim()];
+      if(!guardado) return;
+      const limite = labels[i+1] || null;
+      guardado.forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && el.parentElement === menuLinks) menuLinks.insertBefore(el, limite);
+      });
+    });
+    Object.entries(orden.subgrupos || {}).forEach(([grupoId, ids])=>{
+      const grupo = document.getElementById(grupoId);
+      const itemsCont = grupo?.querySelector('.nav-group-items');
+      if(!itemsCont) return;
+      ids.forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && el.parentElement === itemsCont) itemsCont.appendChild(el);
+      });
+    });
+  }
+  async function cargarYAplicarOrdenMenu(){
+    try{
+      const doc = await db.collection('settings').doc('negocio').get();
+      aplicarOrdenMenuGuardado(doc.exists ? doc.data().menuOrden : null);
+    }catch(e){ /* si falla, el menú queda con el orden por defecto */ }
+  }
+
   // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
   document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
   document.getElementById('btnTiendaVer').addEventListener('click', ()=>
@@ -3900,6 +4094,7 @@
       }
     }catch(e){ userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null; }
     mostrarControlesAdmin();
+    cargarYAplicarOrdenMenu();
     entrarAlPanel(user.email);
     if(userRole === 'BARBER') mostrarVistaBarbero();
   });
@@ -4474,7 +4669,7 @@
     // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
     // Servicios staff, Mi equipo, y el grupo "Más".
     ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
-     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo',
+     'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo','btnOrdenarMenu',
      'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
@@ -4640,7 +4835,7 @@
     return [Math.floor(total/60) % 24, total % 60];
   }
 
-  function importWebBookings(){
+  function importWebBookings(silencioso){
     const incoming = firestoreBookings;
 
     const existing = new Set(appointments.map(a=> a.webId).filter(Boolean));
@@ -4649,6 +4844,7 @@
     incoming.forEach(r=>{
       if(existing.has(r.id)) return;
       if(r.decision === 'rechazada') return;   // las rechazadas no se muestran en el calendario
+      if(r.fecha !== currentDate) return;      // solo el día que se está viendo -- si no, se mezclan citas de otras fechas en el mismo horario y se ven "encimadas"
 
       const meta = serviceMeta(r.svc);
       const col = pickColumn(r.barber);
@@ -4679,15 +4875,17 @@
 
       appointments.push(appt);
       const el = renderAppointment(appt, appointments.length - 1);
-      el.classList.add('appt-web-new');
+      if(!silencioso) el.classList.add('appt-web-new');
       added++;
     });
 
     if(added){
       layoutAllColumns();
-      showToast(added === 1
-        ? 'Nueva reserva desde la web'
-        : `${added} nuevas reservas desde la web`);
+      if(!silencioso){
+        showToast(added === 1
+          ? 'Nueva reserva desde la web'
+          : `${added} nuevas reservas desde la web`);
+      }
       refreshBarberCounts();
       if(typeof applyFilters === 'function') applyFilters();
       if(userRole === 'BARBER' && document.getElementById('vistaBarbero').style.display !== 'none'){
@@ -4792,6 +4990,11 @@
     } else {
       cargarDiaDemo(iso);
       appointments.forEach((a,i)=> renderAppointment(a, i));
+      // Trae también lo que ya llegó en vivo de Firestore para ESTE día
+      // (cargarDiaDemo solo restaura lo que quedó cacheado la última vez
+      // que se vio este día -- si nunca se había visto, esto lo completa).
+      // silencioso=true: esto es solo repoblar la vista, no avisar "nueva reserva".
+      importWebBookings(true);
       layoutAllColumns();
       renderBlocks();
     }
@@ -8838,6 +9041,17 @@
               <button type="button" class="mg-btn ghost" id="clArchivoBtn" style="flex:none;padding:8px 14px;">Seleccionar archivo</button>
               <span class="cu-archivo-nombre" id="clArchivoNombre">ningún archivo seleccionado</span>
             </div>
+            <div id="clUploadEstado" class="cl-upload-estado" style="display:none;">
+              <div class="cl-upload-info">
+                <span id="clUploadNombre"></span>
+                <span id="clUploadTamano"></span>
+              </div>
+              <div class="cl-upload-bar"><div class="cl-upload-bar-fill" id="clUploadBarFill" style="width:0%;"></div></div>
+              <div class="cl-upload-fila">
+                <span id="clUploadTexto">Subiendo… 0%</span>
+                <button type="button" class="cu-card-link" id="clUploadReintentar" style="display:none;">Reintentar</button>
+              </div>
+            </div>
             <button class="mg-btn solid full" id="clAgregar" style="margin-top:10px;">+ Subir lección</button>
           </div>
         </div>
@@ -8912,6 +9126,7 @@
 
     document.getElementById('clAgregar').addEventListener('click', cuAgregarClase);
     document.getElementById('clArchivoBtn').addEventListener('click', cuElegirArchivoClase);
+    document.getElementById('clUploadReintentar').addEventListener('click', cuAgregarClase);
     document.getElementById('cuGuardar').addEventListener('click', cuGuardarCurso);
     document.getElementById('cuCancelar').addEventListener('click', cuVolverListado);
     document.getElementById('cuMediaThumb').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
@@ -8949,32 +9164,85 @@
     return info ? `<span class="cu-video-badge cu-video-badge--${info.cls}">${info.txt}</span>` : '';
   }
 
+  /** Cuánto tiempo sin NINGÚN progreso (ni error, ni éxito) se tolera antes
+   *  de dar la subida por trabada -- en redes móviles inestables (Wi-Fi a
+   *  datos, Safari en segundo plano) la conexión a veces muere sin disparar
+   *  ningún evento de error, y sin esto la promesa nunca se resuelve ni
+   *  rechaza: el botón queda "cargando" para siempre. */
+  const SUBIDA_VIDEO_STALL_MS = 45000;
+
   /** Sube un archivo de video directo a Bunny Stream por TUS (subida
    *  resumable) -- el archivo pesado nunca pasa por Firestore ni por Cloud
-   *  Functions, solo se piden credenciales de subida y se sube directo. */
+   *  Functions, solo se piden credenciales de subida y se sube directo, en
+   *  fragmentos (nunca una sola solicitud gigante -- más resistente a
+   *  cortes de red en móvil). Nunca lee el archivo completo en memoria:
+   *  tus-js-client lee cada fragmento del disco/Fotos justo antes de
+   *  enviarlo. Uso simple, un solo intento (usada por portada de curso,
+   *  hero, etc.) -- para el flujo CON botón "Reintentar" ver
+   *  crearSubidaLeccionConReintento, más abajo. */
   function subirVideoABunny(file, { contexto, contextoId, isFree, title, onProgress }){
-    return new Promise((resolve, reject)=>{
-      functions.httpsCallable('crearSubidaVideo')({ contexto, contextoId, isFree, title })
-        .then((r)=>{
-          const datos = r.data;
-          const upload = new tus.Upload(file, {
-            endpoint: datos.tusEndpoint,
-            retryDelays: [0, 1000, 3000, 5000],
-            headers: {
-              AuthorizationSignature: datos.authSignature,
-              AuthorizationExpire: String(datos.authExpire),
-              VideoId: datos.videoId,
-              LibraryId: String(datos.libraryId),
-            },
-            metadata: { filetype: file.type || 'video/mp4', title: title || file.name },
-            onError: (err)=> reject(err),
-            onProgress: (subidos, total)=>{ if(onProgress) onProgress(Math.round((subidos/total)*100)); },
-            onSuccess: ()=> resolve({ videoId: datos.videoId, libreria: datos.libreria }),
-          });
-          upload.start();
-        })
-        .catch(reject);
-    });
+    return crearSubidaLeccionConReintento(file, { contexto, contextoId, isFree, title, onProgress }).attempt();
+  }
+
+  /** Igual que subirVideoABunny, pero devuelve un controlador con
+   *  `.attempt()` que se puede llamar MÁS DE UNA VEZ -- cada llamada crea
+   *  una promesa nueva, pero reutiliza el mismo `tus.Upload` (mismo video
+   *  ya creado en Bunny) una vez que existe, así que un reintento continúa
+   *  desde el último byte confirmado en vez de crear un video duplicado. */
+  function crearSubidaLeccionConReintento(file, { contexto, contextoId, isFree, title, onProgress }){
+    let upload = null;
+    let datos = null;
+    let intentoActual = null; // {resolve, reject} de la promesa EN CURSO
+    let stallTimer = null;
+
+    function reiniciarVigia(){
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(()=>{
+        if(!intentoActual) return;
+        const { reject } = intentoActual;
+        intentoActual = null;
+        upload.abort();
+        reject(new Error('La subida se detuvo (sin respuesta del servidor).'));
+      }, SUBIDA_VIDEO_STALL_MS);
+    }
+
+    async function asegurarUpload(){
+      if(upload) return;
+      const r = await functions.httpsCallable('crearSubidaVideo')({ contexto, contextoId, isFree, title });
+      datos = r.data;
+      upload = new tus.Upload(file, {
+        endpoint: datos.tusEndpoint,
+        chunkSize: 50 * 1024 * 1024, // 50MB por fragmento -- nunca una sola solicitud con el archivo entero
+        retryDelays: [0, 1000, 3000, 5000, 10000],
+        storeFingerprintForResuming: true,
+        removeFingerprintOnSuccess: true,
+        headers: {
+          AuthorizationSignature: datos.authSignature,
+          AuthorizationExpire: String(datos.authExpire),
+          VideoId: datos.videoId,
+          LibraryId: String(datos.libraryId),
+        },
+        metadata: { filetype: file.type || 'video/mp4', title: title || file.name },
+        onError: (err)=>{ if(intentoActual){ const { reject } = intentoActual; intentoActual = null; clearTimeout(stallTimer); reject(err); } },
+        onProgress: (subidos, total)=>{ reiniciarVigia(); if(onProgress) onProgress(Math.round((subidos/total)*100)); },
+        onSuccess: ()=>{ if(intentoActual){ const { resolve } = intentoActual; intentoActual = null; clearTimeout(stallTimer); resolve({ videoId: datos.videoId, libreria: datos.libreria }); } },
+      });
+    }
+
+    async function attempt(){
+      await asegurarUpload();
+      return new Promise((resolve, reject)=>{
+        intentoActual = { resolve, reject };
+        reiniciarVigia();
+        // Los reintentos automáticos (retryDelays) ya cubren cortes breves.
+        // Si esto es un reintento manual, upload.start() detecta que ya
+        // tiene URL de subida asignada y continúa desde el último byte
+        // confirmado, nunca desde cero.
+        upload.start();
+      });
+    }
+
+    return { attempt };
   }
 
   /** Sube (o reemplaza) la imagen o video principal de un curso -- un solo
@@ -9238,6 +9506,32 @@
     });
   }
 
+  function formatBytesCL(bytes){
+    if(!bytes) return '0 MB';
+    const mb = bytes / (1024*1024);
+    return mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB';
+  }
+
+  /** Controlador de la subida en curso (si hay una) -- se guarda para que
+   *  "Reintentar" continúe la MISMA subida (mismo video en Bunny) en vez
+   *  de crear una nueva desde cero. `clClasePendiente` es la clase que se
+   *  está armando mientras dura la subida (mismo `id`, para no duplicarla
+   *  si el usuario toca "Subir"/"Reintentar" varias veces).*/
+  let clUploadController = null;
+  let clClasePendiente = null;
+
+  function clPintarEstado({ texto, pct, error, mostrarReintentar }){
+    const cont = document.getElementById('clUploadEstado');
+    const fill = document.getElementById('clUploadBarFill');
+    const txt = document.getElementById('clUploadTexto');
+    const btnReintentar = document.getElementById('clUploadReintentar');
+    cont.style.display = '';
+    cont.classList.toggle('error', !!error);
+    if(pct != null) fill.style.width = pct + '%';
+    txt.textContent = texto;
+    btnReintentar.style.display = mostrarReintentar ? '' : 'none';
+  }
+
   function cuElegirArchivoClase(){
     const input = document.createElement('input');
     input.type = 'file';
@@ -9246,7 +9540,12 @@
       const file = input.files[0];
       if(!file) return;
       clArchivoElegido = file;
+      clUploadController = null;
+      clClasePendiente = null;
       document.getElementById('clArchivoNombre').textContent = file.name;
+      document.getElementById('clUploadEstado').style.display = 'none';
+      document.getElementById('clUploadNombre').textContent = file.name;
+      document.getElementById('clUploadTamano').textContent = formatBytesCL(file.size);
     });
     input.click();
   }
@@ -9259,22 +9558,31 @@
     if(!titulo) return showToast('Escribe el título de la clase');
     if(!clArchivoElegido) return showToast('Elige un archivo de video primero');
 
-    const nueva = {
+    // Si ya hay un intento en curso para este mismo archivo (reintento),
+    // se reusa la MISMA clase y el MISMO controlador -- nunca se crea una
+    // clase ni un video duplicado por tocar "Subir"/"Reintentar" de nuevo.
+    const nueva = clClasePendiente || (clClasePendiente = {
       id: 'l' + Date.now(),
       title: titulo, durationMin: min ? Number(min) : null,
       isFree: libre, active: true,
       streamVideoId: '', streamStatus: 'processing',
-    };
+    });
 
     const btnAgregar = document.getElementById('clAgregar');
-    const textoOriginal = btnAgregar.textContent;
     btnAgregar.disabled = true;
-    try{
-      const { videoId } = await subirVideoABunny(clArchivoElegido, {
-        contexto: 'leccion', contextoId: `${cuActual.curso.id}:${nueva.id}`, isFree: nueva.isFree,
-        title: nueva.title, onProgress: (pct)=>{ btnAgregar.textContent = pct + '%'; },
+    clPintarEstado({ texto: 'Subiendo… 0%', pct: 0 });
+
+    if(!clUploadController){
+      clUploadController = crearSubidaLeccionConReintento(clArchivoElegido, {
+        contexto: 'leccion', contextoId: `${cuActual.curso.id}:${nueva.id}`, isFree: nueva.isFree, title: nueva.title,
+        onProgress: (pct)=> clPintarEstado({ texto: `Subiendo… ${pct}%`, pct }),
       });
+    }
+
+    try{
+      const { videoId } = await clUploadController.attempt();
       nueva.streamVideoId = videoId;
+      clPintarEstado({ texto: 'Procesando video…', pct: 100 });
 
       if(MODE === 'api'){
         try{
@@ -9283,19 +9591,24 @@
             body: JSON.stringify({ title:titulo, durationMin:nueva.durationMin, isFree:nueva.isFree })
           });
           nueva.id = r.lesson.id;
-        }catch(e){ return showToast(e.message); }
+        }catch(e){ clPintarEstado({ texto: e.message, error:true, mostrarReintentar:false }); return; }
       }
 
       cuActual.clases.push(nueva);
       if(MODE !== 'api') await cuGuardarClasesSilencioso();
       clArchivoElegido = null;
+      clUploadController = null;
+      clClasePendiente = null;
       cuPintarDetalle();
       cuCargarLista();
-      showToast('Clase agregada, video procesándose…' + (nueva.isFree ? ' (muestra gratuita)' : ''));
+      showToast('Video listo, clase agregada' + (nueva.isFree ? ' (muestra gratuita)' : '') + ' -- terminará de procesarse en Bunny en un momento.');
     }catch(e){
-      showToast('No se pudo subir el video: ' + e.message);
+      clPintarEstado({
+        texto: 'No pudimos subir el video. ' + (e.message || ''),
+        error: true, mostrarReintentar: true,
+      });
     }finally{
-      btnAgregar.disabled = false; btnAgregar.textContent = textoOriginal;
+      btnAgregar.disabled = false;
     }
   }
 
@@ -10484,7 +10797,7 @@
     } else {
       demoAgenda[currentDate] = appointments.slice();   // agenda inicial de hoy
       db.collection('bookings').onSnapshot(snap=>{
-        firestoreBookings = snap.docs.map(d=> d.data());
+        firestoreBookings = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
         importWebBookings();
       });
     }
