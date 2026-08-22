@@ -1500,6 +1500,7 @@
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnAcademyVideos">Videos de cursos</button>
           <button class="menu-panel-item" id="btnAcademyPanel">Panel · cursos</button>
+          <button class="menu-panel-item" id="btnTestimonios">Experiencias de alumnos</button>
           <button class="menu-panel-item" id="btnVentasAcademy">Ventas facturadas</button>
           <button class="menu-panel-item" id="btnAccesosCursos">Accesos a cursos</button>
         </div>
@@ -2069,6 +2070,52 @@
       </div>
     </div>
 
+    <div id="vistaTestimonios" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Experiencias de alumnos</h2>
+          <p class="cx-sub">Videos de testimonios reales para "Experiencias de nuestros alumnos" en Academy -- siempre gratuitos y públicos, para que el cliente los vea antes de comprar.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="tsVolverAgenda">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="cx-panel">
+        <div class="cu-box-title">Nuevo testimonio</div>
+        <label class="mg-label">Tipo</label>
+        <select id="tsTag" class="mg-input">
+          <option value="PRESENCIAL">Presencial</option>
+          <option value="ONLINE">Online</option>
+        </select>
+        <label class="mg-label">Curso relacionado</label>
+        <input type="text" id="tsCurso" class="mg-input" placeholder="Ej: Técnicas de corte modernas">
+        <label class="mg-label">Frase del testimonio</label>
+        <textarea id="tsFrase" class="mg-input" rows="2" placeholder="Ej: Increíble la calidad y la atención. 100% recomendado."></textarea>
+        <div class="cu-fila" style="margin-top:10px;">
+          <button type="button" class="mg-btn ghost" id="tsArchivoBtn" style="flex:none;padding:8px 14px;">Elegir video</button>
+          <span class="cu-archivo-nombre" id="tsArchivoNombre">ningún archivo seleccionado</span>
+        </div>
+        <div id="tsUploadEstado" class="cl-upload-estado" style="display:none;">
+          <div class="cl-upload-info">
+            <span id="tsUploadNombre"></span>
+            <span id="tsUploadTamano"></span>
+          </div>
+          <div class="cl-upload-bar"><div class="cl-upload-bar-fill" id="tsUploadBarFill" style="width:0%;"></div></div>
+          <div class="cl-upload-fila">
+            <span id="tsUploadTexto">Subiendo… 0%</span>
+            <button type="button" class="cu-card-link" id="tsUploadReintentar" style="display:none;">Reintentar</button>
+          </div>
+        </div>
+        <button class="mg-btn solid full" id="tsPublicar" style="margin-top:12px;">+ Publicar testimonio</button>
+      </div>
+
+      <div class="cx-panel" style="margin-top:16px;">
+        <div class="cu-box-title">Testimonios publicados</div>
+        <div id="tsLista"><div class="cx-empty">Cargando...</div></div>
+      </div>
+    </div>
+
     <!-- Otorgar acceso manual (transferencia, efectivo, etc) -->
     <div class="pv-video-modal" id="pvVideoModal" onclick="if(event.target===this) cerrarVistaPreviaVideo()">
       <button class="pv-video-close" onclick="cerrarVistaPreviaVideo()" aria-label="Cerrar">✕</button>
@@ -2082,6 +2129,15 @@
       </div>
       <p class="mg-note" id="cuBorrarTexto" style="margin-bottom:16px;"></p>
       <button class="mg-btn solid full" id="cuBorrarConfirmar" style="background:#c0392b;">Quitar</button>
+    </div>
+
+    <div class="mg-modal" id="modalTsBorrar">
+      <div class="mg-head">
+        <h3>Quitar testimonio</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="tsBorrarTexto" style="margin-bottom:16px;"></p>
+      <button class="mg-btn solid full" id="tsBorrarConfirmar" style="background:#c0392b;">Quitar</button>
     </div>
 
     <div class="mg-modal" id="modalAccesoManual">
@@ -5143,7 +5199,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos'].forEach(id=>{
+      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -5869,7 +5925,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6047,7 +6103,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6074,7 +6130,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6199,7 +6255,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones'].forEach(id=>{
+    ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7617,7 +7673,7 @@
      vendidos, aunque usa el mismo arreglo de reservas ya cargado. ---------- */
   let tpRep = null;
   function mostrarPropinas(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7751,6 +7807,8 @@
       photoUrl: c.photoUrl || '',
       streamVideoId: c.streamVideoId || '',
       streamStatus: c.streamStatus || '',
+      trailerStreamVideoId: c.trailerStreamVideoId || '',
+      trailerStreamStatus: c.trailerStreamStatus || '',
       resources: c.resources || [],
     })));
   }
@@ -7796,6 +7854,7 @@
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
+    document.getElementById('vistaTestimonios').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -7820,6 +7879,7 @@
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
+    document.getElementById('vistaTestimonios').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = '';
@@ -7827,6 +7887,200 @@
     cargarAccesos();
   }
   document.getElementById('btnAccesosCursos').addEventListener('click', mostrarAccesosCursos);
+
+  /* ===== Experiencias de alumnos: testimonios en video (gratis, público) ===== */
+  function mostrarTestimoniosPage(){
+    document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaColores').style.display = 'none';
+    document.getElementById('vistaUsuarios').style.display = 'none';
+    document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaPropinas').style.display = 'none';
+    document.getElementById('vistaProductos').style.display = 'none';
+    document.getElementById('vistaClientes').style.display = 'none';
+    document.getElementById('vistaHorarios').style.display = 'none';
+    document.getElementById('vistaIntelligence').style.display = 'none';
+    document.getElementById('vistaCursos').style.display = 'none';
+    document.getElementById('vistaAccesosCursos').style.display = 'none';
+    document.getElementById('vistaSuscripciones').style.display = 'none';
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaTestimonios').style.display = '';
+    ocultarFlotante(true);
+    cargarTestimoniosPanel();
+  }
+  document.getElementById('btnTestimonios').addEventListener('click', mostrarTestimoniosPage);
+  document.getElementById('tsVolverAgenda').addEventListener('click', ()=>{
+    document.getElementById('vistaTestimonios').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  });
+
+  /* ===== Experiencias de alumnos: testimonios en video (Academy) --
+     siempre gratuitos/públicos (isFree:true fijo), para que el cliente
+     los vea sin comprar nada primero. Reusa exactamente el mismo motor de
+     subida (subirVideoABunny/crearSubidaLeccionConReintento) que ya usan
+     las clases de curso -- nunca una lógica de subida aparte. ===== */
+  let tsArchivoElegido = null;
+  let tsUploadController = null;
+  let tsTestimonios = [];
+  let tsListenerActivo = false;
+
+  function tsPintarEstado({ texto, pct, error, mostrarReintentar }){
+    const cont = document.getElementById('tsUploadEstado');
+    const fill = document.getElementById('tsUploadBarFill');
+    const txt = document.getElementById('tsUploadTexto');
+    const btnReintentar = document.getElementById('tsUploadReintentar');
+    cont.style.display = '';
+    cont.classList.toggle('error', !!error);
+    if(pct != null) fill.style.width = pct + '%';
+    txt.textContent = texto;
+    btnReintentar.style.display = mostrarReintentar ? '' : 'none';
+  }
+
+  document.getElementById('tsArchivoBtn').addEventListener('click', ()=>{
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.addEventListener('change', ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      tsArchivoElegido = file;
+      tsUploadController = null;
+      document.getElementById('tsArchivoNombre').textContent = file.name;
+      document.getElementById('tsUploadEstado').style.display = 'none';
+      document.getElementById('tsUploadNombre').textContent = file.name;
+      document.getElementById('tsUploadTamano').textContent = formatBytesCL(file.size);
+    });
+    input.click();
+  });
+
+  async function tsPublicarTestimonio(){
+    const tag = document.getElementById('tsTag').value;
+    const curso = document.getElementById('tsCurso').value.trim();
+    const frase = document.getElementById('tsFrase').value.trim();
+    if(!curso) return showToast('Escribe el curso relacionado');
+    if(!frase) return showToast('Escribe la frase del testimonio');
+    if(!tsArchivoElegido && !tsUploadController) return showToast('Elige un video primero');
+
+    const id = tsPublicarTestimonio._id || (tsPublicarTestimonio._id = 'ts' + Date.now());
+    const btn = document.getElementById('tsPublicar');
+    btn.disabled = true;
+    tsPintarEstado({ texto: 'Subiendo… 0%', pct: 0 });
+
+    if(!tsUploadController){
+      tsUploadController = crearSubidaLeccionConReintento(tsArchivoElegido, {
+        contexto: 'testimonio', contextoId: id, isFree: true, title: curso,
+        onProgress: (pct)=> tsPintarEstado({ texto: `Subiendo… ${pct}%`, pct }),
+      });
+    }
+
+    try{
+      const { videoId } = await tsUploadController.attempt();
+      tsPintarEstado({ texto: 'Procesando video…', pct: 100 });
+
+      const orden = tsTestimonios.length ? Math.max(...tsTestimonios.map(t=> t.orden || 0)) + 1 : 0;
+      await db.collection('testimonios').doc(id).set({
+        tag, curso, frase, orden, active: true,
+        streamVideoId: videoId, streamStatus: 'processing',
+        createdAt: new Date().toISOString(),
+      });
+
+      tsArchivoElegido = null;
+      tsUploadController = null;
+      tsPublicarTestimonio._id = null;
+      document.getElementById('tsCurso').value = '';
+      document.getElementById('tsFrase').value = '';
+      document.getElementById('tsArchivoNombre').textContent = 'ningún archivo seleccionado';
+      document.getElementById('tsUploadEstado').style.display = 'none';
+      showToast('Video listo, testimonio publicado -- terminará de procesarse en Bunny en un momento.');
+    }catch(e){
+      tsPintarEstado({ texto: 'No pudimos subir el video. ' + (e.message || ''), error: true, mostrarReintentar: true });
+    }finally{
+      btn.disabled = false;
+    }
+  }
+  document.getElementById('tsPublicar').addEventListener('click', tsPublicarTestimonio);
+  document.getElementById('tsUploadReintentar').addEventListener('click', tsPublicarTestimonio);
+
+  function cargarTestimoniosPanel(){
+    if(tsListenerActivo) return; // ya suscrito -- nunca duplicar el listener
+    tsListenerActivo = true;
+    db.collection('testimonios').orderBy('orden').onSnapshot(snap=>{
+      tsTestimonios = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
+      pintarListaTestimonios();
+    }, err=>{
+      document.getElementById('tsLista').innerHTML = '<div class="cx-empty">No se pudo cargar.</div>';
+      console.error('cargarTestimoniosPanel', err);
+    });
+  }
+
+  function pintarListaTestimonios(){
+    const cont = document.getElementById('tsLista');
+    if(!tsTestimonios.length){
+      cont.innerHTML = '<div class="cx-empty">Todavía no hay testimonios publicados.</div>';
+      return;
+    }
+    cont.innerHTML = tsTestimonios.map(t=> `
+      <div class="cu-clase" data-ts="${t.id}">
+        <div class="cu-thumb-sm" data-ts-ver title="Ver video"
+             style="width:44px;height:44px;border-radius:8px;cursor:pointer;background-color:#eee;flex:0 0 auto;
+               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
+               ${t.streamVideoId && t.streamStatus==='ready' ? `background-image:url('https://${BUNNY_CDN_PUBLIC}/${t.streamVideoId}/thumbnail.jpg');` : ''}">${t.streamVideoId ? '' : '🎬'}</div>
+        <div class="cu-cinfo">
+          <div class="cu-ctitulo">
+            <span>${t.curso || ''}</span>
+            ${badgeEstadoVideo(t.streamStatus)}
+            <span class="cu-video-badge" style="background:#eee;color:#555;">${t.tag === 'PRESENCIAL' ? 'Presencial' : 'Online'}</span>
+          </div>
+          <div class="cu-curl" style="font-size:11.5px;color:var(--text-mid);">${t.frase || ''}</div>
+        </div>
+        <div class="cu-cbtns">
+          <button class="cu-ib" data-ts-subir title="Subir">↑</button>
+          <button class="cu-ib" data-ts-bajar title="Bajar">↓</button>
+          <button class="cu-ib del" data-ts-borrar title="Quitar">✕</button>
+        </div>
+      </div>`).join('');
+
+    cont.querySelectorAll('[data-ts]').forEach(row=>{
+      const id = row.dataset.ts;
+      const t = tsTestimonios.find(x=> x.id === id);
+      row.querySelector('[data-ts-ver]').addEventListener('click', ()=>{
+        if(t.streamVideoId && t.streamStatus === 'ready') verVideoSubido(t.streamVideoId, true);
+        else showToast('El video todavía se está procesando.');
+      });
+      row.querySelector('[data-ts-subir]').addEventListener('click', ()=> tsMover(id, -1));
+      row.querySelector('[data-ts-bajar]').addEventListener('click', ()=> tsMover(id, 1));
+      row.querySelector('[data-ts-borrar]').addEventListener('click', ()=> tsConfirmarBorrar(id));
+    });
+  }
+
+  async function tsMover(id, dir){
+    const i = tsTestimonios.findIndex(t=> t.id === id);
+    const j = i + dir;
+    if(i < 0 || j < 0 || j >= tsTestimonios.length) return;
+    const a = tsTestimonios[i], b = tsTestimonios[j];
+    const batch = db.batch();
+    batch.update(db.collection('testimonios').doc(a.id), { orden: b.orden });
+    batch.update(db.collection('testimonios').doc(b.id), { orden: a.orden });
+    await batch.commit();
+  }
+
+  let tsBorrarId = null;
+  function tsConfirmarBorrar(id){
+    tsBorrarId = id;
+    const t = tsTestimonios.find(x=> x.id === id);
+    document.getElementById('tsBorrarTexto').textContent = `¿Quitar el testimonio de "${t?.curso || ''}"? Esta acción no se puede deshacer.`;
+    abrirModal('modalTsBorrar');
+  }
+  document.getElementById('tsBorrarConfirmar').addEventListener('click', async ()=>{
+    if(!tsBorrarId) return;
+    cerrarModales();
+    await db.collection('testimonios').doc(tsBorrarId).delete();
+    tsBorrarId = null;
+    showToast('Testimonio eliminado');
+  });
+
   document.getElementById('acVolverAgenda').addEventListener('click', ()=>{
     document.getElementById('vistaAccesosCursos').style.display = 'none';
     document.getElementById('vistaAgenda').style.display = '';
@@ -8030,7 +8284,7 @@
 
   /* ===== Archivos multimedia: todas las fotos de clientes ===== */
   function mostrarArchivosMultimedia(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
      'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
@@ -8066,7 +8320,7 @@
   let ventasTipoActual = 'academy';
   function mostrarVentas(tipo){
     ventasTipoActual = tipo;
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
      'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaCampanas'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
@@ -8130,7 +8384,7 @@
 
   /* ===== Campañas: envío masivo de correo ===== */
   function mostrarCampanas(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
      'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
@@ -8301,7 +8555,7 @@
   }
 
   function mostrarSuscripciones(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia',
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia',
      'vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
@@ -8971,6 +9225,17 @@
       ${curso.photoUrl ? `background-image:url('${curso.photoUrl}');` : ''}">${curso.photoUrl ? '' : '🖼'}</div>`;
   }
 
+  /** Miniatura del video corto de vista previa (15-20 seg) de un curso --
+   *  siempre gratis/público (isFree:true fijo), pensado para reproducirse
+   *  como portada del inicio del sitio cuando el curso está "Recomendado". */
+  function cuTrailerThumbHtml(curso){
+    const host = (curso.trailerStreamVideoId && curso.trailerStreamStatus === 'ready')
+      ? `https://${BUNNY_CDN_PUBLIC}/${curso.trailerStreamVideoId}/thumbnail.jpg` : '';
+    return `<div class="cu-thumb" id="cuTrailerThumb" title="Clic para cambiar" style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
+      background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
+      ${host ? `background-image:url('${host}');` : ''}">${curso.trailerStreamVideoId ? (host ? '' : '…') : '🎬'}</div>`;
+  }
+
   function cuPintarDetalle(){
     const { curso, clases } = cuActual;
 
@@ -9003,6 +9268,15 @@
             <button type="button" class="mg-btn ghost" id="cuMediaBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
             ${curso.streamVideoId ? badgeEstadoVideo(curso.streamStatus) : ''}
             ${(curso.photoUrl || curso.streamVideoId) ? `<button type="button" class="cu-card-link del" id="cuQuitarMedia">Quitar</button>` : ''}
+          </div>
+
+          <label class="cu-lbl">Video breve de vista previa <span style="text-transform:none;">(15-20 seg, opcional)</span></label>
+          <p class="mg-note" style="margin:-4px 0 8px;">Para que el cliente vea, antes de comprar, más o menos lo que verá en el curso. Siempre gratis y público -- si este curso está "Recomendado", este video es el primero que ve cualquier visitante al entrar al sitio.</p>
+          <div class="cu-fila">
+            ${cuTrailerThumbHtml(curso)}
+            <button type="button" class="mg-btn ghost" id="cuTrailerBtn" style="flex:none;padding:8px 14px;">⬆ Elegir video</button>
+            ${curso.trailerStreamVideoId ? badgeEstadoVideo(curso.trailerStreamStatus) : ''}
+            ${curso.trailerStreamVideoId ? `<button type="button" class="cu-card-link del" id="cuQuitarTrailer">Quitar</button>` : ''}
           </div>
 
           <label class="cu-lbl">Descripción</label>
@@ -9186,6 +9460,9 @@
     document.getElementById('cuMediaThumb').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
     document.getElementById('cuMediaBtn').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
     document.getElementById('cuQuitarMedia')?.addEventListener('click', ()=> cuQuitarMedia(cuActual.curso.id));
+    document.getElementById('cuTrailerThumb').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
+    document.getElementById('cuTrailerBtn').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
+    document.getElementById('cuQuitarTrailer')?.addEventListener('click', ()=> cuQuitarTrailer(cuActual.curso.id));
     document.getElementById('cuRecomendado').addEventListener('change', (e)=> cuCambiarRecomendacion(cuActual.curso.id, e.target.checked));
     document.getElementById('cuRecursoBtn').addEventListener('click', cuSubirRecurso);
     document.getElementById('cuAgregarRecurso').addEventListener('click', cuAgregarRecurso);
@@ -9457,6 +9734,50 @@
     try{
       await publicarCursos();
       showToast('Imagen/video del curso quitado');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
+    cuPintarDetalle();
+  }
+
+  /** Video breve de vista previa (15-20 seg) -- SIEMPRE público (isFree:true
+   *  fijo, nunca protegido), a diferencia de la portada principal que puede
+   *  ser privada; este video existe justo para que alguien SIN comprar
+   *  pueda verlo, así que no tendría sentido protegerlo con token. */
+  function cuSubirTrailer(cursoId){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('cuTrailerThumb');
+      if(thumb) thumb.innerHTML = '0%';
+      try{
+        const c = cuCursos.find(x=> x.id === cursoId);
+        const { videoId } = await subirVideoABunny(file, {
+          contexto: 'curso-trailer', contextoId: cursoId, isFree: true,
+          title: `Vista previa — ${cuActual?.curso?.name || cursoId}`,
+          onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
+        });
+        if(c){ c.trailerStreamVideoId = videoId; c.trailerStreamStatus = 'processing'; }
+        if(cuActual?.curso?.id === cursoId){ cuActual.curso.trailerStreamVideoId = videoId; cuActual.curso.trailerStreamStatus = 'processing'; }
+        await publicarCursos();
+        showToast('Video de vista previa subido, procesándose…');
+        cuPintarDetalle();
+      }catch(e){
+        showToast('No se pudo subir el video: ' + e.message);
+        if(thumb) thumb.textContent = '🎬';
+      }
+    });
+    input.click();
+  }
+
+  async function cuQuitarTrailer(cursoId){
+    const c = cuCursos.find(x=> x.id === cursoId);
+    if(c){ c.trailerStreamVideoId = ''; c.trailerStreamStatus = ''; }
+    if(cuActual?.curso?.id === cursoId){ cuActual.curso.trailerStreamVideoId = ''; cuActual.curso.trailerStreamStatus = ''; }
+    try{
+      await publicarCursos();
+      showToast('Video de vista previa quitado');
     }catch(e){ showToast('No se pudo quitar: ' + e.message); }
     cuPintarDetalle();
   }
@@ -9847,7 +10168,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -9872,7 +10193,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -11336,7 +11657,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });

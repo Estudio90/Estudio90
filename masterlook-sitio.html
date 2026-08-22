@@ -1221,42 +1221,86 @@
   .ac-cursos{padding:40px 0; border-top:1px solid var(--ac-line); text-align:center;}
   .ac-cursos h2{font-family:var(--font-primary); font-size:1.3rem; font-weight:600; margin-bottom:8px;}
   .ac-cursos > .wrap > p, .ac-cursos-sub{color:var(--ac-text-mid); font-size:.88rem; margin-bottom:30px;}
-  .ac-course-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; text-align:left;}
-  .ac-course{background:var(--ac-panel); border:1px solid var(--ac-line); border-radius:10px; overflow:hidden;}
-  .ac-course-photo{height:150px; position:relative;
+  /* Carrusel horizontal (no grid): las tarjetas se recorren deslizando,
+     nunca se apilan verticalmente en ningún ancho de pantalla. */
+  .ac-course-grid{display:flex; gap:16px; text-align:left; overflow-x:auto; scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px;}
+  .ac-course-grid::-webkit-scrollbar{display:none;}
+  .ac-course{flex:0 0 auto; width:192px; scroll-snap-align:start;
+    background:var(--ac-panel); border:1px solid var(--ac-line); border-radius:12px; overflow:hidden;}
+  .ac-course-photo{height:128px; position:relative;
     background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
   .ac-course-photo svg{position:absolute; inset:0; width:34%; height:34%; margin:auto; color:rgba(255,255,255,.55);}
   .ac-course-video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
-  .ac-course-body{padding:16px;}
-  .ac-course-body h3{font-size:.92rem; font-weight:700; text-transform:uppercase; letter-spacing:.01em;
-    line-height:1.3; margin-bottom:8px; min-height:2.4em;}
-  .ac-course-body p{font-size:.8rem; color:var(--ac-text-mid); line-height:1.5; margin-bottom:12px; min-height:3em;}
-  .ac-course-meta{display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
-  .ac-course-meta span{display:flex; align-items:center; gap:6px; font-size:.72rem; color:var(--ac-text-low);}
-  .ac-course-meta svg{width:13px; height:13px; flex-shrink:0;}
-  .ac-course-btn{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
-    background:var(--ac-text); color:#fff; border:1px solid var(--ac-text); padding:10px; border-radius:7px;
-    font-size:.76rem; font-weight:600; cursor:pointer; font-family:inherit;}
+  .ac-course-body{padding:14px;}
+  .ac-course-body h3{font-size:.86rem; font-weight:700; text-transform:uppercase; letter-spacing:.01em;
+    line-height:1.3; margin-bottom:6px; min-height:2.2em;}
+  .ac-course-body p{font-size:.76rem; color:var(--ac-text-mid); line-height:1.45; margin-bottom:10px; min-height:2em;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .ac-course-meta{display:flex; align-items:center; flex-wrap:wrap; gap:5px 12px; margin-bottom:12px;}
+  .ac-course-meta span{display:flex; align-items:center; gap:5px; font-size:.68rem; color:var(--ac-text-low);}
+  .ac-course-meta svg{width:12px; height:12px; flex-shrink:0;}
+  .ac-course-actions{display:flex; flex-direction:column; gap:7px;}
+  .ac-course-btn, .ac-course-btn-outline{display:flex; align-items:center; justify-content:center; gap:7px; width:100%;
+    padding:9px; border-radius:7px; font-size:.74rem; font-weight:600; cursor:pointer; font-family:inherit;}
+  .ac-course-btn{background:var(--ac-text); color:#fff; border:1px solid var(--ac-text);}
   .ac-course-btn:hover{opacity:.85;}
-  .ac-lock-note{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:24px;
+  .ac-course-btn-outline{background:#fff; color:var(--ac-text); border:1px solid var(--ac-line-strong);}
+  .ac-course-btn-outline:hover{border-color:var(--ac-text);}
+  .ac-lock-note{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:20px;
     background:var(--ac-panel); border:1px solid var(--ac-line); border-radius:8px; padding:12px 16px;
     font-size:.78rem; color:var(--ac-text-mid);}
   .ac-lock-note svg{width:14px; height:14px; flex-shrink:0;}
 
+  /* Puntos indicadores, reusados por el carrusel de cursos y el de testimonios. */
+  .ac-carousel-dots{display:flex; justify-content:center; gap:6px; margin-top:14px;}
+  .ac-carousel-dots button{width:6px; height:6px; padding:0; border-radius:50%; border:none;
+    background:var(--ac-line-strong); cursor:pointer; transition:width .15s, border-radius .15s;}
+  .ac-carousel-dots button.active{background:var(--ac-text); width:16px; border-radius:4px;}
+
   .ac-testi{padding:40px 0; border-top:1px solid var(--ac-line); text-align:center;}
-  .ac-testi h2{font-family:var(--font-primary); font-size:1.2rem; font-weight:600; margin-bottom:28px;}
-  .ac-testi-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; text-align:left;}
-  .ac-testi-card{background:var(--ac-panel); border:1px solid var(--ac-line); border-radius:10px; padding:18px;}
-  .ac-testi-head{display:flex; align-items:center; gap:11px; margin-bottom:12px;}
-  .ac-testi-av{width:38px; height:38px; border-radius:50%; background:#1a1a1a; color:#fff;
-    display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; flex-shrink:0;}
-  .ac-testi-name{font-size:.84rem; font-weight:700;}
-  .ac-testi-stars{color:#1a1a1a; font-size:.72rem; letter-spacing:.1em; margin-top:2px;}
-  .ac-testi-card p{font-size:.82rem; color:var(--ac-text-mid); line-height:1.55;}
-  .ac-testi-more{margin-top:24px; display:inline-flex; align-items:center; gap:8px;
-    background:none; border:1px solid var(--ac-line-strong); color:var(--ac-text);
-    padding:11px 20px; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer; font-family:inherit;}
-  .ac-testi-more:hover{border-color:var(--ac-text);}
+  .ac-testi h2{font-family:var(--font-primary); font-size:1.2rem; font-weight:600; margin-bottom:8px;}
+  .ac-testi > .wrap > p, .ac-testi-sub{color:var(--ac-text-mid); font-size:.85rem; margin-bottom:22px;}
+  .ac-testi-grid{display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none; text-align:left; padding-bottom:2px;}
+  .ac-testi-grid::-webkit-scrollbar{display:none;}
+  .ac-testi-card{flex:0 0 auto; width:135px; scroll-snap-align:start; cursor:pointer; background:none; border:none;
+    padding:0; font-family:inherit; text-align:left;}
+  .ac-testi-thumb{position:relative; width:100%; aspect-ratio:9/16; border-radius:12px; overflow:hidden;
+    background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
+  .ac-testi-thumb img, .ac-testi-thumb video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .ac-testi-tag{position:absolute; top:8px; left:8px; background:rgba(255,255,255,.92); color:#111;
+    font-size:.58rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase; padding:3px 8px; border-radius:99px;}
+  .ac-testi-play{position:absolute; inset:0; margin:auto; width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center;}
+  .ac-testi-play svg{width:13px; height:13px; color:#111; margin-left:2px;}
+  .ac-testi-course{font-size:.78rem; font-weight:700; margin-top:8px; margin-bottom:2px; line-height:1.25;}
+  .ac-testi-quote{font-size:.7rem; color:var(--ac-text-mid); line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .ac-testi-empty{color:var(--ac-text-mid); font-size:.85rem; padding:10px 0 4px;}
+
+  /* Modal de detalle de curso ("Ver detalle") */
+  .ac-detail-modal{position:fixed; inset:0; z-index:210; background:rgba(0,0,0,.55);
+    display:none; align-items:flex-end; justify-content:center;}
+  .ac-detail-modal.open{display:flex;}
+  .ac-detail-card{background:#fff; width:100%; max-width:460px; max-height:88vh; overflow-y:auto;
+    border-radius:18px 18px 0 0; position:relative;}
+  @media (min-width:720px){
+    .ac-detail-modal{align-items:center; padding:24px;}
+    .ac-detail-card{border-radius:16px; max-height:80vh;}
+  }
+  .ac-detail-photo{height:190px; position:relative; background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
+  .ac-detail-photo video, .ac-detail-photo img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .ac-detail-photo svg{position:absolute; inset:0; width:30%; height:30%; margin:auto; color:rgba(255,255,255,.55);}
+  .ac-detail-close{position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:50%;
+    background:rgba(0,0,0,.45); color:#fff; border:none; font-size:15px; cursor:pointer; z-index:2;}
+  .ac-detail-body{padding:20px 22px 24px;}
+  .ac-detail-body h3{font-size:1.02rem; font-weight:700; text-transform:uppercase; letter-spacing:.01em; margin-bottom:8px;}
+  .ac-detail-body p{font-size:.85rem; color:var(--ac-text-mid); line-height:1.6; margin-bottom:16px;}
+  .ac-detail-meta{display:flex; gap:18px; margin-bottom:18px; flex-wrap:wrap;}
+  .ac-detail-meta span{display:flex; align-items:center; gap:6px; font-size:.76rem; color:var(--ac-text-low);}
+  .ac-detail-meta svg{width:14px; height:14px; flex-shrink:0;}
+  .ac-detail-price{font-size:1.15rem; font-weight:700; margin-bottom:16px;}
 
   .ac-cta{position:relative; overflow:hidden; margin:40px 0 44px; border-radius:16px;
     background:#0c0c0c; color:#fff; padding:40px 34px; display:grid;
@@ -1281,15 +1325,16 @@
     .ac-hero{grid-template-columns:1fr; gap:26px; padding:26px 0 32px;}
     .ac-hero-photo{aspect-ratio:16/10;}
     .ac-why-grid{grid-template-columns:repeat(3,1fr); row-gap:26px;}
-    .ac-course-grid{grid-template-columns:1fr 1fr;}
-    .ac-testi-grid{grid-template-columns:1fr;}
+    .ac-course{width:175px;}
+    .ac-testi-card{width:125px;}
     .ac-cta{grid-template-columns:1fr; text-align:center; padding:32px 24px;}
     .ac-cta-phone, .ac-seal{margin:0 auto;}
     .ac-cta p{margin-left:auto; margin-right:auto;}
   }
   @media (max-width:560px){
     .ac-why-grid{grid-template-columns:1fr 1fr;}
-    .ac-course-grid{grid-template-columns:1fr;}
+    .ac-course{width:64vw; max-width:205px;}
+    .ac-testi-card{width:118px;}
   }
 
   /* ===== reservas: diseño nuevo ===== */
@@ -2078,35 +2123,32 @@
     .ac-play-ic{width:24px; height:24px;}
     .ac-play-ic svg{width:10px; height:10px;}
 
-    .ac-why{padding:22px 0;}
-    .ac-why h2{font-size:.98rem; margin-bottom:18px;}
-    .ac-why-grid{gap:16px 10px;}
-    .ac-why-item svg{width:20px; height:20px; margin-bottom:9px;}
-    .ac-why-item b{font-size:.72rem; margin-bottom:5px;}
-    .ac-why-item span{font-size:.68rem;}
+    .ac-why{padding:16px 0;}
+    .ac-why h2{font-size:.92rem; margin-bottom:12px;}
+    .ac-why-grid{gap:12px 10px;}
+    .ac-why-item svg{width:16px; height:16px; margin-bottom:5px;}
+    .ac-why-item b{font-size:.66rem; margin-bottom:3px;}
+    .ac-why-item span{font-size:.62rem; line-height:1.35;}
 
     .ac-cursos{padding:24px 0;}
     .ac-cursos h2{font-size:1.05rem; margin-bottom:6px;}
     .ac-cursos > .wrap > p, .ac-cursos-sub{font-size:.78rem; margin-bottom:18px;}
     .ac-course-grid{gap:11px;}
-    .ac-course-photo{height:120px;}
-    .ac-course-body{padding:12px;}
+    .ac-course-photo{height:100px;}
+    .ac-course-body{padding:11px;}
     .ac-course-body h3{font-size:.8rem; margin-bottom:6px; min-height:0;}
     .ac-course-body p{font-size:.72rem; margin-bottom:9px; min-height:0;}
-    .ac-course-meta{gap:4px; margin-bottom:10px;}
-    .ac-course-meta span{font-size:.66rem;}
-    .ac-course-btn{padding:8px; font-size:.7rem;}
+    .ac-course-meta{gap:4px 10px; margin-bottom:10px;}
+    .ac-course-meta span{font-size:.64rem;}
+    .ac-course-btn, .ac-course-btn-outline{padding:8px; font-size:.7rem;}
     .ac-lock-note{margin-top:16px; padding:10px 12px; font-size:.7rem;}
 
     .ac-testi{padding:24px 0;}
-    .ac-testi h2{font-size:1rem; margin-bottom:16px;}
-    .ac-testi-grid{gap:11px;}
-    .ac-testi-card{padding:14px; border-radius:12px;}
-    .ac-testi-av{width:32px; height:32px; font-size:.64rem;}
-    .ac-testi-name{font-size:.78rem;}
-    .ac-testi-stars{font-size:.64rem;}
-    .ac-testi-card p{font-size:.76rem;}
-    .ac-testi-more{margin-top:16px; padding:9px 16px; font-size:.72rem;}
+    .ac-testi h2{font-size:1rem; margin-bottom:6px;}
+    .ac-testi > .wrap > p, .ac-testi-sub{font-size:.78rem; margin-bottom:16px;}
+    .ac-testi-grid{gap:10px;}
+    .ac-testi-course{font-size:.74rem;}
+    .ac-testi-quote{font-size:.68rem;}
 
     .ac-cta{margin:22px 0 26px; padding:22px 16px; border-radius:14px; gap:16px;}
     .ac-cta-phone{width:56px; height:104px; border-radius:10px;}
@@ -3139,6 +3181,7 @@
         <h2>Nuestros cursos</h2>
         <p>Elige el curso que quieras aprender. Cada uno se compra por separado.</p>
         <div class="ac-course-grid" id="acCourseGrid"></div>
+        <div class="ac-carousel-dots" id="acCourseDots"></div>
         <div class="ac-lock-note">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
           Para ver el temario completo y acceder al curso, debes adquirirlo.
@@ -3148,43 +3191,12 @@
 
     <!-- testimonios -->
     <section class="ac-testi">
-      <h2>Lo que dicen nuestros alumnos</h2>
-      <div class="ac-testi-grid">
-        <div class="ac-testi-card">
-          <div class="ac-testi-head">
-            <div class="ac-testi-av">CG</div>
-            <div>
-              <div class="ac-testi-name">Carlos G.</div>
-              <div class="ac-testi-stars">★★★★★</div>
-            </div>
-          </div>
-          <p>Masterlook Academy cambió mi forma de ver la barbería. Aprendí técnica real y hoy vivo de lo que me apasiona.</p>
-        </div>
-        <div class="ac-testi-card">
-          <div class="ac-testi-head">
-            <div class="ac-testi-av">MR</div>
-            <div>
-              <div class="ac-testi-name">Matías R.</div>
-              <div class="ac-testi-stars">★★★★★</div>
-            </div>
-          </div>
-          <p>Los profesores explican todo con claridad y siempre te impulsan a ser tu mejor versión.</p>
-        </div>
-        <div class="ac-testi-card">
-          <div class="ac-testi-head">
-            <div class="ac-testi-av">DA</div>
-            <div>
-              <div class="ac-testi-name">Diego A.</div>
-              <div class="ac-testi-stars">★★★★★</div>
-            </div>
-          </div>
-          <p>No es cualquier curso. Aquí te forman como profesional y te dan las herramientas para crecer.</p>
-        </div>
+      <div class="wrap" style="padding:0;">
+        <h2>Experiencias de nuestros alumnos</h2>
+        <p>Testimonios reales de quienes ya formaron parte de Master Look.</p>
+        <div class="ac-testi-grid" id="acTestiGrid"></div>
+        <div class="ac-carousel-dots" id="acTestiDots"></div>
       </div>
-      <button class="ac-testi-more" onclick="toast('Más testimonios próximamente')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-        Ver más testimonios
-      </button>
     </section>
 
     <!-- cta -->
@@ -3245,6 +3257,24 @@
 <div class="ac-video-modal" id="acVideoModal" onclick="if(event.target===this) cerrarReproductor()">
   <button class="ac-video-close" onclick="cerrarReproductor()" aria-label="Cerrar">✕</button>
   <video id="acVideoPlayer" controls playsinline></video>
+</div>
+
+<!-- "Ver detalle" de un curso de Academy -->
+<div class="ac-detail-modal" id="acCourseDetailModal" onclick="if(event.target===this) cerrarDetalleCurso()">
+  <div class="ac-detail-card">
+    <button class="ac-detail-close" onclick="cerrarDetalleCurso()" aria-label="Cerrar">✕</button>
+    <div class="ac-detail-photo" id="acDetailPhoto"></div>
+    <div class="ac-detail-body">
+      <h3 id="acDetailNombre"></h3>
+      <p id="acDetailDesc"></p>
+      <div class="ac-detail-meta">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 5v14l11-7z"/></svg><span id="acDetailClases"></span></span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 1.9"/></svg><span id="acDetailDuracion"></span></span>
+      </div>
+      <div class="ac-detail-price" id="acDetailPrecio"></div>
+      <button class="ac-course-btn" id="acDetailComprar" style="padding:12px;">Comprar curso</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== Carrito ===== -->
@@ -4036,6 +4066,16 @@
     if(mqHeroDesktop.matches) pintarFondoHeroDesktop();
     else pintarFondoHeroMobile();
   }
+  /** Video breve (15-20 seg) del curso "Recomendado" -- si existe y ya
+   *  terminó de procesarse, es lo PRIMERO que ve cualquier visitante al
+   *  entrar al sitio, por sobre el video/foto de portada configurado a
+   *  mano (ver plan de la dueña: "esa sea la primera vista del cliente
+   *  cuando entre a la página de masterlook"). Si ningún curso recomendado
+   *  tiene uno listo, el hero sigue exactamente como siempre. */
+  function heroTrailerUrl(){
+    const c = (cursosCache || []).find(x=> x.featured !== false && x.trailerStreamVideoId && x.trailerStreamStatus === 'ready');
+    return c ? bunnyPlaylistUrl(c.trailerStreamVideoId) : null;
+  }
   function pintarFondoHeroDesktop(){
     const hero = document.querySelector('.hero');
     const bg = document.querySelector('.hero-bg');
@@ -4043,7 +4083,7 @@
     if(!bg) return;
     const url = horarioNegocio.portadaUrl;
     const videoId = horarioNegocio.heroStreamStatusDesktop === 'ready' ? horarioNegocio.heroStreamVideoIdDesktop : '';
-    const videoUrl = videoId ? bunnyPlaylistUrl(videoId) : '';
+    const videoUrl = heroTrailerUrl() || (videoId ? bunnyPlaylistUrl(videoId) : '');
 
     const mostrarFoto = !!url && !videoUrl;
     if(hero) hero.classList.toggle('tiene-foto', mostrarFoto);
@@ -4087,7 +4127,7 @@
     if(!bg) return;
     const url = horarioNegocio.portadaUrlMobile;
     const videoId = horarioNegocio.heroStreamStatus === 'ready' ? horarioNegocio.heroStreamVideoId : '';
-    const videoUrl = videoId ? bunnyPlaylistUrl(videoId) : '';
+    const videoUrl = heroTrailerUrl() || (videoId ? bunnyPlaylistUrl(videoId) : '');
 
     const mostrarFoto = !!url && !videoUrl;
     if(hero) hero.classList.toggle('tiene-foto', mostrarFoto);
@@ -4211,10 +4251,22 @@
   db.collection('courses').onSnapshot(snap=>{
     cursosCache = snap.docs.map(d=> d.data()).filter(c=> c.active !== false).map(c=>
       ({ ...c, lessons: (c.lessons || []).filter(l=> l.active !== false) }));
+    pintarFondoHero();
     if(!cursosListos) return;
     cargarTienda();
     if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarCursosAcademia();
   });
+
+  /** Testimonios en video de alumnos (Academy), editados desde el panel,
+   *  en vivo -- siempre gratuitos/públicos, ordenados como el panel los dejó. */
+  db.collection('testimonios').orderBy('orden').onSnapshot(snap=>{
+    testimoniosData = snap.docs.map(d=> d.data()).filter(t=> t.active !== false).map(t=> ({
+      tag: t.tag, curso: t.curso, frase: t.frase,
+      videoUrl: (t.streamVideoId && t.streamStatus === 'ready') ? bunnyPlaylistUrl(t.streamVideoId) : null,
+      thumbUrl: (t.streamVideoId && t.streamStatus === 'ready') ? bunnyThumbUrl(t.streamVideoId) : '',
+    })).filter(t=> t.videoUrl);
+    if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarTestimonios();
+  }, ()=>{ /* sin conexión momentánea -- se mantiene lo que ya había cacheado */ });
 
   /** Catálogo de productos físicos (cera, gel, etc.), editado desde el panel. */
   let productosSiteCache = [];
@@ -5954,6 +6006,7 @@
 
   /** Cursos para la vista completa de Academia: mismo origen de datos
    *  que cargarTienda() (el panel interno los publica en modo demo). */
+  let acCursosActuales = [];
   function pintarCursosAcademia(){
     let cursos = CATALOGO_DEMO.filter(i=> i.kind === 'COURSE');
     if(MODE !== 'api'){
@@ -5961,11 +6014,13 @@
     } else if(tvProductos.length){
       cursos = tvProductos.filter(i=> i.kind === 'COURSE') || cursos;
     }
+    acCursosActuales = cursos;
 
     const grid = document.getElementById('acCourseGrid');
     if(!grid) return;
     if(!cursos.length){
       grid.innerHTML = '<div class="tv-vacio">Todavía no hay cursos publicados.</div>';
+      document.getElementById('acCourseDots').innerHTML = '';
       return;
     }
 
@@ -5983,16 +6038,130 @@
             <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 5v14l11-7z"/></svg>${clases.length ? clases.length + ' clase' + (clases.length>1?'s':'') + ' en video' : 'Clases en video'}</span>
             <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 1.9"/></svg>${totalMin ? dur(totalMin) : 'Teoría + Práctica'}</span>
           </div>
-          <button class="ac-course-btn" data-buy="${c.id}" data-name="${c.name}" data-price="${c.priceClp}" data-kind="COURSE">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            Ver detalles
-          </button>
+          <div class="ac-course-actions">
+            <button class="ac-course-btn-outline" data-detalle="${c.id}">
+              Ver detalle
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <button class="ac-course-btn" data-buy="${c.id}" data-name="${c.name}" data-price="${c.priceClp}" data-kind="COURSE">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/></svg>
+              Comprar curso
+            </button>
+          </div>
         </div>
       </div>`;
     }).join('');
     observarVideosLazy(grid);
 
+    grid.querySelectorAll('[data-detalle]').forEach(btn=>
+      btn.addEventListener('click', ()=> abrirDetalleCurso(btn.dataset.detalle)));
     conectarBotonesCompra();
+    configurarCarrusel('acCourseGrid', 'acCourseDots');
+  }
+
+  /** "Ver detalle": muestra foto/video, descripción completa, clases,
+   *  duración y precio -- el botón "Comprar curso" de adentro usa
+   *  exactamente la misma función (agregarAlCarrito) que la tarjeta,
+   *  nunca una lógica de compra distinta. */
+  function abrirDetalleCurso(id){
+    const c = acCursosActuales.find(x=> String(x.id) === String(id));
+    if(!c) return;
+    const clases = (c.lessons || []).filter(l=> l.active !== false);
+    const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
+    const precio = c.priceUsd && c.currency === 'USD' ? 'US$' + c.priceUsd : money(c.priceClp);
+
+    const foto = document.getElementById('acDetailPhoto');
+    const img = (c.streamVideoId && c.streamStatus==='ready') ? bunnyThumbUrl(c.streamVideoId) : c.photoUrl;
+    foto.innerHTML = (c.streamVideoId && c.streamStatus==='ready')
+      ? `<video muted loop playsinline autoplay data-src="${bunnyPlaylistUrl(c.streamVideoId)}"></video>`
+      : (img ? `<img src="${img}" alt="">` : iconoDeCurso(c));
+    if(c.streamVideoId && c.streamStatus==='ready'){
+      const v = foto.querySelector('video');
+      adjuntarHls(v, bunnyPlaylistUrl(c.streamVideoId));
+    }
+
+    document.getElementById('acDetailNombre').textContent = c.name;
+    document.getElementById('acDetailDesc').textContent = c.description || 'Curso online, a tu ritmo.';
+    document.getElementById('acDetailClases').textContent = clases.length ? clases.length + ' clase' + (clases.length>1?'s':'') + ' en video' : 'Clases en video';
+    document.getElementById('acDetailDuracion').textContent = totalMin ? dur(totalMin) : 'Teoría + Práctica';
+    document.getElementById('acDetailPrecio').textContent = precio;
+
+    const btnComprar = document.getElementById('acDetailComprar');
+    btnComprar.onclick = ()=>{ cerrarDetalleCurso(); agregarAlCarrito(c.id, c.name, c.priceClp, 'COURSE'); };
+
+    document.getElementById('acCourseDetailModal').classList.add('open');
+  }
+  function cerrarDetalleCurso(){
+    document.getElementById('acCourseDetailModal').classList.remove('open');
+  }
+
+  /** Sincroniza los puntos indicadores de un carrusel horizontal con la
+   *  tarjeta más visible -- reusado por cursos y testimonios, nunca
+   *  duplicado. Un clic en un punto desliza suave hasta esa tarjeta. */
+  function configurarCarrusel(gridId, dotsId){
+    const grid = document.getElementById(gridId);
+    const dots = document.getElementById(dotsId);
+    if(!grid || !dots) return;
+    const tarjetas = [...grid.children].filter(el=> el.nodeType === 1);
+    if(tarjetas.length < 2){ dots.innerHTML = ''; return; }
+
+    dots.innerHTML = tarjetas.map((_,i)=> `<button data-i="${i}" aria-label="Ir a la tarjeta ${i+1}"></button>`).join('');
+    const puntos = [...dots.children];
+
+    function marcarActivo(){
+      const centro = grid.scrollLeft + grid.clientWidth / 2;
+      let masCercano = 0, distMin = Infinity;
+      tarjetas.forEach((t,i)=>{
+        const c = t.offsetLeft + t.offsetWidth / 2;
+        const d = Math.abs(c - centro);
+        if(d < distMin){ distMin = d; masCercano = i; }
+      });
+      puntos.forEach((p,i)=> p.classList.toggle('active', i === masCercano));
+    }
+    puntos.forEach((p,i)=> p.addEventListener('click', ()=>
+      tarjetas[i].scrollIntoView({behavior:'smooth', inline:'start', block:'nearest'})));
+
+    let scheduled = false;
+    grid.addEventListener('scroll', ()=>{
+      if(scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(()=>{ marcarActivo(); scheduled = false; });
+    });
+    marcarActivo();
+  }
+
+  /** Testimonios en video de alumnos reales -- sin datos de ejemplo: si
+   *  todavía no hay ninguno cargado, se muestra un estado vacío en vez de
+   *  inventar contenido. Preparado para leer testimonios reales (video +
+   *  etiqueta presencial/online + curso + frase) apenas existan. */
+  let testimoniosData = [];
+  function pintarTestimonios(){
+    const grid = document.getElementById('acTestiGrid');
+    if(!grid) return;
+    if(!testimoniosData.length){
+      grid.innerHTML = '<div class="ac-testi-empty">Todavía no hay testimonios en video publicados.</div>';
+      document.getElementById('acTestiDots').innerHTML = '';
+      return;
+    }
+    grid.innerHTML = testimoniosData.map((t,i)=> `
+      <button class="ac-testi-card" data-testi="${i}">
+        <div class="ac-testi-thumb">
+          ${t.thumbUrl ? `<img src="${t.thumbUrl}" alt="">` : ''}
+          <span class="ac-testi-tag">${t.tag === 'PRESENCIAL' ? 'Presencial' : 'Online'}</span>
+          <span class="ac-testi-play">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+        </div>
+        <div class="ac-testi-course">${t.curso || ''}</div>
+        <div class="ac-testi-quote">${t.frase || ''}</div>
+      </button>`).join('');
+
+    grid.querySelectorAll('[data-testi]').forEach(btn=>
+      btn.addEventListener('click', ()=>{
+        const t = testimoniosData[Number(btn.dataset.testi)];
+        if(t?.videoUrl) abrirReproductor(t.videoUrl);
+      }));
+    configurarCarrusel('acTestiGrid', 'acTestiDots');
   }
 
   /* ==========================================================
@@ -7221,6 +7390,7 @@
     document.getElementById('vistaAcademia').scrollTop = 0;
     pintarCursosAcademia();
     pintarVideoAcademia();
+    pintarTestimonios();
     if(!desdeHistorial && hashActual() !== '#academia') irHistorial('push','academia');
   }
   /** Video de presentación de la Academy: reemplaza el ícono de la portada
