@@ -5189,6 +5189,11 @@
         const reason = decision === 'rechazada' && rec.reason
           ? `<div class="hi-reason">Motivo: ${rec.reason} · Escríbenos para reagendar.</div>` : '';
 
+        const puedeCambiar = decision === 'aprobada' && !rec.reagendadaPorCliente;
+        const btnCambiar = puedeCambiar
+          ? `<button class="btn-ghost" style="padding:6px 12px;font-size:.78rem;" data-cambiar="${escapeHTML(b.id)}" data-svc="${escapeHTML(b.svc)}">Cambiar hora</button>`
+          : '';
+
         return `
         <div class="history-item ${decision === 'rechazada' ? 'is-rejected' : ''}">
           <div>
@@ -5196,12 +5201,16 @@
             <div class="hi-meta">${b.barber} · ${b.slot} · ${b.pay}</div>
             ${reason}
           </div>
-          <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <span class="hi-status ${cls}">${label}</span>
             <span class="mono">${money(Number(b.price) || 0)}</span>
+            ${btnCambiar}
           </div>
         </div>`;
       }).join('');
+
+      list.querySelectorAll('[data-cambiar]').forEach((btn) =>
+        btn.addEventListener('click', () => abrirCambioHora(btn.dataset.cambiar, btn.dataset.svc)));
     }
   }
 
@@ -5216,12 +5225,42 @@
     checkConfirmar();
   }
 
-  /* ===== cambio de hora (uno solo, 4 horas de anticipación) ===== */
-  let ultimasReservas = [];
-  let rsEstado = { bookingId:null, startsAt:null };
+  /* ===== cambio de hora (uno solo, 4 horas de anticipación) =====
+     Dos caminos llegan acá, con la MISMA modal y la MISMA lógica de
+     slots -- solo cambia de dónde sale el dato de la reserva y qué
+     Cloud Function se llama al confirmar:
+       - cuenta: bookingId ya está en misReservasCache (Mi cuenta).
+       - invitado: llega por el botón "Modificar cita" del correo
+         (?reagendar=<id>&token=<token>), se resuelve una vez vía
+         obtenerReservaPorToken y se cachea en rsReservaInvitado. */
+  let rsEstado = { bookingId:null, token:null, startsAt:null };
+  let rsReservaInvitado = null;
 
   function abrirCambioHora(bookingId, servicio){
-    rsEstado = { bookingId, startsAt:null };
+    rsEstado = { bookingId, token:null, startsAt:null };
+    rsReservaInvitado = null;
+    abrirModalCambioHora(servicio);
+  }
+
+  async function abrirCambioHoraInvitado(bookingId, token){
+    let real;
+    try{
+      const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerReservaPorToken', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ bookingId, token }),
+      });
+      real = await resp.json();
+      if(!resp.ok || !real.ok) throw new Error(real.error || 'Enlace inválido');
+    }catch(e){
+      toast(e.message || 'Ese enlace ya no es válido.');
+      return;
+    }
+    rsEstado = { bookingId, token, startsAt:null };
+    rsReservaInvitado = real;
+    abrirModalCambioHora(real.svc);
+  }
+
+  function abrirModalCambioHora(servicio){
     document.getElementById('rsServicio').textContent = servicio;
     document.getElementById('rsConfirmar').disabled = true;
 
@@ -5232,6 +5271,13 @@
 
     document.getElementById('rescheduleModal').classList.add('open');
     cargarHorasCambio();
+  }
+
+  /** La reserva que se está reagendando, sea de cuenta o de invitado --
+      misma forma en ambos casos: {svc, fecha, startMin, duracion, barber}. */
+  function reservaActualParaCambio(){
+    if(rsEstado.token) return rsReservaInvitado;
+    return (misReservasCache || []).find(b=> b.id === rsEstado.bookingId);
   }
 
   function cerrarCambioHora(){
@@ -5249,65 +5295,101 @@
     document.getElementById('rsConfirmar').disabled = true;
     cont.innerHTML = '<div class="slots-msg">Buscando horarios...</div>';
 
-    // La reserva conserva su servicio: pedimos disponibilidad para ese mismo
-    const reserva = (ultimasReservas || []).find(b=> b.id === rsEstado.bookingId);
-    const servicio = catalog.services.find(s=> s.name === (reserva?.service || ''));
-    if(!servicio){
-      cont.innerHTML = '<div class="slots-msg">No pudimos identificar el servicio.</div>';
+    const reserva = reservaActualParaCambio();
+    const fecha = document.getElementById('rsFecha').value;
+    if(!reserva){
+      cont.innerHTML = '<div class="slots-msg">No pudimos identificar la reserva.</div>';
       return;
     }
 
+    // FAIL CLOSED: si no se puede confirmar el horario/ocupación real, no
+    // se inventa disponibilidad -- nunca un horario "por si acaso".
+    let real;
     try{
-      const p = new URLSearchParams({
-        date: document.getElementById('rsFecha').value,
-        serviceId: servicio.id
-      });
-      const data = await api('/availability?' + p.toString());
-
-      // margen mínimo de 4 horas desde ahora
-      const limite = Date.now() + 4 * 3600 * 1000;
-      const vistos = new Set();
-      const slots = data.slots.filter(s=>{
-        if(new Date(s.startsAt).getTime() < limite) return false;
-        if(vistos.has(s.label)) return false;
-        vistos.add(s.label);
-        return true;
-      });
-
-      if(!slots.length){
-        cont.innerHTML = '<div class="slots-msg">No hay horarios disponibles ese día con 4 horas de anticipación.</div>';
-        return;
-      }
-
-      cont.innerHTML = slots.map(s=>
-        `<div class="slot" data-start="${s.startsAt}" data-barber="${s.barberId}">${s.label}</div>`
-      ).join('');
-
-      cont.querySelectorAll('.slot').forEach(o=>
-        o.addEventListener('click', ()=>{
-          rsEstado.startsAt = o.dataset.start;
-          rsEstado.barberId = o.dataset.barber;
-          cont.querySelectorAll('.slot').forEach(x=> x.classList.toggle('selected', x===o));
-          document.getElementById('rsConfirmar').disabled = false;
-        }));
+      real = await nrObtenerOcupacionRealSitio(fecha);
     }catch(e){
-      cont.innerHTML = '<div class="slots-msg">No pudimos cargar los horarios.</div>';
+      cont.innerHTML = '<div class="slots-msg">No pudimos confirmar la disponibilidad real. Intenta de nuevo en un momento.</div>';
+      return;
     }
+    if(!real.horario){
+      cont.innerHTML = '<div class="slots-msg">Ese día el local no atiende.</div>';
+      return;
+    }
+
+    const limite = Date.now() + 4 * 3600 * 1000;
+    const inicioGrilla = Math.ceil(real.horario.abre / 60) * 60;
+    const dur = reserva.duracion || 45;
+    const opciones = [];
+    for(let min = inicioGrilla; min + dur <= real.horario.cierra; min += 60){
+      const horaAbsoluta = new Date(fecha + 'T00:00:00').getTime() + min * 60 * 1000;
+      if(horaAbsoluta < limite) continue;
+      // esta misma reserva no debe bloquearse a sí misma si se está mirando
+      // su propia fecha actual
+      const libres = Object.keys(real.ocupacion).filter(nombreBarbero=>{
+        if(fecha === reserva.fecha && nombreBarbero === reserva.barber){
+          const ocupadoSinPropia = (real.ocupacion[nombreBarbero]||[]).filter(([ini,fin])=>
+            !(ini === reserva.startMin && fin === reserva.startMin + reserva.duracion));
+          return !ocupadoSinPropia.some(([ini,fin])=> min < fin && (min+dur) > ini);
+        }
+        return !(real.ocupacion[nombreBarbero]||[]).some(([ini,fin])=> min < fin && (min+dur) > ini);
+      });
+      if(libres.length) opciones.push({ min, barber: libres[0] });
+    }
+
+    if(!opciones.length){
+      cont.innerHTML = '<div class="slots-msg">No hay horarios disponibles ese día con 4 horas de anticipación.</div>';
+      return;
+    }
+
+    cont.innerHTML = opciones.map(o=>
+      `<div class="slot" data-min="${o.min}" data-barber="${escapeHTML(o.barber)}">${String(Math.floor(o.min/60)).padStart(2,'0')}:${String(o.min%60).padStart(2,'0')}</div>`
+    ).join('');
+
+    cont.querySelectorAll('.slot').forEach(o=>
+      o.addEventListener('click', ()=>{
+        rsEstado.startMin = Number(o.dataset.min);
+        rsEstado.barberName = o.dataset.barber;
+        cont.querySelectorAll('.slot').forEach(x=> x.classList.toggle('selected', x===o));
+        document.getElementById('rsConfirmar').disabled = false;
+      }));
+  }
+
+  /** Misma fuente real que usa el resto del sitio -- nunca un horario propio. */
+  let rsOcupacionCache = {};
+  async function nrObtenerOcupacionRealSitio(fecha){
+    if(rsOcupacionCache[fecha]) return rsOcupacionCache[fecha];
+    const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
+    if(!resp.ok) throw new Error('fail');
+    const data = await resp.json();
+    rsOcupacionCache[fecha] = data;
+    return data;
   }
 
   document.getElementById('rsConfirmar').addEventListener('click', async ()=>{
     const btn = document.getElementById('rsConfirmar');
     btn.disabled = true; btn.textContent = 'Cambiando...';
     try{
-      const r = await api(`/bookings/${rsEstado.bookingId}/reschedule`, {
-        method:'POST',
-        body: JSON.stringify({ startsAt: rsEstado.startsAt, barberId: rsEstado.barberId })
-      });
+      const reserva = reservaActualParaCambio();
+      const datos = {
+        bookingId: rsEstado.bookingId, barberName: rsEstado.barberName,
+        fecha: document.getElementById('rsFecha').value,
+        startMin: rsEstado.startMin, minutes: reserva?.duracion || 45,
+      };
+      if(rsEstado.token){
+        const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/reagendarReservaToken', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ...datos, token: rsEstado.token }),
+        });
+        const r = await resp.json();
+        if(!resp.ok || !r.ok) throw new Error(r.error || 'No se pudo cambiar la hora.');
+      } else {
+        await functions.httpsCallable('reagendarReservaCliente')(datos);
+      }
       cerrarCambioHora();
-      toast(r.message || 'Hora actualizada');
-      await renderAccount();
+      toast('Hora actualizada. Te enviamos un correo con el nuevo horario.');
+      if(!rsEstado.token) await renderAccount();
     }catch(e){
-      toast(e.message);
+      toast(e.message || 'No se pudo cambiar la hora.');
     }
     btn.disabled = false; btn.textContent = 'Confirmar cambio';
   });
@@ -5766,6 +5848,18 @@
     }
   }
   manejarRetornoWebpay();
+
+  /** Botón "Modificar cita" del correo (invitado, sin sesión) --
+   *  ?reagendar=<bookingId>&token=<token>. No depende de "Mi cuenta": el
+   *  enlace por sí solo, con su token, es lo que autoriza. */
+  (function manejarReagendarPorEnlace(){
+    const params = new URLSearchParams(location.search);
+    const bookingId = params.get('reagendar');
+    const token = params.get('token');
+    if(!bookingId || !token) return;
+    history.replaceState(null, '', location.pathname + location.hash);
+    abrirCambioHoraInvitado(bookingId, token);
+  })();
 
   // NOTA: registrar la venta y descontar stock ahora lo hace el servidor
   // (webpayConfirmar -> procesarConfirmacion, ver database/functions/webpay.js),
@@ -6239,13 +6333,26 @@
     const detalle = document.getElementById('rvProntoDetalle');
     const hoy = new Date();
 
+    // Días candidatos (el local atiende ese día) -- se decide sin red,
+    // horarioDelDia() es puro cálculo local.
+    const candidatos = [];
     for(let i = 0; i < 14; i++){
       const d = new Date(hoy);
       d.setDate(hoy.getDate() + i);
       const iso = d.toISOString().slice(0,10);
-      if(!horarioDelDia(iso)) continue;
+      if(horarioDelDia(iso)) candidatos.push({ i, iso });
+    }
 
-      const slots = await calcularSlots(iso);
+    // Se piden TODOS los días candidatos en paralelo -- antes se pedían
+    // uno por uno, en serie (hasta 14 ida-y-vuelta seguidas a la Cloud
+    // Function cada vez que un cliente llegaba a este paso, la causa real
+    // de la demora reportada). asegurarOcupacion() ya cachea por fecha,
+    // así que esto nunca duplica una consulta ya hecha (ej. la de loadSlots
+    // para la fecha ya seleccionada).
+    await Promise.all(candidatos.map(c => asegurarOcupacion(c.iso)));
+
+    for(const { i, iso } of candidatos){
+      const slots = await calcularSlots(iso); // ya cacheado, no vuelve a pedir red
       if(slots.length){
         const s = slots[0];
         const cuando = (i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : fmtFechaLarga(iso)) + ' a las ' + s.label;
