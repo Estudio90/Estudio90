@@ -3133,6 +3133,13 @@
   <label class="mg-label">Hora</label>
   <div class="mg-slots" id="nrHoras"><div class="mg-msg">Elige servicio y barbero</div></div>
 
+  <div id="nrForzarWrap" style="display:none;margin-top:6px;">
+    <label class="mg-check">
+      <input type="checkbox" id="nrForzarCheck"> Elegir una hora manual (fuera del horario normal o aunque el barbero ya tenga otra cita)
+    </label>
+    <input type="time" id="nrForzarHora" class="mg-input" style="display:none;margin-top:6px;">
+  </div>
+
   <label class="mg-label">Nota <span class="mg-opt">(opcional)</span></label>
   <input type="text" id="nrNota" class="mg-input" placeholder="Ej: pidió máquina, no tijera">
 
@@ -5839,6 +5846,7 @@
     document.getElementById('nrFecha').value = currentDate;
     document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
     nrSeleccion.startsAt = null;
+    resetNrForzar();
     document.getElementById('nrGuardar').disabled = true;
     abrirModal('modalReserva');
     cargarHorasLibres();
@@ -5847,6 +5855,42 @@
   ['nrServicio','nrBarbero','nrFecha'].forEach(id=>
     document.getElementById(id).addEventListener('change', cargarHorasLibres));
 
+  /* Hora manual, solo ADMIN real (dueño o staff con rol ADMIN, igual que
+     verifica el backend en crearReservaLocal): permite elegir cualquier
+     hora, incluso fuera del horario del local o encima de otra cita ya
+     existente del mismo barbero -- pensado para casos que la administradora
+     coordina a mano y decide asumir ella misma, no para uso normal. */
+  function resetNrForzar(){
+    const wrap = document.getElementById('nrForzarWrap');
+    wrap.style.display = (userRole === 'ADMIN') ? '' : 'none';
+    document.getElementById('nrForzarCheck').checked = false;
+    document.getElementById('nrForzarHora').style.display = 'none';
+    document.getElementById('nrForzarHora').value = '';
+    nrSeleccion.forzar = false;
+  }
+
+  document.getElementById('nrForzarCheck').addEventListener('change', (e)=>{
+    const horaInput = document.getElementById('nrForzarHora');
+    horaInput.style.display = e.target.checked ? '' : 'none';
+    if(e.target.checked){
+      nrSeleccion.forzar = true;
+      document.getElementById('nrHoras').querySelectorAll('.mg-slot').forEach(x=> x.classList.remove('sel'));
+      nrSeleccion.startsAt = horaInput.value ? document.getElementById('nrFecha').value + 'T' + horaInput.value + ':00' : null;
+      nrSeleccion.hora = horaInput.value || null;
+    } else {
+      nrSeleccion.forzar = false;
+      nrSeleccion.startsAt = null;
+      nrSeleccion.hora = null;
+    }
+    validarNuevaReserva();
+  });
+
+  document.getElementById('nrForzarHora').addEventListener('input', (e)=>{
+    nrSeleccion.startsAt = e.target.value ? document.getElementById('nrFecha').value + 'T' + e.target.value + ':00' : null;
+    nrSeleccion.hora = e.target.value || null;
+    validarNuevaReserva();
+  });
+
   /** Ocupación real por fecha -- MISMA fuente que usa el sitio público
    *  (Cloud Function `obtenerOcupacionDia`), nunca un horario propio del
    *  panel: ya incluye horario real del local, horario especial de esa
@@ -5854,12 +5898,22 @@
    *  todo calculado una sola vez en el servidor (ver disponibilidad.js). */
   async function nrObtenerOcupacionReal(fecha){
     const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
-    if(!resp.ok) throw new Error('No se pudo consultar la disponibilidad real.');
+    if(!resp.ok){
+      // Se guarda el motivo real (status + cuerpo) en consola -- así, si
+      // vuelve a fallar, se puede ver la causa exacta en vez de adivinar.
+      let detalle = '';
+      try{ detalle = JSON.stringify(await resp.json()); }catch(e){}
+      console.error('obtenerOcupacionDia falló', resp.status, detalle);
+      throw new Error(`No se pudo consultar la disponibilidad real (código ${resp.status}).`);
+    }
     return resp.json(); // { horario: {abre,cierra} | null, ocupacion: {nombreBarbero: [[ini,fin],...]} }
   }
 
   async function cargarHorasLibres(){
     const cont = document.getElementById('nrHoras');
+    // Si la administradora ya está usando la hora manual, no se pisa su
+    // selección solo porque cambió fecha/servicio/barbero de fondo.
+    if(nrSeleccion.forzar) return;
     nrSeleccion.startsAt = null;
     document.getElementById('nrGuardar').disabled = true;
 
@@ -5878,7 +5932,12 @@
       }catch(e){
         // FAIL CLOSED: si no se puede confirmar el horario real, no se
         // inventa disponibilidad -- nunca ofrecer horas "por si acaso".
-        cont.innerHTML = '<div class="mg-msg">No se pudo confirmar el horario real del local. Intenta de nuevo en un momento.</div>';
+        // Se muestra el motivo real (queda también en la consola) para
+        // poder diagnosticar si vuelve a pasar, en vez de un mensaje ciego.
+        const msgForzar = (userRole === 'ADMIN')
+          ? ' Puedes usar "Elegir una hora manual" más abajo mientras tanto.'
+          : '';
+        cont.innerHTML = `<div class="mg-msg">No se pudo confirmar el horario real del local (${escapeHTML(e.message || 'sin conexión')}).${msgForzar}</div>`;
         return;
       }
       if(!real.horario){
@@ -6076,6 +6135,7 @@
       try{
         await functions.httpsCallable('crearReservaLocal')({
           fecha, client: nombre, phone: fono, email: '', pay: 'Efectivo en local', notaAdmin: notas,
+          forzar: nrSeleccion.forzar === true,
           citas: [{
             serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
             barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
@@ -12868,6 +12928,7 @@
     document.getElementById('nrFecha').value = currentDate;
     document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
     nrSeleccion.startsAt = null;
+    resetNrForzar();
     document.getElementById('nrGuardar').disabled = true;
     abrirModal('modalReserva');
     await cargarHorasLibres();
