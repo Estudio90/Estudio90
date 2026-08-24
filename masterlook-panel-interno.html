@@ -57,7 +57,7 @@
 
     --ok:#189d79; --pend:#c98a2e; --done:#4a5cf0; --no:#d14545;
     --reservado:#3b8fa3; --asistio:#d64fb0;
-    --reservado-tint:#e2f0f2; --pend-tint:#faf1e0; --asistio-tint:#f9e2f3; --no-tint:#fbe7e7;
+    --reservado-tint:#c9e8ec; --pend-tint:#f5e0b8; --asistio-tint:#f6c9e6; --no-tint:#f5c9c9;
     --amber:#c98a2e;
 
     /* Resumen de Ventas -- identidad real de Master Look (la misma del
@@ -88,6 +88,15 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
+  /* Scrollbar propia (craft-floor: los detalles del navegador que no se
+     tocan también forman parte del diseño) -- reemplaza la barra gris con
+     flechas por defecto de Windows por una delgada y redondeada. */
+  *{scrollbar-width:thin; scrollbar-color:rgba(26,24,21,.28) transparent;}
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(26,24,21,.24);border-radius:99px;border:2px solid transparent;background-clip:padding-box;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(26,24,21,.4);background-clip:padding-box;}
+  ::-webkit-scrollbar-button{display:none;width:0;height:0;}
   body{
     background:var(--bg);
     color:var(--text-hi);
@@ -114,19 +123,23 @@
   }
   .wordmark{
     font-family:var(--font-primary);
-    font-size:16px;font-weight:600;letter-spacing:0.06em;
+    font-size:20px;font-weight:800;letter-spacing:0.05em;
     text-transform:uppercase;color:var(--text-hi);
-    display:flex;align-items:center;gap:9px;flex:0 0 auto;
+    display:flex;align-items:center;gap:9px;
+    position:absolute;left:50%;top:20px;transform:translateX(-50%);
   }
   .wordmark .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);}
-  .stock-chips{display:flex;gap:8px;flex:1 1 auto;overflow-x:auto;}
+  /* Los chips de stock bajo pasan a su propia fila completa (order alto +
+     flex-basis:100%) -- así nunca se encima con el wordmark centrado,
+     sin importar cuántos productos con stock bajo haya. */
+  .stock-chips{display:flex;gap:5px;flex:1 1 100%;order:5;overflow-x:auto;}
   .stock-chip{
-    display:flex;align-items:center;gap:6px;
-    font-size:11.5px;color:var(--text-mid);
+    display:flex;align-items:center;gap:4px;
+    font-size:10px;color:var(--text-mid);
     background:var(--panel-2);border:1px solid var(--border);
-    border-radius:999px;padding:5px 11px;white-space:nowrap;
+    border-radius:999px;padding:3px 8px;white-space:nowrap;
   }
-  .stock-chip .qty{font-family:var(--font-primary); font-variant-numeric:tabular-nums;color:var(--amber);font-size:11px;font-weight:600;}
+  .stock-chip .qty{font-family:var(--font-primary); font-variant-numeric:tabular-nums;color:var(--amber);font-size:9.5px;font-weight:600;}
   .stock-chip{cursor:pointer;}
   .stock-chip.low{background:#fbeceb;border-color:#e3a8a1;color:#b03a2e;}
   .stock-chip.low .qty{color:#b03a2e;}
@@ -229,14 +242,21 @@
   .content{padding:22px 32px 0;}
 
   /* ---------- KPI row ---------- */
+  .kpi-range-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
   .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px;}
+  /* Iluminación pareja en toda la ficha, gris claro (no cálida/crema) --
+     muy suave, sin foco en una esquina. */
   .kpi-card{
-    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
-    padding:16px 16px 14px;box-shadow:var(--shadow-sm);
+    background:rgba(240,240,242,.65);
+    -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.7);border-radius:var(--radius);
+    padding:16px 16px 14px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 4px 16px rgba(15,15,20,.06);
     transition:box-shadow .15s ease, transform .15s ease;
     position:relative;overflow:hidden;
   }
-  .kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+  .kpi-card>*{position:relative;}
+  .kpi-card:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 8px 24px rgba(15,15,20,.1);transform:translateY(-1px);}
   .kpi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:11px;}
   .kpi-label{
     font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:9.5px;letter-spacing:0.05em;
@@ -248,20 +268,24 @@
   }
   .kpi-trend.stable{background:var(--cejas-tint);color:var(--cejas);}
   .kpi-value{
-    font-family:var(--font-primary);font-size:21px;font-weight:600;color:var(--text-hi);
-    font-variant-numeric:tabular-nums;margin-bottom:10px;
+    font-family:var(--font-primary);font-size:21px;font-weight:700;color:var(--text-hi);
+    font-variant-numeric:tabular-nums;
   }
-  .kpi-value.accent-corte{color:var(--corte);}
-  .kpi-value.accent-cejas{color:var(--cejas);}
-  .spark{width:100%;height:26px;display:block;}
 
   /* ---------- Layout ---------- */
   .layout{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;}
 
   /* ---------- Sidebar ---------- */
+  /* Fija (sticky) bajo el topbar mientras se hace scroll para ver toda la
+     agenda -- antes se iba scrolleando junto con todo lo demás y había que
+     subir para volver a ver los filtros/mini-calendario, como pidió la
+     administradora que quedara igual a AgendaPro. top:96px deja espacio
+     para el topbar incluso cuando muestra la fila de stock bajo (la más
+     alta que puede tener). */
   .sidebar{
     background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px;box-shadow:var(--shadow-sm);
+    position:sticky;top:140px;max-height:calc(100vh - 160px);overflow-y:auto;
   }
   .nav-row{display:flex;gap:6px;margin-bottom:16px;}
   .nav-btn{
@@ -277,6 +301,9 @@
     font-family:var(--font-primary);font-size:13px;font-weight:600;
     color:var(--text-hi);margin-bottom:10px;
   }
+  /* Mes siguiente debajo del actual (referencia AgendaPro): mismo look,
+     pero sin flechas propias -- navega junto con el mes de arriba. */
+  .mini-cal-head-next{justify-content:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
   .mini-cal-head button{background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:13px;padding:2px 4px;}
   .mini-grid{
     display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
@@ -318,7 +345,7 @@
   .cal-sub{font-size:12px;color:var(--text-mid);margin-top:2px;}
   .cal-stats{display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
   .stat-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-mid);}
-  .stat-item b{color:var(--text-hi);font-weight:600;}
+  .stat-item b{font-family:var(--font-primary);font-variant-numeric:tabular-nums;color:var(--text-hi);font-weight:700;}
   .occ-bar{width:64px;height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden;}
   .occ-fill{height:100%;background:var(--accent);border-radius:3px;}
   .cal-controls{display:flex;gap:6px;}
@@ -401,7 +428,7 @@
   .week-strip{display:flex; gap:6px; padding:12px 16px; border-bottom:1px solid var(--border); overflow-x:auto;}
   .wk-day{
     flex:1; min-width:74px; padding:9px 8px; border:1px solid var(--border); border-radius:10px;
-    background:#fff; cursor:pointer; text-align:center; transition:border-color .15s ease;
+    background:#f0f0ef; cursor:pointer; text-align:center; transition:border-color .15s ease;
   }
   .wk-day:hover{border-color:#4a5cf0;}
   .mini-cal-head{display:flex;align-items:center;justify-content:space-between;gap:6px;}
@@ -409,20 +436,55 @@
   .mini-nav:hover{background:#f1f1f4;color:#1A1815;}
   .mini-grid .day{cursor:pointer;}
   .mini-grid .day:hover{background:#f1f1f4;}
-  .mini-grid .day.sel{background:#1A1815;color:#fff;font-weight:600;}
+  /* Vidrio líquido gris -- mismo estilo que la placa/botones/día
+     seleccionado de la agenda. */
+  .mini-grid .day.sel{
+    position:relative;overflow:hidden;
+    background:linear-gradient(160deg, rgba(122,122,128,.88) 0%, rgba(90,90,96,.9) 55%, rgba(75,75,80,.92) 100%);
+    -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+    color:#fff;font-weight:600;
+  }
   .mini-grid .day.today:not(.sel){color:#4a5cf0;font-weight:700;}
 
-  .wk-day.active{background:#1A1815; border-color:#1A1815; color:#fff;}
+  /* Mismo vidrio líquido de la placa Total Facturado / botones oscuros --
+     gris oscuro translúcido, blur y brillo arriba-izquierda. */
+  .wk-day.active{
+    position:relative;overflow:hidden;
+    background:linear-gradient(160deg, rgba(122,122,128,.88) 0%, rgba(90,90,96,.9) 55%, rgba(75,75,80,.92) 100%);
+    -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+    border-color:rgba(255,255,255,.14); color:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 4px 12px rgba(10,10,12,.18);
+  }
+  .wk-day.active::before{
+    content:"";position:absolute;top:-40%;left:-20%;width:70%;height:100%;pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.18), rgba(255,255,255,0) 70%);
+  }
+  .wk-day.active>*{position:relative;}
   .wk-day.today:not(.active){border-color:#4a5cf0;}
   .wk-day.today:not(.active) .wk-num{color:#4a5cf0;}
   .wk-day .wk-name{font-size:10px; text-transform:uppercase; letter-spacing:.05em; opacity:.6;}
-  .wk-day .wk-num{font-size:17px; font-weight:600; margin:2px 0;}
-  .wk-day .wk-count{font-size:10px; opacity:.7;}
+  .wk-day .wk-num{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:17px; font-weight:700; letter-spacing:-.01em; margin:2px 0;}
+  .wk-day .wk-count{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:10px; opacity:.7;}
   .wk-day .wk-dot{display:inline-block; width:5px; height:5px; border-radius:50%; background:#e0a020; margin-left:3px;}
 
   .cal-actions{display:flex; gap:7px; flex-wrap:wrap;}
-  .ctrl-btn.primary{background:#1A1815; color:#fff; border-color:#1A1815;}
-  .ctrl-btn.primary:hover{background:#4a5cf0; border-color:#4a5cf0;}
+  /* Vidrio líquido gris -- mismo estilo que la placa/día seleccionado de
+     la agenda, para que todos los botones oscuros del panel compartan un
+     solo lenguaje. */
+  .ctrl-btn.primary{
+    position:relative;overflow:hidden;
+    background:linear-gradient(160deg, rgba(122,122,128,.88) 0%, rgba(90,90,96,.9) 55%, rgba(75,75,80,.92) 100%);
+    -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+    color:#fff; border-color:rgba(255,255,255,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  .ctrl-btn.primary::before{
+    content:"";position:absolute;top:-60%;left:-20%;width:65%;height:170%;pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.2), rgba(255,255,255,0) 70%);
+  }
+  .ctrl-btn.primary>*{position:relative;}
+  .ctrl-btn.primary:hover{filter:brightness(1.12);}
 
   /* ===== modales de gestión ===== */
   /* ===== usuarios y permisos ===== */
@@ -916,8 +978,8 @@
   }
   .appt{
     position:absolute;left:5px;right:5px;background:var(--panel);z-index:2;
-    border:1px solid var(--border);border-radius:var(--radius-sm);
-    padding:4px 9px;min-height:36px;cursor:pointer;overflow:hidden;
+    border:1px solid var(--border);border-radius:7px;
+    padding:2px 7px;min-height:26px;cursor:pointer;overflow:hidden;
     box-shadow:var(--shadow-sm);
     transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
     animation:apptIn .32s cubic-bezier(.2,.8,.2,1) both;
@@ -938,9 +1000,9 @@
   .appt.st-no{background:var(--no-tint);} .appt.st-no::before{background:var(--no);}
   .appt:hover{transform:translateY(-1px);box-shadow:var(--shadow-hover);border-color:var(--border-strong);z-index:8;}
   .appt-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
-  .appt-client{font-size:11.5px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .appt-time{font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:9px;color:var(--text-mid);flex:0 0 auto;}
-  .appt-service{font-size:10px;color:var(--text-mid);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appt-client{font-size:10.5px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appt-time{font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:8.5px;color:var(--text-mid);flex:0 0 auto;}
+  .appt-service{font-size:9px;color:var(--text-mid);margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.01em;}
   .appt-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:2px;}
   .appt-bottom-left{display:flex;align-items:center;gap:5px;min-width:0;}
   .status-dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;}
@@ -965,12 +1027,14 @@
   .appt-quick button:hover{background:var(--text-hi);color:#fff;border-color:var(--text-hi);}
   .appt-quick button.wa:hover{background:var(--ok);border-color:var(--ok);}
 
+  /* Rayado diagonal para los bloques ocupados/no disponibles -- referencia
+     AgendaPro -- en vez de un relleno plano casi invisible. */
   .block-overlay{
     position:absolute;left:0;right:0;z-index:1;box-sizing:border-box;
-    background:rgba(15,15,20,0.035);
+    background:repeating-linear-gradient(135deg, rgba(15,15,20,0.05) 0 6px, rgba(15,15,20,0.09) 6px 12px);
     cursor:pointer;padding:7px 9px;overflow:hidden;transition:background-color .12s ease;
   }
-  .block-overlay:hover{background:rgba(15,15,20,0.06);}
+  .block-overlay:hover{background:repeating-linear-gradient(135deg, rgba(15,15,20,0.08) 0 6px, rgba(15,15,20,0.13) 6px 12px);}
   .block-overlay .bo-label{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-mid);}
   .block-overlay .bo-label svg{width:12px;height:12px;flex:0 0 auto;color:var(--text-low);}
   .block-overlay .bo-reason{font-size:10px;color:var(--text-low);margin-top:2px;}
@@ -1241,10 +1305,14 @@
   @media (max-width:980px){
     .layout{grid-template-columns:1fr;}
     .kpi-row{grid-template-columns:repeat(3,1fr);}
+    /* Layout de una sola columna: el sidebar queda arriba del todo, así
+       que fijarlo (sticky) taparía la agenda en vez de ayudar. */
+    .sidebar{position:static;max-height:none;overflow-y:visible;}
   }
   /* ---------- Celular: la agenda se veía enorme, muy poco cabía en pantalla ---------- */
   @media (max-width:600px){
     .topbar{padding:12px 14px;gap:10px;}
+    .wordmark{top:12px;font-size:16px;}
     .content{padding:12px 10px 0;}
     .kpi-row{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
     .kpi-card{padding:10px 12px 8px;}
@@ -1748,6 +1816,15 @@
 
   <div class="content">
 
+    <div class="kpi-range-row" id="kpiRangeRow" style="display:none;">
+      <label class="rv-pill-input">📅
+        <input type="date" id="kpiDesde">
+        <span>-</span>
+        <input type="date" id="kpiHasta">
+      </label>
+      <button class="rv-btn-ghost" id="kpiRangeHoy" type="button">Hoy</button>
+      <button class="rv-btn-ghost" id="kpiRangeMes" type="button">Este mes</button>
+    </div>
     <div class="kpi-row" id="kpiRow"></div>
 
     <!-- ===== VISTA: RESUMEN DE VENTAS -- centro general de todas las
@@ -3069,6 +3146,11 @@
         </div>
         <div class="mini-grid" id="miniGrid"></div>
 
+        <div class="mini-cal-head mini-cal-head-next">
+          <span id="miniCalLbl2">Septiembre 2026</span>
+        </div>
+        <div class="mini-grid" id="miniGrid2"></div>
+
         <div class="field-label">Profesional</div>
         <select class="filter" id="barberFilter">
           <option value="all">Todos</option>
@@ -3087,15 +3169,6 @@
           <option value="asistio">Asistió</option>
           <option value="no">No asistió</option>
         </select>
-
-        <div class="field-label">Servicios</div>
-        <div class="legend">
-          <div class="legend-item"><span class="swatch" style="background:var(--corte)"></span>Corte de cabello</div>
-          <div class="legend-item"><span class="swatch" style="background:var(--cejas)"></span>Perfilado de cejas</div>
-          <div class="legend-item"><span class="swatch" style="background:var(--onda)"></span>Ondulación permanente</div>
-          <div class="legend-item"><span class="swatch" style="background:var(--peinado)"></span>Peinado especial</div>
-          <div class="legend-item"><span class="swatch" style="background:var(--combo)"></span>Paquete completo</div>
-        </div>
       </aside>
 
       <!-- Calendar -->
@@ -3131,10 +3204,10 @@
         </div>
 
         <div class="legend-strip">
-          <div class="legend-item"><span class="ldot" style="background:var(--ok)"></span>Confirmado</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--reservado)"></span>Reservado</div>
           <div class="legend-item"><span class="ldot" style="background:var(--pend)"></span>Pendiente</div>
-          <div class="legend-item"><span class="ldot" style="background:var(--done)"></span>Completado</div>
-          <div class="legend-item"><span class="ldot" style="background:var(--no)"></span>No show</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--asistio)"></span>Asistió</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--no)"></span>No asistió</div>
         </div>
       </div>
 
@@ -3852,38 +3925,60 @@
 </div>
 
 <script>
-  /* ---------------- KPI cards ---------------- */
-  const kpis = [
-    {label:'Servicios finalizados', value:'6', trend:null, color:''},
-    {label:'Ingresos totales', value:'$113.000', trend:null, color:'accent-corte'},
-    {label:'Ventas de productos', value:'$0', trend:null, color:''},
-    {label:'Total propinas', value:'$0', trend:'Estable', color:''},
-    {label:'Pagado en local', value:'$113.000', trend:'Estable', color:'accent-cejas'},
-    {label:'Reservado por añadidos', value:'$0', trend:null, color:''},
-  ];
-  const sparkPaths = [
-    "M2,20 L14,16 L26,18 L38,10 L50,12 L62,5",
-    "M2,18 L14,14 L26,16 L38,8 L50,9 L62,3",
-    "M2,15 L14,15 L26,15 L38,15 L50,15 L62,15",
-    "M2,16 L14,14 L26,15 L38,13 L50,14 L62,12",
-    "M2,17 L14,12 L26,14 L38,7 L50,9 L62,4",
-    "M2,15 L14,15 L26,15 L38,15 L50,15 L62,15",
-  ];
+  /* ---------------- KPI cards -- por rango de fechas, datos reales ----------------
+     Antes eran 6 valores fijos en el código (nunca cambiaban). Ahora se
+     calculan con la misma fuente financiera única que Resumen de Ventas
+     (obtenerResumenVentas sobre paymentMovements), para el rango que se
+     elija arriba. "Reservado por añadidos" se deja tal cual (sin dato real
+     conocido con qué llenarlo) hasta confirmar qué debe medir. */
+  const KPI_DEFS = ['Servicios finalizados','Ingresos totales','Ventas de productos','Total propinas','Pagado en local','Reservado por añadidos'];
   const kpiRow = document.getElementById('kpiRow');
-  kpis.forEach((k,i)=>{
+  KPI_DEFS.forEach(label=>{
     const card = document.createElement('div');
     card.className = 'kpi-card';
-    card.innerHTML = `
-      <div class="kpi-top">
-        <div class="kpi-label">${k.label}</div>
-        ${k.trend ? `<div class="kpi-trend stable">+ ${k.trend}</div>` : ''}
-      </div>
-      <div class="kpi-value ${k.color}">${k.value}</div>
-      <svg class="spark" viewBox="0 0 64 24" preserveAspectRatio="none">
-        <path d="${sparkPaths[i]}" fill="none" stroke="#4a5cf0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
-      </svg>
-    `;
+    card.innerHTML = `<div class="kpi-top"><div class="kpi-label">${label}</div></div><div class="kpi-value">—</div>`;
     kpiRow.appendChild(card);
+  });
+
+  async function cargarKpisPorRango(){
+    if(userRole !== 'ADMIN') return; // obtenerResumenVentas es admin-only
+    const desde = document.getElementById('kpiDesde').value;
+    const hasta = document.getElementById('kpiHasta').value;
+    if(!desde || !hasta) return;
+    const valores = kpiRow.querySelectorAll('.kpi-value');
+    try{
+      const r = await functions.httpsCallable('obtenerResumenVentas')({ desde, hasta });
+      const d = r.data;
+      const pagadoEnLocal = (d.filas || []).filter(f=> f.esInterna).reduce((s,f)=> s + f.total, 0);
+      const serviciosFinalizados = (d.filas || []).filter(f=> f.conceptos.includes('servicio')).length;
+      valores[0].textContent = serviciosFinalizados;
+      valores[1].textContent = money(d.totalFacturado);
+      valores[2].textContent = money(d.productos);
+      valores[3].textContent = money(d.totalPropinas);
+      valores[4].textContent = money(pagadoEnLocal);
+      // valores[5] ("Reservado por añadidos"): sin definición confirmada todavía, se deja como está.
+    }catch(e){
+      valores.forEach(v=> v.textContent = '—');
+      showToast('No se pudieron cargar los datos del rango: ' + (e.message || e));
+    }
+  }
+
+  function kpiAplicarRango(desde, hasta){
+    document.getElementById('kpiDesde').value = desde;
+    document.getElementById('kpiHasta').value = hasta;
+    cargarKpisPorRango();
+  }
+  document.getElementById('kpiDesde').addEventListener('change', cargarKpisPorRango);
+  document.getElementById('kpiHasta').addEventListener('change', cargarKpisPorRango);
+  document.getElementById('kpiRangeHoy').addEventListener('click', ()=>{
+    const hoy = new Date().toISOString().slice(0,10);
+    kpiAplicarRango(hoy, hoy);
+  });
+  document.getElementById('kpiRangeMes').addEventListener('click', ()=>{
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().slice(0,10);
+    const hoy = ahora.toISOString().slice(0,10);
+    kpiAplicarRango(inicioMes, hoy);
   });
 
 
@@ -4877,18 +4972,23 @@
   let miniMes = new Date().getMonth();
   let miniAnio = new Date().getFullYear();
 
-  function pintarMiniCal(){
-    miniGrid.innerHTML = '';
+  /** Dibuja UN mes dentro del grid/label dados -- función aparte para poder
+   *  reusarla tanto en el mes actual (con flechas ‹›) como en el mes
+   *  siguiente que se muestra debajo, en modo solo-lectura, igual que en
+   *  la referencia de AgendaPro. */
+  function pintarUnMiniCal(gridEl, lblEl, anio, mes){
+    if(!gridEl) return;
+    gridEl.innerHTML = '';
     ['L','M','M','J','V','S','D'].forEach(d=>{
       const el = document.createElement('div');
       el.className = 'dow'; el.textContent = d;
-      miniGrid.appendChild(el);
+      gridEl.appendChild(el);
     });
 
-    const primero = new Date(miniAnio, miniMes, 1);
+    const primero = new Date(anio, mes, 1);
     const offset = (primero.getDay() + 6) % 7;          // lunes = 0
-    const diasMes = new Date(miniAnio, miniMes + 1, 0).getDate();
-    const diasPrev = new Date(miniAnio, miniMes, 0).getDate();
+    const diasMes = new Date(anio, mes + 1, 0).getDate();
+    const diasPrev = new Date(anio, mes, 0).getDate();
     const hoyISO = new Date().toISOString().slice(0,10);
 
     const celda = (num, fecha, muted)=>{
@@ -4899,27 +4999,34 @@
       if(fecha === hoyISO) el.classList.add('today');
       if(fecha === currentDate) el.classList.add('sel');
       el.addEventListener('click', ()=> irADia(fecha));
-      miniGrid.appendChild(el);
+      gridEl.appendChild(el);
     };
 
     const iso = (a,m,d)=> `${a}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 
     for(let i = offset - 1; i >= 0; i--){
       const d = diasPrev - i;
-      const m = miniMes === 0 ? 11 : miniMes - 1;
-      const a = miniMes === 0 ? miniAnio - 1 : miniAnio;
+      const m = mes === 0 ? 11 : mes - 1;
+      const a = mes === 0 ? anio - 1 : anio;
       celda(d, iso(a, m, d), true);
     }
-    for(let d = 1; d <= diasMes; d++) celda(d, iso(miniAnio, miniMes, d), false);
+    for(let d = 1; d <= diasMes; d++) celda(d, iso(anio, mes, d), false);
 
     const faltan = (7 - ((offset + diasMes) % 7)) % 7;
     for(let d = 1; d <= faltan; d++){
-      const m = miniMes === 11 ? 0 : miniMes + 1;
-      const a = miniMes === 11 ? miniAnio + 1 : miniAnio;
+      const m = mes === 11 ? 0 : mes + 1;
+      const a = mes === 11 ? anio + 1 : anio;
       celda(d, iso(a, m, d), true);
     }
 
-    document.getElementById('miniCalLbl').textContent = `${MESES[miniMes]} ${miniAnio}`;
+    if(lblEl) lblEl.textContent = `${MESES[mes]} ${anio}`;
+  }
+
+  function pintarMiniCal(){
+    pintarUnMiniCal(miniGrid, document.getElementById('miniCalLbl'), miniAnio, miniMes);
+    const sigMes = miniMes === 11 ? 0 : miniMes + 1;
+    const sigAnio = miniMes === 11 ? miniAnio + 1 : miniAnio;
+    pintarUnMiniCal(document.getElementById('miniGrid2'), document.getElementById('miniCalLbl2'), sigAnio, sigMes);
   }
 
   function moverMes(n){
@@ -4957,8 +5064,9 @@
       const pct = Math.min(100, Math.round((b.count/6)*100));
       const el = document.createElement('div');
       el.className='barber-head'; el.dataset.barber=b.id;
+      const avatarBg = b.photoUrl ? ` style="background-image:url('${b.photoUrl}');background-size:cover;background-position:center;"` : '';
       el.innerHTML = `
-        <div class="b-avatar-ring" style="--pct:${pct}"><div class="b-avatar">${b.initials}</div></div>
+        <div class="b-avatar-ring" style="--pct:${pct}"><div class="b-avatar"${avatarBg}>${b.photoUrl ? '' : b.initials}</div></div>
         <div>
           <div class="b-name">${b.name}</div>
           <div class="b-count">${b.count} reservas <span class="b-pct">· ${pct}%</span></div>
@@ -4996,7 +5104,7 @@
 
   pintarColumnas();
 
-  const START_HOUR=10, END_HOUR=21, SLOT_H = window.innerWidth <= 600 ? 64 : 50;
+  const START_HOUR=10, END_HOUR=21, SLOT_H = window.innerWidth <= 600 ? 64 : 38;
   const timeCol = document.getElementById('timeCol');
   for(let h=START_HOUR; h<=END_HOUR; h++){
     const div=document.createElement('div');
@@ -5046,18 +5154,21 @@
     pintarProductChips();
   });
 
-  /** Chips del encabezado: en rojo y con aviso cuando a un producto le queda poco stock. */
+  /** Chips del encabezado: SOLO productos con stock bajo -- antes mostraba
+   *  el catálogo activo completo (con o sin stock bajo), lo que hacía que
+   *  la fila se viera enorme y desordenada apenas hubiera varios productos.
+   *  El propósito de esta fila (según su propio nombre/estilo, siempre en
+   *  rojo de aviso) es avisar qué necesita reposición, no listar todo. */
   function pintarStockChips(){
     const cont = document.getElementById('stockChips');
     if(!cont) return;
     const activos = productsCache.filter(p=> p.active !== false);
-    cont.innerHTML = activos.map(p=>{
-      const stock = p.stock ?? 0;
-      const bajo = stock < STOCK_MINIMO;
-      return `<div class="stock-chip${bajo ? ' low' : ''}" data-id="${p.id}" title="Clic para ajustar el stock">
-        ${escapeHTML(p.name)} <span class="qty">· ${stock}</span>
-      </div>`;
-    }).join('');
+    const bajos = activos.filter(p=> (p.stock ?? 0) < STOCK_MINIMO);
+    cont.innerHTML = bajos.length
+      ? bajos.map(p=> `<div class="stock-chip low" data-id="${p.id}" title="Clic para ajustar el stock">
+          ${escapeHTML(p.name)} <span class="qty">· ${p.stock ?? 0}</span>
+        </div>`).join('')
+      : '';
     cont.querySelectorAll('.stock-chip').forEach(el=>
       el.addEventListener('click', ()=> abrirEditarStock(el.dataset.id)));
 
@@ -5066,7 +5177,6 @@
       pintarCatalogoProductos();
     }
 
-    const bajos = activos.filter(p=> (p.stock ?? 0) < STOCK_MINIMO);
     const idsBajos = new Set(bajos.map(p=> p.id));
     const nuevos = bajos.filter(p=> !productosAlertados.has(p.id));
     if(nuevos.length){
@@ -5444,6 +5554,11 @@
      lo valida: ocultar el botón no es la única protección. */
   function mostrarControlesAdmin(){
     const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
+    const kpiRangeRow = document.getElementById('kpiRangeRow');
+    if(kpiRangeRow){
+      kpiRangeRow.style.display = soloAdmin;
+      if(userRole === 'ADMIN') document.getElementById('kpiRangeMes').click();
+    }
     // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
     // Servicios staff, Mi equipo, y el grupo "Más".
     ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
@@ -5601,7 +5716,7 @@
     cfgBarberos.forEach(cb=>{
       const id = cb.calId != null ? cb.calId : cb.id;
       const initials = cb.initials || String(cb.name||'').trim().split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
-      barbers.push({ id, name: cb.name, initials, count:0, active: cb.active !== false });
+      barbers.push({ id, name: cb.name, initials, count:0, active: cb.active !== false, photoUrl: cb.photoUrl || null });
       BARBER_COL[cb.name] = id;
       if(typeof crearColumna === 'function') crearColumna(id);
     });
