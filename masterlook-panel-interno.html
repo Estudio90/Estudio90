@@ -57,6 +57,7 @@
 
     --ok:#189d79; --pend:#c98a2e; --done:#4a5cf0; --no:#d14545;
     --reservado:#3b8fa3; --asistio:#d64fb0;
+    --reservado-tint:#e2f0f2; --pend-tint:#faf1e0; --asistio-tint:#f9e2f3; --no-tint:#fbe7e7;
     --amber:#c98a2e;
     --radius:16px;
     --radius-sm:10px;
@@ -794,7 +795,7 @@
   .nr-nombre-wrap{position:relative;}
   .nr-sugerencias{display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:10;
     background:#fff; border:1px solid #e2e2e6; border-radius:10px; box-shadow:0 12px 28px rgba(20,19,17,.16);
-    max-height:220px; overflow-y:auto;}
+    max-height:420px; overflow-y:auto;}
   .nr-sug-item{display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:9px 12px; cursor:pointer; font-size:13px; border-bottom:1px solid #f1f1f4;}
   .nr-sug-item:last-child{border-bottom:none;}
@@ -907,6 +908,14 @@
   .appt.svc-onda{background:var(--onda-tint);}   .appt.svc-onda::before{background:var(--onda);}
   .appt.svc-combo{background:var(--combo-tint);} .appt.svc-combo::before{background:var(--combo);}
   .appt.svc-peinado{background:var(--peinado-tint);} .appt.svc-peinado::before{background:var(--peinado);}
+  /* La etiqueta (Reservado/Pendiente/Asistió/No asistió) pinta la tarjeta
+     ENTERA, no solo el puntito -- reemplaza el color de servicio de arriba
+     mientras la reserva tenga ese estado (mismo criterio visual que ya
+     usa el servicio: tinte de fondo + franja sólida a la izquierda). */
+  .appt.st-reservado{background:var(--reservado-tint);} .appt.st-reservado::before{background:var(--reservado);}
+  .appt.st-pend{background:var(--pend-tint);} .appt.st-pend::before{background:var(--pend);}
+  .appt.st-asistio{background:var(--asistio-tint);} .appt.st-asistio::before{background:var(--asistio);}
+  .appt.st-no{background:var(--no-tint);} .appt.st-no::before{background:var(--no);}
   .appt:hover{transform:translateY(-1px);box-shadow:var(--shadow-hover);border-color:var(--border-strong);z-index:8;}
   .appt-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
   .appt-client{font-size:11.5px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -3007,10 +3016,10 @@
         <div class="field-label">Estado de la reserva</div>
         <select class="filter" id="statusFilter">
           <option value="all">Activo, todos</option>
-          <option value="ok">Confirmado</option>
+          <option value="reservado">Reservado</option>
           <option value="pend">Pendiente</option>
-          <option value="done">Completado</option>
-          <option value="no">No show</option>
+          <option value="asistio">Asistió</option>
+          <option value="no">No asistió</option>
         </select>
 
         <div class="field-label">Servicios</div>
@@ -5156,7 +5165,7 @@
     const e = String(a.end[0]).padStart(2,'0')+':'+String(a.end[1]).padStart(2,'0');
 
     const el = document.createElement('div');
-    el.className = 'appt ' + a.type;
+    el.className = 'appt ' + a.type + ' ' + apptStatusClass(a.status);
     el.style.top = top+'px'; el.style.height = h+'px';
     el.style.animationDelay = (colCounters[a.col]++ * 45) + 'ms';
     el.dataset.idx = idx;
@@ -5458,6 +5467,55 @@
     'Diego Colina':1, 'Jhoover Peñaranda':2, 'Raúl Chourio':3,
     'Luis Barrios':4, 'Carlos Garcés':5
   };
+
+  /**
+   * Reconstruye `barbers`/`BARBER_COL` (la lista que dibuja las columnas de
+   * la agenda) desde `cfgBarberos`, que sí se recarga fresco de Firestore
+   * en cada visita. Antes de esto, `barbers`/BARBER_COL` nacían con estos 5
+   * nombres de arriba fijos en el código y, al recargar la página, solo se
+   * les copiaba `active` si su `calId` YA estaba en esa lista fija (ver el
+   * `if(enCal)` que había en el arranque) -- un barbero agregado, renombrado
+   * o reemplazado después de escrito este archivo quedaba con columna
+   * propia SOLO durante esa misma sesión (recién agregado) y, tras recargar
+   * la página, desaparecía de la agenda por completo: sus reservas seguían
+   * existiendo en Firestore, pero `pickColumn()` las encajaba en la columna
+   * de otro barbero cualquiera (el de menos reservas ese día) por no
+   * encontrar su nombre en BARBER_COL. Esta función es la corrección: se
+   * llama en el arranque, después de `cargarCatalogo()`, y cada vez que se
+   * agrega/edita un barbero -- así `barbers`/BARBER_COL` siempre reflejan lo
+   * que de verdad hay en Firestore, sin tocar el layout de la grilla (que
+   * ya soportaba cualquier cantidad de columnas vía crearColumna()).
+   */
+  /** El filtro "Barbero" de la agenda tenía los mismos 5 nombres fijos
+   *  como <option> en el HTML -- mismo problema que BARBER_COL de arriba:
+   *  filtrar por un barbero agregado después nunca mostraba nada, porque
+   *  la opción ni siquiera existía en el <select>. Se reconstruye desde
+   *  `barbers` (ya sincronizado con Firestore), conservando el valor
+   *  elegido si ese barbero sigue existiendo. */
+  function pintarBarberFilterOptions(){
+    const sel = document.getElementById('barberFilter');
+    if(!sel) return;
+    const valorPrevio = sel.value;
+    sel.innerHTML = '<option value="all">Todos</option>' +
+      barbers.filter(b=> b.active !== false)
+        .map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    sel.value = [...sel.options].some(o=> o.value === valorPrevio) ? valorPrevio : 'all';
+  }
+
+  function sincronizarBarberosDesdeFirestore(){
+    if(!cfgBarberos.length) return; // sin datos reales todavía: se deja el fallback inicial de arriba
+    barbers.length = 0;
+    Object.keys(BARBER_COL).forEach(k=> delete BARBER_COL[k]);
+    cfgBarberos.forEach(cb=>{
+      const id = cb.calId != null ? cb.calId : cb.id;
+      const initials = cb.initials || String(cb.name||'').trim().split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
+      barbers.push({ id, name: cb.name, initials, count:0, active: cb.active !== false });
+      BARBER_COL[cb.name] = id;
+      if(typeof crearColumna === 'function') crearColumna(id);
+    });
+    if(typeof pintarBarberFilterOptions === 'function') pintarBarberFilterOptions();
+  }
+
   const DIRECCION_NEGOCIO = 'Av. Nueva Providencia 1945, oficina 1408';
 
   /** Mensaje de recordatorio/condiciones para WhatsApp, con los datos reales de la reserva. */
@@ -5501,10 +5559,15 @@
 
   function pickColumn(barberName){
     if(BARBER_COL[barberName]) return BARBER_COL[barberName];
-    // "Cualquiera disponible" → columna con menos reservas
-    const counts = {1:0,2:0,3:0,4:0,5:0};
-    appointments.forEach(a=> counts[a.col]++);
-    return Object.keys(counts).sort((x,y)=> counts[x]-counts[y])[0]*1;
+    // "Cualquiera disponible" → columna con menos reservas, entre los
+    // barberos activos REALES (nunca una lista fija de 5: si hay más o
+    // menos barberos activos, esto se ajusta solo). Map en vez de objeto
+    // plano para no perder el tipo real de b.id (puede ser number o string).
+    const activos = barbers.filter(b=> b.active !== false);
+    if(!activos.length) return 1;
+    const counts = new Map(activos.map(b=> [b.id, 0]));
+    appointments.forEach(a=> { if(counts.has(a.col)) counts.set(a.col, counts.get(a.col)+1); });
+    return [...counts.entries()].sort((x,y)=> x[1]-y[1])[0][0];
   }
 
   function parseSlot(slot){
@@ -6042,19 +6105,41 @@
     }catch(e){ nrClientesListos = false; }
   }
 
+  /** minúsculas + sin tildes/diacríticos -- así "Maria"/"maria"/"María"
+   *  comparan igual, sin tocar ni guardar nada, solo al momento de buscar. */
+  function nrNormalizar(s){
+    return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function nrSoloDigitos(s){
+    return String(s||'').replace(/\D/g,'');
+  }
+  /** true si ALGUNA palabra del texto (nombre, apellido, o ambos juntos)
+   *  EMPIEZA por la búsqueda -- así "fernanda" encuentra a alguien cuyo
+   *  nombre completo es "María Fernanda González" aunque "fernanda" no sea
+   *  la primera palabra, sin caer en union genérica que ensucie resultados
+   *  de una sola letra (esa sigue siendo solo por inicio de palabra). */
+  function nrCoincidePorPalabra(texto, query){
+    return nrNormalizar(texto).split(/\s+/).some(palabra=> palabra.startsWith(query));
+  }
+
   function nrBuscarClientes(q){
-    const query = q.trim().toLowerCase();
-    if(!query) return [];
+    const original = q.trim();
+    if(!original) return [];
+    const query = nrNormalizar(original);
+    const queryDigitos = nrSoloDigitos(original);
     return clientesCache.filter(c=>{
-      const nombre = (c.nombre||'').toLowerCase();
-      const apellido = (c.apellido||'').toLowerCase();
-      // desde la primera letra: nombre o apellido que EMPIECEN por lo escrito
-      // (no en cualquier parte, para que no aparezcan resultados random con
-      // solo una letra) -- teléfono y correo sí se buscan en cualquier parte.
-      return nombre.startsWith(query) || apellido.startsWith(query)
-        || (c.telefono||'').toLowerCase().includes(query)
-        || (c.email||'').toLowerCase().includes(query);
-    }).slice(0, 6);
+      if(nrCoincidePorPalabra((c.nombre||'') + ' ' + (c.apellido||''), query)) return true;
+      // correo: coincidencia en cualquier parte, pero solo desde 3
+      // caracteres -- con 1-2 letras casi cualquier @gmail.com/@hotmail.com
+      // la contiene, y los resultados dejan de ser útiles (ej. "m" no debe
+      // devolver a todo cliente con Gmail).
+      if(query.length >= 3 && (c.email||'').toLowerCase().includes(query)) return true;
+      // teléfono: se compara por dígitos (ignora +56, espacios, guiones,
+      // paréntesis) -- "91234" debe encontrar "+56 9 1234 5678" aunque el
+      // 9 y el 1234 estén separados por un espacio en el dato guardado.
+      if(queryDigitos && nrSoloDigitos(c.telefono).includes(queryDigitos)) return true;
+      return false;
+    }).slice(0, 30);
   }
 
   function nrPintarSugerencias(lista){
@@ -7364,6 +7449,7 @@
         if(enCal){
           enCal.active = b.active;
           pintarColumnas();
+          pintarBarberFilterOptions();
           if(typeof irADia === 'function') irADia(currentDate);
         }
 
@@ -7420,10 +7506,12 @@
       const ini = nombre.split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
       const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:nombre, initials:ini, active:true, schedules:[] };
       barbers.push({ id:nuevoId, name:nombre, initials:ini, count:0, active:true });
+      BARBER_COL[nombre] = nuevoId;
       cfgBarberos.push(nuevo);
       try{ await db.collection('barbers').doc(nuevo.id).set(nuevo); }catch(e){}
       crearColumna(nuevoId);
       pintarColumnas();
+      pintarBarberFilterOptions();
       renderBlocks();
     }
     input.value = '';
@@ -11522,9 +11610,11 @@
         datos.barberId = 'd' + nuevoId;
         const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:datos.name, initials:ini, active:true, schedules:[] };
         barbers.push({ id:nuevoId, name:datos.name, initials:ini, count:0, active:true });
+        BARBER_COL[datos.name] = nuevoId;
         cfgBarberos.push(nuevo);
         try{ await db.collection('barbers').doc(nuevo.id).set(nuevo); }catch(e){}
         crearColumna(nuevoId);
+        pintarBarberFilterOptions();
       }
 
       pintarColumnas();
@@ -11968,10 +12058,7 @@
     // la sesión activa (si existe) la confirma Firebase vía onAuthStateChanged
 
     await cargarCatalogo();
-    cfgBarberos.forEach(cb=>{
-      const enCal = barbers.find(x=> x.id === cb.calId);
-      if(enCal) enCal.active = cb.active;
-    });
+    sincronizarBarberosDesdeFirestore();
     pintarColumnas();
 
     document.getElementById('calSub').textContent = fmtFecha(currentDate);
@@ -12218,6 +12305,15 @@
     reservado:'Reservado', pend:'Pendiente', asistio:'Asistió', no:'No asistió',
     new:'Nuevo cliente', ok:'Asiste', resched:'Reagendó', done:'Completado',
   };
+  /** Clase que pinta la tarjeta ENTERA de la agenda según la etiqueta
+   *  (ver reglas .appt.st-* más arriba en el CSS) -- 'done' es el valor
+   *  histórico de "Asistió", se pinta igual de rosado que 'asistio'. Los
+   *  demás valores viejos (new/ok/resched) no tienen tarjeta propia: esas
+   *  reservas siguen mostrando el color de servicio de siempre. */
+  function apptStatusClass(status){
+    if(status === 'done') return 'st-asistio';
+    return ['reservado','pend','asistio','no'].includes(status) ? 'st-' + status : '';
+  }
   const tagLabelEl = document.getElementById('tagLabel');
   function placeTagLabel(){
     const selected = document.querySelector('.tag-dot.selected');
@@ -12449,10 +12545,14 @@
     document.getElementById('clConteo').textContent =
       `${clientesCache.length} cliente${clientesCache.length === 1 ? '' : 's'} registrado${clientesCache.length === 1 ? '' : 's'}`;
 
-    const q = document.getElementById('clBuscar').value.trim().toLowerCase();
+    const qOriginal = document.getElementById('clBuscar').value.trim();
+    const q = nrNormalizar(qOriginal);
+    const qDigitos = nrSoloDigitos(qOriginal);
     const lista = clientesCache.filter(c=>{
       if(!q) return true;
-      return [c.nombre, c.apellido, c.email, c.telefono, c.rut].some(v=> (v||'').toLowerCase().includes(q));
+      if([c.nombre, c.apellido, c.email, c.rut].some(v=> nrNormalizar(v).includes(q))) return true;
+      if(qDigitos && nrSoloDigitos(c.telefono).includes(qDigitos)) return true;
+      return false;
     });
     const cont = document.getElementById('clTabla');
     if(!lista.length){ cont.innerHTML = '<div class="us-vacio">Sin resultados.</div>'; return; }
