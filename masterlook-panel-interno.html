@@ -88,6 +88,7 @@
     display:flex;align-items:center;justify-content:space-between;
     padding:20px 32px;border-bottom:1px solid var(--border);
     gap:20px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:15;background:var(--panel);
   }
   .wordmark{
     font-family:var(--font-primary);
@@ -302,9 +303,11 @@
   .ctrl-btn{
     font-size:12px;font-weight:600;color:var(--text-mid);background:transparent;
     border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 13px;cursor:pointer;
+    transition:transform .12s ease-out, border-color .12s ease, color .12s ease, background .12s ease;
   }
   .ctrl-btn.active{background:var(--text-hi);color:#fff;border-color:var(--text-hi);font-weight:600;}
   .ctrl-btn:hover:not(.active){border-color:var(--border-strong);color:var(--text-hi);}
+  .ctrl-btn:active{transform:scale(.97);}
 
   .panel-nav{
     display:flex; align-items:center; gap:6px;
@@ -376,7 +379,7 @@
   .week-strip{display:flex; gap:6px; padding:12px 16px; border-bottom:1px solid var(--border); overflow-x:auto;}
   .wk-day{
     flex:1; min-width:74px; padding:9px 8px; border:1px solid var(--border); border-radius:10px;
-    background:#fff; cursor:pointer; text-align:center; transition:all .15s ease;
+    background:#fff; cursor:pointer; text-align:center; transition:border-color .15s ease;
   }
   .wk-day:hover{border-color:#4a5cf0;}
   .mini-cal-head{display:flex;align-items:center;justify-content:space-between;gap:6px;}
@@ -747,7 +750,8 @@
     position:fixed; inset:0; background:rgba(20,19,17,.45); backdrop-filter:blur(2px);
     z-index:88; display:none;
   }
-  .mg-overlay.open{display:block;}
+  .mg-overlay.open{display:block; animation:mgOverlayIn 200ms ease-out;}
+  @keyframes mgOverlayIn{from{opacity:0;}to{opacity:1;}}
 
   /* Vista previa de video (clases de Academy): overlay grande dedicado,
      no encaja en el ancho fijo de .mg-modal (pensado para diálogos chicos). */
@@ -765,7 +769,16 @@
     box-shadow:0 24px 60px rgba(20,19,17,.28);
   }
   .mg-modal.wide{width:min(620px, calc(100vw - 32px));}
-  .mg-modal.open{display:block;}
+  .mg-modal.open{display:block; animation:mgModalIn 220ms cubic-bezier(0.23,1,0.32,1);}
+  @keyframes mgModalIn{
+    from{opacity:0; transform:translate(-50%,-50%) scale(0.95);}
+    to{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .mg-overlay.open{animation:none;}
+    .mg-modal.open{animation:mgModalInReduced 150ms ease-out;}
+  }
+  @keyframes mgModalInReduced{from{opacity:0;}to{opacity:1;}}
   .mg-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
   .mg-head h3{font-size:17px; font-weight:600;}
   .mg-close{background:#f1f1f4; border:none; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:#57565f;}
@@ -806,7 +819,8 @@
   .mg-warn{font-size:12px; color:#a3562a; background:#fdf3ea; border-radius:8px; padding:10px; margin-top:12px; display:none; line-height:1.5;}
   .mg-warn.show{display:block;}
   .mg-actions{display:flex; gap:9px; margin-top:22px;}
-  .mg-btn{flex:1; padding:11px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; border:1px solid transparent;}
+  .mg-btn{flex:1; padding:11px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; border:1px solid transparent; transition:transform .12s ease-out, background .12s ease;}
+  .mg-btn:active:not(:disabled){transform:scale(.97);}
   .mg-btn.solid{background:#1A1815; color:#fff;}
   .mg-btn.solid:hover{background:#4a5cf0;}
   .mg-btn.solid:disabled{opacity:.35; cursor:not-allowed;}
@@ -1004,7 +1018,7 @@
     position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
     background:var(--text-hi);color:#fff;font-size:13px;font-weight:500;
     padding:11px 18px;border-radius:999px;box-shadow:var(--shadow-lg);
-    opacity:0;pointer-events:none;transition:all .25s ease;z-index:60;
+    opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;z-index:60;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
@@ -1069,7 +1083,7 @@
     position:absolute;top:calc(100% + 6px);left:0;right:0;
     background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);
     box-shadow:var(--shadow-md);padding:6px;z-index:10;
-    opacity:0;pointer-events:none;transform:translateY(-4px);transition:all .14s ease;
+    opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .14s ease, transform .14s ease;
   }
   .payment-menu.open{opacity:1;pointer-events:auto;transform:translateY(0);}
   /* modificador para usar el mismo popover fuera de .payment-wrap, posicionado
@@ -1433,10 +1447,12 @@
   .rv-pill-input{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e7e7ec;border-radius:10px;padding:8px 12px;font-size:13px;color:#333;}
   .rv-pill-input input[type=date]{border:none;background:transparent;font-size:12.5px;color:#333;padding:0;width:104px;}
   .rv-select{background:#fff;border:1px solid #e7e7ec;border-radius:10px;padding:9px 14px;font-size:13px;color:#333;min-width:150px;}
-  .rv-btn-primary{background:linear-gradient(180deg,#8477f2,#6a5adf);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 10px rgba(108,92,231,0.25);white-space:nowrap;}
+  .rv-btn-primary{background:linear-gradient(180deg,#8477f2,#6a5adf);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 10px rgba(108,92,231,0.25);white-space:nowrap;transition:transform .12s ease-out, filter .12s ease;}
   .rv-btn-primary:hover{filter:brightness(1.05);}
+  .rv-btn-primary:active:not(:disabled){transform:scale(.97);}
   .rv-btn-primary:disabled{opacity:.6;cursor:default;}
-  .rv-btn-ghost{background:#fff;border:1px solid #e7e7ec;color:#4a4a52;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+  .rv-btn-ghost{background:#fff;border:1px solid #e7e7ec;color:#4a4a52;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .12s ease-out, border-color .12s ease;}
+  .rv-btn-ghost:active{transform:scale(.97);}
 
   .rv-kpi-card{display:flex;background:#fff;border:1px solid #eee;border-radius:16px;padding:22px 26px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.03);flex-wrap:wrap;}
   .rv-kpi-block{display:flex;align-items:center;gap:12px;flex:1;min-width:150px;padding:0 20px;}
@@ -1463,7 +1479,7 @@
   .rv-tablebox-wrap{background:#fff;border:1px solid #eee;border-radius:16px;overflow:hidden;}
   .rv-tabla-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;}
   .rv-tabs{display:flex;gap:22px;}
-  .rv-tab{background:none;border:none;padding:8px 2px 12px;font-size:14px;font-weight:600;color:#9a9aa2;cursor:pointer;border-bottom:2px solid transparent;}
+  .rv-tab{background:none;border:none;padding:8px 2px 12px;font-size:14px;font-weight:600;color:#9a9aa2;cursor:pointer;border-bottom:2px solid transparent;transition:color 150ms ease, border-color 150ms ease;}
   .rv-tab.on{color:#6a5adf;border-bottom-color:#6a5adf;}
   .rv-total-general{font-family:var(--font-body);font-size:14px;color:#6b6b74;}
   .rv-total-general b{font-family:var(--font-primary);font-variant-numeric:tabular-nums;color:#1f9d55;}
@@ -1482,6 +1498,16 @@
   .rv-bottom-item+.rv-bottom-item{border-left:1px solid #f0f0f0;}
   .rv-bottom-label{font-family:var(--font-body);font-size:12px;color:#9a9aa2;}
   .rv-bottom-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:16px;font-weight:700;color:#1A1815;letter-spacing:-.005em;}
+
+  .rv-fade-in{animation:rvFadeIn 300ms ease-out both;}
+  @keyframes rvFadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  .rv-content-fade{animation:rvContentFade 220ms ease-out;}
+  @keyframes rvContentFade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){
+    .rv-fade-in{animation:rvFadeInReduced 200ms ease-out both;}
+    .rv-content-fade{animation:rvFadeInReduced 150ms ease-out;}
+  }
+  @keyframes rvFadeInReduced{from{opacity:0;} to{opacity:1;}}
 
   @media (max-width: 980px){
     .rv-charts-row{grid-template-columns:1fr;}
@@ -1669,8 +1695,8 @@
         </div>
       </div>
 
-      <div class="rv-kpi-card" id="rvKpis"></div>
-      <div style="display:flex;justify-content:flex-end;margin:-8px 0 16px;">
+      <div class="rv-kpi-card rv-fade-in" id="rvKpis"></div>
+      <div class="rv-fade-in" style="display:flex;justify-content:flex-end;margin:-8px 0 16px;animation-delay:40ms;">
         <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:8px 16px;font-size:12.5px;color:#6b6b74;display:flex;gap:10px;align-items:center;">
           <span>🧧 <b id="rvPropinasValor" style="color:#1A1815;">$0</b> Propinas recibidas</span>
           <span style="color:#c7c7cf;">·</span>
@@ -1678,7 +1704,7 @@
         </div>
       </div>
 
-      <div class="rv-filtros-card">
+      <div class="rv-filtros-card rv-fade-in" style="animation-delay:80ms;">
         <div class="rv-filtro-col">
           <label>Locales</label>
           <select class="rv-select" id="rvLocal2"><option>Todos seleccionados</option></select>
@@ -1698,21 +1724,21 @@
       <div id="rvIncidenciasAviso" style="display:none;margin-bottom:16px;padding:10px 14px;border-radius:10px;background:#fff4e5;color:#8a5a00;font-size:13px;"></div>
 
       <div class="rv-charts-row">
-        <div class="rv-chart-card">
+        <div class="rv-chart-card rv-fade-in" style="animation-delay:120ms;">
           <h3 class="rv-chart-title">Ventas por tipo</h3>
           <div id="rvDonutTipo"></div>
         </div>
-        <div class="rv-chart-card">
+        <div class="rv-chart-card rv-fade-in" style="animation-delay:150ms;">
           <h3 class="rv-chart-title">Ventas por método de pago</h3>
           <div id="rvDonutMetodo"></div>
         </div>
-        <div class="rv-chart-card">
+        <div class="rv-chart-card rv-fade-in" style="animation-delay:180ms;">
           <h3 class="rv-chart-title">Ventas por día <select class="rv-chip-select" id="rvPeriodoChips"><option value="dia">Por día</option></select></h3>
           <div id="rvLinea"></div>
         </div>
       </div>
 
-      <div class="rv-tablebox-wrap">
+      <div class="rv-tablebox-wrap rv-fade-in" style="animation-delay:220ms;">
         <div class="rv-tabla-head">
           <div class="rv-tabs">
             <button class="rv-tab on" id="rvTabVentas">Ventas</button>
@@ -1734,7 +1760,7 @@
         </div>
       </div>
 
-      <div class="rv-bottom-card" id="rvResumenInferior"></div>
+      <div class="rv-bottom-card rv-fade-in" id="rvResumenInferior" style="animation-delay:260ms;"></div>
     </div>
 
     <!-- ===== VISTA: ABONOS -- SOLO anticipos de reserva ya APROBADOS por
@@ -4038,7 +4064,25 @@
   // Cualquier destino real (no el título de un grupo) cierra el panel al elegirlo.
   menuLateralPanel.querySelectorAll('.menu-links .menu-panel-item, .menu-pie .menu-panel-item').forEach(btn=>{
     btn.addEventListener('click', cerrarMenuLateral);
+    // Recuerda la última sección elegida (solo esta pestaña, sessionStorage)
+    // para poder restaurarla si se recarga la página -- ver restaurarSeccionActiva().
+    if(btn.id) btn.addEventListener('click', ()=> sessionStorage.setItem('mlUltimaSeccion', btn.id));
   });
+
+  /** Si al recargar había una sección guardada (y sigue siendo visible para
+   *  este rol/permisos, tras mostrarControlesAdmin), la vuelve a abrir
+   *  reusando el mismo botón/click real -- nunca duplica la lógica de
+   *  mostrarX(). Se llama DESPUÉS de mostrarControlesAdmin() y ANTES de
+   *  revelar el panel (entrarAlPanel), así nunca se ve Agenda de por medio. */
+  function restaurarSeccionActiva(){
+    const id = sessionStorage.getItem('mlUltimaSeccion');
+    if(!id) return;
+    const btn = document.getElementById(id);
+    if(!btn || btn.style.display === 'none') return;
+    const grupo = btn.closest('.nav-group');
+    if(grupo && grupo.style.display === 'none') return;
+    btn.click();
+  }
 
   // ---------- Ordenar menú (solo ADMIN): flechas ↑↓ para acomodar el orden
   // de las secciones principales y de los ítems dentro de cada grupo
@@ -4359,17 +4403,12 @@
   const RV_PALETA_METODO = ['#f0b13d','#9aa0ae','#e0526b','#5b6bd9','#2fa360','#3b8fa3','#a3702f','#7a4fa3'];
 
   function mostrarResumenVentas(){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaCursos').style.display = 'none';
-    document.getElementById('vistaProductos').style.display = 'none';
-    document.getElementById('vistaClientes').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaComisiones').style.display = 'none';
-    document.getElementById('vistaAbonos').style.display = 'none';
+    ['vistaAgenda','vistaColores','vistaUsuarios','vistaCursos','vistaAccesosCursos','vistaTestimonios',
+     'vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios',
+     'vistaIntelligence','vistaPropinas','vistaComisiones','vistaAbonos','vistaSuscripciones'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaResumenVentas').style.display = '';
@@ -4425,13 +4464,26 @@
     sel.value = metodos.includes(actual) ? actual : '';
   }
 
+  // Reinicia la animación de "contenido recién llegado" en un contenedor --
+  // simplemente volver a poner la misma clase no la reinicia (el navegador
+  // no ve un cambio), así que se saca, se fuerza un reflow, y se vuelve a
+  // poner. Se usa después de cada innerHTML con datos nuevos (primera carga
+  // o "Filtrar"), nunca bloquea interacción (solo opacity/transform).
+  function rvReanimar(el){
+    if(!el) return;
+    el.classList.remove('rv-content-fade');
+    void el.offsetWidth;
+    el.classList.add('rv-content-fade');
+  }
+
   function rvBottomItem(icono, label, valor){
     return `<div class="rv-bottom-item"><span class="rv-icon-circle" style="background:#f2f0fb;">${icono}</span>
       <div><div class="rv-bottom-label">${label}</div><div class="rv-bottom-value">${valor}</div></div></div>`;
   }
   function rvPintarResumenInferior(d){
     const pct = (v)=> d.totalFacturado ? Math.round(v/d.totalFacturado*100) : 0;
-    document.getElementById('rvResumenInferior').innerHTML = [
+    const el = document.getElementById('rvResumenInferior');
+    el.innerHTML = [
       rvBottomItem('💰','Total facturado', money(d.totalFacturado)),
       rvBottomItem('✂️','Ventas servicios', `${money(d.servicios)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.servicios)}%)</span>`),
       rvBottomItem('🛒','Ventas productos', `${money(d.productos)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.productos)}%)</span>`),
@@ -4439,6 +4491,7 @@
       rvBottomItem('🎫','Tickets', d.cantidadVentas),
       rvBottomItem('🏅','Ticket promedio', money(d.ticketPromedio)),
     ].join('');
+    rvReanimar(el);
   }
 
   function rvPintarIncidencias(d){
@@ -4462,7 +4515,8 @@
     const filtrado = !!d.metodoFiltro;
     const variacion = d.totalFacturadoVariacion;
     const variacionHtml = filtrado ? '' : `<div class="rv-kpi-delta ${variacion>=0?'up':'down'}">${variacion>=0?'▲':'▼'} ${Math.abs(variacion)}% vs período anterior</div>`;
-    document.getElementById('rvKpis').innerHTML = `
+    const kpisEl = document.getElementById('rvKpis');
+    kpisEl.innerHTML = `
       <div class="rv-kpi-block rv-kpi-main">
         <div class="rv-kpi-label">TOTAL FACTURADO${filtrado?` (solo ${d.metodoFiltro})`:''}</div>
         <div class="rv-kpi-value-lg">${money(d.totalFacturado)}</div>
@@ -4474,6 +4528,7 @@
       ${rvKpiBlock({label:'Productos', valor:money(d.productos), sub:(d.totalFacturado?Math.round(d.productos/d.totalFacturado*100):0)+'% del total', icono:'🛒', bg:'#fdecd6'})}
       ${rvKpiBlock({label:'Cursos', valor:money(d.cursos), sub:(d.totalFacturado?Math.round(d.cursos/d.totalFacturado*100):0)+'% del total', icono:'🎓', bg:'#e1f5e9'})}
     `;
+    rvReanimar(kpisEl);
     document.getElementById('rvTotalGeneral').innerHTML = `Total general: <b>${money(rvTotalTabla(d))}</b>`;
     document.getElementById('rvPropinasValor').textContent = money(d.totalPropinas);
     document.getElementById('rvDineroTotalValor').textContent = money(d.dineroTotalIngresado);
@@ -4520,13 +4575,17 @@
       { label:'Productos', value:d.productos, color:RV_COLORES_TIPO.producto },
       { label:'Cursos', value:d.cursos, color:RV_COLORES_TIPO.curso },
     ];
-    document.getElementById('rvDonutTipo').innerHTML = rvSvgDonut(entries, money(d.totalFacturado));
+    const el = document.getElementById('rvDonutTipo');
+    el.innerHTML = rvSvgDonut(entries, money(d.totalFacturado));
+    rvReanimar(el);
   }
 
   function rvPintarDonutMetodo(d){
     const metodos = Object.keys(d.donaPorMetodo||{});
     const entries = metodos.map((m,i)=> ({ label:m, value:d.donaPorMetodo[m], color: RV_PALETA_METODO[i % RV_PALETA_METODO.length] }));
-    document.getElementById('rvDonutMetodo').innerHTML = rvSvgDonut(entries, money(d.totalFacturado));
+    const el = document.getElementById('rvDonutMetodo');
+    el.innerHTML = rvSvgDonut(entries, money(d.totalFacturado));
+    rvReanimar(el);
   }
 
   function rvSvgLinea(serie){
@@ -4561,7 +4620,9 @@
   }
 
   function rvPintarLinea(d){
-    document.getElementById('rvLinea').innerHTML = rvSvgLinea(d.serieDiaria || []);
+    const el = document.getElementById('rvLinea');
+    el.innerHTML = rvSvgLinea(d.serieDiaria || []);
+    rvReanimar(el);
   }
 
   function rvFmtFechaHora(ms){
@@ -4578,6 +4639,7 @@
     document.getElementById('rvTotalGeneral').innerHTML = `Total general: <b>${money(rvTotalTabla(d))}</b>`;
     if(!filas.length){
       tbody.innerHTML = '<tr><td colspan="12">No hay ventas en el rango seleccionado.</td></tr>';
+      rvReanimar(tbody);
       return;
     }
     tbody.innerHTML = filas.map(f=>{
@@ -4600,6 +4662,7 @@
       </tr>`;
     }).join('');
     tbody.querySelectorAll('.rv-ver').forEach(btn=> btn.addEventListener('click', ()=> rvVerDetalle(btn.dataset.saleid)));
+    rvReanimar(tbody);
   }
 
   function rvVerDetalle(saleId){
@@ -4689,11 +4752,13 @@
     }catch(e){ userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null; }
     mostrarControlesAdmin();
     cargarYAplicarOrdenMenu();
+    if(userRole !== 'BARBER') restaurarSeccionActiva();
     entrarAlPanel(user.email);
     if(userRole === 'BARBER') mostrarVistaBarbero();
   });
 
   function salirDelPanel(){
+    sessionStorage.removeItem('mlUltimaSeccion');
     auth.signOut();
     location.href = 'index.html';
   }
@@ -5713,7 +5778,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos'].forEach(id=>{
+      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos','vistaResumenVentas'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.style.display = 'none';
       });
@@ -6439,7 +6504,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6617,7 +6682,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -6644,7 +6709,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -7484,6 +7549,7 @@
     document.getElementById('vistaHorarios').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
@@ -8370,6 +8436,7 @@
     document.getElementById('vistaAccesosCursos').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -8395,6 +8462,7 @@
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = '';
@@ -8417,6 +8485,7 @@
     document.getElementById('vistaCursos').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
+    document.getElementById('vistaResumenVentas').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = '';
@@ -8800,7 +8869,7 @@
   /* ===== Archivos multimedia: todas las fotos de clientes ===== */
   function mostrarArchivosMultimedia(){
     ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas','vistaSuscripciones'].forEach(id=>{
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
     sbCerrarVistaSemana();
@@ -8836,7 +8905,7 @@
   function mostrarVentas(tipo){
     ventasTipoActual = tipo;
     ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaCampanas'].forEach(id=>{
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaCampanas','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
     sbCerrarVistaSemana();
@@ -8900,7 +8969,7 @@
   /* ===== Campañas: envío masivo de correo ===== */
   function mostrarCampanas(){
     ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas','vistaSuscripciones'].forEach(id=>{
+     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = 'none';
     });
     sbCerrarVistaSemana();
@@ -9116,7 +9185,7 @@
 
   function mostrarSuscripciones(){
     ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia',
-     'vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence'].forEach(id=>{
+     'vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -10769,7 +10838,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -12258,7 +12327,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -12531,6 +12600,7 @@
   async function goToPayView(){
     paymentMenu.classList.remove('open');
     detailView.classList.remove('open');
+    abonoView.classList.remove('open');
     payView.classList.add('open');
     document.getElementById('paySeccionProductos').style.display = userRole === 'BARBER' ? 'none' : '';
     document.getElementById('payContinue').disabled = true;
