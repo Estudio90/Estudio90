@@ -1532,7 +1532,7 @@
 <body>
 
 <!-- ===== Ingreso al panel ===== -->
-<div id="loginScreen" class="lg-wrap">
+<div id="loginScreen" class="lg-wrap oculto">
   <div class="lg-card">
     <div class="lg-brand"><span class="lg-dot"></span>MASTERLOOK</div>
     <h1>Panel interno</h1>
@@ -4747,7 +4747,15 @@
   let userBarberName = null;
 
   auth.onAuthStateChanged(async user=>{
-    if(!user) return;
+    if(!user){
+      // Recién ahora sabemos de verdad que no hay sesión -- antes de esto
+      // el login queda oculto (ver "oculto" en el HTML), así que al
+      // refrescar ya logueada nunca se alcanza a ver "Panel interno" ni
+      // se pierde la sección en la que estabas (restaurarSeccionActiva()
+      // corre más abajo, siempre después de confirmar la sesión real).
+      document.getElementById('loginScreen').classList.remove('oculto');
+      return;
+    }
     try{
       const doc = await db.collection('staff').doc(user.uid).get();
       if(doc.exists){
@@ -5210,6 +5218,7 @@
       }
 
       a.status = 'asistio';
+      el.className = 'appt ' + a.type + ' ' + apptStatusClass('asistio');
       el.querySelector('.status-dot').className = 'status-dot asistio';
       el.querySelector('.status-txt').textContent = 'Asistió';
       if(document.querySelector('.tag-dot')){
@@ -7111,7 +7120,7 @@
         const status = r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend'));
 
         const el = document.createElement('div');
-        el.className = `appt ${meta.type}`;
+        el.className = `appt ${meta.type} ${apptStatusClass(status)}`;
         el.style.top = top + 'px';
         el.style.height = Math.max(bottom-top, 34) + 'px';
         el.innerHTML = `
@@ -12351,6 +12360,7 @@
       const idx = appointments.indexOf(a);
       const el = document.querySelector(`.appt[data-idx="${idx}"]`);
       if(el){
+        el.className = 'appt ' + a.type + ' ' + apptStatusClass(nuevoEstado);
         const dot = el.querySelector('.status-dot');
         const txt = el.querySelector('.status-txt');
         if(dot) dot.className = 'status-dot ' + nuevoEstado;
