@@ -6834,7 +6834,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones'].forEach(id=>{
+    ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones','vistaIntelligence','vistaAbonos','vistaResumenVentas'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -8254,7 +8254,7 @@
      vendidos, aunque usa el mismo arreglo de reservas ya cargado. ---------- */
   let tpRep = null;
   function mostrarPropinas(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
+    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas','vistaAbonos'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
     });
@@ -8437,6 +8437,7 @@
     document.getElementById('vistaSuscripciones').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = 'none';
     document.getElementById('vistaResumenVentas').style.display = 'none';
+    document.getElementById('vistaAbonos').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -8463,6 +8464,7 @@
     document.getElementById('vistaSuscripciones').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = 'none';
     document.getElementById('vistaResumenVentas').style.display = 'none';
+    document.getElementById('vistaAbonos').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = '';
@@ -8486,6 +8488,7 @@
     document.getElementById('vistaAccesosCursos').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = 'none';
     document.getElementById('vistaResumenVentas').style.display = 'none';
+    document.getElementById('vistaAbonos').style.display = 'none';
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = '';
