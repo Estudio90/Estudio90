@@ -56,6 +56,7 @@
     --peinado:#7a4fd8; --peinado-tint:#f1ecfc;
 
     --ok:#189d79; --pend:#c98a2e; --done:#4a5cf0; --no:#d14545;
+    --reservado:#3b8fa3; --asistio:#d64fb0;
     --amber:#c98a2e;
     --radius:16px;
     --radius-sm:10px;
@@ -917,6 +918,7 @@
   .status-dot.ok{background:var(--ok);} .status-dot.pend{background:var(--pend);}
   .status-dot.done{background:var(--done);} .status-dot.no{background:var(--no);}
   .status-dot.new{background:var(--corte);} .status-dot.resched{background:#e2836f;}
+  .status-dot.reservado{background:var(--reservado);} .status-dot.asistio{background:var(--asistio);}
   .status-txt{font-size:9.5px;color:var(--text-low);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .appt-price{font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:9.5px;color:var(--text-mid);flex:0 0 auto;}
   .appt-quick{
@@ -3609,13 +3611,11 @@
 
     <div class="field-label" style="margin-top:16px;">Etiqueta</div>
     <div class="status-pills" id="statusPills">
-      <div class="tag-dot" data-s="new" style="background:var(--corte)"></div>
+      <div class="tag-dot" data-s="reservado" style="background:var(--reservado)"></div>
       <div class="tag-dot" data-s="pend" style="background:var(--pend)"></div>
-      <div class="tag-dot" data-s="ok" style="background:#d64fb0"></div>
-      <div class="tag-dot" data-s="resched" style="background:#e2836f"></div>
+      <div class="tag-dot" data-s="asistio" style="background:var(--asistio)"></div>
       <div class="tag-dot" data-s="no" style="background:var(--no)"></div>
-      <div class="tag-dot" data-s="done" style="background:var(--ok)"></div>
-      <span class="tag-label" id="tagLabel">Asiste</span>
+      <span class="tag-label" id="tagLabel">Reservado</span>
     </div>
 
     <div class="field-label">Nota del barbero</div>
@@ -5178,6 +5178,9 @@
     });
     el.querySelector('.done').addEventListener('click', async (ev)=>{
       ev.stopPropagation();
+      // Idempotente: si ya está Asistió (o el histórico 'done'), un segundo
+      // click no vuelve a escribir ni a generar comisión duplicada.
+      if(a.status === 'asistio' || a.status === 'done') return;
 
       if(MODE === 'api' && a.apiId){
         try{
@@ -5186,13 +5189,17 @@
           });
         }catch(e){ return showToast(e.message); }
       } else if(a.fromWeb && a.webId){
-        try{ await db.collection('bookings').doc(a.webId).update({ estado: 'done', etiqueta: 'done' }); }
+        try{ await db.collection('bookings').doc(a.webId).update({ etiqueta: 'asistio' }); }
         catch(e){ return showToast('No se pudo guardar: ' + e.message); }
       }
 
-      a.status = 'done';
-      el.querySelector('.status-dot').className = 'status-dot done';
-      el.querySelector('.status-txt').textContent = 'Completado';
+      a.status = 'asistio';
+      el.querySelector('.status-dot').className = 'status-dot asistio';
+      el.querySelector('.status-txt').textContent = 'Asistió';
+      if(document.querySelector('.tag-dot')){
+        document.querySelectorAll('.tag-dot').forEach(x=> x.classList.toggle('selected', x.dataset.s === 'asistio' && currentAppt === a));
+        if(currentAppt === a) placeTagLabel();
+      }
       showToast(`${a.client} atendido · ya cuenta para su comisión`);
     });
     col.appendChild(el);
@@ -5528,7 +5535,7 @@
         service: r.svc,
         price: '$' + Number(r.price).toLocaleString('es-CL'),
         start, end, type: meta.type,
-        status: r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'ok' : 'pend')),
+        status: r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend')),
         barber: barberName,
         phone: r.phone || '',
         email: r.email || '',
@@ -6956,7 +6963,7 @@
         const end = addMinutes(start[0], start[1], meta.mins);
         const top = timeToTop(start[0], start[1]);
         const bottom = timeToTop(end[0], end[1]);
-        const status = r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'ok' : 'pend'));
+        const status = r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend'));
 
         const el = document.createElement('div');
         el.className = `appt ${meta.type}`;
@@ -7510,7 +7517,9 @@
     await cxCargarTarifas();
 
     const yo = cfgBarberos.find(b=> b.name === userBarberName);
-    const items = appointments.filter(a=> a.status === 'done' && a.barber === userBarberName);
+    // 'asistio' es el estado vigente; 'done' se mantiene para no perder la
+    // comisión ya calculada de reservas históricas marcadas antes del cambio.
+    const items = appointments.filter(a=> (a.status === 'asistio' || a.status === 'done') && a.barber === userBarberName);
 
     let comisionServicios = 0, propinas = 0, comisionProductos = 0;
     const filas = items.map(a=>{
@@ -7571,12 +7580,13 @@
       .sort((a,b)=> (a.start[0]*60+a.start[1]) - (b.start[0]*60+b.start[1]));
 
     let comisionServicios = 0, propinas = 0, comisionProductos = 0, realizados = 0;
-    const ESTADOS = {ok:'Confirmada', pend:'Pendiente', done:'Completado', no:'No show'};
+    const ESTADOS = {reservado:'Reservado', pend:'Pendiente', asistio:'Asistió', no:'No asistió', ok:'Confirmada', done:'Completado'};
 
     const filas = misCitas.map(a=>{
       const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
       let comisionTxt = '';
-      if(a.status === 'done'){
+      const asistio = a.status === 'asistio' || a.status === 'done';
+      if(asistio){
         const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
         comisionServicios += c.amount;
         propinas += Number(a.propina) || 0;
@@ -7589,7 +7599,7 @@
       return `<div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <b>${hora} · ${escapeHTML(a.client)}</b>
-          <span class="rc-chip ${a.status === 'done' ? 'sent' : (a.status === 'no' ? 'none' : 'wait')}">${ESTADOS[a.status] || a.status}</span>
+          <span class="rc-chip ${asistio ? 'sent' : (a.status === 'no' ? 'none' : 'wait')}">${ESTADOS[a.status] || a.status}</span>
         </div>
         <span style="color:#57565f;font-size:12.5px;">${escapeHTML(a.service)}${comisionTxt}</span>
         ${a.notaAdmin ? `<div style="background:#fdf6e8;border-radius:8px;padding:8px 10px;font-size:12px;color:#8a6d1f;">📌 ${escapeHTML(a.notaAdmin)}</div>` : ''}
@@ -7892,7 +7902,9 @@
     cfgBarberos.filter(b=> b.active && (!soloBarberId || b.id === soloBarberId)).forEach(fila);
 
     for(const a of appointments){
-      if(!['done','no'].includes(a.status)) continue;
+      // 'asistio' es el estado vigente que genera comisión; 'done' se
+      // mantiene por compatibilidad con reservas históricas ya marcadas así.
+      if(!['asistio','done','no'].includes(a.status)) continue;
       // Comisiones barberos: solo cuentan los servicios REALIZADOS dentro
       // del período elegido (mismo campo a.fecha que usa el calendario).
       if(from && a.fecha && a.fecha < from) continue;
@@ -12138,7 +12150,14 @@
     closeDrawer();
   });
 
-  const tagLabels = {new:'Nuevo cliente', pend:'Pendiente', ok:'Asiste', resched:'Reagendó', no:'No show', done:'Completado'};
+  // Estados operativos vigentes: reservado/pend/asistio/no (únicos seleccionables
+  // en las pills, ver #statusPills). new/ok/resched/done quedan solo para seguir
+  // mostrando correctamente reservas históricas -- ya no se escriben desde ningún
+  // lugar del panel, ver auditoría de estados de reservas.
+  const tagLabels = {
+    reservado:'Reservado', pend:'Pendiente', asistio:'Asistió', no:'No asistió',
+    new:'Nuevo cliente', ok:'Asiste', resched:'Reagendó', done:'Completado',
+  };
   const tagLabelEl = document.getElementById('tagLabel');
   function placeTagLabel(){
     const selected = document.querySelector('.tag-dot.selected');
@@ -12291,7 +12310,9 @@
       return;
     }
 
-    const completadas = reservas.filter(r=> r.estado === 'done');
+    // Fuente única: 'etiqueta' (no 'estado', que solo lo escribía un botón y
+    // quedaba desincronizado si la asistencia se marcaba por otro camino).
+    const completadas = reservas.filter(r=> r.etiqueta === 'asistio' || r.etiqueta === 'done');
     const totalGastado = completadas.reduce((s,r)=> s + (Number(r.price)||0), 0);
     const primeraFecha = reservas.length ? reservas[reservas.length - 1].fecha : '—';
 
@@ -12304,7 +12325,7 @@
           <b>${escapeHTML(r.fecha || '')} · ${escapeHTML(r.svc || '')}</b>
           <span class="rc-chip ${cls}">${estadoTxt}</span>
         </div>
-        <span style="color:#57565f;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(r.price)}${r.estado === 'done' ? ' · Completado' : ''}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
+        <span style="color:#57565f;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(r.price)}${(r.etiqueta === 'asistio' || r.etiqueta === 'done') ? ' · Asistió' : ''}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
       </div>`;
     }).join('');
 
@@ -12811,33 +12832,10 @@
       paymentBtn.classList.add('paid');
       document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
 
-      // Cobrar el pago completo (abono + restante) significa que el servicio
-      // ya se hizo -- se marca "Completado" solo (para que Comisiones
-      // barberos lo cuente sin un paso manual aparte), salvo que la cita sea
-      // de una fecha futura: ahí ya está pagada pero el corte todavía no
-      // ocurre, así que no correspondería contarla como realizada todavía.
-      const hoyIso = new Date().toISOString().slice(0,10);
-      if(currentAppt.status !== 'done' && (!currentAppt.fecha || currentAppt.fecha <= hoyIso)){
-        const estadoAnterior = currentAppt.status;
-        currentAppt.status = 'done';
-        if(currentAppt.fromWeb && currentAppt.webId){
-          try{
-            await db.collection('bookings').doc(currentAppt.webId).update({ etiqueta: 'done' });
-          }catch(e){ currentAppt.status = estadoAnterior; }
-        }
-        if(currentAppt.status === 'done'){
-          document.querySelectorAll('.tag-dot').forEach(x=> x.classList.toggle('selected', x.dataset.s === 'done'));
-          placeTagLabel();
-          const idx = appointments.indexOf(currentAppt);
-          const elCita = document.querySelector(`.appt[data-idx="${idx}"]`);
-          if(elCita){
-            const dot = elCita.querySelector('.status-dot');
-            const txt = elCita.querySelector('.status-txt');
-            if(dot) dot.className = 'status-dot done';
-            if(txt) txt.textContent = tagLabels.done || 'Completado';
-          }
-        }
-      }
+      // Pagar (incluso el total) NO significa que el cliente asistió --
+      // "Asistió" es siempre una acción manual y explícita del staff (pill
+      // de Etiqueta o el botón "Marcar asistencia"), nunca un efecto
+      // secundario de cobrar. El pago solo actualiza el dinero recibido.
 
       enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt);
       mostrarAlertaComprobante(currentAppt, metodoLabel, totalTxt);
