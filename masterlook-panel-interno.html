@@ -676,6 +676,11 @@
   .cx-nav{display:flex;gap:7px;flex-wrap:wrap;}
   .cx-navbtn.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
   .cx-navbtn2.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
+  /* Pestañas de "Mi perfil" (Perfil/Datos/Portafolio) -- clase propia,
+     nunca ".cx-navbtn": esa la esconde por completo mostrarComisiones()
+     para un barbero (es la sub-nav de la pantalla de Comisiones del
+     admin), y por compartir nombre apagaba también estas pestañas. */
+  .cx-navbtn3.on{background:#1A1815!important;color:#fff!important;border-color:#1A1815!important;}
   .cx-panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(20,19,17,.05);}
 
   /* ===== vista de colores del sitio, con preview en vivo ===== */
@@ -829,6 +834,17 @@
   .rc-chip.wait{background:#fdf6e8; color:#8a6d1f;}
   .rc-chip.none{background:#fbeceb; color:#b03a2e;}
   .rc-empty{font-size:12.5px; color:#87868f; text-align:center; padding:18px 0;}
+
+  /* "Mis reservas" (barbero) -- grilla mensual, una celda por día. */
+  .mr-cal{display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:12px; overflow:hidden;}
+  .mr-cal-head{background:var(--panel-2); padding:8px 6px; font-size:10.5px; font-weight:600; color:var(--text-mid); text-align:center;}
+  .mr-cal-cell{background:var(--panel); min-height:88px; padding:6px; display:flex; flex-direction:column; gap:3px;}
+  .mr-cal-cell.vacio{background:var(--panel-2);}
+  .mr-cal-num{display:flex; align-items:center; justify-content:space-between; font-size:11.5px; font-weight:600; color:var(--text-mid);}
+  .mr-cal-count{font-size:9px; font-weight:600; color:var(--accent); background:var(--accent-tint); padding:1px 6px; border-radius:99px;}
+  .mr-cal-preview{font-size:9.5px; color:var(--text-mid); line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mr-cal-preview b{color:var(--text-hi); font-variant-numeric:tabular-nums;}
+  @media (max-width:700px){ .mr-cal-cell{min-height:56px;} .mr-cal-preview{display:none;} }
 
   .mg-overlay{
     position:fixed; inset:0; background:rgba(20,19,17,.45); backdrop-filter:blur(2px);
@@ -1719,9 +1735,10 @@
       <button class="btn-ordenar-menu" id="btnOrdenarMenu" type="button" style="display:none;">↕ Ordenar menú</button>
       <div class="nav-section-label">Panel</div>
       <button class="menu-panel-item" id="btnAgendaNav">Agenda</button>
+      <button class="menu-panel-item" id="btnMisReservas" style="display:none;">Mis reservas</button>
       <button class="menu-panel-item" id="btnRecordatorios">Recordatorios</button>
 
-      <div class="nav-section-label">Vista cliente</div>
+      <div class="nav-section-label" id="lblVistaCliente">Vista cliente</div>
       <button class="menu-panel-item" id="btnMensajeriaWhatsapp">Mensajería WhatsApp</button>
 
 
@@ -2080,19 +2097,35 @@
 
       <!-- Resumen personal para cuentas de barbero: solo ven lo suyo -->
       <div class="cx-panel" id="cxBarbero" style="display:none;">
-        <div class="cx-regla">
-          Resumen de <b>hoy</b>. Solo cuentan los servicios que ya marcaste como realizados.
+        <div class="cx-head" style="margin:0 0 12px;">
+          <div class="cx-regla" style="flex:1;">
+            Solo cuentan los servicios ya marcados como <b>Asistió</b>. Elige el período que quieres ver.
+          </div>
+          <select id="cbPeriodo" class="mg-input" style="width:auto;">
+            <option value="hoy">Hoy</option>
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="mes">Este mes</option>
+          </select>
+          <button class="ctrl-btn" id="cbExportar">Exportar</button>
         </div>
+        <div id="cbEstadoPago" style="margin-bottom:14px;"></div>
         <div class="cx-kpis">
           <div class="cx-kpi"><div class="k">Servicios realizados</div><div class="v" id="cbServicios">0</div></div>
           <div class="cx-kpi pay"><div class="k">Tu comisión</div><div class="v" id="cbComision">$0</div></div>
           <div class="cx-kpi"><div class="k">Propinas recibidas</div><div class="v" id="cbPropinas">$0</div></div>
           <div class="cx-kpi"><div class="k">Comisión por productos</div><div class="v" id="cbComisionProductos">$0</div></div>
-          <div class="cx-kpi net"><div class="k">Total para ti hoy</div><div class="v" id="cbTotal">$0</div></div>
+          <div class="cx-kpi net"><div class="k">Total para ti en el período</div><div class="v" id="cbTotal">$0</div></div>
         </div>
+        <h3 style="font-size:13px;font-weight:600;margin:18px 0 8px;color:var(--text-mid);text-transform:uppercase;">
+          Detalle por cliente · <span id="cbConteo">0 servicios en el período</span>
+        </h3>
         <div class="cx-tablebox">
           <table class="cx-table">
-            <thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th class="r">Tu comisión</th></tr></thead>
+            <thead><tr>
+              <th>Fecha creación</th><th>Fecha servicio</th><th>Cliente</th><th>Hora</th><th>Servicio</th>
+              <th class="r">Comisión</th><th class="r">Propina/Prod.</th><th class="r">Total</th>
+            </tr></thead>
             <tbody id="cbTabla"></tbody>
           </table>
         </div>
@@ -2572,18 +2605,92 @@
     </div>
 
     <!-- Mi perfil -->
-    <div class="mg-modal" id="modalMiPerfil">
+    <div class="mg-modal wide" id="modalMiPerfil">
       <div class="mg-head">
         <h3>Mi perfil</h3>
         <button class="mg-close" data-close>✕</button>
       </div>
-      <label class="mg-label">Nombre</label>
-      <input type="text" id="mpNombre" class="mg-input" placeholder="Tu nombre">
-      <label class="mg-label">Correo</label>
-      <input type="text" id="mpCorreo" class="mg-input" disabled>
-      <button class="mg-btn solid full" id="mpGuardar" style="margin-top:14px;">Guardar nombre</button>
-      <p class="mg-note" style="margin-top:16px;">¿Quieres cambiar tu contraseña? Te mandamos un correo con el enlace para hacerlo de forma segura.</p>
-      <button class="mg-btn ghost full" id="mpCambiarClave">Enviar correo para cambiar contraseña</button>
+
+      <div class="cx-nav" style="margin-bottom:16px;">
+        <button class="ctrl-btn cx-navbtn3 on" data-mptab="perfil" type="button">Perfil</button>
+        <button class="ctrl-btn cx-navbtn3" data-mptab="datos" type="button">Datos</button>
+        <button class="ctrl-btn cx-navbtn3" data-mptab="portafolio" type="button">Portafolio</button>
+      </div>
+
+      <!-- Tab: Perfil -->
+      <div id="mpTabPerfil">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+          <div class="avatar-round" id="mpAvatarPreview" style="width:56px;height:56px;font-size:20px;background-size:cover;background-position:center;"></div>
+          <div>
+            <button class="mg-btn ghost" id="mpSubirFoto" type="button" style="padding:6px 14px;font-size:12px;">📷 Cambiar foto</button>
+            <input type="file" id="mpFotoArchivo" accept="image/*" style="display:none;">
+          </div>
+        </div>
+        <label class="mg-label">Nombre</label>
+        <input type="text" id="mpNombre" class="mg-input" placeholder="Tu nombre">
+        <label class="mg-label">Correo</label>
+        <input type="text" id="mpCorreo" class="mg-input" disabled>
+        <button class="mg-btn solid full" id="mpGuardar" style="margin-top:14px;">Guardar cambios</button>
+        <p class="mg-note" style="margin-top:16px;">¿Quieres cambiar tu contraseña? Te mandamos un correo con el enlace para hacerlo de forma segura.</p>
+        <button class="mg-btn ghost full" id="mpCambiarClave">Enviar correo para cambiar contraseña</button>
+      </div>
+
+      <!-- Tab: Datos (alimenta el pago real de la comisión) -->
+      <div id="mpTabDatos" style="display:none;">
+        <p class="mg-note" style="margin-bottom:12px;">Estos datos se usan para pagarte tu comisión -- solo los ve administración.</p>
+        <div class="mg-two">
+          <div><label class="mg-label">Nombre legal</label><input type="text" id="mpdNombreLegal" class="mg-input"></div>
+          <div><label class="mg-label">Apellido legal</label><input type="text" id="mpdApellidoLegal" class="mg-input"></div>
+        </div>
+        <label class="mg-label">RUT</label>
+        <input type="text" id="mpdRut" class="mg-input" placeholder="12.345.678-9">
+        <div class="mg-two">
+          <div>
+            <label class="mg-label">Tipo de cuenta</label>
+            <select id="mpdTipoCuenta" class="mg-input">
+              <option value="">Selecciona</option>
+              <option value="corriente">Cuenta corriente</option>
+              <option value="vista">Cuenta vista</option>
+              <option value="ahorro">Cuenta de ahorro</option>
+              <option value="rut">Cuenta RUT</option>
+            </select>
+          </div>
+          <div><label class="mg-label">Número de cuenta</label><input type="text" id="mpdNumeroCuenta" class="mg-input"></div>
+        </div>
+        <label class="mg-label">Banco</label>
+        <select id="mpdBanco" class="mg-input">
+          <option value="">Selecciona</option>
+          <option>Banco de Chile</option>
+          <option>Banco Estado</option>
+          <option>Banco Santander</option>
+          <option>Banco BCI</option>
+          <option>Banco Itaú</option>
+          <option>Banco Scotiabank</option>
+          <option>Banco Falabella</option>
+          <option>Banco Security</option>
+          <option>Banco BICE</option>
+          <option>Banco Consorcio</option>
+          <option>Otro</option>
+        </select>
+        <label class="mg-label">Correo para transferencias</label>
+        <input type="email" id="mpdCorreoTransferencias" class="mg-input" placeholder="tucorreo@ejemplo.com">
+        <button class="mg-btn solid full" id="mpdGuardar" style="margin-top:14px;">Guardar cambios</button>
+      </div>
+
+      <!-- Tab: Portafolio (visible en el perfil público) -->
+      <div id="mpTabPortafolio" style="display:none;">
+        <p class="mg-note" style="margin-bottom:12px;">Se muestra en tu perfil público para que los clientes vean tu trabajo.</p>
+        <label class="mg-label">Título <span class="mg-opt">(opcional)</span></label>
+        <input type="text" id="mpfTitulo" class="mg-input" placeholder="Ej: Degradado clásico">
+        <label class="mg-label">Nota</label>
+        <input type="text" id="mpfNota" class="mg-input" placeholder="Cuéntanos sobre este trabajo">
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="mg-btn ghost" id="mpfSubirArchivo" type="button">📎 Subir archivo</button>
+          <input type="file" id="mpfArchivo" accept="image/*,application/pdf" style="display:none;">
+          <button class="mg-btn solid" id="mpfAgregarNota" type="button">+ Agregar nota</button>
+        </div>
+        <div id="mpfLista" style="display:flex;flex-direction:column;gap:8px;margin-top:16px;"></div>
+      </div>
     </div>
 
     <!-- Mensajería WhatsApp: informativo, no es una bandeja real -->
@@ -3115,6 +3222,12 @@
           <h2 class="cx-title">Hola, <span id="vbNombre"></span></h2>
           <p class="cx-sub" id="vbFecha"></p>
         </div>
+        <div class="nav-row" style="margin:0;align-items:center;">
+          <button class="nav-btn" id="vbBtnHoy">Hoy</button>
+          <button class="nav-btn icon" id="vbBtnPrevDay">‹</button>
+          <button class="nav-btn icon" id="vbBtnNextDay">›</button>
+          <input type="date" id="vbFechaInput" class="mg-input" style="width:auto;padding:7px 10px;">
+        </div>
       </div>
 
       <div class="cx-kpis">
@@ -3122,11 +3235,47 @@
         <div class="cx-kpi pay"><div class="k">Tu comisión</div><div class="v" id="vbComision">$0</div></div>
         <div class="cx-kpi"><div class="k">Propinas recibidas</div><div class="v" id="vbPropinas">$0</div></div>
         <div class="cx-kpi"><div class="k">Comisión por productos</div><div class="v" id="vbComisionProductos">$0</div></div>
-        <div class="cx-kpi net"><div class="k">Total para ti hoy</div><div class="v" id="vbTotal">$0</div></div>
+        <div class="cx-kpi net"><div class="k">Total para ti</div><div class="v" id="vbTotal">$0</div></div>
       </div>
 
-      <h3 style="font-size:15px;font-weight:600;margin:22px 0 12px;">Tus horas de hoy</h3>
+      <h3 style="font-size:15px;font-weight:600;margin:22px 0 12px;" id="vbListaTitulo">Tus horas de hoy</h3>
       <div id="vbLista" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Mis reservas (barbero): todas sus citas asignadas, en Semana/Día
+         (grilla horaria, igual que la agenda de un profesional que ve el
+         admin) o Lista -- a diferencia de "Agenda" (arriba) que solo
+         muestra hoy. -->
+    <div id="vistaMisReservas" style="display:none; padding:24px 32px;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Mis reservas</h2>
+          <p class="cx-sub">Reservas vinculadas a tu cuenta.</p>
+        </div>
+        <div class="nav-row" style="margin:0;align-items:center;">
+          <button class="ctrl-btn" id="mrBtnSemana">Semana</button>
+          <button class="ctrl-btn" id="mrBtnDia">Día</button>
+          <button class="ctrl-btn" id="mrBtnLista">Lista</button>
+        </div>
+      </div>
+
+      <div class="cx-head" style="margin-top:0;">
+        <div class="nav-row" style="margin:0;align-items:center;">
+          <button class="nav-btn" id="mrHoy">Hoy</button>
+          <button class="nav-btn icon" id="mrPrev">‹</button>
+          <button class="nav-btn icon" id="mrNext">›</button>
+          <span id="mrRangoLbl" style="font-weight:600;margin-left:6px;"></span>
+        </div>
+      </div>
+
+      <div id="mrGridWrap" class="grid-wrap">
+        <div class="barbers-row" id="mrHeaderRow"></div>
+        <div class="grid-body" id="mrGridBody">
+          <div class="time-col" id="mrTimeCol"></div>
+        </div>
+      </div>
+
+      <div id="mrListaWrap" style="display:none;flex-direction:column;gap:18px;"></div>
     </div>
 
     <div class="layout" id="vistaAgenda">
@@ -3799,6 +3948,10 @@
       <button class="btn-outline" id="btnFicha">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h1"/></svg>
         Ficha
+      </button>
+      <button class="btn-outline" id="btnFotosBarbero" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Fotos del cliente
       </button>
     </div>
 
@@ -4955,8 +5108,11 @@
     mostrarControlesAdmin();
     cargarYAplicarOrdenMenu();
     if(userRole !== 'BARBER') restaurarSeccionActiva();
-    entrarAlPanel(user.email);
-    if(userRole === 'BARBER') mostrarVistaBarbero();
+    // El avatar debe mostrar las iniciales de quien inició sesión, no las
+    // del correo -- antes usaba siempre user.email, así que un barbero
+    // veía la inicial de su propio correo en vez de su nombre real.
+    entrarAlPanel(userBarberName || user.email);
+    if(userRole === 'BARBER') mostrarComisiones();
   });
 
   function salirDelPanel(){
@@ -5570,10 +5726,29 @@
     // esos dos ítems están visibles -- evita dejar una línea suelta sin nada arriba.
     document.getElementById('userMenuSepEquipo').style.display = soloAdmin;
 
-    // Mis comisiones: SOLO barbero (su propio resumen) -- el administrador ya
-    // no usa este botón, usa el grupo "Comisiones" de abajo (información de
-    // TODOS los profesionales). Recepción no ve ninguno de los dos.
-    document.getElementById('btnComisiones').style.display = (userRole === 'BARBER') ? '' : 'none';
+    // Mis comisiones: para un barbero, el primer botón del menú ("Agenda"
+    // para admin/recepción) se reusa como su acceso directo a su propio
+    // resumen de comisiones -- así no queda un "Mis comisiones" duplicado
+    // escondido dentro de "Equipo barberos" (grupoEquipo se deja siempre
+    // oculto: su único otro contenido, "Servicios staff", es admin-only).
+    document.getElementById('btnAgendaNav').textContent = userRole === 'BARBER' ? 'Mis comisiones' : 'Agenda';
+    const grupoEquipoEl = document.getElementById('grupoEquipo');
+    if(grupoEquipoEl) grupoEquipoEl.style.display = 'none';
+
+    // Mis reservas: navegación semanal (semana/día/lista) de las citas
+    // asignadas al barbero -- solo su propia cuenta.
+    document.getElementById('btnMisReservas').style.display = (userRole === 'BARBER') ? '' : 'none';
+
+    // "Vista cliente" (Mensajería WhatsApp) y el aviso de stock bajo/agotado
+    // son herramientas de administración del negocio -- un barbero no
+    // gestiona inventario ni manda campañas, así que no le sirven de nada.
+    document.getElementById('lblVistaCliente').style.display = (userRole === 'BARBER') ? 'none' : '';
+    document.getElementById('btnMensajeriaWhatsapp').style.display = (userRole === 'BARBER') ? 'none' : '';
+    document.getElementById('stockChips').style.display = (userRole === 'BARBER') ? 'none' : '';
+    // "Configurar" (servicios y precios, equipo, negocio, portada del
+    // sitio) es configuración del NEGOCIO -- un barbero ya tiene su propio
+    // "Mi perfil" (nombre, foto, datos bancarios, portafolio) para lo suyo.
+    document.getElementById('btnConfig').style.display = (userRole === 'BARBER') ? 'none' : '';
 
     // Comisiones (grupo administrativo): información financiera de todos los
     // profesionales -- únicamente administrador, nunca un barbero ni recepción,
@@ -5611,6 +5786,16 @@
       const algunoVisible = Array.from(items).some(el=> el.style.display !== 'none');
       grupo.style.display = algunoVisible ? '' : 'none';
     });
+    // Lo de arriba reabre "Academy"/"Tienda"/"Equipo barberos" para un
+    // barbero apenas UNO de sus ítems (ej. btnTestimonios, btnTiendaVer)
+    // no esté en la lista soloAdmin de más arriba -- son herramientas de
+    // gestión del negocio (inventario, cursos, campañas), no le sirven a
+    // un barbero para nada, así que se cierran del todo después.
+    if(userRole === 'BARBER'){
+      ['grupoAcademy','grupoTienda','grupoEquipo','grupoServicios'].forEach(id=>{
+        const el = document.getElementById(id); if(el) el.style.display = 'none';
+      });
+    }
 
     // Punto rojo de "hay pagos próximos" -- se revisa una sola vez al
     // entrar, no solo cuando se abre la sección, para que avise aunque
@@ -6060,7 +6245,10 @@
     document.getElementById('menuLateralOverlay')?.classList.remove('open');
     document.getElementById('menuLateralPanel')?.classList.remove('open');
     if(userRole === 'BARBER'){
-      mostrarVistaBarbero();
+      // El logo y el botón "Agenda" (renombrado "Mis comisiones" para un
+      // barbero, ver mostrarControlesAdmin) llevan al mismo lugar: su
+      // resumen de comisiones. La agenda del día vive en "Mis reservas".
+      mostrarComisiones();
     }else{
       ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos','vistaResumenVentas'].forEach(id=>{
         const el = document.getElementById(id);
@@ -7834,6 +8022,8 @@
 
   function mostrarComisiones(ver){
     document.getElementById('vistaAgenda').style.display = 'none';
+    document.getElementById('vistaBarbero').style.display = 'none';
+    document.getElementById('vistaMisReservas').style.display = 'none';
     document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
     document.getElementById('vistaCursos').style.display = 'none';
@@ -7854,6 +8044,7 @@
     if(userRole === 'BARBER'){
       document.getElementById('cxTitulo').textContent = 'Mis comisiones';
       document.getElementById('cxSub').textContent = 'Tu propio resumen de ganancias.';
+      document.getElementById('cxVolver').textContent = '← Ver mis reservas';
       document.getElementById('cxConfig').style.display = 'none';
       document.getElementById('cxReporte').style.display = 'none';
       document.getElementById('cxBarbero').style.display = '';
@@ -7862,41 +8053,136 @@
       document.getElementById('cxBarbero').style.display = 'none';
       document.getElementById('cxTitulo').textContent = 'Comisiones';
       document.getElementById('cxSub').textContent = 'Define cuánto gana cada profesional por servicio.';
+      document.getElementById('cxVolver').textContent = '← Volver a la agenda';
       cxIrA(ver || 'config');
     }
   }
 
   /** Resumen de ganancias de hoy, solo para la cuenta del propio barbero. */
+  /** Rango de fechas [desde,hasta] (ISO) para el selector de período de
+   * "Mis comisiones" -- mismo criterio de nombres que usa el resto del panel. */
+  function cbRangoFechas(periodo){
+    const hoyISO = new Date().toISOString().slice(0,10);
+    if(periodo === 'hoy') return { desde: hoyISO, hasta: hoyISO };
+    if(periodo === 'mes'){
+      const hoy = new Date();
+      const desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0,10);
+      return { desde, hasta: hoyISO };
+    }
+    const dias = Number(periodo) || 30;
+    const desde = new Date(Date.now() - (dias-1)*24*60*60*1000).toISOString().slice(0,10);
+    return { desde, hasta: hoyISO };
+  }
+
+  /** A diferencia de la versión anterior (solo "hoy", leída de `appointments`
+   * -- la agenda del día actual), esto lee `firestoreBookings` completo
+   * (mismo dato en vivo que usa "Mis reservas") y filtra por el rango de
+   * fechas elegido, así el barbero puede ver su historial real, no solo hoy. */
+  /**
+   * Estado de pago de la comisión: hoy solo existe agregado por
+   * barbero+período EXACTO que eligió el admin al marcarlo (colección
+   * `commissionPayments`, doc keyeado por barberId+from+to) -- no hay un
+   * campo "pagada/pendiente" por cita individual todavía, ni pantalla de
+   * admin para marcarlo cita por cita. Mostrar esto como si fuera exacto
+   * por cita sería mostrar información falsa. En su lugar: se trae el
+   * último registro que administración dejó para este barbero (sin
+   * importar el período que el barbero tenga elegido arriba) y se muestra
+   * tal cual, con su propio rango de fechas, para que quede claro que es
+   * "lo último que marcó administración", no "el estado de este período".
+   */
+  async function cbCargarEstadoPago(barberId){
+    const el = document.getElementById('cbEstadoPago');
+    if(!barberId){ el.innerHTML = ''; return; }
+    try{
+      const snap = await db.collection('commissionPayments').where('barberId', '==', barberId).get();
+      if(snap.empty){
+        el.innerHTML = '<span class="cx-estado pendiente">Sin registro de pago</span> <span style="font-size:11px;color:var(--text-mid);margin-left:6px;">Administración todavía no ha marcado ningún período tuyo como pagado.</span>';
+        return;
+      }
+      const ultimo = snap.docs.map(d=> d.data()).sort((a,b)=> (b.actualizadoEn||'').localeCompare(a.actualizadoEn||''))[0];
+      const pagado = ultimo.estado === 'pagado';
+      el.innerHTML = `<span class="cx-estado ${pagado ? 'pagado' : 'pendiente'}">${pagado ? 'Pagada' : 'Pendiente'}</span>
+        <span style="font-size:11px;color:var(--text-mid);margin-left:6px;">
+          Según administración, para el período ${escapeHTML(ultimo.from || '?')} – ${escapeHTML(ultimo.to || '?')}
+          ${ultimo.actualizadoEn ? ' · actualizado ' + escapeHTML(ultimo.actualizadoEn.slice(0,10)) : ''}
+          -- puede no coincidir con el período que elegiste arriba.
+        </span>`;
+    }catch(e){
+      el.innerHTML = '<span style="font-size:11px;color:var(--text-mid);">No se pudo cargar el estado de pago.</span>';
+    }
+  }
+
+  let cbUltimoDetalle = null;
   async function pintarResumenBarbero(){
     await cargarCatalogo();
     await cxCargarTarifas();
 
+    const periodo = document.getElementById('cbPeriodo').value;
+    const { desde, hasta } = cbRangoFechas(periodo);
+
     const yo = cfgBarberos.find(b=> b.name === userBarberName);
+    cbCargarEstadoPago(yo?.id);
     // 'asistio' es el estado vigente; 'done' se mantiene para no perder la
     // comisión ya calculada de reservas históricas marcadas antes del cambio.
-    const items = appointments.filter(a=> (a.status === 'asistio' || a.status === 'done') && a.barber === userBarberName);
+    const items = firestoreBookings.filter(r=>{
+      const estado = mrEstadoDe(r);
+      return r.barber === userBarberName && r.decision !== 'rechazada' &&
+        r.fecha >= desde && r.fecha <= hasta && (estado === 'asistio' || estado === 'done');
+    }).sort((a,b)=> (b.fecha + (b.slot||'')).localeCompare(a.fecha + (a.slot||'')));
 
     let comisionServicios = 0, propinas = 0, comisionProductos = 0;
-    const filas = items.map(a=>{
-      const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
-      const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
+    const filasData = items.map(r=>{
+      const precio = parseInt(String(r.price).replace(/[^0-9]/g,''), 10) || 0;
+      const c = yo ? cxComisionDemo(yo.id, r.svc, precio) : { amount:0 };
       comisionServicios += c.amount;
-      propinas += Number(a.propina) || 0;
-      const subProductos = (a.productosVendidos || []).reduce((s,p)=> s + (p.subtotal||0), 0);
-      comisionProductos += Math.round(subProductos * 0.10);
-      const hora = String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
-      return `<tr><td>${hora}</td><td>${escapeHTML(a.client)}</td><td>${escapeHTML(a.service)}</td><td class="r">${cxClp(c.amount)}</td></tr>`;
+      const propina = Number(r.propina) || 0;
+      propinas += propina;
+      const subProductos = (r.productosVendidos || []).reduce((s,p)=> s + (p.subtotal||0), 0);
+      const comisionProducto = Math.round(subProductos * 0.10);
+      comisionProductos += comisionProducto;
+      const propinaYProducto = propina + comisionProducto;
+      return {
+        fechaCreacion: (r.createdAt || '').slice(0,10) || '',
+        fechaServicio: r.fecha || '', cliente: r.client || 'Cliente web', hora: r.slot || '',
+        servicio: r.svc || '', comision: c.amount, propinaYProducto, total: c.amount + propinaYProducto,
+      };
     });
+    // guardado aparte para que "Exportar" no tenga que recalcular todo de nuevo
+    cbUltimoDetalle = { periodo, desde, hasta, filas: filasData };
+
+    const filas = filasData.map(f=> `<tr>
+        <td>${escapeHTML(f.fechaCreacion || '—')}</td><td>${escapeHTML(f.fechaServicio)}</td>
+        <td>${escapeHTML(f.cliente)}</td><td>${escapeHTML(f.hora)}</td>
+        <td>${escapeHTML(f.servicio)}</td><td class="r">${cxClp(f.comision)}</td>
+        <td class="r">${f.propinaYProducto ? cxClp(f.propinaYProducto) : '—'}</td>
+        <td class="r"><b>${cxClp(f.total)}</b></td>
+      </tr>`);
 
     document.getElementById('cbServicios').textContent = items.length;
+    document.getElementById('cbConteo').textContent = `${items.length} servicio${items.length===1?'':'s'} en el período`;
     document.getElementById('cbComision').textContent = cxClp(comisionServicios);
     document.getElementById('cbPropinas').textContent = cxClp(propinas);
     document.getElementById('cbComisionProductos').textContent = cxClp(comisionProductos);
     document.getElementById('cbTotal').textContent = cxClp(comisionServicios + propinas + comisionProductos);
     document.getElementById('cbTabla').innerHTML = filas.length
       ? filas.join('')
-      : '<tr><td colspan="4" class="cx-empty">Todavía no hay servicios marcados como realizados hoy.</td></tr>';
+      : '<tr><td colspan="8" class="cx-empty">Todavía no hay servicios marcados como realizados en este período.</td></tr>';
   }
+  document.getElementById('cbPeriodo').addEventListener('change', pintarResumenBarbero);
+
+  document.getElementById('cbExportar').addEventListener('click', ()=>{
+    if(!cbUltimoDetalle || !cbUltimoDetalle.filas.length) return showToast('No hay datos para exportar en este período');
+    const { desde, hasta, filas } = cbUltimoDetalle;
+    const encabezado = ['Fecha creación','Fecha servicio','Cliente','Hora','Servicio','Comisión','Propina/Productos','Total'];
+    const cuerpo = filas.map(f=> [f.fechaCreacion, f.fechaServicio, f.cliente, f.hora, f.servicio, f.comision, f.propinaYProducto, f.total]);
+    const filasCsv = [[`Mis comisiones — ${userBarberName || ''}`], ['Período', `${desde} a ${hasta}`], [], encabezado, ...cuerpo];
+    const csv = '﻿' + filasCsv.map(f=> f.map(cell=> `"${String(cell ?? '')}"`).join(';')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = `mis_comisiones_${desde}_a_${hasta}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Reporte descargado');
+  });
 
   /**
    * Página propia y simple para las cuentas de barbero: reemplaza por completo
@@ -7906,6 +8192,7 @@
   function mostrarVistaBarbero(){
     document.getElementById('vistaAgenda').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = 'none';
+    document.getElementById('vistaMisReservas').style.display = 'none';
     document.getElementById('vistaPropinas').style.display = 'none';
     document.getElementById('vistaColores').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = 'none';
@@ -7922,9 +8209,32 @@
     pintarVistaBarbero();
   }
 
+  /** Navegación de fecha dentro de la vista del barbero: reutiliza irADia
+   * (mismo pipeline que usa la agenda del admin para traer las reservas de
+   * Firestore) y luego repinta la lista/KPIs propios del barbero. */
+  async function vbIrADia(iso){
+    await irADia(iso);
+    pintarVistaBarbero();
+  }
+  function vbMoverDia(n){
+    const d = new Date(currentDate + 'T12:00:00');
+    d.setDate(d.getDate() + n);
+    vbIrADia(d.toISOString().slice(0,10));
+  }
+  document.getElementById('vbBtnHoy').addEventListener('click', ()=>
+    vbIrADia(new Date().toISOString().slice(0,10)));
+  document.getElementById('vbBtnPrevDay').addEventListener('click', ()=> vbMoverDia(-1));
+  document.getElementById('vbBtnNextDay').addEventListener('click', ()=> vbMoverDia(1));
+  document.getElementById('vbFechaInput').addEventListener('change', (e)=>{
+    if(e.target.value) vbIrADia(e.target.value);
+  });
+
   async function pintarVistaBarbero(){
     document.getElementById('vbNombre').textContent = userBarberName || '';
+    const esHoy = currentDate === new Date().toISOString().slice(0,10);
     document.getElementById('vbFecha').textContent = fmtFecha(currentDate);
+    document.getElementById('vbFechaInput').value = currentDate;
+    document.getElementById('vbListaTitulo').textContent = esHoy ? 'Tus horas de hoy' : 'Tus horas ese día';
 
     await cargarCatalogo();
     await cxCargarTarifas();
@@ -7969,12 +8279,261 @@
     document.getElementById('vbTotal').textContent = cxClp(comisionServicios + propinas + comisionProductos);
     document.getElementById('vbLista').innerHTML = filas.length
       ? filas.join('')
-      : '<div class="cx-empty">No tienes horas agendadas hoy.</div>';
+      : `<div class="cx-empty">No tienes horas agendadas ${esHoy ? 'hoy' : 'ese día'}.</div>`;
     document.getElementById('vbLista').querySelectorAll('[data-fotos-cliente]').forEach(btn=>
       btn.addEventListener('click', ()=> abrirFotosCliente(btn.dataset.fotosCliente)));
   }
 
+  /**
+   * "Mis reservas" (barbero): a diferencia de "Agenda" (un solo día, hoy),
+   * navega semana a semana en 3 modos -- Semana y Día reutilizan la misma
+   * grilla horaria con bloques de color que ya usa el admin al abrir la
+   * semana de un profesional (mismas clases CSS: .appt/.block-overlay/
+   * .sb-day-head), para que se vea igual; Lista agrupa por día dentro de
+   * la semana. Lee de `firestoreBookings`, ya en memoria por el listener
+   * en vivo de más abajo -- no hace falta una consulta nueva a Firestore.
+   * Clic en una cita abre el mismo drawer de detalle que usa el admin
+   * (openDrawer), que ya sabe ocultar teléfono/correo para un barbero.
+   *
+   * Límite conocido: solo toma reservas con `barber` igual al nombre
+   * exacto de esta cuenta. Las reservas de "cualquiera disponible" se
+   * asignan a una columna dinámicamente al cargar cada día en la Agenda
+   * (pickColumn) y no quedan resueltas de antemano en `firestoreBookings`,
+   * así que por ahora no aparecen acá.
+   */
+  let mrModo = 'semana';
+  let mrFecha = new Date().toISOString().slice(0,10); // ancla: lunes de la semana (semana/lista) o el día (día)
+  const MR_ESTADOS = {reservado:'Reservado', pend:'Pendiente', asistio:'Asistió', no:'No asistió', ok:'Confirmada', done:'Completado'};
+
+  function mrEstadoDe(r){
+    return r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend'));
+  }
+
+  function mrLunesDe(iso){
+    const d = new Date(iso + 'T12:00:00');
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return d.toISOString().slice(0,10);
+  }
+
+  function mrReservasDelDia(iso){
+    return firestoreBookings.filter(r=>
+      r.barber === userBarberName && r.decision !== 'rechazada' && r.fecha === iso);
+  }
+
+  /** Convierte un doc crudo de `bookings` al formato que espera openDrawer
+   * (mismo shape que arma importWebBookings para la agenda del admin). */
+  function mrRawToApt(r){
+    const meta = serviceMeta(r.svc);
+    const start = parseSlot(r.slot);
+    const end = addMinutes(start[0], start[1], meta.mins);
+    return {
+      webId: r.id, fecha: r.fecha, client: r.client || 'Cliente web', service: r.svc,
+      price: '$' + Number(r.price || 0).toLocaleString('es-CL'), start, end, type: meta.type,
+      status: mrEstadoDe(r), barber: r.barber, phone: r.phone || '', email: r.email || '',
+      notes: 'Reserva online', fromWeb: true, contactoCargado: true,
+      notaAdmin: r.notaAdmin || '', propina: r.propina, productosVendidos: r.productosVendidos,
+    };
+  }
+
+  function mostrarMisReservas(){
+    ['vistaAgenda','vistaComisiones','vistaBarbero','vistaPropinas','vistaColores','vistaUsuarios','vistaCursos','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.style.display = 'none';
+    });
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    const nav = document.querySelector('.panel-nav');
+    if(nav) nav.style.display = 'none';
+    document.getElementById('vistaMisReservas').style.display = '';
+    mrRender();
+  }
+
+  function mrCambiar(n){
+    const dias = mrModo === 'dia' ? 1 : 7;
+    const d = new Date(mrFecha + 'T12:00:00');
+    d.setDate(d.getDate() + n*dias);
+    mrFecha = d.toISOString().slice(0,10);
+    mrRender();
+  }
+
+  function mrRender(){
+    document.getElementById('mrBtnSemana').classList.toggle('active', mrModo==='semana');
+    document.getElementById('mrBtnDia').classList.toggle('active', mrModo==='dia');
+    document.getElementById('mrBtnLista').classList.toggle('active', mrModo==='lista');
+    document.getElementById('mrGridWrap').style.display = mrModo==='lista' ? 'none' : '';
+    document.getElementById('mrListaWrap').style.display = mrModo==='lista' ? 'flex' : 'none';
+
+    if(mrModo === 'dia'){
+      const d = new Date(mrFecha + 'T12:00:00');
+      document.getElementById('mrRangoLbl').textContent = fmtFecha(mrFecha);
+      mrRenderGrid(mrFecha, 1);
+    } else {
+      const inicio = mrLunesDe(mrFecha);
+      const fin = new Date(inicio + 'T12:00:00'); fin.setDate(fin.getDate()+6);
+      document.getElementById('mrRangoLbl').textContent =
+        `${new Date(inicio+'T12:00:00').getDate()} – ${fin.getDate()} de ${fin.toLocaleDateString('es-CL',{month:'long', year:'numeric'})}`;
+      if(mrModo === 'semana') mrRenderGrid(inicio, 7);
+      else mrRenderLista(inicio);
+    }
+  }
+
+  function mrRenderGrid(fechaInicioISO, dias){
+    const headerRow = document.getElementById('mrHeaderRow');
+    const gridBody = document.getElementById('mrGridBody');
+    const timeCol = document.getElementById('mrTimeCol');
+
+    headerRow.innerHTML = '<div style="border-right:1px solid var(--border);"></div>';
+    gridBody.querySelectorAll('.mr-col').forEach(c=> c.remove());
+
+    const cols = '56px repeat(' + dias + ', minmax(140px,1fr))';
+    headerRow.style.gridTemplateColumns = cols;
+    gridBody.style.gridTemplateColumns = cols;
+
+    timeCol.innerHTML = '';
+    for(let h=START_HOUR; h<=END_HOUR; h++){
+      const div = document.createElement('div');
+      div.className = 'time-slot'; div.style.height = SLOT_H+'px';
+      div.textContent = (h<10?'0'+h:h)+':00';
+      timeCol.appendChild(div);
+    }
+    const totalHeight = (END_HOUR - START_HOUR) * SLOT_H;
+    timeCol.style.height = totalHeight+'px';
+
+    const cb = cfgBarberos.find(b=> b.name === userBarberName);
+    const inicio = new Date(fechaInicioISO + 'T12:00:00');
+    const hoyISO = new Date().toISOString().slice(0,10);
+
+    for(let i=0; i<dias; i++){
+      const d = new Date(inicio);
+      d.setDate(d.getDate() + i);
+      const iso = d.toISOString().slice(0,10);
+      const weekday = d.getDay();
+
+      const head = document.createElement('div');
+      head.className = 'sb-day-head' + (iso === hoyISO ? ' today' : '');
+      head.innerHTML = `<div class="sb-dname">${DIAS_CORTOS[weekday]}</div><div class="sb-dnum">${d.getDate()}</div>`;
+      headerRow.appendChild(head);
+
+      const col = document.createElement('div');
+      col.className = 'col mr-col';
+      col.style.height = totalHeight + 'px';
+      col.style.backgroundSize = `100% ${SLOT_H}px`;
+      gridBody.appendChild(col);
+
+      // Un barbero sin ningún horario cargado en Firestore (cb.schedules
+      // vacío) no significa "no disponible todos los días" -- significa
+      // que nadie lo configuró todavía. Pintar todo en gris ahí sería
+      // afirmar una indisponibilidad que no es real. Solo se pinta "No
+      // disponible" cuando SÍ hay horario cargado y ese día puntual queda
+      // fuera de él (o es un día libre real, sin bloque para ese weekday).
+      const tieneHorarioConfigurado = !!(cb?.schedules && cb.schedules.length);
+      const bloque = tieneHorarioConfigurado ? cb.schedules.find(s=> s.weekday === weekday) : null;
+      if(tieneHorarioConfigurado && !bloque){
+        const el = document.createElement('div');
+        el.className = 'block-overlay';
+        el.style.top = '0px'; el.style.height = totalHeight + 'px';
+        el.innerHTML = '<div class="bo-label">No disponible</div>';
+        col.appendChild(el);
+      } else if(bloque){
+        if(bloque.startMin > START_HOUR*60){
+          const h = Math.floor(bloque.startMin/60), m = bloque.startMin%60;
+          const el = document.createElement('div');
+          el.className = 'block-overlay';
+          el.style.top = '0px'; el.style.height = timeToTop(h,m) + 'px';
+          el.innerHTML = '<div class="bo-label">No disponible</div>';
+          col.appendChild(el);
+        }
+        if(bloque.endMin < END_HOUR*60){
+          const h = Math.floor(bloque.endMin/60), m = bloque.endMin%60;
+          const top = timeToTop(h,m);
+          const el = document.createElement('div');
+          el.className = 'block-overlay';
+          el.style.top = top + 'px'; el.style.height = (totalHeight - top) + 'px';
+          el.innerHTML = '<div class="bo-label">No disponible</div>';
+          col.appendChild(el);
+        }
+      }
+
+      mrReservasDelDia(iso).forEach(r=>{
+        const meta = serviceMeta(r.svc);
+        const start = parseSlot(r.slot);
+        const end = addMinutes(start[0], start[1], meta.mins);
+        const top = timeToTop(start[0], start[1]);
+        const bottom = timeToTop(end[0], end[1]);
+        const status = mrEstadoDe(r);
+
+        const el = document.createElement('div');
+        el.className = `appt ${meta.type} ${apptStatusClass(status)}`;
+        el.style.top = top + 'px';
+        el.style.height = Math.max(bottom-top, 34) + 'px';
+        el.innerHTML = `
+          <div class="appt-top">
+            <span class="appt-client">${escapeHTML(r.client || 'Cliente web')}</span>
+            <span class="appt-time">${String(start[0]).padStart(2,'0')}:${String(start[1]).padStart(2,'0')}</span>
+          </div>
+          <div class="appt-service">${escapeHTML(r.svc || '')}</div>
+          <div class="appt-bottom"><div class="appt-bottom-left"><span class="status-dot ${status}"></span></div></div>`;
+        el.addEventListener('click', ()=> openDrawer(mrRawToApt(r)));
+        col.appendChild(el);
+      });
+    }
+  }
+
+  function mrRenderLista(fechaInicioISO){
+    const cont = document.getElementById('mrListaWrap');
+    const inicio = new Date(fechaInicioISO + 'T12:00:00');
+    let html = '';
+    for(let i=0; i<7; i++){
+      const d = new Date(inicio);
+      d.setDate(d.getDate() + i);
+      const iso = d.toISOString().slice(0,10);
+      const reservas = mrReservasDelDia(iso).sort((a,b)=> (a.slot||'').localeCompare(b.slot||''));
+
+      html += `<div>
+        <h3 style="font-size:13px;font-weight:600;margin:0 0 8px;color:var(--text-mid);text-transform:uppercase;">
+          ${DIAS_CORTOS[d.getDay()]} · ${fmtFecha(iso)}
+        </h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">`;
+      if(!reservas.length){
+        html += '<div class="cx-empty">Sin citas este día.</div>';
+      } else {
+        reservas.forEach(r=>{
+          const estado = mrEstadoDe(r);
+          const chipClase = (estado==='asistio' || estado==='done') ? 'sent' : (estado==='no' ? 'none' : 'wait');
+          html += `<div class="rc-item mr-item" style="flex-direction:column;align-items:stretch;gap:6px;cursor:pointer;" data-mr-id="${escapeHTML(r.id)}">
+            <div style="display:flex;justify-content:space-between;gap:10px;">
+              <b>${escapeHTML(r.slot || '')} · ${escapeHTML(r.client || 'Cliente web')}</b>
+              <span class="rc-chip ${chipClase}">${MR_ESTADOS[estado] || estado}</span>
+            </div>
+            <span style="color:#57565f;font-size:12.5px;">${escapeHTML(r.svc || '')}${r.price ? ' · $' + Number(r.price).toLocaleString('es-CL') : ''}</span>
+          </div>`;
+        });
+      }
+      html += `</div></div>`;
+    }
+    cont.innerHTML = html;
+    cont.querySelectorAll('[data-mr-id]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const r = firestoreBookings.find(x=> x.id === el.dataset.mrId);
+        if(r) openDrawer(mrRawToApt(r));
+      });
+    });
+  }
+
+  document.getElementById('btnMisReservas').addEventListener('click', mostrarMisReservas);
+  document.getElementById('mrBtnSemana').addEventListener('click', ()=>{ mrModo='semana'; mrRender(); });
+  document.getElementById('mrBtnDia').addEventListener('click', ()=>{ mrModo='dia'; mrRender(); });
+  document.getElementById('mrBtnLista').addEventListener('click', ()=>{ mrModo='lista'; mrRender(); });
+  document.getElementById('mrHoy').addEventListener('click', ()=>{ mrFecha = new Date().toISOString().slice(0,10); mrRender(); });
+  document.getElementById('mrPrev').addEventListener('click', ()=> mrCambiar(-1));
+  document.getElementById('mrNext').addEventListener('click', ()=> mrCambiar(1));
+
   function volverAgenda(){
+    // Para un barbero, "vistaAgenda" es el calendario completo de admin
+    // (todos los profesionales, + Nueva reserva, Bloquear día) -- nunca
+    // debe llegar ahí. "Mis comisiones" es ahora su pantalla de inicio
+    // (ver irAlInicio), así que "volver" tiene más sentido llevándolo a
+    // "Mis reservas" (su propia agenda) que de vuelta al mismo lugar.
+    if(userRole === 'BARBER'){ mostrarMisReservas(); return; }
     document.getElementById('vistaComisiones').style.display = 'none';
     document.getElementById('vistaAgenda').style.display = '';
     document.getElementById('kpiRow').style.display = '';
@@ -9210,12 +9769,47 @@
   });
 
   /* ===== Mi perfil ===== */
-  function mostrarMiPerfil(){
+  let mpStaffDoc = null; // cache del doc de staff/{uid} mientras el modal está abierto
+  function mpPintarAvatar(url){
+    const el = document.getElementById('mpAvatarPreview');
+    if(url){ el.style.backgroundImage = `url("${url}")`; el.textContent = ''; }
+    else { el.style.backgroundImage = ''; el.textContent = (userBarberName || '?').split(' ').slice(0,2).map(w=> w[0]).join('').toUpperCase(); }
+  }
+
+  async function mostrarMiPerfil(){
     document.getElementById('mpNombre').value = userBarberName || auth.currentUser?.displayName || '';
     document.getElementById('mpCorreo').value = auth.currentUser?.email || '';
+    mpCambiarTab('perfil');
     abrirModal('modalMiPerfil');
+
+    try{
+      const doc = await db.collection('staff').doc(auth.currentUser.uid).get();
+      mpStaffDoc = doc.exists ? doc.data() : {};
+    }catch(e){ mpStaffDoc = {}; }
+
+    mpPintarAvatar(mpStaffDoc.photoUrl);
+    document.getElementById('mpdNombreLegal').value = mpStaffDoc.nombreLegal || '';
+    document.getElementById('mpdApellidoLegal').value = mpStaffDoc.apellidoLegal || '';
+    document.getElementById('mpdRut').value = mpStaffDoc.rut || '';
+    document.getElementById('mpdTipoCuenta').value = mpStaffDoc.tipoCuenta || '';
+    document.getElementById('mpdNumeroCuenta').value = mpStaffDoc.numeroCuenta || '';
+    document.getElementById('mpdBanco').value = mpStaffDoc.banco || '';
+    document.getElementById('mpdCorreoTransferencias').value = mpStaffDoc.correoTransferencias || '';
+
+    await mpCargarPortafolio();
   }
   document.getElementById('btnMiPerfil').addEventListener('click', mostrarMiPerfil);
+
+  function mpCambiarTab(tab){
+    document.querySelectorAll('#modalMiPerfil [data-mptab]').forEach(b=>
+      b.classList.toggle('on', b.dataset.mptab === tab));
+    document.getElementById('mpTabPerfil').style.display = tab === 'perfil' ? '' : 'none';
+    document.getElementById('mpTabDatos').style.display = tab === 'datos' ? '' : 'none';
+    document.getElementById('mpTabPortafolio').style.display = tab === 'portafolio' ? '' : 'none';
+  }
+  document.querySelectorAll('#modalMiPerfil [data-mptab]').forEach(b=>
+    b.addEventListener('click', ()=> mpCambiarTab(b.dataset.mptab)));
+
   document.getElementById('mpGuardar').addEventListener('click', async ()=>{
     const nombre = document.getElementById('mpNombre').value.trim();
     if(!nombre) return showToast('Escribe tu nombre');
@@ -9230,6 +9824,114 @@
       await auth.sendPasswordResetEmail(auth.currentUser.email);
       showToast('Te mandamos un correo para cambiar tu contraseña');
     }catch(e){ showToast('No se pudo enviar el correo: ' + (e.message || 'error')); }
+  });
+
+  /* ---- Foto de perfil: mismo path siempre, para que subir una nueva
+     reemplace la anterior en vez de acumular archivos huérfanos. ---- */
+  document.getElementById('mpSubirFoto').addEventListener('click', ()=>
+    document.getElementById('mpFotoArchivo').click());
+  document.getElementById('mpFotoArchivo').addEventListener('change', async (ev)=>{
+    const file = ev.target.files[0];
+    if(!file) return;
+    try{
+      const blob = await redimensionarImagen(file);
+      const ref = storage.ref(`staffPhotos/${auth.currentUser.uid}/avatar.jpg`);
+      await ref.put(blob, { contentType:'image/jpeg' });
+      const url = await ref.getDownloadURL();
+      await db.collection('staff').doc(auth.currentUser.uid).set({ photoUrl: url }, { merge:true });
+      mpPintarAvatar(url);
+      showToast('Foto de perfil actualizada');
+    }catch(e){ showToast('No se pudo subir la foto: ' + e.message); }
+    ev.target.value = '';
+  });
+
+  /* ---- Datos bancarios: alimentan el pago real de la comisión. ---- */
+  document.getElementById('mpdGuardar').addEventListener('click', async ()=>{
+    const datos = {
+      nombreLegal: document.getElementById('mpdNombreLegal').value.trim(),
+      apellidoLegal: document.getElementById('mpdApellidoLegal').value.trim(),
+      rut: document.getElementById('mpdRut').value.trim(),
+      tipoCuenta: document.getElementById('mpdTipoCuenta').value,
+      numeroCuenta: document.getElementById('mpdNumeroCuenta').value.trim(),
+      banco: document.getElementById('mpdBanco').value,
+      correoTransferencias: document.getElementById('mpdCorreoTransferencias').value.trim(),
+    };
+    try{
+      await db.collection('staff').doc(auth.currentUser.uid).set(datos, { merge:true });
+      showToast('Datos guardados');
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || 'error')); }
+  });
+
+  /* ---- Portafolio: archivos y/o notas, visibles en el perfil público. ---- */
+  async function mpCargarPortafolio(){
+    const cont = document.getElementById('mpfLista');
+    cont.innerHTML = '<div class="cx-empty">Cargando...</div>';
+    try{
+      const snap = await db.collection('staffPortfolio').where('uid', '==', auth.currentUser.uid).get();
+      const items = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+        .sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+      cont.innerHTML = items.length ? items.map(it=> `
+        <div class="rc-item" style="align-items:flex-start;">
+          <div style="flex:1;">
+            ${it.titulo ? `<b>${escapeHTML(it.titulo)}</b><br>` : ''}
+            ${it.type === 'file'
+              ? `<a href="${it.url}" target="_blank" rel="noopener" style="color:var(--accent);">Ver archivo</a>`
+              : `<span style="color:#57565f;font-size:12.5px;">${escapeHTML(it.texto||'')}</span>`}
+          </div>
+          <button class="mg-btn ghost" data-mpfdel="${it.id}" style="padding:4px 10px;font-size:11px;">Eliminar</button>
+        </div>`).join('') : '<div class="cx-empty">Todavía no agregaste nada a tu portafolio.</div>';
+      cont.querySelectorAll('[data-mpfdel]').forEach(btn=>
+        btn.addEventListener('click', ()=> mpEliminarPortafolio(btn.dataset.mpfdel)));
+    }catch(e){
+      cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+    }
+  }
+
+  async function mpEliminarPortafolio(id){
+    try{
+      await db.collection('staffPortfolio').doc(id).delete();
+      await mpCargarPortafolio();
+    }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+  }
+
+  document.getElementById('mpfSubirArchivo').addEventListener('click', ()=>
+    document.getElementById('mpfArchivo').click());
+  document.getElementById('mpfArchivo').addEventListener('change', async (ev)=>{
+    const file = ev.target.files[0];
+    if(!file) return;
+    const titulo = document.getElementById('mpfTitulo').value.trim();
+    try{
+      let blob = file, contentType = file.type || 'application/octet-stream';
+      if(file.type.startsWith('image/')){ blob = await redimensionarImagen(file); contentType = 'image/jpeg'; }
+      const ruta = `staffPortfolio/${auth.currentUser.uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g,'_')}`;
+      const ref = storage.ref(ruta);
+      await ref.put(blob, { contentType });
+      const url = await ref.getDownloadURL();
+      await db.collection('staffPortfolio').add({
+        uid: auth.currentUser.uid, barberName: userBarberName || '',
+        type: 'file', titulo, url, path: ruta, createdAt: new Date().toISOString(),
+      });
+      document.getElementById('mpfTitulo').value = '';
+      showToast('Archivo agregado a tu portafolio');
+      await mpCargarPortafolio();
+    }catch(e){ showToast('No se pudo subir el archivo: ' + e.message); }
+    ev.target.value = '';
+  });
+
+  document.getElementById('mpfAgregarNota').addEventListener('click', async ()=>{
+    const titulo = document.getElementById('mpfTitulo').value.trim();
+    const texto = document.getElementById('mpfNota').value.trim();
+    if(!texto) return showToast('Escribe una nota primero');
+    try{
+      await db.collection('staffPortfolio').add({
+        uid: auth.currentUser.uid, barberName: userBarberName || '',
+        type: 'nota', titulo, texto, createdAt: new Date().toISOString(),
+      });
+      document.getElementById('mpfTitulo').value = '';
+      document.getElementById('mpfNota').value = '';
+      showToast('Nota agregada a tu portafolio');
+      await mpCargarPortafolio();
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
   /* ===== Mensajería WhatsApp (panel informativo) ===== */
@@ -12340,6 +13042,10 @@
     document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
     document.getElementById('dWhatsapp').style.display = verContacto ? '' : 'none';
     document.getElementById('btnFicha').style.display = verContacto ? '' : 'none';
+    // Fotos del cliente (historial de cortes anteriores): un barbero sí
+    // puede verlas y subir nuevas -- distinto de "Ficha" (arriba), que trae
+    // teléfono/correo/historial de compras y es exclusivo de admin/recepción.
+    document.getElementById('btnFotosBarbero').style.display = userRole === 'BARBER' ? '' : 'none';
     document.getElementById('menuWa').style.display = verContacto ? '' : 'none';
 
     const puedeGestionarCita = userRole === 'ADMIN' || userRole === 'RECEPTION';
@@ -12347,6 +13053,10 @@
     document.getElementById('btnEditarCita').style.display = puedeGestionarCita ? '' : 'none';
     document.getElementById('statusPills').style.opacity = puedeGestionarCita ? '' : '0.5';
     document.getElementById('statusPills').style.pointerEvents = puedeGestionarCita ? '' : 'none';
+    // Cobrar/abonar/cambiar método de pago: solo admin y recepción. Un
+    // barbero solo mira su propia reserva, nunca gestiona el cobro desde
+    // acá -- antes este botón quedaba visible para cualquier rol.
+    document.getElementById('paymentBtn').style.display = puedeGestionarCita ? '' : 'none';
 
     document.getElementById('dNota').value = a.notaAdmin || '';
     document.getElementById('dNota').readOnly = !puedeGestionarCita;
@@ -12579,6 +13289,10 @@
   document.getElementById('btnFicha').addEventListener('click', ()=>{
     if(!currentAppt) return;
     abrirFichaCliente(currentAppt);
+  });
+  document.getElementById('btnFotosBarbero').addEventListener('click', ()=>{
+    if(!currentAppt) return;
+    abrirFotosCliente(currentAppt.client);
   });
 
   /* ---------- Fotos del cliente: cualquier barbero puede subir y ver ---------- */
