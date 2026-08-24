@@ -971,20 +971,24 @@
     100%{box-shadow:0 0 0 0 rgba(74,92,240,0);}
   }
   .appt-web-new{animation:apptIn .3s ease, webPulse 2s ease 3;}
-  .appt-web-new::after{
-    content:'WEB'; position:absolute; top:6px; right:8px;
-    font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:8px; letter-spacing:0.06em;
-    background:#4a5cf0; color:#fff; padding:2px 5px; border-radius:4px;
-  }
+  /* Tamaño y proporciones medidas directo del AgendaPro real de la
+     administradora (radio, franja izquierda, tipografía, alto de fila) --
+     no aproximado, copiado del DOM real. */
   .appt{
-    position:absolute;left:5px;right:5px;background:var(--panel);z-index:2;
-    border:1px solid var(--border);border-radius:7px;
-    padding:2px 7px;min-height:26px;cursor:pointer;overflow:hidden;
+    position:absolute;left:3px;right:3px;background:var(--panel);z-index:2;
+    border:none;border-radius:3px;
+    padding:2px 4px 2px 14px;min-height:22px;cursor:pointer;overflow:hidden;
     box-shadow:var(--shadow-sm);
     transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
     animation:apptIn .32s cubic-bezier(.2,.8,.2,1) both;
   }
-  .appt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;}
+  .appt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:12px;}
+  /* "A" (abono pagado) o "$" (pagado completo) sobre la franja izquierda --
+     misma bandera venga el abono de Webpay o registrado presencial. */
+  .appt-badge{
+    position:absolute;left:0;top:50%;transform:translateY(-50%);width:12px;text-align:center;
+    font-family:var(--font-primary);font-size:9px;font-weight:700;color:#fff;pointer-events:none;
+  }
   .appt.svc-corte{background:var(--corte-tint);} .appt.svc-corte::before{background:var(--corte);}
   .appt.svc-cejas{background:var(--cejas-tint);} .appt.svc-cejas::before{background:var(--cejas);}
   .appt.svc-onda{background:var(--onda-tint);}   .appt.svc-onda::before{background:var(--onda);}
@@ -999,11 +1003,14 @@
   .appt.st-asistio{background:var(--asistio-tint);} .appt.st-asistio::before{background:var(--asistio);}
   .appt.st-no{background:var(--no-tint);} .appt.st-no::before{background:var(--no);}
   .appt:hover{transform:translateY(-1px);box-shadow:var(--shadow-hover);border-color:var(--border-strong);z-index:8;}
-  .appt-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px;}
-  .appt-client{font-size:10.5px;font-weight:700;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .appt-time{font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:8.5px;color:var(--text-mid);flex:0 0 auto;}
-  .appt-service{font-size:9px;color:var(--text-mid);margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.01em;}
-  .appt-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:2px;}
+  /* Nombre / servicio / hora apilados en 3 líneas, mismo tamaño y alto de
+     línea que AgendaPro (12px / 13px) -- ya no nombre+hora en la misma
+     línea como antes. */
+  .appt-top{display:flex;flex-direction:column;}
+  .appt-client{font-size:11px;font-weight:600;line-height:13px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appt-service{font-size:11px;font-weight:400;line-height:13px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .appt-time{font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:11px;line-height:13px;color:var(--text-mid);}
+  .appt-bottom{display:none;}
   .appt-bottom-left{display:flex;align-items:center;gap:5px;min-width:0;}
   .status-dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;}
   .status-dot.ok{background:var(--ok);} .status-dot.pend{background:var(--pend);}
@@ -1011,6 +1018,19 @@
   .status-dot.new{background:var(--corte);} .status-dot.resched{background:#e2836f;}
   .status-dot.reservado{background:var(--reservado);} .status-dot.asistio{background:var(--asistio);}
   .status-txt{font-size:9.5px;color:var(--text-low);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* Tooltip flotante al pasar el mouse por una reserva. */
+  .appt-hover{
+    position:fixed;z-index:120;width:216px;background:#fff;border-radius:12px;
+    padding:12px 14px;box-shadow:var(--shadow-lg);border:1px solid var(--border);
+    opacity:0;transform:translateY(3px);pointer-events:none;
+    transition:opacity .12s ease, transform .12s ease;
+  }
+  .appt-hover.open{opacity:1;transform:translateY(0);}
+  .appt-hover-nombre{font-family:var(--font-primary);font-size:13.5px;font-weight:700;color:var(--text-hi);margin-bottom:2px;}
+  .appt-hover-servicio{font-size:12px;color:var(--text-mid);margin-bottom:8px;}
+  .appt-hover-fila{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-hi);margin-top:6px;}
+  .appt-hover-fila svg{width:14px;height:14px;flex:0 0 auto;color:var(--text-low);}
+  .appt-hover-fila .status-dot{width:8px;height:8px;}
   .appt-price{font-family:var(--font-primary); font-variant-numeric:tabular-nums;font-size:9.5px;color:var(--text-mid);flex:0 0 auto;}
   .appt-quick{
     position:absolute;top:6px;right:6px;display:flex;gap:3px;
@@ -5104,7 +5124,7 @@
 
   pintarColumnas();
 
-  const START_HOUR=10, END_HOUR=21, SLOT_H = window.innerWidth <= 600 ? 64 : 38;
+  const START_HOUR=10, END_HOUR=21, SLOT_H = window.innerWidth <= 600 ? 64 : 35;
   const timeCol = document.getElementById('timeCol');
   for(let h=START_HOUR; h<=END_HOUR; h++){
     const div=document.createElement('div');
@@ -5353,6 +5373,16 @@
     }[c]));
   }
 
+  /** Quita emojis del texto crudo (nombre de cliente/servicio a veces
+   *  vienen con uno escrito a mano) antes de mostrarlo en la tarjeta de
+   *  la agenda -- ahí se ve como ruido, no como algo intencional. */
+  function stripEmoji(texto){
+    return String(texto ?? '')
+      .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}️]/gu, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
   const colCounters = {1:0,2:0,3:0,4:0,5:0};
   function renderAppointment(a, idx){
     const col = document.getElementById('col'+a.col);
@@ -5372,22 +5402,22 @@
     el.dataset.idx = idx;
 
     const statusLabel = tagLabels[a.status] || '';
+    const badge = a.pagado ? '$' : ((a.depositoPagado || a.abono) ? 'A' : '');
     el.innerHTML = `
+      ${badge ? `<span class="appt-badge">${badge}</span>` : ''}
       <div class="appt-quick">
         <button class="wa" title="WhatsApp" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.7 14.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.5-.6-2.7-1.2-4.4-3.9-4.6-4.1-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.4.2.5.7 1.7.8 1.9.1.1.1.3 0 .5-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.8c.2-.3.4-.2.7-.1l1.6.8c.2.1.4.2.5.3.1.2.1.9-.1 1.5z"/></svg></button>
         <button class="done" title="Marcar asistencia" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></button>
       </div>
       <div class="appt-top">
-        <div class="appt-client">${escapeHTML(a.client)}</div>
+        <div class="appt-client">${escapeHTML(stripEmoji(a.client))}</div>
+        <div class="appt-service">${escapeHTML(stripEmoji(a.service))}</div>
         <div class="appt-time">${s}–${e}</div>
-      </div>
-      <div class="appt-service">${escapeHTML(a.service)}</div>
-      <div class="appt-bottom">
-        <div class="appt-bottom-left"><span class="status-dot ${a.status}"></span><span class="status-txt">${statusLabel}</span></div>
-        <span class="appt-price">${a.price}</span>
       </div>
     `;
     el.addEventListener('click', ()=>openDrawer(a));
+    el.addEventListener('mouseenter', ()=> apptHoverMostrar(el, a));
+    el.addEventListener('mouseleave', apptHoverOcultar);
     el.querySelector('.wa').addEventListener('click', (ev)=>{
       ev.stopPropagation();
       const waNumber = (a.phone || '').replace(/[^0-9]/g,'');
@@ -5799,9 +5829,16 @@
       if(r.fecha !== currentDate) return;      // solo el día que se está viendo -- si no, se mezclan citas de otras fechas en el mismo horario y se ven "encimadas"
 
       const meta = serviceMeta(r.svc);
+      // Duración real de ESTA reserva (guardada al crearla), no una
+      // adivinanza por el nombre del servicio -- serviceMeta().mins solo
+      // sirve de respaldo para reservas viejas que no la tengan guardada.
+      // Antes SIEMPRE usaba la adivinanza, así que un servicio de 120 min
+      // con un nombre que no calzara con ningún patrón quedaba mostrado
+      // como si durara 45 min en la agenda.
+      const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
       const col = pickColumn(r.barber);
       const start = parseSlot(r.slot);
-      const end = addMinutes(start[0], start[1], meta.mins);
+      const end = addMinutes(start[0], start[1], duracionReal);
       const barberName = BARBER_COL[r.barber]
         ? r.barber
         : (barbers.find(b=> b.id===col) || {}).name;
@@ -5820,6 +5857,10 @@
         fromWeb: true,
         abono: r.abono ? '$' + Number(r.abono).toLocaleString('es-CL') : undefined,
         abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha,
+        // depositoPagado: misma bandera tanto si el anticipo se pagó por
+        // Webpay como si se registró presencial (ver paymentMovements.js) --
+        // así la franja A/$ de la tarjeta no depende de por cuál camino vino.
+        depositoPagado: r.depositoPagado || false,
         pagado: r.pagado || false, metodoPago: r.metodoPago,
         montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
         notaAdmin: r.notaAdmin || '',
@@ -7311,8 +7352,9 @@
       // citas reales de ese día
       sbCitasDelDia(iso, b.name).forEach(r=>{
         const meta = serviceMeta(r.svc);
+        const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
         const start = parseSlot(r.slot);
-        const end = addMinutes(start[0], start[1], meta.mins);
+        const end = addMinutes(start[0], start[1], duracionReal);
         const top = timeToTop(start[0], start[1]);
         const bottom = timeToTop(end[0], end[1]);
         const status = r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend'));
@@ -7323,10 +7365,10 @@
         el.style.height = Math.max(bottom-top, 34) + 'px';
         el.innerHTML = `
           <div class="appt-top">
-            <span class="appt-client">${r.client || 'Cliente web'}</span>
+            <span class="appt-client">${escapeHTML(stripEmoji(r.client || 'Cliente web'))}</span>
+            <span class="appt-service">${escapeHTML(stripEmoji(r.svc || ''))}</span>
             <span class="appt-time">${String(start[0]).padStart(2,'0')}:${String(start[1]).padStart(2,'0')}</span>
           </div>
-          <div class="appt-service">${r.svc || ''}</div>
           <div class="appt-bottom"><div class="appt-bottom-left"><span class="status-dot ${status}"></span></div></div>`;
         col.appendChild(el);
       });
@@ -12520,6 +12562,50 @@
   function apptStatusClass(status){
     if(status === 'done') return 'st-asistio';
     return ['reservado','pend','asistio','no'].includes(status) ? 'st-' + status : '';
+  }
+
+  /* Tooltip al pasar el mouse por una reserva (sin hacer clic) -- mismo
+     comportamiento que AgendaPro: nombre, servicio, estado, hora, teléfono
+     y estado de pago, en un solo elemento flotante reusado por toda la
+     agenda (se reposiciona en cada hover, igual que slotPopover). */
+  const apptHoverBox = document.createElement('div');
+  apptHoverBox.className = 'appt-hover';
+  document.body.appendChild(apptHoverBox);
+  let apptHoverTimer = null;
+
+  function apptHoverMostrar(el, a){
+    clearTimeout(apptHoverTimer);
+    apptHoverTimer = setTimeout(()=>{
+      const s = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
+      const e = String(a.end[0]).padStart(2,'0')+':'+String(a.end[1]).padStart(2,'0');
+      const statusLabel = tagLabels[a.status] || '';
+      const pagoTxt = a.pagado ? 'Pagado' : ((a.depositoPagado || a.abono) ? 'Abono pagado' : 'Pendiente');
+      apptHoverBox.innerHTML = `
+        <div class="appt-hover-nombre">${escapeHTML(a.client)}</div>
+        <div class="appt-hover-servicio">${escapeHTML(a.service)}</div>
+        <div class="appt-hover-fila"><span class="status-dot ${a.status}"></span>${statusLabel}</div>
+        <div class="appt-hover-fila">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          ${s} - ${e}
+        </div>
+        ${a.phone ? `<div class="appt-hover-fila">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
+          ${escapeHTML(a.phone)}
+        </div>` : ''}
+        <div class="appt-hover-fila">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          ${pagoTxt}
+        </div>
+      `;
+      const r = el.getBoundingClientRect();
+      apptHoverBox.style.left = Math.min(r.right + 8, window.innerWidth - 232) + 'px';
+      apptHoverBox.style.top = Math.max(8, r.top) + 'px';
+      apptHoverBox.classList.add('open');
+    }, 220);
+  }
+  function apptHoverOcultar(){
+    clearTimeout(apptHoverTimer);
+    apptHoverBox.classList.remove('open');
   }
   const tagLabelEl = document.getElementById('tagLabel');
   function placeTagLabel(){
