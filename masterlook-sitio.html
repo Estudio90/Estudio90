@@ -3903,8 +3903,16 @@
   const payMethod = 'Webpay';
   const nameInput = document.getElementById('cName');
   const phoneInput = document.getElementById('cPhone');
-  [nameInput, phoneInput].forEach(inp=> inp.addEventListener('input', checkConfirmar));
-  function datosListos(){ return !!(nameInput.value.trim() && phoneInput.value.trim() && payMethod); }
+  const emailInputReserva = document.getElementById('cEmail');
+  [nameInput, phoneInput, emailInputReserva].forEach(inp=> inp.addEventListener('input', checkConfirmar));
+  // El correo es obligatorio de verdad (la página ya lo dice: "te
+  // enviaremos la confirmación de tu reserva y los detalles del pago") --
+  // antes el botón se habilitaba igual sin él, y esa reserva quedaba sin
+  // forma de avisarle al cliente ni de que el panel lo mostrara.
+  function datosListos(){
+    return !!(nameInput.value.trim() && phoneInput.value.trim() && payMethod
+      && /^\S+@\S+\.\S+$/.test(emailInputReserva.value.trim()));
+  }
   function checkConfirmar(){
     document.getElementById('confirmBtn').classList.toggle('not-ready', !datosListos());
     actualizarBarra();
@@ -3912,7 +3920,11 @@
   /** Si falta un dato obligatorio, sube la vista hasta ese campo y lo enfoca
    *  en vez de dejar el botón inerte sin ninguna pista de qué falta. */
   function llevarAlDatoFaltante(){
-    const falta = !nameInput.value.trim() ? nameInput : !phoneInput.value.trim() ? phoneInput : null;
+    const emailValido = /^\S+@\S+\.\S+$/.test(emailInputReserva.value.trim());
+    const falta = !nameInput.value.trim() ? nameInput
+      : !phoneInput.value.trim() ? phoneInput
+      : !emailValido ? emailInputReserva
+      : null;
     if(!falta) return false;
     falta.closest('.dp-field')?.scrollIntoView({ behavior:'smooth', block:'center' });
     falta.focus();
