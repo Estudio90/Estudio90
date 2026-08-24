@@ -59,6 +59,26 @@
     --reservado:#3b8fa3; --asistio:#d64fb0;
     --reservado-tint:#e2f0f2; --pend-tint:#faf1e0; --asistio-tint:#f9e2f3; --no-tint:#fbe7e7;
     --amber:#c98a2e;
+
+    /* Resumen de Ventas -- identidad real de Master Look (la misma del
+       sitio público: negro cálido + crema + dorado antiguo), en vez de la
+       paleta morada/pastel genérica de dashboard que tenía antes. */
+    --rv-ink:#1A1815; --rv-ink-soft:#5b564a;
+    --rv-cream:#f6f0e2; --rv-cream-deep:#ece0c3;
+    --rv-line:rgba(26,24,21,.14);
+    --rv-taupe:#8a8272; --rv-taupe-soft:#e8e3d6;
+    --rv-grey-soft:#f0f0ef;
+    --rv-terracotta:#a85c3f; --rv-terracotta-soft:#f3ded4;
+    --rv-moss:#5c6b3f; --rv-moss-soft:#e2e6d3;
+    --rv-rose:#8a3f4a; --rv-rose-soft:#f0dcdd;
+
+    /* Servicio/Producto/Curso -- paleta copiada exacta de la referencia que
+       mandó la administradora (captura "Medios de pago"): naranja/durazno,
+       rojo coral, morado -- para las donas y las pills de la tabla de abajo. */
+    --rv-pastel-red:#F2685C; --rv-pastel-red-soft:#fde3e0; --rv-pastel-red-ink:#c14a3f;
+    --rv-pastel-yellow:#FFC98C; --rv-pastel-yellow-soft:#fdedd9; --rv-pastel-yellow-ink:#b3792f;
+    --rv-pastel-purple:#A47FC4; --rv-pastel-purple-soft:#ece3f4; --rv-pastel-purple-ink:#7955a0;
+
     --radius:16px;
     --radius-sm:10px;
     --shadow-sm:0 1px 2px rgba(15,15,20,0.04), 0 1px 1px rgba(15,15,20,0.03);
@@ -1450,65 +1470,110 @@
     .pc-actions{justify-content:flex-start;}
   }
 
-  /* ===== Resumen de Ventas ===== */
+  /* ===== Resumen de Ventas -- identidad real de Master Look (ver PRODUCT.md
+     y .impeccable/): negro cálido / crema / dorado antiguo, la misma marca
+     ya establecida en el sitio público, en vez de la paleta morada/pastel
+     genérica de dashboard que tenía esta vista antes. Visual únicamente --
+     ningún cálculo, filtro ni dato cambia. ===== */
   .rv-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
-  .rv-title{font-size:26px;font-weight:700;margin:0;color:#1A1815;}
-  .rv-sub{font-size:13px;color:#8a8a92;margin:4px 0 0;}
+  .rv-title{font-family:var(--font-primary);font-size:27px;font-weight:700;margin:0;color:var(--rv-ink);letter-spacing:-.015em;}
+  .rv-sub{font-family:var(--font-body);font-size:13px;color:var(--rv-ink-soft);margin:4px 0 0;}
   .rv-head-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-  .rv-pill-input{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e7e7ec;border-radius:10px;padding:8px 12px;font-size:13px;color:#333;}
-  .rv-pill-input input[type=date]{border:none;background:transparent;font-size:12.5px;color:#333;padding:0;width:104px;}
-  .rv-select{background:#fff;border:1px solid #e7e7ec;border-radius:10px;padding:9px 14px;font-size:13px;color:#333;min-width:150px;}
-  .rv-btn-primary{background:linear-gradient(180deg,#8477f2,#6a5adf);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 10px rgba(108,92,231,0.25);white-space:nowrap;transition:transform .12s ease-out, filter .12s ease;}
-  .rv-btn-primary:hover{filter:brightness(1.05);}
+  /* Los controles nativos (date/select/button) no heredan la tipografía de
+     la página por defecto -- el navegador les pone su propia fuente de
+     sistema, así que sin esto quedan "genéricos" aunque el resto de la
+     vista use la tipografía real de Master Look. */
+  .rv-pill-input{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--rv-line);border-radius:10px;padding:8px 12px;font-family:var(--font-primary);font-size:13px;font-weight:600;letter-spacing:-.005em;color:var(--rv-ink);}
+  .rv-pill-input input[type=date]{border:none;background:transparent;font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:600;color:var(--rv-ink);padding:0;width:104px;}
+  .rv-select{background:#fff;border:1px solid var(--rv-line);border-radius:10px;padding:9px 14px;font-family:var(--font-primary);font-size:13px;font-weight:600;letter-spacing:-.005em;color:var(--rv-ink);min-width:150px;}
+  /* Mismo vidrio líquido de la placa Total Facturado -- gris oscuro
+     translúcido, blur y brillo arriba-izquierda -- para que los botones
+     oscuros de esta vista compartan un solo lenguaje, no dos negros distintos. */
+  .rv-btn-primary{
+    position:relative;overflow:hidden;
+    background:linear-gradient(160deg, rgba(72,72,78,.92) 0%, rgba(32,32,36,.94) 55%, rgba(24,24,27,.96) 100%);
+    -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+    color:#fff;border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:10px 18px;
+    font-family:var(--font-primary);font-size:13px;font-weight:600;letter-spacing:-.005em;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 4px 12px rgba(26,24,21,0.22);
+    transition:transform .12s ease-out, filter .12s ease;
+  }
+  .rv-btn-primary::before{
+    content:"";position:absolute;top:-60%;left:-20%;width:65%;height:170%;pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.2), rgba(255,255,255,0) 70%);
+  }
+  .rv-btn-primary>*{position:relative;}
+  .rv-btn-primary:hover{filter:brightness(1.18);}
   .rv-btn-primary:active:not(:disabled){transform:scale(.97);}
   .rv-btn-primary:disabled{opacity:.6;cursor:default;}
-  .rv-btn-ghost{background:#fff;border:1px solid #e7e7ec;color:#4a4a52;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .12s ease-out, border-color .12s ease;}
+  .rv-btn-ghost{background:#fff;border:1px solid var(--rv-line);color:var(--rv-ink-soft);border-radius:10px;padding:9px 16px;font-family:var(--font-primary);font-size:13px;font-weight:600;letter-spacing:-.005em;cursor:pointer;transition:transform .12s ease-out, border-color .12s ease;}
   .rv-btn-ghost:active{transform:scale(.97);}
 
-  .rv-kpi-card{display:flex;background:#fff;border:1px solid #eee;border-radius:16px;padding:22px 26px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.03);flex-wrap:wrap;}
-  .rv-kpi-block{display:flex;align-items:center;gap:12px;flex:1;min-width:150px;padding:0 20px;}
-  .rv-kpi-block+.rv-kpi-block{border-left:1px solid #f0f0f0;}
-  .rv-kpi-block.rv-kpi-main{flex-direction:column;align-items:flex-start;gap:6px;padding-left:0;}
-  .rv-kpi-label{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.04em;color:#9a9aa2;text-transform:uppercase;}
-  .rv-kpi-value-lg{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:34px;font-weight:700;color:#1A1815;line-height:1.1;letter-spacing:-.01em;}
-  .rv-kpi-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;color:#1A1815;letter-spacing:-.01em;}
-  .rv-kpi-sub{font-family:var(--font-body);font-size:11px;color:#9a9aa2;margin-top:2px;}
-  .rv-kpi-delta{font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-block;}
-  .rv-kpi-delta.up{color:#1f9d55;background:#e8f8ee;}
-  .rv-kpi-delta.down{color:#c0455e;background:#fbeaec;}
-  .rv-icon-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .rv-kpi-card{display:flex;background:#fff;border:1px solid var(--rv-line);border-radius:16px;padding:10px 26px;margin-bottom:16px;box-shadow:0 2px 10px rgba(26,24,21,0.05);flex-wrap:wrap;}
+  .rv-kpi-block{display:flex;align-items:center;gap:12px;flex:1;min-width:150px;padding:20px;}
+  .rv-kpi-block+.rv-kpi-block{border-left:1px solid var(--rv-line);}
+  /* El KPI principal (Total Facturado) es la tesis de la vista -- una
+     placa oscura que se lee primero, no otra tarjeta más de la fila. */
+  /* "Gota de agua": vidrio líquido -- gris oscuro translúcido, blur, y un
+     brillo suave arriba a la izquierda como el reflejo de una gota, en vez
+     de un panel plano de un solo color sólido. */
+  .rv-kpi-block.rv-kpi-main{
+    flex-direction:column;align-items:flex-start;gap:7px;position:relative;overflow:hidden;
+    background:linear-gradient(160deg, rgba(72,72,78,.92) 0%, rgba(32,32,36,.94) 55%, rgba(24,24,27,.96) 100%);
+    -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px);
+    border-radius:22px;margin:10px;padding:22px 24px;border-left:none;
+    border:1px solid rgba(255,255,255,.09);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 40px rgba(255,255,255,.03), 0 12px 34px rgba(10,10,12,.28);
+  }
+  /* El "brillo" de la gota: un óvalo de luz suave flotando arriba-izquierda. */
+  .rv-kpi-block.rv-kpi-main::before{
+    content:"";position:absolute;top:-30%;left:-15%;width:70%;height:80%;pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.16), rgba(255,255,255,0) 70%);
+  }
+  .rv-kpi-block.rv-kpi-main>*{position:relative;}
+  .rv-kpi-label{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--rv-ink-soft);text-transform:uppercase;}
+  .rv-kpi-main .rv-kpi-label{color:#fff;opacity:.72;}
+  .rv-kpi-value-lg{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:42px;font-weight:700;color:#fff;line-height:1.05;letter-spacing:-.02em;}
+  .rv-kpi-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;color:var(--rv-ink);letter-spacing:-.01em;}
+  .rv-kpi-sub{font-family:var(--font-body);font-size:11px;color:var(--rv-ink-soft);margin-top:2px;}
+  .rv-kpi-delta{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-block;}
+  .rv-kpi-delta.up{color:#2f7d4f;background:rgba(70,150,100,.16);}
+  .rv-kpi-delta.down{color:#e0c4a0;background:rgba(255,255,255,.1);}
+  .rv-icon-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--rv-ink);}
+  .rv-icon-circle svg{width:18px;height:18px;}
 
-  .rv-filtros-card{display:flex;align-items:flex-end;gap:16px;background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 22px;margin-bottom:16px;flex-wrap:wrap;}
+  .rv-filtros-card{display:flex;align-items:flex-end;gap:16px;background:#fff;border:1px solid var(--rv-line);border-radius:16px;padding:18px 22px;margin-bottom:16px;flex-wrap:wrap;}
   .rv-filtro-col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:170px;}
-  .rv-filtro-col label{font-size:12px;font-weight:600;color:#6b6b74;}
+  .rv-filtro-col label{font-size:12px;font-weight:600;color:var(--rv-ink-soft);}
 
   .rv-charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
-  .rv-chart-card{background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 20px;}
-  .rv-chart-title{font-size:14px;font-weight:700;margin:0 0 12px;color:#1A1815;display:flex;justify-content:space-between;align-items:center;}
-  .rv-chip-select{border:1px solid #e7e7ec;border-radius:20px;padding:5px 12px;font-size:12px;background:#fff;}
+  .rv-chart-card{background:#fff;border:1px solid var(--rv-line);border-radius:16px;padding:18px 20px;}
+  .rv-chart-title{font-family:var(--font-primary);font-size:14px;font-weight:700;margin:0 0 12px;color:var(--rv-ink);display:flex;justify-content:space-between;align-items:center;}
+  .rv-chip-select{border:1px solid var(--rv-line);border-radius:20px;padding:5px 12px;font-family:var(--font-primary);font-size:12px;font-weight:600;background:#fff;color:var(--rv-ink-soft);}
 
-  .rv-tablebox-wrap{background:#fff;border:1px solid #eee;border-radius:16px;overflow:hidden;}
+  .rv-tablebox-wrap{background:#fff;border:1px solid var(--rv-line);border-radius:16px;overflow:hidden;}
   .rv-tabla-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;}
   .rv-tabs{display:flex;gap:22px;}
-  .rv-tab{background:none;border:none;padding:8px 2px 12px;font-size:14px;font-weight:600;color:#9a9aa2;cursor:pointer;border-bottom:2px solid transparent;transition:color 150ms ease, border-color 150ms ease;}
-  .rv-tab.on{color:#6a5adf;border-bottom-color:#6a5adf;}
-  .rv-total-general{font-family:var(--font-body);font-size:14px;color:#6b6b74;}
-  .rv-total-general b{font-family:var(--font-primary);font-variant-numeric:tabular-nums;color:#1f9d55;}
+  .rv-tab{background:none;border:none;padding:8px 2px 12px;font-family:var(--font-primary);font-size:14px;font-weight:600;letter-spacing:-.005em;color:var(--rv-ink-soft);cursor:pointer;border-bottom:2px solid transparent;transition:color 150ms ease, border-color 150ms ease;}
+  .rv-tab.on{color:var(--rv-ink);border-bottom-color:var(--rv-ink);}
+  .rv-total-general{font-family:var(--font-body);font-size:14px;color:var(--rv-ink-soft);}
+  .rv-total-general b{font-family:var(--font-primary);font-variant-numeric:tabular-nums;color:#2f7d4f;}
   .rv-tablebox-wrap table.cx-table td,.rv-tablebox-wrap table.cx-table th{font-family:var(--font-body);}
   .rv-tablebox-wrap table.cx-table td.r{font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
   .rv-tablebox-wrap table.cx-table{border:none;border-radius:0;}
 
   .rv-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
-  .rv-pill-servicio{background:#fde3e8;color:#c0455e;}
-  .rv-pill-producto{background:#fdecd6;color:#b3721f;}
-  .rv-pill-curso{background:#e1f5e9;color:#1f9d55;}
-  .rv-pill-metodo{background:#eef1fb;color:#4a5bd0;}
+  .rv-pill-servicio{background:var(--rv-pastel-red-soft);color:var(--rv-pastel-red-ink);}
+  .rv-pill-producto{background:var(--rv-pastel-yellow-soft);color:var(--rv-pastel-yellow-ink);}
+  .rv-pill-curso{background:var(--rv-pastel-purple-soft);color:var(--rv-pastel-purple-ink);}
+  .rv-pill-metodo{background:var(--rv-grey-soft);color:var(--rv-ink-soft);}
 
-  .rv-bottom-card{display:flex;background:#fff;border:1px solid #eee;border-radius:16px;padding:18px 24px;flex-wrap:wrap;margin-top:16px;}
+  .rv-bottom-card{display:flex;background:#fff;border:1px solid var(--rv-line);border-radius:16px;padding:18px 24px;flex-wrap:wrap;margin-top:16px;}
   .rv-bottom-item{display:flex;align-items:center;gap:12px;flex:1;min-width:150px;padding:0 16px;}
-  .rv-bottom-item+.rv-bottom-item{border-left:1px solid #f0f0f0;}
-  .rv-bottom-label{font-family:var(--font-body);font-size:12px;color:#9a9aa2;}
-  .rv-bottom-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:16px;font-weight:700;color:#1A1815;letter-spacing:-.005em;}
+  .rv-bottom-item+.rv-bottom-item{border-left:1px solid var(--rv-line);}
+  .rv-bottom-label{font-family:var(--font-body);font-size:12px;color:var(--rv-ink-soft);}
+  .rv-bottom-value{font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:16px;font-weight:700;color:var(--rv-ink);letter-spacing:-.005em;}
 
   .rv-fade-in{animation:rvFadeIn 300ms ease-out both;}
   @keyframes rvFadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
@@ -1523,7 +1588,8 @@
   @media (max-width: 980px){
     .rv-charts-row{grid-template-columns:1fr;}
     .rv-kpi-card,.rv-bottom-card{flex-direction:column;}
-    .rv-kpi-block,.rv-bottom-item{border-left:none!important;padding:10px 0;border-top:1px solid #f0f0f0;}
+    .rv-kpi-block,.rv-bottom-item{border-left:none!important;padding:10px 0;border-top:1px solid var(--rv-line);}
+    .rv-kpi-block.rv-kpi-main{border-top:none;margin:10px 0;}
     .rv-kpi-block:first-child,.rv-bottom-item:first-child{border-top:none;}
     .rv-filtros-card{flex-direction:column;align-items:stretch;}
   }
@@ -1708,10 +1774,10 @@
 
       <div class="rv-kpi-card rv-fade-in" id="rvKpis"></div>
       <div class="rv-fade-in" style="display:flex;justify-content:flex-end;margin:-8px 0 16px;animation-delay:40ms;">
-        <div style="background:#fff;border:1px solid #eee;border-radius:12px;padding:8px 16px;font-size:12.5px;color:#6b6b74;display:flex;gap:10px;align-items:center;">
-          <span>🧧 <b id="rvPropinasValor" style="color:#1A1815;">$0</b> Propinas recibidas</span>
-          <span style="color:#c7c7cf;">·</span>
-          <span title="Total Facturado + Propinas -- solo para conciliación interna, nunca reemplaza Total Facturado">Dinero total ingresado: <b id="rvDineroTotalValor" style="color:#1A1815;">$0</b></span>
+        <div style="background:#fff;border:1px solid var(--rv-line);border-radius:12px;padding:8px 16px;font-size:12.5px;color:var(--rv-ink-soft);display:flex;gap:10px;align-items:center;">
+          <span>🧧 <b id="rvPropinasValor" style="color:var(--rv-ink);">$0</b> Propinas recibidas</span>
+          <span style="color:var(--rv-line);">·</span>
+          <span title="Total Facturado + Propinas -- solo para conciliación interna, nunca reemplaza Total Facturado">Dinero total ingresado: <b id="rvDineroTotalValor" style="color:var(--rv-ink);">$0</b></span>
         </div>
       </div>
 
@@ -4415,8 +4481,25 @@
    */
   let rvUltimoResultado = null;
   let rvTabActiva = 'ventas'; // 'ventas' | 'internas' -- filtra SOLO la tabla, nunca los KPIs/donas/línea
-  const RV_COLORES_TIPO = { servicio:'#e0526b', producto:'#e0a23d', curso:'#2fa360' };
-  const RV_PALETA_METODO = ['#f0b13d','#9aa0ae','#e0526b','#5b6bd9','#2fa360','#3b8fa3','#a3702f','#7a4fa3'];
+  // Misma paleta cálida (terracota/dorado/musgo) del resto de Resumen de
+  // Ventas -- ver las variables --rv-* en :root -- en vez del set morado/
+  // pastel genérico que tenía antes.
+  // Set de íconos propios (trazo único, 1.7px, sin relleno) en vez de emojis
+  // -- un emoji como ícono es exactamente la señal de "genérico/IA" que se
+  // pidió corregir acá.
+  const RV_ICONS = {
+    bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+    ticket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><line x1="12" y1="7" x2="12" y2="17" stroke-dasharray="2 2"/></svg>',
+    scissors: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><line x1="8" y1="7.5" x2="19" y2="17"/><line x1="8" y1="16.5" x2="19" y2="7"/></svg>',
+    cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 4h2.5l2.7 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21.5 8H6.4"/></svg>',
+    cap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-4 10 4-10 4-10-4z"/><path d="M6 11v4c0 1.3 2.7 2.5 6 2.5s6-1.2 6-2.5v-4"/><path d="M22 9v6"/></svg>',
+    coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="6" y1="12" x2="6" y2="12.01"/><line x1="18" y1="12" x2="18" y2="12.01"/></svg>',
+    medal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7 21l5-2.5 5 2.5-2-7.5"/></svg>',
+  };
+  // Paleta copiada exacta de la referencia que mandó la administradora
+  // (captura "Medios de pago"): naranja/durazno, gris, rojo coral, morado.
+  const RV_COLORES_TIPO = { servicio:'#FFC98C', producto:'#F2685C', curso:'#A47FC4' };
+  const RV_PALETA_METODO = ['#FFC98C','#D6D6D6','#F2685C','#A47FC4','#8a8272','#5c6b3f','#5b564a','#c48a6f'];
 
   function mostrarResumenVentas(){
     ['vistaAgenda','vistaColores','vistaUsuarios','vistaCursos','vistaAccesosCursos','vistaTestimonios',
@@ -4493,19 +4576,19 @@
   }
 
   function rvBottomItem(icono, label, valor){
-    return `<div class="rv-bottom-item"><span class="rv-icon-circle" style="background:#f2f0fb;">${icono}</span>
+    return `<div class="rv-bottom-item"><span class="rv-icon-circle" style="background:var(--rv-grey-soft);">${icono}</span>
       <div><div class="rv-bottom-label">${label}</div><div class="rv-bottom-value">${valor}</div></div></div>`;
   }
   function rvPintarResumenInferior(d){
     const pct = (v)=> d.totalFacturado ? Math.round(v/d.totalFacturado*100) : 0;
     const el = document.getElementById('rvResumenInferior');
     el.innerHTML = [
-      rvBottomItem('💰','Total facturado', money(d.totalFacturado)),
-      rvBottomItem('✂️','Ventas servicios', `${money(d.servicios)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.servicios)}%)</span>`),
-      rvBottomItem('🛒','Ventas productos', `${money(d.productos)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.productos)}%)</span>`),
-      rvBottomItem('🎓','Ventas cursos', `${money(d.cursos)} <span style="color:#9a9aa2;font-weight:500;">(${pct(d.cursos)}%)</span>`),
-      rvBottomItem('🎫','Tickets', d.cantidadVentas),
-      rvBottomItem('🏅','Ticket promedio', money(d.ticketPromedio)),
+      rvBottomItem(RV_ICONS.coin,'Total facturado', money(d.totalFacturado)),
+      rvBottomItem(RV_ICONS.scissors,'Ventas servicios', `${money(d.servicios)} <span style="color:var(--rv-ink-soft);font-weight:500;">(${pct(d.servicios)}%)</span>`),
+      rvBottomItem(RV_ICONS.cart,'Ventas productos', `${money(d.productos)} <span style="color:var(--rv-ink-soft);font-weight:500;">(${pct(d.productos)}%)</span>`),
+      rvBottomItem(RV_ICONS.cap,'Ventas cursos', `${money(d.cursos)} <span style="color:var(--rv-ink-soft);font-weight:500;">(${pct(d.cursos)}%)</span>`),
+      rvBottomItem(RV_ICONS.ticket,'Tickets', d.cantidadVentas),
+      rvBottomItem(RV_ICONS.medal,'Ticket promedio', money(d.ticketPromedio)),
     ].join('');
     rvReanimar(el);
   }
@@ -4538,11 +4621,11 @@
         <div class="rv-kpi-value-lg">${money(d.totalFacturado)}</div>
         ${variacionHtml}
       </div>
-      ${rvKpiBlock({label:'Ventas', valor:d.cantidadVentas, sub:'Total de ventas', icono:'🛍️', bg:'#efeafc'})}
-      ${rvKpiBlock({label:'Ticket promedio', valor:money(d.ticketPromedio), sub:filtrado?'Parcial (método filtrado)':'Por transacción', icono:'🎖️', bg:'#e5f0fb'})}
-      ${rvKpiBlock({label:'Servicios', valor:money(d.servicios), sub:(d.totalFacturado?Math.round(d.servicios/d.totalFacturado*100):0)+'% del total', icono:'✂️', bg:'#fde3e8'})}
-      ${rvKpiBlock({label:'Productos', valor:money(d.productos), sub:(d.totalFacturado?Math.round(d.productos/d.totalFacturado*100):0)+'% del total', icono:'🛒', bg:'#fdecd6'})}
-      ${rvKpiBlock({label:'Cursos', valor:money(d.cursos), sub:(d.totalFacturado?Math.round(d.cursos/d.totalFacturado*100):0)+'% del total', icono:'🎓', bg:'#e1f5e9'})}
+      ${rvKpiBlock({label:'Ventas', valor:d.cantidadVentas, sub:'Total de ventas', icono:RV_ICONS.bag, bg:'var(--rv-grey-soft)'})}
+      ${rvKpiBlock({label:'Ticket promedio', valor:money(d.ticketPromedio), sub:filtrado?'Parcial (método filtrado)':'Por transacción', icono:RV_ICONS.medal, bg:'var(--rv-grey-soft)'})}
+      ${rvKpiBlock({label:'Servicios', valor:money(d.servicios), sub:(d.totalFacturado?Math.round(d.servicios/d.totalFacturado*100):0)+'% del total', icono:RV_ICONS.scissors, bg:'var(--rv-terracotta-soft)'})}
+      ${rvKpiBlock({label:'Productos', valor:money(d.productos), sub:(d.totalFacturado?Math.round(d.productos/d.totalFacturado*100):0)+'% del total', icono:RV_ICONS.cart, bg:'var(--rv-taupe-soft)'})}
+      ${rvKpiBlock({label:'Cursos', valor:money(d.cursos), sub:(d.totalFacturado?Math.round(d.cursos/d.totalFacturado*100):0)+'% del total', icono:RV_ICONS.cap, bg:'var(--rv-moss-soft)'})}
     `;
     rvReanimar(kpisEl);
     document.getElementById('rvTotalGeneral').innerHTML = `Total general: <b>${money(rvTotalTabla(d))}</b>`;
@@ -4568,17 +4651,17 @@
       return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${e.color}" stroke-width="${grosor}" stroke-dasharray="${largo} ${circunferencia-largo}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
     }).join('');
     const svg = `<svg viewBox="0 0 180 180" width="180" height="180">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#ececec" stroke-width="${grosor}"></circle>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#ece0c3" stroke-width="${grosor}"></circle>
       ${arcos}
-      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="600">${totalTexto}</text>
-      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="10" fill="#888">Total</text>
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="-.01em" style="font-variant-numeric:tabular-nums;" fill="#1A1815">${totalTexto}</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9.5" letter-spacing=".04em" fill="#8a8272">TOTAL</text>
     </svg>`;
     const leyenda = entries.map(e=>{
       const pct = total > 0 ? Math.round(e.value/total*100) : 0;
-      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;">
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;color:#1A1815;">
         <span style="width:10px;height:10px;border-radius:50%;background:${e.color};display:inline-block;flex-shrink:0;"></span>
         <span style="flex:1;">${e.label}</span><span style="font-weight:600;">${money(e.value)}</span>
-        <span style="color:#888;width:40px;text-align:right;">${pct}%</span>
+        <span style="color:#5b564a;width:40px;text-align:right;">${pct}%</span>
       </div>`;
     }).join('');
     return `<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
@@ -4616,21 +4699,21 @@
     });
     const path = puntos.map((p,i)=> (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
     const area = path + ` L${puntos[puntos.length-1].x.toFixed(1)},${h-padB} L${puntos[0].x.toFixed(1)},${h-padB} Z`;
-    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#6a5adf"><title>${p.d.fecha}: ${money(p.d.monto)}</title></circle>`).join('');
+    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#1A1815"><title>${p.d.fecha}: ${money(p.d.monto)}</title></circle>`).join('');
     const saltoEje = Math.max(1, Math.ceil(puntos.length/8));
     const ejeX = puntos.filter((_,i)=> i % saltoEje === 0).map(p=>
-      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" fill="#9a9aa2">${p.d.fecha.slice(5)}</text>`).join('');
+      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" style="font-variant-numeric:tabular-nums;" fill="#5b564a">${p.d.fecha.slice(5)}</text>`).join('');
     const pasosY = 4;
     const ejeY = Array.from({length:pasosY+1}, (_, i)=>{
       const valor = Math.round(max*i/pasosY);
       const y = h-padB - (i/pasosY)*(h-padT-padB);
-      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" fill="#9a9aa2">${money(valor)}</text>
-              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#f2f2f5" stroke-width="1"></line>`;
+      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" style="font-variant-numeric:tabular-nums;" fill="#5b564a">${money(valor)}</text>
+              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#f1e9d6" stroke-width="1"></line>`;
     }).join('');
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="max-width:100%;">
       ${ejeY}
-      <path d="${area}" fill="#6a5adf1f"></path>
-      <path d="${path}" fill="none" stroke="#6a5adf" stroke-width="2.5"></path>
+      <path d="${area}" fill="#1A18151a"></path>
+      <path d="${path}" fill="none" stroke="#1A1815" stroke-width="2.5"></path>
       ${puntosSvg}${ejeX}
     </svg>`;
   }
