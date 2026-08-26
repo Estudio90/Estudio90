@@ -3361,6 +3361,36 @@
 <!-- ============ Modales de gestión ============ -->
 <div class="mg-overlay" id="mgOverlay"></div>
 
+<!-- Confirmación genérica -- reemplaza confirm()/alert() nativos (bloqueados
+     en silencio por Chrome en el panel). Un solo modal reusado por
+     mgConfirm(), ver JS. -->
+<div class="mg-modal" id="modalMgConfirm">
+  <div class="mg-head">
+    <h3 id="mgConfirmTitulo">Confirmar</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note" id="mgConfirmTexto" style="margin-bottom:16px; white-space:pre-line;"></p>
+  <div style="display:flex; gap:10px;">
+    <button class="mg-btn ghost" id="mgConfirmCancelar" data-close style="flex:1;">Cancelar</button>
+    <button class="mg-btn solid" id="mgConfirmAceptar" style="flex:1;">Confirmar</button>
+  </div>
+</div>
+
+<!-- Entrada de texto genérica -- reemplaza prompt() nativo. Un solo modal
+     reusado por mgPrompt(), ver JS. -->
+<div class="mg-modal" id="modalMgPrompt">
+  <div class="mg-head">
+    <h3 id="mgPromptTitulo">Ingresa un valor</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note" id="mgPromptTexto" style="margin-bottom:10px;"></p>
+  <input type="text" id="mgPromptInput" class="mg-input" style="margin-bottom:16px; width:100%;">
+  <div style="display:flex; gap:10px;">
+    <button class="mg-btn ghost" id="mgPromptCancelar" data-close style="flex:1;">Cancelar</button>
+    <button class="mg-btn solid" id="mgPromptAceptar" style="flex:1;">Aceptar</button>
+  </div>
+</div>
+
 <!-- Nueva reserva desde el local -->
 <div class="mg-modal" id="modalReserva">
   <div class="mg-head">
@@ -3967,6 +3997,9 @@
       <div class="field-label" style="margin-top:14px;">Barbero</div>
       <select id="editBarbero" class="mg-input"></select>
 
+      <div class="field-label" style="margin-top:14px;">Fecha</div>
+      <input type="date" id="editFecha" class="mg-input">
+
       <div class="field-label" style="margin-top:14px;">Hora</div>
       <input type="time" id="editHora" class="mg-input">
     </div>
@@ -4146,7 +4179,11 @@
      La clave nunca se guarda ni se compara en este archivo: Firebase
      la valida en su servidor y solo nos avisa si la sesión es válida.
      ========================================================== */
-  const firebaseConfig = {
+  // Producción: estudio90.github.io (GitHub Pages). Cualquier otro host
+  // (el dominio de Firebase Hosting de staging, o localhost en pruebas)
+  // usa el proyecto de staging -- mismo criterio que masterlook-sitio.html.
+  const ES_STAGING = location.hostname !== 'estudio90.github.io';
+  const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",
     projectId: "estudio90",
@@ -4154,7 +4191,30 @@
     messagingSenderId: "420826163402",
     appId: "1:420826163402:web:d5020ca2069637e193ec33",
   };
+  const FIREBASE_CONFIG_STAGING = {
+    apiKey: "AIzaSyDUPboJlJIUdR36JNN3CkPeiZ0WYsvXeiI",
+    authDomain: "estudio90-dev.firebaseapp.com",
+    projectId: "estudio90-dev",
+    storageBucket: "estudio90-dev.firebasestorage.app",
+    messagingSenderId: "892931716452",
+    appId: "1:892931716452:web:97b93c65e782e1521ab671",
+  };
+  const firebaseConfig = ES_STAGING ? FIREBASE_CONFIG_STAGING : FIREBASE_CONFIG_PROD;
   firebase.initializeApp(firebaseConfig);
+  // Base para llamar Cloud Functions HTTP directas (fetch, no callable) y
+  // para armar enlaces absolutos al sitio -- mismo criterio que
+  // masterlook-sitio.html.
+  const FUNCTIONS_BASE = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`;
+  const SITE_BASE = ES_STAGING ? 'https://estudio90-dev.web.app' : 'https://estudio90.github.io/Estudio90';
+  /** Único paso obligatorio antes de escribir en la colección `mail` desde
+   *  el panel -- en producción no hace nada; en staging antepone
+   *  "[STAGING] " al asunto (el destinatario real SÍ recibe el correo, a
+   *  propósito, para poder probar el flujo completo con cualquier
+   *  dirección real durante las pruebas). */
+  function prepararCorreoCliente(payload){
+    if(!ES_STAGING) return payload;
+    return { ...payload, message:{ ...(payload.message||{}), subject:`[STAGING] ${payload.message?.subject||''}` } };
+  }
   // App Check: misma protección que el sitio del cliente (ver ahí el detalle).
   // Usa la misma clave de reCAPTCHA v3, porque el panel vive en el mismo
   // dominio (estudio90.github.io).
@@ -4241,7 +4301,8 @@
   function enviarCorreoReserva(reserva, estado, motivo){
     if(!reserva.email) return;
     const { subject, html, text } = plantillaCorreoReserva(reserva, estado, motivo);
-    db.collection('mail').add({ to:[reserva.email], message:{ subject, html, text } }).catch(()=>{});
+    const correoReserva = prepararCorreoCliente({ to:[reserva.email], message:{ subject, html, text } });
+    if(correoReserva) db.collection('mail').add(correoReserva).catch(()=>{});
   }
 
   /** Comprobante de pago: mismo diseño que los otros correos, con el detalle del cobro. */
@@ -4269,7 +4330,8 @@
         </div>
       </div>`;
     const text = `Hola ${corto}, este es tu comprobante de pago.\n\nServicio: ${a.service}\nMétodo de pago: ${metodoLabel}\nTotal pagado: ${total}\n\nMASTERLOOK · +56 9 4912 4645`;
-    db.collection('mail').add({ to:[a.email], message:{ subject:'MASTERLOOK · Comprobante de pago', html, text } }).catch(()=>{});
+    const correoComprobante = prepararCorreoCliente({ to:[a.email], message:{ subject:'MASTERLOOK · Comprobante de pago', html, text } });
+    if(correoComprobante) db.collection('mail').add(correoComprobante).catch(()=>{});
   }
 
   /** Al cobrar una cita (ya atendida y pagada), invitamos por correo a
@@ -4280,7 +4342,7 @@
   function enviarCorreoCalificacion(a){
     if(!a.email) return;
     const corto = (a.client || '').split(' ')[0];
-    const link = 'https://estudio90.github.io/Estudio90/?resena=1&nombre=' + encodeURIComponent(a.client || '') + '#resenas';
+    const link = SITE_BASE + '/?resena=1&nombre=' + encodeURIComponent(a.client || '') + '#resenas';
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#faf8f4;">
         <div style="background:#1A1815;padding:28px 24px;text-align:center;">
@@ -4295,7 +4357,8 @@
         </div>
       </div>`;
     const text = `Hola ${corto}, ¡gracias por venir a MASTERLOOK!\n\n¿Cómo estuvo tu ${a.service || 'visita'} con ${a.barber || 'nosotros'}?\n\nCalifícanos aquí: ${link}\n\nMASTERLOOK · +56 9 4912 4645`;
-    db.collection('mail').add({ to:[a.email], message:{ subject:'MASTERLOOK · ¿Cómo estuvo tu visita?', html, text } }).catch(()=>{});
+    const correoEncuesta = prepararCorreoCliente({ to:[a.email], message:{ subject:'MASTERLOOK · ¿Cómo estuvo tu visita?', html, text } });
+    if(correoEncuesta) db.collection('mail').add(correoEncuesta).catch(()=>{});
   }
 
   /** Agrega una tarjeta flotante al contenedor de avisos: se cierra sola a
@@ -5244,6 +5307,17 @@
     barbers.forEach(b=>{
       const c = document.getElementById('col' + b.id);
       if(c) c.style.display = b.active === false ? 'none' : '';
+    });
+
+    // El HTML trae 5 columnas fijas de origen (col1..col5, de cuando el
+    // negocio tenía exactamente 5 barberos hardcodeados). Cualquier columna
+    // que ya no corresponda a NINGÚN barbero real (activo o inactivo) queda
+    // oculta -- si no, sigue ocupando un espacio en el grid que ya no está
+    // contado en `cols` de arriba, y con menos de 5 barberos la grilla se
+    // envuelve en una fila extra y tapa/desalinea las reservas reales.
+    const idsConocidos = new Set(barbers.map(b=> String(b.id)));
+    document.querySelectorAll('#gridBody .col').forEach(c=>{
+      if(!idsConocidos.has(String(c.dataset.barber))) c.style.display = 'none';
     });
   }
 
@@ -6253,13 +6327,70 @@
     mgOverlay.classList.add('open');
     document.getElementById(id).classList.add('open');
   }
+  let mgConfirmResolver = null;
+  let mgPromptResolver = null;
   function cerrarModales(){
     mgOverlay.classList.remove('open');
     document.querySelectorAll('.mg-modal').forEach(m=> m.classList.remove('open'));
+    // Cualquier camino de cierre (botón, overlay, Escape) debe resolver un
+    // mgConfirm()/mgPrompt() pendiente -- igual que confirm()/prompt()
+    // nativos devuelven false/null si se cancelan de cualquier forma.
+    if(mgConfirmResolver){ const r = mgConfirmResolver; mgConfirmResolver = null; r(false); }
+    if(mgPromptResolver){ const r = mgPromptResolver; mgPromptResolver = null; r(null); }
   }
   mgOverlay.addEventListener('click', cerrarModales);
   document.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', cerrarModales));
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarModales(); });
+
+  /** Reemplaza confirm() nativo (Chrome lo bloquea en silencio dentro del
+   *  panel -- ver CLAUDE.md). Mismo contrato: Promise<boolean>, true solo si
+   *  se presiona "Confirmar". opts.titulo personaliza el encabezado,
+   *  opts.textoConfirmar el texto del botón, opts.soloOk oculta "Cancelar"
+   *  (para usarlo también como reemplazo de alert()). */
+  function mgConfirm(mensaje, opts={}){
+    return new Promise(resolve=>{
+      document.getElementById('mgConfirmTitulo').textContent = opts.titulo || 'Confirmar';
+      document.getElementById('mgConfirmTexto').textContent = mensaje;
+      const btnOk = document.getElementById('mgConfirmAceptar');
+      const btnCancel = document.getElementById('mgConfirmCancelar');
+      btnOk.textContent = opts.textoConfirmar || 'Confirmar';
+      btnCancel.style.display = opts.soloOk ? 'none' : '';
+      mgConfirmResolver = resolve;
+      abrirModal('modalMgConfirm');
+    });
+  }
+  function mgAlert(mensaje, opts={}){
+    return mgConfirm(mensaje, { ...opts, soloOk: true, textoConfirmar: opts.textoConfirmar || 'Aceptar' });
+  }
+  document.getElementById('mgConfirmAceptar').addEventListener('click', ()=>{
+    const r = mgConfirmResolver; mgConfirmResolver = null;
+    cerrarModales();
+    if(r) r(true);
+  });
+
+  /** Reemplaza prompt() nativo. Mismo contrato: Promise<string|null>, null
+   *  solo si se cancela (igual que el nativo). */
+  function mgPrompt(mensaje, valorPorDefecto, opts={}){
+    return new Promise(resolve=>{
+      document.getElementById('mgPromptTitulo').textContent = opts.titulo || 'Ingresa un valor';
+      document.getElementById('mgPromptTexto').textContent = mensaje;
+      const inp = document.getElementById('mgPromptInput');
+      inp.value = valorPorDefecto != null ? valorPorDefecto : '';
+      inp.type = opts.tipo || 'text';
+      mgPromptResolver = resolve;
+      abrirModal('modalMgPrompt');
+      setTimeout(()=> inp.focus(), 50);
+    });
+  }
+  document.getElementById('mgPromptAceptar').addEventListener('click', ()=>{
+    const r = mgPromptResolver; mgPromptResolver = null;
+    const val = document.getElementById('mgPromptInput').value;
+    cerrarModales();
+    if(r) r(val);
+  });
+  document.getElementById('mgPromptInput').addEventListener('keydown', e=>{
+    if(e.key === 'Enter') document.getElementById('mgPromptAceptar').click();
+  });
 
   /** Al hacer clic en "Master Look" del topbar: cierra todo y vuelve a la agenda con las reservas. */
   function irAlInicio(){
@@ -6374,7 +6505,7 @@
    *  fecha si existe, bloqueos, y horario propio de cada profesional --
    *  todo calculado una sola vez en el servidor (ver disponibilidad.js). */
   async function nrObtenerOcupacionReal(fecha){
-    const resp = await fetch('https://us-central1-estudio90.cloudfunctions.net/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
+    const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
     if(!resp.ok){
       // Se guarda el motivo real (status + cuerpo) en consola -- así, si
       // vuelve a fallar, se puede ver la causa exacta en vez de adivinar.
@@ -6738,7 +6869,7 @@
   }
 
   async function quitarBloqueo(id){
-    if(!confirm('¿Quitar este bloqueo?')) return;
+    if(!(await mgConfirm('¿Quitar este bloqueo?'))) return;
     try{
       await db.collection('blocks').doc(id).delete();
       showToast('Bloqueo eliminado');
@@ -7887,7 +8018,7 @@
   async function desactivarServicio(row){
     const id = row.dataset.id;
     const nombre = row.querySelector('[data-f=name]').value;
-    if(!confirm(`¿Desactivar "${nombre}"?\n\nDeja de aparecer en el sitio, pero las reservas antiguas se conservan.`)) return;
+    if(!(await mgConfirm(`¿Desactivar "${nombre}"?\n\nDeja de aparecer en el sitio, pero las reservas antiguas se conservan.`))) return;
 
     if(MODE === 'api'){
       try{ await api('/manage/services/' + id, { method:'DELETE' }); }
@@ -7903,10 +8034,10 @@
   }
 
   document.getElementById('cfgAddServicio').addEventListener('click', async ()=>{
-    const nombre = prompt('Nombre del nuevo servicio:');
+    const nombre = await mgPrompt('Nombre del nuevo servicio:');
     if(!nombre) return;
-    const precio = Number(prompt('Precio en pesos (solo números):', '15000'));
-    const mins = Number(prompt('Duración en minutos:', '45'));
+    const precio = Number(await mgPrompt('Precio en pesos (solo números):', '15000'));
+    const mins = Number(await mgPrompt('Duración en minutos:', '45'));
     if(!precio || !mins) return showToast('Precio y duración son obligatorios');
 
     if(MODE === 'api'){
@@ -7945,10 +8076,10 @@
 
         // si tiene citas ese día, avisamos antes
         const suyas = appointments.filter(a=> a.barber === b.name).length;
-        if(b.active && suyas && !confirm(
+        if(b.active && suyas && !(await mgConfirm(
           `${b.name} tiene ${suyas} cita(s) en la agenda de este día.\n\n` +
           `Al quitarlo dejará de aparecer y no se le podrán asignar reservas nuevas. ¿Continuar?`
-        )) return;
+        ))) return;
 
         if(MODE === 'api'){
           try{
@@ -9721,7 +9852,8 @@
       let enviados = 0;
       for(const email of correos){
         try{
-          await db.collection('mail').add({ to:[email], message:{ subject: asunto, html, text: cuerpo } });
+          const correoCampana = prepararCorreoCliente({ to:[email], message:{ subject: asunto, html, text: cuerpo } });
+          if(correoCampana) await db.collection('mail').add(correoCampana);
           enviados++;
         }catch(e){}
       }
@@ -11447,9 +11579,9 @@
   }
 
   document.getElementById('cuNuevo').addEventListener('click', async ()=>{
-    const nombre = prompt('Nombre del nuevo curso:');
+    const nombre = await mgPrompt('Nombre del nuevo curso:');
     if(!nombre) return;
-    const precio = Number(prompt('Precio en pesos:', '50000'));
+    const precio = Number(await mgPrompt('Precio en pesos:', '50000'));
     if(!precio && precio !== 0) return showToast('Necesitas indicar un precio');
 
     if(MODE === 'api'){
@@ -12183,9 +12315,9 @@
 
   async function usToggle(u){
     const activo = u.active !== false;
-    if(!confirm(activo
+    if(!(await mgConfirm(activo
       ? `¿Quitar el acceso de ${u.name}?\n\nNo podrá entrar al panel, pero su historial se conserva.`
-      : `¿Devolverle el acceso a ${u.name}?`)) return;
+      : `¿Devolverle el acceso a ${u.name}?`))) return;
 
     if(MODE === 'api'){
       try{
@@ -12208,12 +12340,12 @@
   }
 
   async function usNuevaClave(u){
-    if(!confirm(`¿Enviarle a ${u.name} un correo para definir una contraseña nueva?`)) return;
+    if(!(await mgConfirm(`¿Enviarle a ${u.name} un correo para definir una contraseña nueva?`))) return;
 
     if(MODE === 'api'){
       try{
         const r = await api(`/users/${u.id}/reset-password`, { method:'POST' });
-        alert(`Nueva contraseña de ${u.name}:\n\n${r.claveTemporal}\n\nTambién se la enviamos por correo.`);
+        await mgAlert(`Nueva contraseña de ${u.name}:\n\n${r.claveTemporal}\n\nTambién se la enviamos por correo.`);
       }catch(e){ showToast(e.message); }
       return;
     }
@@ -12355,7 +12487,7 @@
   }
 
   async function eliminarArco(id){
-    if(!confirm('¿Eliminar esta solicitud?')) return;
+    if(!(await mgConfirm('¿Eliminar esta solicitud?'))) return;
     try{
       await db.collection('arcoRequests').doc(id).delete();
       arcoCache = arcoCache.filter(r=> r.id !== id);
@@ -12416,7 +12548,7 @@
   }
 
   async function eliminarPromo(id){
-    if(!confirm('¿Eliminar esta promoción del sitio?')) return;
+    if(!(await mgConfirm('¿Eliminar esta promoción del sitio?'))) return;
     try{ await db.collection('promos').doc(id).delete(); showToast('Promoción eliminada'); }
     catch(e){ showToast('No se pudo eliminar: ' + e.message); }
   }
@@ -12561,7 +12693,7 @@
     for(const r of pendientes){
       if(r.email){
         const { subject, html, text } = plantillaCorreoReserva(bookingParaAviso(r), 'recordatorio');
-        try{ await db.collection('mail').add({ to:[r.email], message:{ subject, html, text } }); conCorreo++; }catch(e){}
+        try{ const correoRecordatorio = prepararCorreoCliente({ to:[r.email], message:{ subject, html, text } }); if(correoRecordatorio){ await db.collection('mail').add(correoRecordatorio); conCorreo++; } }catch(e){}
       }
       try{ await db.collection('bookings').doc(r.id).update({ recordatorioEnviado: true }); }catch(e){}
     }
@@ -12730,7 +12862,7 @@
   document.getElementById('btnEliminarCita').addEventListener('click', async ()=>{
     const a = currentAppt;
     if(!a) return;
-    if(!confirm(`¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`)) return;
+    if(!(await mgConfirm(`¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`))) return;
 
     if(a.fromWeb && a.webId){
       try{ await db.collection('bookings').doc(a.webId).delete(); }
@@ -12766,6 +12898,7 @@
     if(barberoActual) document.getElementById('editBarbero').value = barberoActual.id;
     document.getElementById('editHora').value =
       String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
+    document.getElementById('editFecha').value = a.fecha || currentDate;
 
     detailView.classList.remove('open');
     editView.classList.add('open');
@@ -12783,21 +12916,25 @@
     const servicio = cfgServicios.find(s=> s.id === document.getElementById('editServicio').value);
     const barbero = cfgBarberos.find(b=> b.id === document.getElementById('editBarbero').value);
     const hora = document.getElementById('editHora').value;
-    if(!servicio || !barbero || !hora){ showToast('Completa servicio, barbero y hora'); return; }
+    const fecha = document.getElementById('editFecha').value;
+    if(!servicio || !barbero || !hora || !fecha){ showToast('Completa servicio, barbero, fecha y hora'); return; }
 
     btn.disabled = true; btn.textContent = 'Guardando...';
 
     const [h,m] = hora.split(':').map(Number);
     const finMin = h*60 + m + servicio.minutes;
+    const cambiaDeFecha = fecha !== (a.fecha || currentDate);
 
     if(a.fromWeb && a.webId){
       // Pasa por la MISMA validación atómica real que crearReservaLocal:
       // horario del local, horario especial, horario del profesional,
       // bloqueos y slotLocks -- nunca decide el frontend si el horario
       // nuevo es válido. Sin límite de veces (reagendo de administración).
+      // fecha: si no cambia, reagendarReservaAdmin mantiene sola la que
+      // ya tenía (no hace falta mandarla igual, pero no está de más).
       try{
         await functions.httpsCallable('reagendarReservaAdmin')({
-          bookingId: a.webId, barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
+          bookingId: a.webId, barberName: barbero.name, fecha, startMin: h*60+m, minutes: servicio.minutes,
           serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
         });
       }catch(e){
@@ -12812,8 +12949,17 @@
     a.type = serviceMeta(servicio.name).type;
     a.barber = barbero.name;
     a.col = barbero.calId;
+    a.fecha = fecha;
     a.start = [h, m];
     a.end = [Math.floor(finMin/60), finMin%60];
+
+    if(cambiaDeFecha){
+      // Se movió a otro día -- ya no pertenece a la vista de hoy. Se saca
+      // de la vista actual (igual que "eliminar"); al entrar al día nuevo,
+      // importWebBookings() la trae de vuelta con los datos ya actualizados.
+      const idx = appointments.indexOf(a);
+      if(idx > -1) appointments.splice(idx, 1);
+    }
 
     document.querySelectorAll('.appt').forEach(el=> el.remove());
     Object.keys(colCounters).forEach(k=> colCounters[k] = 0);
@@ -12822,7 +12968,7 @@
     refreshBarberCounts();
 
     btn.disabled = false; btn.textContent = 'Guardar cambios';
-    showToast('Reserva actualizada');
+    showToast(cambiaDeFecha ? 'Reserva movida al ' + fecha : 'Reserva actualizada');
     editView.classList.remove('open');
     closeDrawer();
   });
@@ -13156,7 +13302,7 @@
   async function clBorrar(id){
     const c = clientesCache.find(x=> x.id === id);
     if(!c) return;
-    if(!confirm(`¿Eliminar a ${c.nombre} de la base de clientes?\n\nEsto no borra sus reservas.`)) return;
+    if(!(await mgConfirm(`¿Eliminar a ${c.nombre} de la base de clientes?\n\nEsto no borra sus reservas.`))) return;
     try{
       await db.collection('clientes').doc(id).delete();
       showToast('Cliente eliminado');
