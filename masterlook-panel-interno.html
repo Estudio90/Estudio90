@@ -21,6 +21,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+<script src="config-comun.js"></script>
 <!-- Generador de PDF para la cartola de comisiones (Comisiones > Comisiones barberos) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
@@ -1007,6 +1008,37 @@
     .mg-two{grid-template-columns:1fr;}
   }
 
+  /* ---------- Accesos a cursos: tabla responsive ----------
+     Escritorio: 8 columnas en grid, con scroll horizontal si la ventana
+     es angosta. Móvil (<=820px): cada acceso es una tarjeta apilada con
+     etiquetas (mismo patrón que la tabla de Productos). */
+  .ac-tabla-wrap{overflow-x:auto;}
+  .ac-tabla{display:flex;flex-direction:column;gap:8px;}
+  .ac-head,.ac-row{
+    display:grid;
+    grid-template-columns:minmax(150px,1.5fr) minmax(110px,1.1fr) 96px 92px 92px 96px 100px 128px;
+    gap:10px;align-items:center;min-width:840px;
+  }
+  .ac-head{padding:0 12px;font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.04em;}
+  .ac-row{padding:11px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;}
+  .ac-row .ac-sub{font-size:11px;color:var(--text-mid);}
+  .ac-badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;color:#fff;}
+  .ac-acciones{display:flex;gap:6px;}
+  @media (max-width:820px){
+    .ac-tabla-wrap{overflow-x:visible;}
+    .ac-head{display:none;}
+    .ac-row{grid-template-columns:1fr 1fr;gap:10px 12px;min-width:0;padding:14px;}
+    .ac-row > div::before{
+      content:attr(data-label);display:block;
+      font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+      color:var(--text-low);margin-bottom:2px;
+    }
+    .ac-row .ac-cell-cliente,
+    .ac-row .ac-acciones{grid-column:1 / -1;}
+    .ac-row .ac-acciones{justify-content:flex-start;}
+    .ac-row .ac-acciones::before{content:none;}
+  }
+
   @keyframes apptIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
   @keyframes webPulse{
     0%{box-shadow:0 0 0 0 rgba(74,92,240,0.45);}
@@ -1438,28 +1470,9 @@
     .barber-head:hover .b-avatar-ring{transform:none;}
   }
 
-  /* ===== pantalla de ingreso ===== */
-  .lg-wrap{position:fixed; inset:0; z-index:200; background:#1A1815;
-    display:flex; align-items:center; justify-content:center; padding:20px;}
-  .lg-wrap.oculto{display:none;}
-  .lg-card{background:#fff; border-radius:20px; padding:34px; width:100%; max-width:380px;
-    box-shadow:0 30px 70px rgba(0,0,0,.4);}
-  .lg-brand{display:flex; align-items:center; gap:8px; font-family:var(--font-primary);
-    font-weight:700; font-size:14px; letter-spacing:.07em; margin-bottom:22px;}
-  .lg-dot{width:7px; height:7px; border-radius:50%; background:#4a5cf0;}
-  .lg-card h1{font-family:var(--font-primary); font-size:21px; font-weight:600;}
-  .lg-sub{color:#57565f; font-size:13.5px; margin:5px 0 22px;}
-  .lg-label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em;
-    color:#87868f; margin-bottom:6px;}
-  .lg-card input{width:100%; padding:12px 14px; border:1px solid #e2e2e6; border-radius:10px;
-    font-family:inherit; font-size:14px; margin-bottom:16px;}
-  .lg-card input:focus{outline:2px solid #4a5cf0; outline-offset:1px;}
-  .lg-error{display:none; font-size:12.5px; color:#b03a2e; background:#fbeceb;
-    border-radius:8px; padding:10px 12px; margin-bottom:14px;}
-  .lg-error.show{display:block;}
-  .lg-btn{width:100%; padding:13px; background:#1A1815; color:#fff; border:none;
-    border-radius:10px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;}
-  .lg-btn:hover{background:#4a5cf0;}
+  /* ===== shell del panel: oculto hasta terminar auth + validación de rol
+     (login unificado -- ver onAuthStateChanged) ===== */
+  .app.oculto{display:none;}
   .lg-demo{margin-top:20px; padding:12px 14px; background:#f6f6f8; border-radius:10px;
     font-size:12px; color:#57565f; line-height:1.6;}
   .lg-demo b{display:block; color:#1A1815; margin-bottom:3px; font-size:11px;
@@ -1753,25 +1766,12 @@
 </head>
 <body>
 
-<!-- ===== Ingreso al panel ===== -->
-<div id="loginScreen" class="lg-wrap oculto">
-  <div class="lg-card">
-    <div class="lg-brand"><span class="lg-dot"></span>MASTERLOOK</div>
-    <h1>Panel interno</h1>
-    <p class="lg-sub">Ingresa con tu cuenta para ver la agenda.</p>
-
-    <label class="lg-label">Usuario o correo</label>
-    <input type="text" id="lgUser" placeholder="admin@masterlook.cl" autocomplete="username">
-
-    <label class="lg-label">Contraseña</label>
-    <input type="password" id="lgPass" placeholder="••••••••" autocomplete="current-password">
-
-    <div class="lg-error" id="lgError"></div>
-
-    <button class="lg-btn" id="lgEntrar">Ingresar</button>
-  </div>
-</div>
-<div class="app">
+<!-- ===== Ingreso al panel =====
+     Ya no hay un formulario de login propio acá: la única puerta de
+     autenticación es el login unificado del sitio público. Si no hay
+     sesión Firebase válida, onAuthStateChanged (más abajo) redirige a
+     index.html antes de mostrar nada de este shell. ===== -->
+<div class="app oculto">
 
   <div class="topbar">
     <button class="burger" id="btnMenuLateral" aria-label="Abrir menú" title="Menú">
@@ -1822,7 +1822,6 @@
       <div class="nav-group" id="grupoAcademy" style="display:none;">
         <button class="nav-group-head" type="button">Academy</button>
         <div class="nav-group-items">
-          <button class="menu-panel-item" id="btnAcademyVideos">Videos de cursos</button>
           <button class="menu-panel-item" id="btnAcademyPanel">Panel · cursos</button>
           <button class="menu-panel-item" id="btnTestimonios">Experiencias de alumnos</button>
           <button class="menu-panel-item" id="btnVentasAcademy">Ventas facturadas</button>
@@ -2281,12 +2280,7 @@
       <div class="cx-panel" style="margin-top:18px;">
         <h3 style="font-size:14px;margin:0 0 4px;">Video de presentación de la Academy</h3>
         <p class="mg-note">Video breve que se ve en la portada de la Academy (donde antes solo había un ícono), y que se abre en grande al tocar el botón "Ver video". Ideal menos de 15 MB para que cargue rápido.</p>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div class="cu-thumb" id="acVideoThumb" title="Subir video de presentación"
-               style="width:80px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;overflow:hidden;
-                 display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;">🎬</div>
-          <button class="mg-btn ghost" id="acQuitarVideo" style="flex:none;padding:9px 16px;">Quitar video</button>
-        </div>
+        <div id="acVideoSeccion" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"></div>
       </div>
 
       <div class="cx-panel" style="margin-top:18px;">
@@ -2536,7 +2530,7 @@
           <option value="ONLINE">Online</option>
         </select>
         <label class="mg-label">Curso relacionado</label>
-        <input type="text" id="tsCurso" class="mg-input" placeholder="Ej: Técnicas de corte modernas">
+        <select id="tsCurso" class="mg-input"><option value="">Cargando cursos…</option></select>
         <label class="mg-label">Frase del testimonio</label>
         <textarea id="tsFrase" class="mg-input" rows="2" placeholder="Ej: Increíble la calidad y la atención. 100% recomendado."></textarea>
         <div class="cu-fila" style="margin-top:10px;">
@@ -4401,33 +4395,10 @@
   }
 
   function entrarAlPanel(nombre){
-    document.getElementById('loginScreen').classList.add('oculto');
     const who = document.querySelector('.topbar .who, #who');
     if(who) who.textContent = (nombre || 'AD').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
 
-  async function intentarIngreso(){
-    const u = document.getElementById('lgUser').value.trim();
-    const c = document.getElementById('lgPass').value;
-    const err = document.getElementById('lgError');
-    const btn = document.getElementById('lgEntrar');
-
-    err.classList.remove('show');
-    if(!u || !c){ err.textContent = 'Completa usuario y contraseña.'; err.classList.add('show'); return; }
-
-    btn.disabled = true; btn.textContent = 'Entrando...';
-
-    try{
-      await auth.signInWithEmailAndPassword(u, c);
-      // el rol real y entrarAlPanel() los resuelve onAuthStateChanged
-    }catch(e){
-      err.textContent = 'Correo o contraseña incorrectos.';
-      err.classList.add('show');
-    }
-    btn.disabled = false; btn.textContent = 'Ingresar';
-  }
-
-  document.getElementById('lgEntrar').addEventListener('click', intentarIngreso);
   document.getElementById('btnSalir')?.addEventListener('click', salirDelPanel);
 
   // ---------- Menú lateral (hamburguesa: secciones del negocio) ----------
@@ -4482,6 +4453,46 @@
     if(grupo && grupo.style.display === 'none') return;
     btn.click();
   }
+
+  /* Fuente ÚNICA de todas las vistas de sección del panel. Cuando se agrega
+   * una vista nueva se suma acá y en ningún otro lado -- antes cada
+   * mostrarX() tenía su propia lista a mano de qué ocultar, siempre distinta
+   * e incompleta, lo que dejaba dos secciones visibles a la vez. */
+  const VISTAS_PANEL = [
+    'vistaAgenda', 'vistaBarbero', 'vistaAbonos', 'vistaAccesosCursos',
+    'vistaArchivosMultimedia', 'vistaCampanas', 'vistaClientes', 'vistaColores',
+    'vistaComisiones', 'vistaCursos', 'vistaHorarios', 'vistaIntelligence',
+    'vistaProductos', 'vistaPropinas', 'vistaResumenVentas', 'vistaSuscripciones',
+    'vistaTestimonios', 'vistaUsuarios', 'vistaVentas',
+  ];
+  /** Oculta TODAS las vistas de sección. Cada mostrarX() la llama y después
+   *  muestra solo la suya (y ajusta lo suyo: kpiRow, tarjeta flotante, etc.). */
+  function ocultarVistasPanel(){
+    VISTAS_PANEL.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    sincronizarKpiRangeRow();
+  }
+
+  /* El selector de rango de fechas del dashboard (kpiRangeRow) va pegado a
+   * la vista de agenda: solo tiene sentido junto a las tarjetas KPI. Antes
+   * quedaba fijo en el tope de TODAS las secciones -- p. ej. en "Resumen de
+   * Ventas", que tiene su propio selector de fechas, se veían dos a la vez.
+   * Ahora aparece solo cuando la agenda está visible y quien mira es ADMIN. */
+  function sincronizarKpiRangeRow(){
+    const agenda = document.getElementById('vistaAgenda');
+    const rangeRow = document.getElementById('kpiRangeRow');
+    if(!agenda || !rangeRow) return;
+    const enAgenda = agenda.style.display !== 'none';
+    rangeRow.style.display = (enAgenda && userRole === 'ADMIN') ? '' : 'none';
+  }
+  (function observarVistaAgenda(){
+    const agenda = document.getElementById('vistaAgenda');
+    if(!agenda || typeof MutationObserver === 'undefined') return;
+    new MutationObserver(sincronizarKpiRangeRow)
+      .observe(agenda, { attributes:true, attributeFilter:['style'] });
+  })();
 
   // ---------- Ordenar menú (solo ADMIN): flechas ↑↓ para acomodar el orden
   // de las secciones principales y de los ítems dentro de cada grupo
@@ -4670,17 +4681,7 @@
    * este archivo nunca escribe en esa colección, solo la consulta.
    */
   function mostrarAbonos(){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaCursos').style.display = 'none';
-    document.getElementById('vistaProductos').style.display = 'none';
-    document.getElementById('vistaClientes').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaComisiones').style.display = 'none';
-    document.getElementById('vistaResumenVentas').style.display = 'none';
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAbonos').style.display = '';
@@ -4819,12 +4820,7 @@
   const RV_PALETA_METODO = ['#FFC98C','#D6D6D6','#F2685C','#A47FC4','#8a8272','#5c6b3f','#5b564a','#c48a6f'];
 
   function mostrarResumenVentas(){
-    ['vistaAgenda','vistaColores','vistaUsuarios','vistaCursos','vistaAccesosCursos','vistaTestimonios',
-     'vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios',
-     'vistaIntelligence','vistaPropinas','vistaComisiones','vistaAbonos','vistaSuscripciones'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaResumenVentas').style.display = '';
@@ -5139,41 +5135,66 @@
   // el histórico; se puede invocar entonces desde la consola de Firebase
   // o reincorporando este botón, sin volver a tocar el resto del sistema.
 
-  ['lgUser','lgPass'].forEach(id=>
-    document.getElementById(id).addEventListener('keydown', e=>{
-      if(e.key === 'Enter') intentarIngreso();
-    }));
-
   let userBarberName = null;
 
+  // Login unificado: este archivo ya no tiene un formulario de login
+  // propio. La única puerta de autenticación es el sitio público
+  // (index.html / masterlook-sitio.html). Acá solo se valida la sesión
+  // Firebase que ya exista y se decide, según el rol real leído de
+  // Firestore, si esta cuenta puede ver el panel o si hay que sacarla.
+  //
+  // `redirigiendoDesdePanel` evita que el re-disparo de
+  // onAuthStateChanged(null) que provoca el propio auth.signOut() (más
+  // abajo) vuelva a ejecutar este observer y pise la redirección que ya
+  // se decidió (por ejemplo, reemplazando panelError=inactivo por una
+  // redirección genérica).
+  let redirigiendoDesdePanel = false;
+
   auth.onAuthStateChanged(async user=>{
+    if(redirigiendoDesdePanel) return; // ya decidimos a dónde vamos; ignorar este re-disparo
+
     if(!user){
-      // Recién ahora sabemos de verdad que no hay sesión -- antes de esto
-      // el login queda oculto (ver "oculto" en el HTML), así que al
-      // refrescar ya logueada nunca se alcanza a ver "Panel interno" ni
-      // se pierde la sección en la que estabas (restaurarSeccionActiva()
-      // corre más abajo, siempre después de confirmar la sesión real).
-      document.getElementById('loginScreen').classList.remove('oculto');
+      redirigiendoDesdePanel = true;
+      location.href = 'index.html?volverAPanel=1';
       return;
     }
-    try{
-      const doc = await db.collection('staff').doc(user.uid).get();
-      if(doc.exists){
-        if(doc.data().active === false){
-          await auth.signOut();
-          const err = document.getElementById('lgError');
-          if(err){ err.textContent = 'Tu acceso fue desactivado. Habla con un administrador.'; err.classList.add('show'); }
-          return;
+
+    // El UID de la dueña se comprueba PRIMERO: su acceso nunca depende
+    // de que la lectura de staff/{uid} exista, esté permitida o
+    // responda -- así una falla de Firestore jamás la puede degradar a
+    // "no es staff".
+    const esDueña = user.uid === OWNER_UID_FALLBACK;
+    let userIsStaff = false;
+
+    if(esDueña){
+      userRole = 'ADMIN';
+      userIsStaff = true;
+    } else {
+      try{
+        const doc = await db.collection('staff').doc(user.uid).get();
+        if(doc.exists){
+          if(doc.data().active === false){
+            redirigiendoDesdePanel = true;
+            await auth.signOut();
+            location.href = 'index.html?volverAPanel=1&panelError=inactivo';
+            return;
+          }
+          userRole = doc.data().role || 'BARBER';
+          userBarberName = doc.data().barber?.name || null;
+          userPermissions = doc.data().permissions || [];
+          userIsStaff = true;
         }
-        userRole = doc.data().role || 'BARBER';
-        userBarberName = doc.data().barber?.name || null;
-        userPermissions = doc.data().permissions || [];
-      } else {
-        // cuenta sin ficha en "staff": solo el dueño original de la cuenta
-        // sigue siendo administrador por defecto, igual que en las reglas del servidor.
-        userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null;
-      }
-    }catch(e){ userRole = (user.uid === 'VKtOl9PCTgRiBeWG96d6UNp4JGx2') ? 'ADMIN' : null; }
+      }catch(e){ /* lectura denegada -> no es staff */ }
+    }
+
+    if(!userIsStaff){
+      redirigiendoDesdePanel = true;
+      await auth.signOut();
+      location.href = 'index.html';
+      return;
+    }
+
+    document.querySelector('.app').classList.remove('oculto');
     mostrarControlesAdmin();
     cargarYAplicarOrdenMenu();
     if(userRole !== 'BARBER') restaurarSeccionActiva();
@@ -5181,9 +5202,14 @@
     if(userRole === 'BARBER') mostrarVistaBarbero();
   });
 
-  function salirDelPanel(){
+  async function salirDelPanel(){
     sessionStorage.removeItem('mlUltimaSeccion');
-    auth.signOut();
+    // Logout voluntario: NO es una expulsión. Se marca redirigiendoDesdePanel
+    // ANTES del signOut() para que el observer de onAuthStateChanged no lo
+    // trate como "sesión perdida" y no mande a index.html?volverAPanel=1
+    // (que abriría el modal de login justo después de cerrar sesión).
+    redirigiendoDesdePanel = true;
+    try{ await auth.signOut(); }catch(e){}
     location.href = 'index.html';
   }
 
@@ -5817,14 +5843,13 @@
      lo valida: ocultar el botón no es la única protección. */
   function mostrarControlesAdmin(){
     const soloAdmin = userRole === 'ADMIN' ? '' : 'none';
-    const kpiRangeRow = document.getElementById('kpiRangeRow');
-    if(kpiRangeRow){
-      kpiRangeRow.style.display = soloAdmin;
-      if(userRole === 'ADMIN') document.getElementById('kpiRangeMes').click();
-    }
-    // Solo-admin: Cursos (Videos/Panel), Ventas de Academy y Tienda, Productos,
+    // kpiRangeRow: su visibilidad la maneja sincronizarKpiRangeRow() (va
+    // pegada a la vista de agenda); acá solo se dispara el rango por defecto.
+    sincronizarKpiRangeRow();
+    if(userRole === 'ADMIN') document.getElementById('kpiRangeMes').click();
+    // Solo-admin: Panel · cursos, Ventas de Academy y Tienda, Productos,
     // Servicios staff, Mi equipo, y el grupo "Más".
-    ['btnAcademyVideos','btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
+    ['btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
      'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo','btnOrdenarMenu',
      'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
@@ -5862,6 +5887,13 @@
     // en el servidor exige lo mismo, esto solo evita mostrar el botón.
     const accesosOn = (userRole === 'ADMIN' || userPermissions.includes('CURSOS_ACCESOS')) ? '' : 'none';
     document.getElementById('btnAccesosCursos').style.display = accesosOn;
+
+    // Experiencias de alumnos (testimonios): administrador, o staff con el
+    // permiso TESTIMONIOS_GESTIONAR -- mismo criterio que el backend (reglas
+    // de Firestore + crearSubidaVideo). Ocultar el botón no es la protección
+    // real, solo evita mostrar una sección que igual sería rechazada.
+    const testiOn = (userRole === 'ADMIN' || userPermissions.includes('TESTIMONIOS_GESTIONAR')) ? '' : 'none';
+    document.getElementById('btnTestimonios').style.display = testiOn;
 
     // Campañas: por ahora solo administrador (envío masivo de correo).
     const campanasEl = document.getElementById('btnCampanas');
@@ -6400,10 +6432,7 @@
     if(userRole === 'BARBER'){
       mostrarVistaBarbero();
     }else{
-      ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaClientes','vistaProductos','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaAbonos','vistaResumenVentas'].forEach(id=>{
-        const el = document.getElementById(id);
-        if(el) el.style.display = 'none';
-      });
+      ocultarVistasPanel();
       sbCerrarVistaSemana();
       document.getElementById('vistaAgenda').style.display = '';
       document.getElementById('kpiRow').style.display = '';
@@ -6817,6 +6846,12 @@
     demoBlocks = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
     renderBlocks();
     renderBlockList();
+  }, ()=>{
+    // Este listener se engancha al cargar el panel, antes de que
+    // onAuthStateChanged confirme la sesión. Si quien entró NO es del
+    // equipo (un cliente que abrió la URL por error), la regla `blocks`
+    // (isStaff) rechaza la lectura -- pero a esa persona ya se la está
+    // expulsando, así que el error se ignora en silencio.
   });
 
   function minsOf(hhmm){ const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
@@ -7301,10 +7336,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaColores').style.display = '';
@@ -7479,10 +7511,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaHorarios').style.display = '';
@@ -7506,10 +7535,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaIntelligence').style.display = '';
@@ -7631,10 +7657,7 @@
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
     // calendario, filtro de profesional, etc.) se queda tal cual estaba
-    ['vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaSuscripciones','vistaIntelligence','vistaAbonos','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     document.getElementById('vistaAgenda').style.display = '';
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('calPanelDia').style.display = 'none';
@@ -8274,17 +8297,7 @@
   }
 
   function mostrarComisiones(ver){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaCursos').style.display = 'none';
-    document.getElementById('vistaProductos').style.display = 'none';
-    document.getElementById('vistaClientes').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaAbonos').style.display = 'none';
-    document.getElementById('vistaResumenVentas').style.display = 'none';
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaComisiones').style.display = '';
@@ -8345,16 +8358,7 @@
    * que le haya dejado el administrador — nunca las reservas de otros barberos.
    */
   function mostrarVistaBarbero(){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaComisiones').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaCursos').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaSuscripciones').style.display = 'none';
-    document.getElementById('vistaResumenVentas').style.display = 'none';
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     const nav = document.querySelector('.panel-nav');
@@ -9062,10 +9066,7 @@
      vendidos, aunque usa el mismo arreglo de reservas ya cargado. ---------- */
   let tpRep = null;
   function mostrarPropinas(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas','vistaAbonos'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaPropinas').style.display = '';
@@ -9181,49 +9182,49 @@
   let cuRecursoArchivo = null;
   let clArchivoElegido = null;
 
-  /* Publica los cursos (con sus precios y clases) en Firestore para que
-     masterlook-sitio.html los muestre en la Academy, en cualquier dispositivo. */
-  async function publicarCursos(){
+  /* Prioridad de estados de video de Bunny -- MISMA lógica que puedeAvanzar()
+     en database/functions/bunnyStream.js. El estado del procesamiento lo
+     manda el webhook de Bunny (fuente de verdad); el panel nunca lo hace
+     retroceder: 'ready'/'error' son finales y un 'processing' viejo que
+     quedó en memoria no los pisa. */
+  const PRIO_ESTADO_VIDEO = { '': 0, processing: 1, ready: 2, error: 2 };
+  function estadoVideoNoRetrocede(local, remoto){
+    return (PRIO_ESTADO_VIDEO[remoto] || 0) >= (PRIO_ESTADO_VIDEO[local] || 0)
+      ? (remoto || local || '') : (local || '');
+  }
+
+  /* Guarda en Firestore SOLO los campos del curso `courseId` que administra
+     este panel (nombre, precio, foto, id del video, recursos...), con merge,
+     en UN único documento: el del curso que cambió.
+
+     NUNCA escribe streamStatus / trailerStreamStatus / lessons: el estado de
+     procesamiento del video es del webhook de Bunny, y las lecciones las
+     guarda cuGuardarClasesSilencioso() preservando ese estado. Así, abrir o
+     editar el panel con datos viejos en memoria no puede revertir a
+     'processing' un video que Bunny ya dejó 'ready', ni tocar cursos que no
+     se editaron. */
+  async function guardarCurso(courseId){
     if(MODE === 'api') return;
-    await Promise.all(cuCursos.map(c=> db.collection('courses').doc(c.id).set({
+    const c = cuCursos.find(x=> x.id === courseId);
+    if(!c) return;
+    await db.collection('courses').doc(c.id).set({
       id: c.id, kind:'COURSE', name: c.name,
       description: c.description || '',
       priceClp: c.priceClp, priceUsd: c.priceUsd || null,
       featured: c.featured !== false, active: c.active !== false,
-      accessUrl: c.accessUrl || '',
       accessDurationDays: c.accessDurationDays || 30,
-      lessons: c.lessons || [],
       photoUrl: c.photoUrl || '',
       streamVideoId: c.streamVideoId || '',
-      streamStatus: c.streamStatus || '',
       trailerStreamVideoId: c.trailerStreamVideoId || '',
-      trailerStreamStatus: c.trailerStreamStatus || '',
       resources: c.resources || [],
-    })));
+      // El enlace de acceso NO va en el doc público del catálogo (lo lee
+      // entero cualquier visitante). Se borra de acá si venía de una
+      // versión anterior y se guarda en la subcolección privada.
+      accessUrl: firebase.firestore.FieldValue.delete(),
+    }, { merge: true });
+    await db.collection('courses').doc(c.id).collection('privado').doc('config')
+      .set({ accessUrl: c.accessUrl || '' }, { merge: true });
   }
-
-  /* Catálogo de demostración, con clases de ejemplo */
-  const CU_DEMO = [
-    { id:'c1', name:'Técnicas de Corte Modernas', description:'Lo que hoy piden los clientes premium',
-      priceClp:79990, priceUsd:89, active:true, accessUrl:'https://masterlook.cl/cursos/tecnicas',
-      lessons:[
-        { id:'l1', title:'Bienvenida y materiales', videoUrl:'https://youtu.be/ejemplo1', durationMin:8,  isFree:true,  active:true },
-        { id:'l2', title:'Fundamentos del fade',    videoUrl:'https://youtu.be/ejemplo2', durationMin:24, isFree:false, active:true },
-        { id:'l3', title:'Visagismo aplicado',      videoUrl:'https://youtu.be/ejemplo3', durationMin:31, isFree:false, active:true },
-      ]},
-    { id:'c2', name:'MÉTODO NEXUS™ — Posicionamiento. Agenda Llena. Facturación Real.',
-      description:'Corte de cabello', priceClp:50000, priceUsd:55, active:true,
-      accessUrl:'https://masterlook.cl/cursos/nexus',
-      lessons:[
-        { id:'l4', title:'Cómo posicionar tu barbería', videoUrl:'https://youtu.be/ejemplo4', durationMin:18, isFree:true,  active:true },
-        { id:'l5', title:'Precios que sí funcionan',    videoUrl:'https://youtu.be/ejemplo5', durationMin:22, isFree:false, active:true },
-      ]},
-    { id:'c3', name:'CURSO ONDULACION PERMANENTE', description:'Curso online de Ondulacion permanente',
-      priceClp:45000, priceUsd:45, active:true, accessUrl:'https://masterlook.cl/cursos/ondulacion',
-      lessons:[
-        { id:'l6', title:'Química del rizado', videoUrl:'https://youtu.be/ejemplo6', durationMin:15, isFree:false, active:true },
-      ]},
-  ];
 
   /** La tarjeta flotante de "próxima cita" solo tiene sentido en la agenda. */
   function ocultarFlotante(ocultar){
@@ -9232,20 +9233,7 @@
   }
 
   function mostrarCursos(){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaComisiones').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaProductos').style.display = 'none';
-    document.getElementById('vistaClientes').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaAccesosCursos').style.display = 'none';
-    document.getElementById('vistaSuscripciones').style.display = 'none';
-    document.getElementById('vistaTestimonios').style.display = 'none';
-    document.getElementById('vistaResumenVentas').style.display = 'none';
-    document.getElementById('vistaAbonos').style.display = 'none';
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCursos').style.display = '';
@@ -9259,20 +9247,7 @@
 
   /* ===== Accesos a cursos (entitlements): otorgar/extender/revocar/reactivar ===== */
   function mostrarAccesosCursos(){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaComisiones').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaProductos').style.display = 'none';
-    document.getElementById('vistaClientes').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaCursos').style.display = 'none';
-    document.getElementById('vistaSuscripciones').style.display = 'none';
-    document.getElementById('vistaTestimonios').style.display = 'none';
-    document.getElementById('vistaResumenVentas').style.display = 'none';
-    document.getElementById('vistaAbonos').style.display = 'none';
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaAccesosCursos').style.display = '';
@@ -9283,25 +9258,39 @@
 
   /* ===== Experiencias de alumnos: testimonios en video (gratis, público) ===== */
   function mostrarTestimoniosPage(){
-    document.getElementById('vistaAgenda').style.display = 'none';
-    document.getElementById('vistaColores').style.display = 'none';
-    document.getElementById('vistaUsuarios').style.display = 'none';
-    document.getElementById('vistaComisiones').style.display = 'none';
-    document.getElementById('vistaPropinas').style.display = 'none';
-    document.getElementById('vistaProductos').style.display = 'none';
-    document.getElementById('vistaClientes').style.display = 'none';
-    document.getElementById('vistaHorarios').style.display = 'none';
-    document.getElementById('vistaIntelligence').style.display = 'none';
-    document.getElementById('vistaCursos').style.display = 'none';
-    document.getElementById('vistaAccesosCursos').style.display = 'none';
-    document.getElementById('vistaSuscripciones').style.display = 'none';
-    document.getElementById('vistaResumenVentas').style.display = 'none';
-    document.getElementById('vistaAbonos').style.display = 'none';
+    // La protección real está en Firestore + Cloud Functions; esto solo
+    // evita entrar a una sección que igual rechazaría cada escritura.
+    if(!(userRole === 'ADMIN' || userPermissions.includes('TESTIMONIOS_GESTIONAR')))
+      return showToast('No tienes permiso para ver esto');
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaTestimonios').style.display = '';
     ocultarFlotante(true);
     cargarTestimoniosPanel();
+    tsCargarCursos();
+  }
+
+  /** "Curso relacionado": dropdown con los cursos reales de la colección
+   *  `courses` (nunca texto libre). Se recarga cada vez que se entra a la
+   *  sección para tomar cursos nuevos. Guarda el nombre (lo muestra el
+   *  sitio) y el courseId (para dejar el vínculo real). */
+  let tsCursosCache = [];
+  async function tsCargarCursos(){
+    try{
+      const snap = await db.collection('courses').get();
+      tsCursosCache = snap.docs
+        .map(d=> ({ id: d.id, name: d.data().name || d.id }))
+        .sort((a,b)=> a.name.localeCompare(b.name, 'es'));
+    }catch(e){ tsCursosCache = []; }
+    const sel = document.getElementById('tsCurso');
+    if(!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = tsCursosCache.length
+      ? '<option value="">Elige un curso…</option>' +
+        tsCursosCache.map(c=> `<option value="${escapeHTML(c.id)}">${escapeHTML(c.name)}</option>`).join('')
+      : '<option value="">Todavía no hay cursos creados</option>';
+    if(prev && tsCursosCache.some(c=> c.id === prev)) sel.value = prev;
   }
   document.getElementById('btnTestimonios').addEventListener('click', mostrarTestimoniosPage);
   document.getElementById('tsVolverAgenda').addEventListener('click', ()=>{
@@ -9352,9 +9341,11 @@
 
   async function tsPublicarTestimonio(){
     const tag = document.getElementById('tsTag').value;
-    const curso = document.getElementById('tsCurso').value.trim();
+    const cursoId = document.getElementById('tsCurso').value;
+    const cursoObj = tsCursosCache.find(c=> c.id === cursoId);
+    const curso = cursoObj ? cursoObj.name : '';
     const frase = document.getElementById('tsFrase').value.trim();
-    if(!curso) return showToast('Escribe el curso relacionado');
+    if(!curso) return showToast('Elige el curso relacionado');
     if(!frase) return showToast('Escribe la frase del testimonio');
     if(!tsArchivoElegido && !tsUploadController) return showToast('Elige un video primero');
 
@@ -9376,7 +9367,7 @@
 
       const orden = tsTestimonios.length ? Math.max(...tsTestimonios.map(t=> t.orden || 0)) + 1 : 0;
       await db.collection('testimonios').doc(id).set({
-        tag, curso, frase, orden, active: true,
+        tag, curso, courseId: cursoId, frase, orden, active: true,
         streamVideoId: videoId, streamStatus: 'processing',
         createdAt: new Date().toISOString(),
       });
@@ -9512,36 +9503,37 @@
       cont.innerHTML = '<div class="cx-empty">Todavía no hay accesos otorgados.</div>';
       return;
     }
-    cont.innerHTML = `
-      <div class="mg-row" style="grid-template-columns:1.4fr 1.1fr 100px 90px 90px 90px 100px auto;font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.04em;">
+    cont.innerHTML = `<div class="ac-tabla-wrap"><div class="ac-tabla">
+      <div class="ac-head">
         <div>Cliente</div><div>Curso</div><div>Método</div><div>Inicio</div><div>Expira</div><div>Estado</div><div>Creado por</div><div>Acciones</div>
       </div>
-    ` + accesosCache.map(a=>{
+      ${accesosCache.map(a=>{
       const vencido = a.accessExpirationDate?.toMillis && a.accessExpirationDate.toMillis() < Date.now();
       const estadoReal = (a.accessStatus === 'active' && vencido) ? 'expired' : a.accessStatus;
       const creador = a.createdBy === 'system:webpay' ? 'Webpay' : (a.createdBy || '—');
       return `
-      <div class="mg-row" data-id="${a.id}" style="grid-template-columns:1.4fr 1.1fr 100px 90px 90px 90px 100px auto;align-items:center;">
-        <div>
-          <div style="font-weight:600;">${a.buyerName || '—'}</div>
-          <div style="font-size:11px;color:var(--text-mid);">${a.buyerEmail || ''}</div>
+      <div class="ac-row" data-id="${a.id}">
+        <div class="ac-cell-cliente" data-label="Cliente">
+          <div style="font-weight:600;">${escapeHTML(a.buyerName || '—')}</div>
+          <div class="ac-sub">${escapeHTML(a.buyerEmail || '')}</div>
         </div>
-        <div>${a.courseName || a.courseId}</div>
-        <div>${METODO_PAGO_LABEL[a.paymentMethod] || a.paymentMethod || '—'}</div>
-        <div>${fmtFechaAcceso(a.accessStartDate)}</div>
-        <div>${fmtFechaAcceso(a.accessExpirationDate)}</div>
-        <div><span style="display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;color:#fff;background:${ESTADO_ACCESO_COLOR[estadoReal] || '#9A9691'};">${ESTADO_ACCESO_LABEL[estadoReal] || estadoReal}</span></div>
-        <div style="font-size:11px;color:var(--text-mid);word-break:break-word;">${creador}</div>
-        <div style="display:flex;gap:6px;">
+        <div data-label="Curso">${escapeHTML(a.courseName || a.courseId || '')}</div>
+        <div data-label="Método">${METODO_PAGO_LABEL[a.paymentMethod] || a.paymentMethod || '—'}</div>
+        <div data-label="Inicio">${fmtFechaAcceso(a.accessStartDate)}</div>
+        <div data-label="Expira">${fmtFechaAcceso(a.accessExpirationDate)}</div>
+        <div data-label="Estado"><span class="ac-badge" style="background:${ESTADO_ACCESO_COLOR[estadoReal] || '#9A9691'};">${ESTADO_ACCESO_LABEL[estadoReal] || estadoReal}</span></div>
+        <div class="ac-sub" data-label="Creado por" style="word-break:break-word;">${escapeHTML(creador)}</div>
+        <div class="ac-acciones" data-label="Acciones">
           <button class="cu-ib" data-extender title="Extender acceso">＋</button>
           <button class="cu-ib" data-revocar title="Revocar acceso" ${estadoReal === 'revoked' ? 'disabled' : ''}>🚫</button>
           <button class="cu-ib" data-reactivar title="Reactivar acceso" ${estadoReal !== 'revoked' ? 'disabled' : ''}>↺</button>
           <button class="cu-ib" data-historial title="Ver historial">🕘</button>
         </div>
       </div>`;
-    }).join('');
+    }).join('')}
+    </div></div>`;
 
-    cont.querySelectorAll('.mg-row[data-id]').forEach(row=>{
+    cont.querySelectorAll('.ac-row[data-id]').forEach(row=>{
       const id = row.dataset.id;
       row.querySelector('[data-extender]').addEventListener('click', ()=> accionExtenderAcceso(id));
       row.querySelector('[data-revocar]').addEventListener('click', ()=> accionRevocarAcceso(id));
@@ -9679,10 +9671,7 @@
 
   /* ===== Archivos multimedia: todas las fotos de clientes ===== */
   function mostrarArchivosMultimedia(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaVentas','vistaCampanas','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id); if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaArchivosMultimedia').style.display = '';
@@ -9715,10 +9704,7 @@
   let ventasTipoActual = 'academy';
   function mostrarVentas(tipo){
     ventasTipoActual = tipo;
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaCampanas','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id); if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaVentas').style.display = '';
@@ -9779,10 +9765,7 @@
 
   /* ===== Campañas: envío masivo de correo ===== */
   function mostrarCampanas(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos',
-     'vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaArchivosMultimedia','vistaVentas','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id); if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaCampanas').style.display = '';
@@ -9880,7 +9863,7 @@
     try{
       const doc = await db.collection('settings').doc('negocio').get();
       const d = doc.exists ? doc.data() : {};
-      pintarVideoAcademiaThumb(d.academiaStreamVideoId || '', d.academiaStreamStatus || '');
+      pintarSeccionVideoAcademia(d.academiaStreamVideoId || '', d.academiaStreamStatus || '');
       pintarCtaFotoThumb(d.ctaPhoneFotoUrl || '');
     }catch(e){}
   }
@@ -9929,22 +9912,78 @@
     }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
   });
 
-  function pintarVideoAcademiaThumb(streamVideoId, status){
-    pintarVideoConfigThumb('acVideoThumb', streamVideoId, status, '🎬');
+  /* Video de presentación de Academy: vive en settings/negocio
+   *  (academiaStreamVideoId + academiaStreamStatus), librería PÚBLICA de Bunny.
+   *  El estado lo manda el webhook de Bunny -- acá el 🔄 solo consulta y guarda
+   *  sin hacerlo retroceder (misma regla que los videos de curso). La
+   *  previsualización reusa verVideoSubido() -> obtenerTokenReproduccionAdmin
+   *  (admin-only, sin entitlement); nunca se arma una URL de Bunny a mano. */
+  let acVideoActual = { videoId: '', status: '' };
+
+  function pintarSeccionVideoAcademia(videoId, status){
+    const cont = document.getElementById('acVideoSeccion');
+    if(!cont) return;
+    // llamada sin args -> re-render con el último estado conocido
+    // (ej. después de un error de subida: nada cambió en Firestore).
+    if(videoId === undefined){ videoId = acVideoActual.videoId; status = acVideoActual.status; }
+    acVideoActual = { videoId: videoId || '', status: status || '' };
+    const hay = !!videoId;
+    const listo = hay && status === 'ready';
+    const procesando = hay && status === 'processing';
+    const conError = hay && status === 'error';
+
+    cont.innerHTML = `
+      <div class="cu-thumb" id="acVideoThumb"
+           style="width:80px;height:60px;border-radius:10px;background-color:#eee;overflow:hidden;
+             display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;">🎬</div>
+      ${hay ? badgeEstadoVideo(status) : ''}
+      <button type="button" class="mg-btn ghost" id="acVideoSubir" style="flex:none;padding:9px 16px;">${hay ? 'Cambiar video' : '⬆ Subir video'}</button>
+      ${listo ? `<button type="button" class="mg-btn ghost" id="acVideoPreview" style="flex:none;padding:9px 16px;">▶ Previsualizar</button>` : ''}
+      ${procesando ? `<button type="button" class="cu-card-link" id="acVideoRefrescar" title="Verificar si ya terminó de procesarse">🔄 Verificar</button>` : ''}
+      ${hay ? `<button type="button" class="mg-btn ghost del" id="acVideoEliminar" style="flex:none;padding:9px 16px;">Eliminar video</button>` : ''}
+      ${procesando ? `<div class="mg-note" style="flex-basis:100%;margin:2px 0 0;">Bunny todavía lo está procesando -- puede tardar unos minutos. Toca "Verificar" o vuelve a entrar más tarde.</div>` : ''}
+      ${conError ? `<div class="mg-note" style="flex-basis:100%;margin:2px 0 0;color:#c0392b;">Bunny reportó un error al procesar este video. Prueba subirlo de nuevo (idealmente MP4, menos de 15 MB).</div>` : ''}
+    `;
+    // miniatura: reusa el helper existente (no arma URLs de Bunny nuevas)
+    pintarVideoConfigThumb('acVideoThumb', videoId, status, '🎬');
+
+    document.getElementById('acVideoSubir').addEventListener('click', acVideoSubir);
+    document.getElementById('acVideoPreview')?.addEventListener('click', ()=> verVideoSubido(acVideoActual.videoId, true));
+    document.getElementById('acVideoRefrescar')?.addEventListener('click', acVideoRefrescarEstado);
+    document.getElementById('acVideoEliminar')?.addEventListener('click', acVideoEliminar);
   }
 
-  document.getElementById('acVideoThumb').addEventListener('click', ()=> subirVideoConfig({
-    contexto: 'academia', campoVideoId: 'academiaStreamVideoId', campoStatus: 'academiaStreamStatus',
-    thumbId: 'acVideoThumb', iconoVacio: '🎬', nombreExito: 'Video de la Academy',
-  }));
+  function acVideoSubir(){
+    subirVideoConfig({
+      contexto: 'academia', campoVideoId: 'academiaStreamVideoId', campoStatus: 'academiaStreamStatus',
+      thumbId: 'acVideoThumb', iconoVacio: '🎬', nombreExito: 'Video de la Academy',
+      onEstado: (id, st)=> pintarSeccionVideoAcademia(id, st),
+    });
+  }
 
-  document.getElementById('acQuitarVideo').addEventListener('click', async ()=>{
+  /** Fallback manual mientras el webhook llega/tarda -- consulta el estado
+   *  real en Bunny y lo guarda en settings/negocio SIN hacerlo retroceder
+   *  (si el webhook ya dejó algo más avanzado, gana ese). */
+  async function acVideoRefrescarEstado(){
+    if(!acVideoActual.videoId) return;
+    try{
+      const r = await functions.httpsCallable('obtenerEstadoVideo')({ videoId: acVideoActual.videoId, libreria: 'public' });
+      const doc = await db.collection('settings').doc('negocio').get();
+      const remoto = doc.exists ? (doc.data().academiaStreamStatus || '') : '';
+      const nuevo = estadoVideoNoRetrocede(r.data.estado, remoto);
+      await db.collection('settings').doc('negocio').set({ academiaStreamStatus: nuevo }, { merge: true });
+      pintarSeccionVideoAcademia(acVideoActual.videoId, nuevo);
+      showToast(nuevo === 'ready' ? 'El video ya está listo' : (nuevo === 'error' ? 'Bunny reportó un error' : 'Todavía se está procesando'));
+    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
+  }
+
+  async function acVideoEliminar(){
     try{
       await db.collection('settings').doc('negocio').set({ academiaStreamVideoId: '', academiaStreamStatus: '' }, { merge:true });
-      pintarVideoAcademiaThumb('', '');
-      showToast('Video de la Academy quitado');
-    }catch(e){ showToast('No se pudo quitar el video: ' + e.message); }
-  });
+      pintarSeccionVideoAcademia('', '');
+      showToast('Video de la Academy eliminado');
+    }catch(e){ showToast('No se pudo eliminar el video: ' + e.message); }
+  }
 
   function cuVolverAgenda(){
     document.getElementById('vistaCursos').style.display = 'none';
@@ -9953,7 +9992,6 @@
     ocultarFlotante(false);
   }
 
-  document.getElementById('btnAcademyVideos').addEventListener('click', mostrarCursos);
   document.getElementById('btnAcademyPanel').addEventListener('click', mostrarCursos);
   document.getElementById('cuVolver').addEventListener('click', cuVolverAgenda);
 
@@ -9996,11 +10034,7 @@
   }
 
   function mostrarSuscripciones(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia',
-     'vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaUsuarios','vistaHorarios','vistaIntelligence','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaSuscripciones').style.display = '';
@@ -10546,20 +10580,23 @@
     } else if(!cuCursos.length){
       try{
         const snap = await db.collection('courses').get();
-        if(!snap.empty){
-          cuCursos = snap.docs.map(d=> d.data());
-        } else {
-          cuCursos = JSON.parse(JSON.stringify(CU_DEMO));
-        }
+        cuCursos = snap.empty ? [] : snap.docs.map(d=> d.data());
       }catch(e){
-        cuCursos = JSON.parse(JSON.stringify(CU_DEMO));
+        cont.innerHTML = '<div class="cx-empty">No se pudieron cargar los cursos. Reintenta en un momento.</div>';
+        return;
       }
     }
 
-    try{ await publicarCursos(); }catch(e){ /* sincronización oportunista: si falla, seguimos mostrando lo que ya cargamos */ }
+    // Abrir/refrescar la lista NO escribe nada en Firestore -- ni siquiera
+    // cuando la colección está vacía (nunca se siembran cursos de ejemplo).
+    // Cada edición real guarda su propio documento (guardarCurso / cuGuardarClases).
 
     if(!cuCursos.length){
-      cont.innerHTML = '<div class="cx-empty">Todavía no hay cursos. Crea el primero.</div>';
+      cont.innerHTML = `<div class="cx-empty">
+        Todavía no hay cursos. Crea tu primer curso.
+        <button class="mg-btn solid" id="cuNuevoVacio" style="display:block;margin:14px auto 0;">+ Crear curso</button>
+      </div>`;
+      document.getElementById('cuNuevoVacio')?.addEventListener('click', ()=> document.getElementById('cuNuevo').click());
       return;
     }
 
@@ -10601,8 +10638,9 @@
     const c = cuCursos.find(x=> x.id === id);
     if(!c) return;
     c.featured = valor;
-    try{ await publicarCursos(); }
-    catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    // solo el documento de este curso (merge)
+    try{ await guardarCurso(id); }
+    catch(e){ c.featured = !valor; showToast('No se pudo guardar: ' + e.message); }
   }
 
   function cuEliminarCurso(id){
@@ -10649,6 +10687,12 @@
     } else {
       const c = cuCursos.find(x=> x.id === id);
       cuActual = { curso:{...c}, clases:(c.lessons || []).map(l=> ({...l})) };
+      // El enlace de acceso vive en courses/{id}/privado/config, fuera del
+      // doc público -- se lee solo acá, al abrir el editor.
+      try{
+        const priv = await db.collection('courses').doc(id).collection('privado').doc('config').get();
+        cuActual.curso.accessUrl = priv.exists ? (priv.data().accessUrl || '') : (cuActual.curso.accessUrl || '');
+      }catch(e){ /* sin doc todavía: se queda con lo que haya en memoria */ }
     }
 
     cuPintarDetalle();
@@ -10708,6 +10752,7 @@
             ${cuMediaThumbHtml(curso)}
             <button type="button" class="mg-btn ghost" id="cuMediaBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
             ${curso.streamVideoId ? badgeEstadoVideo(curso.streamStatus) : ''}
+            ${curso.streamVideoId && curso.streamStatus === 'ready' ? `<button type="button" class="cu-card-link" id="cuVerMedia" title="Previsualizar el video">▶ Ver</button>` : ''}
             ${curso.streamVideoId && curso.streamStatus === 'processing' ? `<button type="button" class="cu-card-link" id="cuRefrescarMedia" title="Verificar si ya terminó de procesarse">🔄</button>` : ''}
             ${(curso.photoUrl || curso.streamVideoId) ? `<button type="button" class="cu-card-link del" id="cuQuitarMedia">Quitar</button>` : ''}
           </div>
@@ -10718,6 +10763,7 @@
             ${cuTrailerThumbHtml(curso)}
             <button type="button" class="mg-btn ghost" id="cuTrailerBtn" style="flex:none;padding:8px 14px;">⬆ Elegir video</button>
             ${curso.trailerStreamVideoId ? badgeEstadoVideo(curso.trailerStreamStatus) : ''}
+            ${curso.trailerStreamVideoId && curso.trailerStreamStatus === 'ready' ? `<button type="button" class="cu-card-link" id="cuVerTrailer" title="Previsualizar el video">▶ Ver</button>` : ''}
             ${curso.trailerStreamVideoId && curso.trailerStreamStatus === 'processing' ? `<button type="button" class="cu-card-link" id="cuRefrescarTrailer" title="Verificar si ya terminó de procesarse">🔄</button>` : ''}
             ${curso.trailerStreamVideoId ? `<button type="button" class="cu-card-link del" id="cuQuitarTrailer">Quitar</button>` : ''}
           </div>
@@ -10731,7 +10777,7 @@
           <label class="cu-lbl">Duración del acceso <span style="text-transform:none;">(días)</span></label>
           <input type="number" id="cuDuracionAcceso" min="1" step="1" value="${curso.accessDurationDays ?? 30}">
 
-          <label class="cu-lbl">Enlace de acceso <span style="text-transform:none;">(se envía en el comprobante, opcional)</span></label>
+          <label class="cu-lbl">Enlace de acceso <span style="text-transform:none;">(privado, no se muestra en el sitio, opcional)</span></label>
           <input type="url" id="cuAcceso" value="${curso.accessUrl || ''}" placeholder="https://...">
 
           <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--text-hi);">
@@ -10907,10 +10953,12 @@
     document.getElementById('cuCancelar').addEventListener('click', cuVolverListado);
     document.getElementById('cuMediaThumb').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
     document.getElementById('cuMediaBtn').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
+    document.getElementById('cuVerMedia')?.addEventListener('click', ()=> verVideoSubido(cuActual.curso.streamVideoId, true));
     document.getElementById('cuQuitarMedia')?.addEventListener('click', ()=> cuQuitarMedia(cuActual.curso.id));
     document.getElementById('cuRefrescarMedia')?.addEventListener('click', ()=> cuRefrescarEstadoMedia(cuActual.curso.id));
     document.getElementById('cuTrailerThumb').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
     document.getElementById('cuTrailerBtn').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
+    document.getElementById('cuVerTrailer')?.addEventListener('click', ()=> verVideoSubido(cuActual.curso.trailerStreamVideoId, true));
     document.getElementById('cuQuitarTrailer')?.addEventListener('click', ()=> cuQuitarTrailer(cuActual.curso.id));
     document.getElementById('cuRefrescarTrailer')?.addEventListener('click', ()=> cuRefrescarEstadoTrailer(cuActual.curso.id));
     document.getElementById('cuRecomendado').addEventListener('change', (e)=> cuCambiarRecomendacion(cuActual.curso.id, e.target.checked));
@@ -11112,7 +11160,7 @@
 
   /** Sube un video de configuración (hero/Academy) a la librería pública de
    *  Bunny y lo guarda en settings/negocio. */
-  function subirVideoConfig({ contexto, campoVideoId, campoStatus, thumbId, iconoVacio, nombreExito }){
+  function subirVideoConfig({ contexto, campoVideoId, campoStatus, thumbId, iconoVacio, nombreExito, onEstado }){
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'video/*';
@@ -11124,14 +11172,19 @@
       try{
         const { videoId } = await subirVideoABunny(file, {
           contexto, isFree: true, title: contexto,
-          onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
+          onProgress: (pct)=>{ const t = document.getElementById(thumbId); if(t) t.innerHTML = pct + '%'; },
         });
         await db.collection('settings').doc('negocio').set({ [campoVideoId]: videoId, [campoStatus]: 'processing' }, { merge:true });
-        pintarVideoConfigThumb(thumbId, videoId, 'processing', iconoVacio);
+        // onEstado (opcional): quien llama re-renderiza su propia sección
+        // (éxito -> processing / error -> sin args, vuelve al estado guardado).
+        // Sin onEstado se usa el comportamiento simple de solo la miniatura.
+        if(onEstado) onEstado(videoId, 'processing');
+        else pintarVideoConfigThumb(thumbId, videoId, 'processing', iconoVacio);
         showToast(nombreExito + ' subido, procesándose…');
       }catch(e){
         showToast('No se pudo subir el video: ' + e.message);
-        pintarVideoConfigThumb(thumbId, null, null, iconoVacio);
+        if(onEstado) onEstado();
+        else pintarVideoConfigThumb(thumbId, null, null, iconoVacio);
       }
     });
     input.click();
@@ -11167,7 +11220,12 @@
           if(cuActual?.curso?.id === cursoId) cuActual.curso.photoUrl = url;
           showToast('Imagen del curso actualizada');
         }
-        await publicarCursos();
+        await guardarCurso(cursoId);
+        // el estado se escribe aparte de guardarCurso: video nuevo -> siempre
+        // arranca en 'processing' (el webhook lo pasará a 'ready' al terminar).
+        if(file.type.startsWith('video/')){
+          await db.collection('courses').doc(cursoId).set({ streamStatus: 'processing' }, { merge: true });
+        }
         cuPintarDetalle();
       }catch(e){
         showToast('No se pudo subir el archivo: ' + e.message);
@@ -11182,7 +11240,9 @@
     if(c){ c.streamVideoId = ''; c.streamStatus = ''; c.photoUrl = ''; }
     if(cuActual?.curso?.id === cursoId){ cuActual.curso.streamVideoId = ''; cuActual.curso.streamStatus = ''; cuActual.curso.photoUrl = ''; }
     try{
-      await publicarCursos();
+      await guardarCurso(cursoId);
+      // sin video no hay estado de procesamiento que preservar
+      await db.collection('courses').doc(cursoId).set({ streamStatus: '' }, { merge: true });
       showToast('Imagen/video del curso quitado');
     }catch(e){ showToast('No se pudo quitar: ' + e.message); }
     cuPintarDetalle();
@@ -11210,7 +11270,9 @@
         });
         if(c){ c.trailerStreamVideoId = videoId; c.trailerStreamStatus = 'processing'; }
         if(cuActual?.curso?.id === cursoId){ cuActual.curso.trailerStreamVideoId = videoId; cuActual.curso.trailerStreamStatus = 'processing'; }
-        await publicarCursos();
+        await guardarCurso(cursoId);
+        // estado aparte de guardarCurso: video nuevo -> 'processing'
+        await db.collection('courses').doc(cursoId).set({ trailerStreamStatus: 'processing' }, { merge: true });
         showToast('Video de vista previa subido, procesándose…');
         cuPintarDetalle();
       }catch(e){
@@ -11235,7 +11297,11 @@
       const r = await functions.httpsCallable('obtenerEstadoVideo')({ videoId: c.streamVideoId, libreria: 'public' });
       c.streamStatus = r.data.estado;
       if(cuActual?.curso?.id === cursoId) cuActual.curso.streamStatus = r.data.estado;
-      await publicarCursos();
+      // el 🔄 solo actualiza el estado del video -- no re-escribe los datos del
+      // curso. Y sin retroceder: si el webhook ya dejó algo más avanzado, gana ese.
+      const rem = (await db.collection('courses').doc(cursoId).get()).data() || {};
+      await db.collection('courses').doc(cursoId).set(
+        { streamStatus: estadoVideoNoRetrocede(r.data.estado, rem.streamStatus) }, { merge: true });
       cuPintarDetalle();
       showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
     }catch(e){ showToast('No se pudo verificar: ' + e.message); }
@@ -11247,7 +11313,9 @@
       const r = await functions.httpsCallable('obtenerEstadoVideo')({ videoId: c.trailerStreamVideoId, libreria: 'public' });
       c.trailerStreamStatus = r.data.estado;
       if(cuActual?.curso?.id === cursoId) cuActual.curso.trailerStreamStatus = r.data.estado;
-      await publicarCursos();
+      const rem = (await db.collection('courses').doc(cursoId).get()).data() || {};
+      await db.collection('courses').doc(cursoId).set(
+        { trailerStreamStatus: estadoVideoNoRetrocede(r.data.estado, rem.trailerStreamStatus) }, { merge: true });
       cuPintarDetalle();
       showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
     }catch(e){ showToast('No se pudo verificar: ' + e.message); }
@@ -11258,7 +11326,8 @@
     if(c){ c.trailerStreamVideoId = ''; c.trailerStreamStatus = ''; }
     if(cuActual?.curso?.id === cursoId){ cuActual.curso.trailerStreamVideoId = ''; cuActual.curso.trailerStreamStatus = ''; }
     try{
-      await publicarCursos();
+      await guardarCurso(cursoId);
+      await db.collection('courses').doc(cursoId).set({ trailerStreamStatus: '' }, { merge: true });
       showToast('Video de vista previa quitado');
     }catch(e){ showToast('No se pudo quitar: ' + e.message); }
     cuPintarDetalle();
@@ -11293,7 +11362,7 @@
       cuActual.curso.resources = [...(cuActual.curso.resources||[]), { name: nombre, url }];
       const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
       if(enLista) enLista.resources = cuActual.curso.resources;
-      await publicarCursos();
+      await guardarCurso(cuActual.curso.id);
       cuRecursoArchivo = null;
       showToast('Recurso agregado');
       cuPintarDetalle();
@@ -11307,7 +11376,7 @@
     cuActual.curso.resources.splice(i, 1);
     const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
     if(enLista) enLista.resources = cuActual.curso.resources;
-    try{ await publicarCursos(); }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    try{ await guardarCurso(cuActual.curso.id); }catch(e){ showToast('No se pudo guardar: ' + e.message); }
     cuPintarDetalle();
   }
 
@@ -11331,15 +11400,37 @@
     }
   }
 
-  /** Sincroniza cuActual.clases -> cuActual.curso.lessons y guarda en
-   *  Firestore, sin toast -- usada por cada edición chica (reordenar,
-   *  cambiar título/minutos/gratis) para que nada se pierda sin tener que
-   *  apretar "Guardar cambios". */
+  /** Sincroniza cuActual.clases -> cuActual.curso.lessons y guarda SOLO el
+   *  array de lecciones en Firestore (merge), sin toast -- usada por cada
+   *  edición chica (reordenar, cambiar título/minutos/gratis) para que nada
+   *  se pierda sin tener que apretar "Guardar cambios".
+   *
+   *  El único escritor del array `lessons`. Antes de escribir relee las
+   *  lecciones de Firestore y, por cada una (match por id), conserva el
+   *  streamStatus real que dejó el webhook de Bunny -- solo usa el estado
+   *  local si el panel cambió el video de esa lección (streamVideoId
+   *  distinto) o si Firestore aún no sabe nada. Así, guardar un cambio de
+   *  título nunca revierte a 'processing' un video que ya estaba 'ready'. */
   async function cuGuardarClasesSilencioso(){
     cuActual.curso.lessons = cuActual.clases;
     const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
     if(enLista) enLista.lessons = cuActual.clases;
-    try{ await publicarCursos(); }
+    try{
+      const ref = db.collection('courses').doc(cuActual.curso.id);
+      let remotas = [];
+      try{ const s = await ref.get(); if(s.exists) remotas = s.data().lessons || []; }catch(e){}
+      const remotaPorId = {};
+      remotas.forEach(l=>{ if(l && l.id) remotaPorId[l.id] = l; });
+      const lessons = cuActual.clases.map(l=>{
+        const r = remotaPorId[l.id];
+        if(!r) return { ...l };
+        const mismoVideo = (l.streamVideoId || '') === (r.streamVideoId || '');
+        return { ...l, streamStatus: mismoVideo
+          ? estadoVideoNoRetrocede(l.streamStatus, r.streamStatus)
+          : (l.streamStatus || '') };
+      });
+      await ref.set({ lessons }, { merge: true });
+    }
     catch(e){ showToast('No se pudo guardar: ' + e.message); }
   }
 
@@ -11565,12 +11656,12 @@
 
     Object.assign(cuActual.curso, datos);
     const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
-    if(enLista){
-      Object.assign(enLista, datos);
-      enLista.lessons = cuActual.clases;
-    }
+    if(enLista) Object.assign(enLista, datos);
 
-    try{ await publicarCursos(); }
+    // 1 solo write, 1 solo documento: el de este curso. Las lecciones ya se
+    // guardan solas en cada edición (cuGuardarClasesSilencioso), así que este
+    // botón no las toca.
+    try{ await guardarCurso(cuActual.curso.id); }
     catch(e){ btn.disabled = false; btn.textContent = 'Guardar cambios'; return showToast('No se pudo guardar: ' + e.message); }
 
     btn.disabled = false; btn.textContent = 'Guardar cambios';
@@ -11593,10 +11684,14 @@
         cuCursos.push({ ...r.product, lessons: [] });
       }catch(e){ return showToast(e.message); }
     } else {
-      cuCursos.push({
+      const nuevo = {
         id:'c' + Date.now(), name:nombre, description:'', priceClp:precio,
-        priceUsd:null, active:true, accessUrl:'', lessons:[]
-      });
+        priceUsd:null, active:true, featured:false, accessUrl:'',
+        accessDurationDays:30, resources:[], lessons:[]
+      };
+      cuCursos.push(nuevo);
+      try{ await guardarCurso(nuevo.id); }   // el curso nuevo queda en Firestore de inmediato
+      catch(e){ cuCursos = cuCursos.filter(c=> c.id !== nuevo.id); return showToast('No se pudo crear el curso: ' + e.message); }
     }
 
     await cuCargarLista();
@@ -11618,6 +11713,7 @@
     { id:'SERVICIOS_EDITAR',  nombre:'Editar servicios y precios', grupo:'Configuración' },
     { id:'EQUIPO_EDITAR',     nombre:'Agregar o quitar barberos',  grupo:'Configuración' },
     { id:'CURSOS_EDITAR',     nombre:'Administrar cursos',         grupo:'Configuración' },
+    { id:'TESTIMONIOS_GESTIONAR', nombre:'Administrar experiencias de alumnos', grupo:'Configuración' },
     { id:'TIENDA_EDITAR',     nombre:'Administrar productos',      grupo:'Configuración' },
     { id:'COMISIONES_VER',    nombre:'Ver comisiones',             grupo:'Dinero', sensible:true },
     { id:'COMISIONES_EDITAR', nombre:'Cambiar porcentajes',        grupo:'Dinero', sensible:true },
@@ -11650,10 +11746,7 @@
   }
 
   function mostrarUsuarios(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaProductos','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaUsuarios').style.display = '';
@@ -11675,10 +11768,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaClientes','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaProductos').style.display = '';
@@ -13228,10 +13318,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
-    ['vistaAgenda','vistaComisiones','vistaPropinas','vistaColores','vistaCursos','vistaAccesosCursos','vistaTestimonios','vistaArchivosMultimedia','vistaVentas','vistaCampanas','vistaUsuarios','vistaProductos','vistaHorarios','vistaIntelligence','vistaSuscripciones','vistaResumenVentas'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.style.display = 'none';
-    });
+    ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaClientes').style.display = '';

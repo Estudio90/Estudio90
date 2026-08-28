@@ -20,6 +20,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
+<script src="config-comun.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
 <style>
   /* ==========================================================
@@ -1664,20 +1665,6 @@
   }
 
 
-  .pm-aviso{display:none; text-align:left; font-size:.78rem; line-height:1.55; color:#8a6d1f;
-    background:#f5efe0; border-radius:var(--radius-sm); padding:12px 14px; margin-top:14px;}
-  .pm-aviso.show{display:block;}
-  .pm-aviso b{display:block; margin-bottom:3px;}
-  .pm-archivo{width:100%; margin-top:11px; padding:10px; background:var(--text-hi); color:var(--bg);
-    border:none; border-radius:var(--radius-sm); font-family:inherit; font-size:.79rem;
-    font-weight:600; cursor:pointer;}
-  .pm-archivo:hover{opacity:.87;}
-  .pm-aviso code{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.74rem; background:rgba(0,0,0,.06);
-    padding:1px 5px; border-radius:4px;}
-
-  .pm-ic{width:52px; height:52px; border-radius:50%; background:var(--panel-2);
-    display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin:0 auto 16px;}
-
   /* ===== carrito ===== */
   .cart-overlay{position:fixed;inset:0;background:rgba(20,19,17,.42);z-index:85;display:none;}
   .cart-overlay.open{display:block;}
@@ -2231,9 +2218,6 @@
     .notify-demo-note{font-size:.66rem; margin-top:10px;}
 
     .toast{padding:10px 16px; font-size:.76rem; bottom:82px;}
-    .pm-aviso{font-size:.72rem; padding:11px 12px;}
-    .pm-archivo{padding:9px; font-size:.74rem;}
-    .pm-ic{width:44px; height:44px; font-size:1.2rem; margin:0 auto 13px;}
     .rs-warn{font-size:.74rem; padding:11px 12px;}
 
     /* academia (vista completa) */
@@ -2390,7 +2374,6 @@
     <a href="#" onclick="cerrarMenu();abrirTienda();return false;">Tienda</a>
     <a href="#promos" onclick="cerrarMenu();">Promociones</a>
     <a href="#" onclick="cerrarMenu();onAccountChipClick();return false;">Mi cuenta</a>
-    <a href="masterlook-panel-interno.html" id="panelInternoMenuLink" style="display:none;">Panel interno</a>
   </nav>
   <div class="menu-pie">
     <div>Lun a Vie · <span id="horLVMenu">11:00–21:00</span></div>
@@ -2793,7 +2776,7 @@
       <div class="field-err" id="loginErr"></div>
       <button class="btn-full" onclick="doLogin()">Ingresar</button>
       <p class="auth-hint">¿No tienes cuenta? <span class="auth-switch" onclick="switchTab('register')">Créala aquí</span></p>
-      <p class="auth-hint">¿Eres del equipo? <a href="masterlook-panel-interno.html" class="auth-switch">Entra al panel interno</a></p>
+      <p class="auth-hint"><span class="auth-switch" onclick="doForgotPassword()">¿Olvidaste tu contraseña?</span></p>
     </div>
 
     <div class="auth-form" data-form="register">
@@ -3493,26 +3476,6 @@
     </div>
   </div>
 </aside>
-
-<!-- Acceso al panel interno -->
-<div class="modal-overlay" id="panelModal">
-  <div class="modal-card" style="max-width:380px; text-align:center;">
-    <div class="pm-ic">🔑</div>
-    <h2>Cuenta del equipo</h2>
-    <p class="modal-sub" style="margin-bottom:22px;">
-      Hola <b id="pmNombre">Administrador</b>, tu cuenta tiene acceso al panel interno.
-    </p>
-    <button class="btn-dark" id="pmIr" style="width:100%;">Ir al panel interno →</button>
-    <button class="btn-ghost" id="pmQuedarse" style="width:100%; margin-top:9px;">Quedarme en el sitio</button>
-
-    <div class="pm-aviso" id="pmAviso">
-      <b>El panel no está en esta carpeta</b>
-      Pasa cuando abres el sitio solo (vista previa o archivo suelto).
-      Al subir los dos archivos juntos a tu hosting, el botón funciona directo.
-      <button class="pm-archivo" id="pmArchivo">Abrir el panel desde mi archivo</button>
-    </div>
-  </div>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -4768,7 +4731,7 @@
   auth.onAuthStateChanged(async user=>{
     if(MODE === 'api') { if(resolverAuthListo) resolverAuthListo(); resolverAuthListo = null; return; } // ese modo maneja su propia sesión por token
     if(!user){
-      customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); actualizarChipMisProductos(null); actualizarLinkPanelInterno(null); reiniciarTimerInactividad();
+      customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); actualizarChipMisProductos(null); reiniciarTimerInactividad();
       if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
       return;
     }
@@ -4809,7 +4772,6 @@
     await renderAccount();
     actualizarChipMisCursos(user.uid);
     actualizarChipMisProductos(user.uid);
-    actualizarLinkPanelInterno(user.uid);
     reiniciarTimerInactividad();
     if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
   });
@@ -4842,6 +4804,21 @@
     if(e.target.id === 'authModal') closeAuth();
   });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAuth(); });
+
+  /* Login unificado: si masterlook-panel-interno.html nos mandó de vuelta
+     acá (sin sesión, o con una cuenta de staff desactivada), abrimos el
+     login directamente en vez de dejar que la persona tenga que buscarlo.
+     Ninguno de estos parámetros declara ni transmite ningún rol -- solo
+     indican qué pestaña/mensaje mostrar. */
+  (function revisarVueltaDesdePanel(){
+    const params = new URLSearchParams(location.search);
+    if(params.get('volverAPanel') !== '1') return;
+    openAuth('login');
+    if(params.get('panelError') === 'inactivo'){
+      showErr('loginErr', 'Tu acceso fue desactivado. Habla con un administrador.');
+    }
+    history.replaceState(null, '', location.pathname + location.hash);
+  })();
 
   /* ---------- Pie legal: Términos, Privacidad, Derechos ARCO ---------- */
   function abrirModalLegal(id){ document.getElementById(id).classList.add('open'); }
@@ -4965,13 +4942,33 @@
       try{
         await auth.signInWithEmailAndPassword(email, pass);
       }catch(e){ return showErr('loginErr', 'Correo o contraseña incorrectos.'); }
-    }
 
-    // si la cuenta es del equipo, ofrecemos ir al panel
-    if(MODE === 'api' && ['ADMIN','BARBER'].includes(sessionUser?.role)){
-      closeAuth();
-      mostrarAccesoPanel(sessionUser.name);
-      return;
+      // Login unificado: cliente, barbero, recepción y administrador
+      // entran todos por este mismo formulario -- el rol se determina
+      // acá, nunca lo elige el usuario. El UID de la dueña se comprueba
+      // PRIMERO, sin depender de que la lectura de staff/{uid} exista,
+      // esté permitida o responda (si fallara, jamás debe degradarla a
+      // "cliente normal"). Solo para cualquier otra cuenta se consulta
+      // staff/{uid} para decidir BARBER/RECEPTION/ADMIN/cliente -- el
+      // mismo patrón ya usado hasta ahora por actualizarLinkPanelInterno().
+      const esDueña = auth.currentUser.uid === OWNER_UID_FALLBACK;
+      if(esDueña){
+        closeAuth();
+        location.href = 'masterlook-panel-interno.html';
+        return;
+      }
+      try{
+        const staffDoc = await db.collection('staff').doc(auth.currentUser.uid).get();
+        if(staffDoc.exists){
+          if(staffDoc.data().active === false){
+            await auth.signOut();
+            return showErr('loginErr', 'Tu acceso fue desactivado. Habla con un administrador.');
+          }
+          closeAuth();
+          location.href = 'masterlook-panel-interno.html';
+          return;
+        }
+      }catch(e){ /* lectura denegada = cliente normal, sigue abajo sin tocar nada */ }
     }
 
     if(carritoEsperandoAuth){
@@ -4986,6 +4983,20 @@
     const nombre = (sessionUser?.name || currentUser()?.name || '').split(' ')[0];
     toast('Hola de nuevo, ' + nombre);
     document.getElementById('cuenta').scrollIntoView({behavior:'smooth'});
+  }
+
+  // "¿Olvidaste tu contraseña?" -- único mecanismo de recuperación, para
+  // cualquier tipo de cuenta (cliente, barbero, recepción, admin): el
+  // mismo built-in de Firebase Auth que ya usa el panel interno 3 veces,
+  // nunca un segundo sistema de contraseñas.
+  async function doForgotPassword(){
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    if(!email) return showErr('loginErr', 'Escribe tu correo arriba y vuelve a intentar.');
+    try{
+      await auth.sendPasswordResetEmail(email);
+      showErr('loginErr', '');
+      toast('Te enviamos un correo para restablecer tu contraseña');
+    }catch(e){ showErr('loginErr', 'No pudimos enviar el correo: revisa que esté bien escrito.'); }
   }
 
   /* ---------- Cierre de sesión automático por inactividad (30 min) -----------
@@ -7507,68 +7518,6 @@
     pintarPortada();
   }
 
-  /* ---------- acceso del equipo al panel interno ---------- */
-
-  /** Al ingresar con una cuenta del equipo (vía API real), lo llevamos al panel. */
-  function mostrarAccesoPanel(nombre){
-    const modal = document.getElementById('panelModal');
-    document.getElementById('pmNombre').textContent = nombre || 'Administrador';
-    modal.classList.add('open');
-  }
-
-  /* Nombres posibles del archivo del panel, según cómo lo hayas subido. */
-  const RUTAS_PANEL = ['masterlook-panel-interno.html', 'panel.html', 'masterlook-panel.html'];
-
-  /** Verifica que el archivo exista antes de navegar, para no caer en un 404. */
-  async function irAlPanel(){
-    const btn = document.getElementById('pmIr');
-    btn.disabled = true; btn.textContent = 'Abriendo...';
-
-    for(const ruta of RUTAS_PANEL){
-      try{
-        const r = await fetch(ruta, { method:'HEAD' });
-        if(r.ok){ location.href = ruta; return; }
-      }catch(e){ /* seguimos probando */ }
-    }
-
-    // No está en la carpeta (pasa al abrir el archivo suelto o en una vista previa).
-    // En vez de un 404, ofrecemos abrirlo pegando el archivo aquí mismo.
-    btn.disabled = false; btn.textContent = 'Ir al panel interno →';
-    document.getElementById('pmAviso').classList.add('show');
-  }
-
-  /** Abre el panel desde el archivo que el usuario tenga guardado. */
-  function abrirPanelDesdeArchivo(){
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.html';
-    input.addEventListener('change', ()=>{
-      const f = input.files[0];
-      if(!f) return;
-      const lector = new FileReader();
-      lector.onload = ()=>{
-        // lo abrimos en una pestaña nueva, con la sesión ya iniciada
-        const w = window.open('', '_blank');
-        if(!w) return toast('Permite las ventanas emergentes para abrir el panel');
-        w.document.write(lector.result);
-        w.document.close();
-      };
-      lector.readAsText(f);
-    });
-    input.click();
-  }
-
-  document.getElementById('pmArchivo')?.addEventListener('click', abrirPanelDesdeArchivo);
-
-  document.getElementById('pmIr')?.addEventListener('click', irAlPanel);
-  document.getElementById('pmQuedarse')?.addEventListener('click', ()=>{
-    document.getElementById('panelModal').classList.remove('open');
-    toast('Puedes entrar al panel cuando quieras desde tu cuenta');
-  });
-  document.getElementById('panelModal')?.addEventListener('click', e=>{
-    if(e.target.id === 'panelModal') e.currentTarget.classList.remove('open');
-  });
-
   /* En una vista previa o iframe restringido el navegador puede bloquear el
      historial. Lo envolvemos para que un bloqueo no rompa la navegación. */
   let historialOk = true;
@@ -7799,21 +7748,6 @@
 
   /** El ícono de "Mis cursos" del header solo se muestra a clientes con al
    *  menos un curso vigente -- para el resto queda oculto, no solo inerte. */
-  /** "Panel interno" solo debe verse en el menú de cuentas del equipo, nunca
-   *  a un cliente. Se apoya en la misma regla de Firestore que ya protege
-   *  la colección `staff` (isStaff() en firestore.rules): un cliente no
-   *  puede ni leer su propio documento ahí, así que la lectura falla sola
-   *  y basta con tratar cualquier error como "no es del equipo". */
-  async function actualizarLinkPanelInterno(uid){
-    const link = document.getElementById('panelInternoMenuLink');
-    if(!link) return;
-    if(!uid){ link.style.display = 'none'; return; }
-    try{
-      const doc = await db.collection('staff').doc(uid).get();
-      link.style.display = doc.exists ? '' : 'none';
-    }catch(e){ link.style.display = 'none'; }
-  }
-
   async function actualizarChipMisCursos(uid){
     const link = document.getElementById('misCursosMenuLink');
     if(!link) return;
