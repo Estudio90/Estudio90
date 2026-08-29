@@ -1807,6 +1807,10 @@
       <div class="nav-section-label">Panel</div>
       <button class="menu-panel-item" id="btnAgendaNav">Agenda</button>
       <button class="menu-panel-item" id="btnRecordatorios">Recordatorios</button>
+      <!-- Reporte personal del barbero (solo BARBER -- lo revela
+           mostrarControlesAdmin). Antes vivía dentro del grupo "Equipo
+           barberos", que no corresponde mostrarle a un barbero. -->
+      <button class="menu-panel-item" id="btnComisiones" style="display:none;">Mis comisiones</button>
 
       <div class="nav-section-label">Vista cliente</div>
       <button class="menu-panel-item" id="btnMensajeriaWhatsapp">Mensajería WhatsApp</button>
@@ -1844,7 +1848,6 @@
         <button class="nav-group-head" type="button">Equipo barberos</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnEquipoServicios">Servicios staff</button>
-          <button class="menu-panel-item" id="btnComisiones">Mis comisiones</button>
         </div>
       </div>
 
@@ -4662,8 +4665,10 @@
 
   // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
   document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
-  document.getElementById('btnTiendaVer').addEventListener('click', ()=>
-    window.open('masterlook-sitio.html#tienda', '_blank'));
+  document.getElementById('btnTiendaVer').addEventListener('click', ()=>{
+    if(barberoBloqueado()) return;
+    window.open('masterlook-sitio.html#tienda', '_blank');
+  });
   document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarHorariosPage);
   document.getElementById('btnEquipoServicios').addEventListener('click', mostrarHorariosPage);
   document.getElementById('btnComProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
@@ -4681,6 +4686,7 @@
    * este archivo nunca escribe en esa colección, solo la consulta.
    */
   function mostrarAbonos(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -4820,6 +4826,7 @@
   const RV_PALETA_METODO = ['#FFC98C','#D6D6D6','#F2685C','#A47FC4','#8a8272','#5c6b3f','#5b564a','#c48a6f'];
 
   function mostrarResumenVentas(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -5150,6 +5157,40 @@
   // redirección genérica).
   let redirigiendoDesdePanel = false;
 
+  // El SDK de Auth vuelve a disparar onAuthStateChanged varias veces mientras
+  // asienta el token al cargar la página (cada lectura de Firestore del arranque
+  // puede gatillar un refresh). `sesionResuelta` hace que solo el PRIMER disparo
+  // con sesión válida haga el trabajo (leer la ficha, montar o expulsar); los
+  // re-disparos de la MISMA sesión no repiten las lecturas ni vuelven a montar.
+  // Un signOut real dispara la rama `!user`, que va antes de este guard.
+  let sesionResuelta = false;
+
+  /* Lee staff/{uid} resistente a la carrera del token: justo al restaurar
+     sesión (F5 en el panel, o llegada directa por URL) el token puede no
+     haber llegado aún al SDK de Firestore y devolver permission-denied por
+     carrera -- no porque no sea staff. Misma técnica que destinoDeLogin() en
+     el sitio: una lectura de control (su propio customers/{uid}, que cualquier
+     sesión válida puede hacer) distingue la carrera de un permission-denied
+     real. Si la de control pasa y staff sigue denegando -> no es staff, se
+     devuelve null sin esperar. Si la de control falla -> carrera: hasta 3
+     intentos refrescando el token (getIdToken(true)) desde el 2º, con esperas
+     cortas. NO relaja nada: agotados los intentos, o ficha inexistente,
+     devuelve null y la sesión se expulsa igual que antes. */
+  async function leerFichaStaffPanel(user){
+    for(let intento = 0; intento < 3; intento++){
+      try{ await user.getIdToken(intento > 0); }catch(e){}
+      let tokenListo = false;
+      try{ await db.collection('customers').doc(user.uid).get(); tokenListo = true; }catch(e){}
+      try{
+        return await db.collection('staff').doc(user.uid).get();
+      }catch(e){
+        if(tokenListo) return null;   // token confirmado -> no es staff
+        if(intento < 2) await new Promise(r=> setTimeout(r, 150));
+      }
+    }
+    return null;
+  }
+
   auth.onAuthStateChanged(async user=>{
     if(redirigiendoDesdePanel) return; // ya decidimos a dónde vamos; ignorar este re-disparo
 
@@ -5158,6 +5199,9 @@
       location.href = 'index.html?volverAPanel=1';
       return;
     }
+
+    if(sesionResuelta) return;   // re-disparo del SDK con la misma sesión ya montada
+    sesionResuelta = true;
 
     // El UID de la dueña se comprueba PRIMERO: su acceso nunca depende
     // de que la lectura de staff/{uid} exista, esté permitida o
@@ -5170,21 +5214,21 @@
       userRole = 'ADMIN';
       userIsStaff = true;
     } else {
-      try{
-        const doc = await db.collection('staff').doc(user.uid).get();
-        if(doc.exists){
-          if(doc.data().active === false){
-            redirigiendoDesdePanel = true;
-            await auth.signOut();
-            location.href = 'index.html?volverAPanel=1&panelError=inactivo';
-            return;
-          }
-          userRole = doc.data().role || 'BARBER';
-          userBarberName = doc.data().barber?.name || null;
-          userPermissions = doc.data().permissions || [];
-          userIsStaff = true;
+      const doc = await leerFichaStaffPanel(user);   // reintenta ante carrera de token
+      if(doc && doc.exists){
+        if(doc.data().active === false){
+          redirigiendoDesdePanel = true;
+          await auth.signOut();
+          location.href = 'index.html?volverAPanel=1&panelError=inactivo';
+          return;
         }
-      }catch(e){ /* lectura denegada -> no es staff */ }
+        userRole = doc.data().role || 'BARBER';
+        userBarberName = doc.data().barber?.name || null;
+        userPermissions = doc.data().permissions || [];
+        userIsStaff = true;
+      }
+      // doc === null (3 lecturas fallidas con token refrescado) o !doc.exists
+      // -> userIsStaff sigue false -> se expulsa abajo, igual que antes.
     }
 
     if(!userIsStaff){
@@ -5209,6 +5253,11 @@
     // trate como "sesión perdida" y no mande a index.html?volverAPanel=1
     // (que abriría el modal de login justo después de cerrar sesión).
     redirigiendoDesdePanel = true;
+    // Cortar los listeners privados (bookings, blocks) ANTES del signOut: si
+    // siguen vivos, Firestore los re-evalúa sin sesión y tira un
+    // permission-denied ("Uncaught Error in snapshot listener") en la consola.
+    try{ if(unsubBookings){ unsubBookings(); unsubBookings = null; } }catch(e){}
+    try{ if(unsubBlocks){ unsubBlocks(); unsubBlocks = null; } }catch(e){}
     try{ await auth.signOut(); }catch(e){}
     location.href = 'index.html';
   }
@@ -5875,10 +5924,13 @@
     // solo evita mostrar el botón a quien de todas formas no podría usarlo.
     document.getElementById('btnResumenVentas').style.display = soloAdmin;
 
-    // Clientes/Horarios/Reseñas/ARCO: administrador y recepción sí, barbero no.
+    // Clientes/Horarios/Reseñas/ARCO, Mensajería WhatsApp y "Ver productos"
+    // de Tienda: administrador y recepción sí, barbero no. El barbero tiene
+    // su propia vista (su día + sus comisiones); no gestiona clientes,
+    // catálogo, tienda ni la comunicación con clientes.
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
     ['btnClientes','btnHorarios','btnServiciosCatalogo','btnResenas','btnArco',
-     'btnArchivosMultimedia'].forEach(id=>{
+     'btnArchivosMultimedia','btnMensajeriaWhatsapp','btnTiendaVer'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = cliOn;
     });
 
@@ -5905,6 +5957,18 @@
       const items = grupo.querySelectorAll('.menu-panel-item');
       const algunoVisible = Array.from(items).some(el=> el.style.display !== 'none');
       grupo.style.display = algunoVisible ? '' : 'none';
+    });
+
+    // Una etiqueta de sección se oculta si no le quedó ningún ítem ni grupo
+    // visible debajo (p.ej. "Vista cliente" para un barbero, que ya no ve
+    // Mensajería WhatsApp, Tienda ni Academy).
+    document.querySelectorAll('#menuLinks > .nav-section-label').forEach(label=>{
+      let hayAlgo = false;
+      for(let el = label.nextElementSibling; el && !el.classList.contains('nav-section-label'); el = el.nextElementSibling){
+        if(el.classList.contains('btn-ordenar-menu')) continue;
+        if(el.style.display !== 'none'){ hayAlgo = true; break; }
+      }
+      label.style.display = hayAlgo ? '' : 'none';
     });
 
     // Punto rojo de "hay pagos próximos" -- se revisa una sola vez al
@@ -5962,8 +6026,19 @@
 
   /* ---------------- Puente con el sitio web ----------------
      Las reservas hechas en masterlook-sitio.html se guardan en
-     Firestore y aparecen aquí en vivo, desde cualquier dispositivo. */
+     Firestore y aparecen aquí en vivo, desde cualquier dispositivo.
+
+     `firestoreBookings` ya NO contiene toda la colección: solo las reservas
+     de la semana (lunes–domingo) que se está viendo. Antes había un
+     onSnapshot sin límite sobre `bookings` entera, que además nunca se
+     cancelaba y era solo-aditivo (una reserva modificada, cancelada o
+     borrada no se reflejaba hasta recargar). Ver suscribirBookingsSemana()
+     y reconciliarAgenda() más abajo. */
   let firestoreBookings = [];
+  let unsubBookings = null;      // corta el listener de la semana anterior al navegar
+  let unsubBlocks = null;        // se cancela en el logout junto con unsubBookings
+  let bookingsWeekKey = null;    // 'YYYY-MM-DD' del lunes de la semana suscrita
+  let bookingsSubEpoch = 0;      // invalida callbacks de un listener ya reemplazado
 
   const BARBER_COL = {
     'Diego Colina':1, 'Jhoover Peñaranda':2, 'Raúl Chourio':3,
@@ -6082,74 +6157,200 @@
     return [Math.floor(total/60) % 24, total % 60];
   }
 
-  function importWebBookings(silencioso){
-    const incoming = firestoreBookings;
+  /**
+   * Construye el objeto de cita que usa la agenda a partir de un documento
+   * crudo de `bookings`. Extraído de la antigua importWebBookings para
+   * reusarlo tanto al agregar como al actualizar una reserva.
+   */
+  function appointmentDesdeBooking(r){
+    const meta = serviceMeta(r.svc);
+    // Duración real de ESTA reserva (guardada al crearla), no una
+    // adivinanza por el nombre del servicio -- serviceMeta().mins solo
+    // sirve de respaldo para reservas viejas que no la tengan guardada.
+    // Antes SIEMPRE usaba la adivinanza, así que un servicio de 120 min
+    // con un nombre que no calzara con ningún patrón quedaba mostrado
+    // como si durara 45 min en la agenda.
+    const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
+    const col = pickColumn(r.barber);
+    const start = parseSlot(r.slot);
+    const end = addMinutes(start[0], start[1], duracionReal);
+    const barberName = BARBER_COL[r.barber]
+      ? r.barber
+      : (barbers.find(b=> b.id===col) || {}).name;
 
-    const existing = new Set(appointments.map(a=> a.webId).filter(Boolean));
-    let added = 0;
+    return {
+      webId: r.id, col, fecha: r.fecha,
+      client: r.client || 'Cliente web',
+      service: r.svc,
+      price: '$' + Number(r.price).toLocaleString('es-CL'),
+      start, end, type: meta.type,
+      status: r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend')),
+      barber: barberName,
+      phone: r.phone || '',
+      email: r.email || '',
+      notes: 'Reserva online' + (r.pay ? ' · Pago: ' + r.pay : ''),
+      fromWeb: true,
+      abono: r.abono ? '$' + Number(r.abono).toLocaleString('es-CL') : undefined,
+      abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha,
+      // depositoPagado: misma bandera tanto si el anticipo se pagó por
+      // Webpay como si se registró presencial (ver paymentMovements.js) --
+      // así la franja A/$ de la tarjeta no depende de por cuál camino vino.
+      depositoPagado: r.depositoPagado || false,
+      pagado: r.pagado || false, metodoPago: r.metodoPago,
+      montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
+      notaAdmin: r.notaAdmin || '',
+    };
+  }
 
-    incoming.forEach(r=>{
-      if(existing.has(r.id)) return;
-      if(r.decision === 'rechazada') return;   // las rechazadas no se muestran en el calendario
-      if(r.fecha !== currentDate) return;      // solo el día que se está viendo -- si no, se mezclan citas de otras fechas en el mismo horario y se ven "encimadas"
+  /** Campos de una cita que, si cambian en Firestore, obligan a repintar. */
+  function firmaCita(a){
+    return [
+      a.col, a.start && a.start.join(':'), a.end && a.end.join(':'),
+      a.service, a.status, a.barber, a.client, a.price, a.abono,
+      a.depositoPagado, a.pagado, a.notaAdmin, a.type,
+    ].join('|');
+  }
 
-      const meta = serviceMeta(r.svc);
-      // Duración real de ESTA reserva (guardada al crearla), no una
-      // adivinanza por el nombre del servicio -- serviceMeta().mins solo
-      // sirve de respaldo para reservas viejas que no la tengan guardada.
-      // Antes SIEMPRE usaba la adivinanza, así que un servicio de 120 min
-      // con un nombre que no calzara con ningún patrón quedaba mostrado
-      // como si durara 45 min en la agenda.
-      const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
-      const col = pickColumn(r.barber);
-      const start = parseSlot(r.slot);
-      const end = addMinutes(start[0], start[1], duracionReal);
-      const barberName = BARBER_COL[r.barber]
-        ? r.barber
-        : (barbers.find(b=> b.id===col) || {}).name;
+  /**
+   * Sincroniza la agenda del día visible con `firestoreBookings` (que solo
+   * contiene la semana suscrita). A diferencia de la antigua importWebBookings,
+   * que SOLO agregaba, esta:
+   *   - agrega las reservas nuevas del día,
+   *   - actualiza in situ las que cambiaron (hora, servicio, estado, barbero…),
+   *   - quita las canceladas, borradas o reagendadas a otra fecha.
+   * Nunca toca una cita sin `webId` (las manuales/locales se respetan).
+   */
+  function reconciliarAgenda(opts){
+    opts = opts || {};
+    const avisar = opts.silencioso === false;
 
-      const appt = {
-        webId: r.id, col, fecha: r.fecha,
-        client: r.client || 'Cliente web',
-        service: r.svc,
-        price: '$' + Number(r.price).toLocaleString('es-CL'),
-        start, end, type: meta.type,
-        status: r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend')),
-        barber: barberName,
-        phone: r.phone || '',
-        email: r.email || '',
-        notes: 'Reserva online' + (r.pay ? ' · Pago: ' + r.pay : ''),
-        fromWeb: true,
-        abono: r.abono ? '$' + Number(r.abono).toLocaleString('es-CL') : undefined,
-        abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha,
-        // depositoPagado: misma bandera tanto si el anticipo se pagó por
-        // Webpay como si se registró presencial (ver paymentMovements.js) --
-        // así la franja A/$ de la tarjeta no depende de por cuál camino vino.
-        depositoPagado: r.depositoPagado || false,
-        pagado: r.pagado || false, metodoPago: r.metodoPago,
-        montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
-        notaAdmin: r.notaAdmin || '',
-      };
-
-      appointments.push(appt);
-      const el = renderAppointment(appt, appointments.length - 1);
-      if(!silencioso) el.classList.add('appt-web-new');
-      added++;
+    const deseadas = new Map();
+    firestoreBookings.forEach(r=>{
+      if(r.decision === 'rechazada') return;   // las rechazadas no se muestran
+      if(r.fecha !== currentDate) return;      // solo el día que se está viendo
+      deseadas.set(r.id, appointmentDesdeBooking(r));
     });
 
-    if(added){
-      layoutAllColumns();
-      if(!silencioso){
-        showToast(added === 1
-          ? 'Nueva reserva desde la web'
-          : `${added} nuevas reservas desde la web`);
+    let added = 0, updated = 0, removed = 0;
+    const nuevasIds = [];
+
+    // 1) quitar las que ya no corresponden (canceladas / borradas / movidas)
+    for(let i = appointments.length - 1; i >= 0; i--){
+      const a = appointments[i];
+      if(!a.webId) continue;                 // jamás tocar una cita manual/local
+      if(deseadas.has(a.webId)) continue;
+      appointments.splice(i, 1);
+      removed++;
+    }
+
+    // 2) agregar nuevas y actualizar cambiadas
+    deseadas.forEach((nueva, id)=>{
+      const idx = appointments.findIndex(a=> a.webId === id);
+      if(idx === -1){
+        appointments.push(nueva);
+        nuevasIds.push(id);
+        added++;
+      } else if(firmaCita(appointments[idx]) !== firmaCita(nueva)){
+        // conservamos la MISMA referencia del objeto: openDrawer(a),
+        // los hovers y otros closures ya capturaron ese `a`.
+        Object.assign(appointments[idx], nueva);
+        updated++;
       }
+    });
+
+    if(added || updated || removed){
+      document.querySelectorAll('.appt').forEach(el=> el.remove());
+      Object.keys(colCounters).forEach(k=> colCounters[k] = 0);
+      appointments.forEach((a,i)=>{
+        const el = renderAppointment(a, i);
+        if(avisar && a.webId && nuevasIds.indexOf(a.webId) > -1) el.classList.add('appt-web-new');
+      });
+      layoutAllColumns();
       refreshBarberCounts();
       if(typeof applyFilters === 'function') applyFilters();
       if(userRole === 'BARBER' && document.getElementById('vistaBarbero').style.display !== 'none'){
         pintarVistaBarbero();
       }
+      guardarDiaActual();   // el caché del día queda coherente con lo reconciliado
+      if(avisar && added){
+        showToast(added === 1
+          ? 'Nueva reserva desde la web'
+          : `${added} nuevas reservas desde la web`);
+      }
     }
+  }
+
+  /** Compat: irADia() sigue llamando a esto al cambiar de fecha. */
+  function importWebBookings(silencioso){
+    reconciliarAgenda({ silencioso: silencioso !== false });
+  }
+
+  function lunesISO(iso){
+    const d = new Date((iso || currentDate) + 'T12:00:00');
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return d.toISOString().slice(0,10);
+  }
+  function domingoISO(lunesIso){
+    const d = new Date(lunesIso + 'T12:00:00');
+    d.setDate(d.getDate() + 6);
+    return d.toISOString().slice(0,10);
+  }
+
+  /**
+   * Escucha en vivo SOLO las reservas de la semana (lunes–domingo) que
+   * contiene `refIso`. Cancela primero la suscripción anterior -- nunca dos
+   * listeners de `bookings` a la vez. Si ya se está escuchando esa semana,
+   * no hace nada (navegar entre días de la misma semana = 0 lecturas).
+   * Devuelve una promesa que resuelve con el primer snapshot.
+   */
+  function suscribirBookingsSemana(refIso){
+    const lunes = lunesISO(refIso);
+    if(lunes === bookingsWeekKey && unsubBookings) return Promise.resolve();
+
+    // 1) cortar el listener de la semana anterior ANTES de abrir el nuevo
+    if(unsubBookings){ try{ unsubBookings(); }catch(e){} unsubBookings = null; }
+
+    const domingo = domingoISO(lunes);
+    bookingsWeekKey = lunes;
+    const epoch = ++bookingsSubEpoch;   // cualquier callback viejo con otro epoch se ignora
+    firestoreBookings.length = 0;        // en memoria solo vive la semana suscrita
+
+    return new Promise(resolve=>{
+      let primera = true;
+      const listo = ()=>{ if(primera){ primera = false; resolve(); } };
+      unsubBookings = db.collection('bookings')
+        .where('fecha', '>=', lunes)
+        .where('fecha', '<=', domingo)
+        .onSnapshot(snap=>{
+          // callback de un listener ya reemplazado (doble navegación rápida):
+          // se ignora, pero igual se resuelve la promesa para no colgar a quien
+          // la esté esperando.
+          if(epoch === bookingsSubEpoch){
+            snap.docChanges().forEach(ch=>{
+              const doc = { id: ch.doc.id, ...ch.doc.data() };
+              const i = firestoreBookings.findIndex(b=> b.id === doc.id);
+              if(ch.type === 'removed'){
+                if(i > -1) firestoreBookings.splice(i, 1);
+              } else {
+                if(i > -1) firestoreBookings[i] = doc; else firestoreBookings.push(doc);
+              }
+            });
+            // Primer snapshot = carga inicial, en silencio. Los siguientes sí
+            // avisan ("nueva reserva desde la web") y animan la tarjeta nueva.
+            reconciliarAgenda({ silencioso: primera });
+            if(document.getElementById('calPanelSemana').style.display !== 'none' && sbCalId){
+              sbPintarSemana();   // la vista semanal del barbero usa esta misma data
+            }
+          }
+          listo();
+        }, ()=>{
+          // Al cerrar sesión (o si entra alguien sin permiso), la regla
+          // `bookings` (isStaff) rechaza y el listener emitiría un
+          // permission-denied en consola. Ya se está saliendo: se ignora,
+          // igual que el handler silencioso del listener de `blocks`.
+          listo();
+        });
+    });
   }
 
   function refreshBarberCounts(){
@@ -6248,11 +6449,13 @@
     } else {
       cargarDiaDemo(iso);
       appointments.forEach((a,i)=> renderAppointment(a, i));
-      // Trae también lo que ya llegó en vivo de Firestore para ESTE día
-      // (cargarDiaDemo solo restaura lo que quedó cacheado la última vez
-      // que se vio este día -- si nunca se había visto, esto lo completa).
-      // silencioso=true: esto es solo repoblar la vista, no avisar "nueva reserva".
-      importWebBookings(true);
+      // Si el día cae en otra semana, re-suscribe el listener a esa semana
+      // (cortando el anterior) y espera su primer snapshot. Dentro de la
+      // semana ya suscrita esto no hace nada -> 0 lecturas nuevas.
+      await suscribirBookingsSemana(iso);
+      // Reconcilia la vista con lo que llegó en vivo: agrega lo nuevo,
+      // actualiza lo cambiado y quita lo que ya no va (canceladas, movidas).
+      reconciliarAgenda({ silencioso: true });
       layoutAllColumns();
       renderBlocks();
     }
@@ -6355,7 +6558,15 @@
 
   /* ---------- Modales ---------- */
   const mgOverlay = document.getElementById('mgOverlay');
+  // Modales que son pantallas administrativas: un BARBER no los abre por
+  // ninguna vía (los legítimos para él -- Mi perfil, Recordatorios, fotos de
+  // cliente, WhatsApp por cliente -- no están en la lista).
+  const MODALES_ADMIN = ['modalArco', 'modalPromos', 'modalMensajeriaWhatsapp'];
   function abrirModal(id){
+    if(userRole === 'BARBER' && MODALES_ADMIN.indexOf(id) > -1){
+      if(typeof showToast === 'function') showToast('Esta sección no está disponible para tu cuenta');
+      return;
+    }
     mgOverlay.classList.add('open');
     document.getElementById(id).classList.add('open');
   }
@@ -6842,7 +7053,7 @@
      calendario, y el sitio del cliente (masterlook-sitio.html) los lee
      en vivo para no ofrecer esos horarios en las reservas online. */
   let demoBlocks = [];
-  db.collection('blocks').onSnapshot(snap=>{
+  unsubBlocks = db.collection('blocks').onSnapshot(snap=>{
     demoBlocks = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
     renderBlocks();
     renderBlockList();
@@ -7336,6 +7547,7 @@
   let colTemaPreview = 'oscuro';
 
   async function mostrarColores(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -7511,6 +7723,7 @@
 
   /* ---------- Página de Horarios (horario del local + horario por barbero) ---------- */
   async function mostrarHorariosPage(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -7535,6 +7748,7 @@
 
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -7652,7 +7866,7 @@
     return l;
   }
 
-  function abrirSemanaBarbero(calId){
+  async function abrirSemanaBarbero(calId){
     sbCalId = calId;
     sbWeekStart = lunesDe(new Date(currentDate + 'T12:00:00'));
     // usa el mismo espacio que la agenda del día -- la barra lateral (mini
@@ -7663,6 +7877,9 @@
     document.getElementById('calPanelDia').style.display = 'none';
     document.getElementById('calPanelSemana').style.display = '';
     ocultarFlotante(true);
+    // Reusa el MISMO listener de la agenda (misma semana del día activo, así
+    // que normalmente ni re-suscribe). No abre un segundo listener de bookings.
+    await suscribirBookingsSemana(sbWeekStart.toISOString().slice(0,10));
     sbPintarSemana();
   }
 
@@ -7676,10 +7893,14 @@
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = '';
     ocultarFlotante(false);
+    // si en la vista semanal se navegó a otra semana, volver a la del día activo
+    suscribirBookingsSemana(currentDate).then(()=> reconciliarAgenda({ silencioso: true }));
   }
 
-  function sbMoverSemana(n){
+  async function sbMoverSemana(n){
     sbWeekStart.setDate(sbWeekStart.getDate() + n*7);
+    // cambia la semana visible -> corta el listener anterior y suscribe la nueva
+    await suscribirBookingsSemana(sbWeekStart.toISOString().slice(0,10));
     sbPintarSemana();
   }
 
@@ -7799,8 +8020,9 @@
 
   document.getElementById('sbPrev').addEventListener('click', ()=> sbMoverSemana(-1));
   document.getElementById('sbNext').addEventListener('click', ()=> sbMoverSemana(1));
-  document.getElementById('sbHoy').addEventListener('click', ()=>{
+  document.getElementById('sbHoy').addEventListener('click', async ()=>{
     sbWeekStart = lunesDe(new Date());
+    await suscribirBookingsSemana(sbWeekStart.toISOString().slice(0,10));
     sbPintarSemana();
   });
   document.getElementById('sbVolver').addEventListener('click', sbVolverAgenda);
@@ -8367,6 +8589,45 @@
     pintarVistaBarbero();
   }
 
+  /**
+   * Candado de las pantallas administrativas frente al rol BARBER. Ocultar el
+   * botón del menú no basta: si un barbero invoca la función de la vista
+   * (consola, navegación interna, un handler suelto), acá se lo devuelve a su
+   * propia vista y la función no llega a mostrar ni a cargar nada. ADMIN y
+   * RECEPCIÓN pasan sin tocar nada. Devuelve true si se bloqueó.
+   */
+  function barberoBloqueado(){
+    if(userRole !== 'BARBER') return false;
+    if(typeof showToast === 'function') showToast('Esta sección no está disponible para tu cuenta');
+    mostrarVistaBarbero();
+    return true;
+  }
+
+  // Únicas vistas que un BARBER puede tener abiertas: la suya y "Mis comisiones"
+  // (que internamente solo le muestra su propio resumen). "Agenda" y
+  // "Recordatorios" del barbero no son vistas de sección: Agenda lo lleva a su
+  // propia vista y Recordatorios es un modal.
+  const VISTAS_BARBERO_OK = ['vistaBarbero', 'vistaComisiones'];
+
+  // Red de seguridad: si por CUALQUIER vía (consola, hash, DOM directo, una
+  // función sin candado, navegación restaurada) una vista administrativa se
+  // hace visible con rol BARBER, se oculta al instante y se vuelve a su vista.
+  // No depende de que cada mostrarX() tenga su propio guard.
+  (function candadoVistasBarbero(){
+    if(typeof MutationObserver === 'undefined') return;
+    VISTAS_PANEL.forEach(id=>{
+      if(VISTAS_BARBERO_OK.indexOf(id) > -1) return;
+      const el = document.getElementById(id);
+      if(!el) return;
+      new MutationObserver(()=>{
+        if(userRole === 'BARBER' && el.style.display !== 'none'){
+          el.style.display = 'none';
+          mostrarVistaBarbero();
+        }
+      }).observe(el, { attributes:true, attributeFilter:['style'] });
+    });
+  })();
+
   async function pintarVistaBarbero(){
     document.getElementById('vbNombre').textContent = userBarberName || '';
     document.getElementById('vbFecha').textContent = fmtFecha(currentDate);
@@ -8433,6 +8694,16 @@
     b.addEventListener('click', ()=> cxIrA(b.dataset.cxv)));
 
   async function cxIrA(v){
+    // El barbero solo ve su propio resumen -- nunca el reporte de todos los
+    // profesionales ni la configuración de tarifas, aunque llame a cxIrA directo.
+    if(userRole === 'BARBER'){
+      document.getElementById('cxConfig').style.display = 'none';
+      document.getElementById('cxReporte').style.display = 'none';
+      document.getElementById('cxAccionesReporte').style.display = 'none';
+      document.getElementById('cxBarbero').style.display = '';
+      pintarResumenBarbero();
+      return;
+    }
     document.querySelectorAll('#vistaComisiones .cx-navbtn').forEach(b=> b.classList.toggle('on', b.dataset.cxv === v));
     const rep = v === 'reporte';
     document.getElementById('cxConfig').style.display = rep ? 'none' : '';
@@ -8447,6 +8718,7 @@
 
   /* ---------- lista de profesionales ---------- */
   async function cxCargarPros(){
+    if(userRole === 'BARBER') return;   // tarifas de TODOS los profesionales -- nunca un barbero
     const grid = document.getElementById('cxPros');
     grid.innerHTML = '<div class="cx-empty">Cargando...</div>';
     await cargarCatalogo();
@@ -8789,6 +9061,7 @@
   }
 
   async function cxCargarReporte(){
+    if(userRole === 'BARBER') return;   // comisiones de TODOS los profesionales -- nunca un barbero
     const tb = document.getElementById('cxTabla');
     tb.innerHTML = '<tr><td colspan="7" class="cx-empty">Calculando...</td></tr>';
     await cargarCatalogo();
@@ -9066,6 +9339,7 @@
      vendidos, aunque usa el mismo arreglo de reservas ya cargado. ---------- */
   let tpRep = null;
   function mostrarPropinas(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -9233,6 +9507,7 @@
   }
 
   function mostrarCursos(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -9247,6 +9522,7 @@
 
   /* ===== Accesos a cursos (entitlements): otorgar/extender/revocar/reactivar ===== */
   function mostrarAccesosCursos(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -9258,6 +9534,7 @@
 
   /* ===== Experiencias de alumnos: testimonios en video (gratis, público) ===== */
   function mostrarTestimoniosPage(){
+    if(barberoBloqueado()) return;
     // La protección real está en Firestore + Cloud Functions; esto solo
     // evita entrar a una sección que igual rechazaría cada escritura.
     if(!(userRole === 'ADMIN' || userPermissions.includes('TESTIMONIOS_GESTIONAR')))
@@ -9666,11 +9943,14 @@
   });
 
   /* ===== Mensajería WhatsApp (panel informativo) ===== */
-  document.getElementById('btnMensajeriaWhatsapp').addEventListener('click', ()=>
-    abrirModal('modalMensajeriaWhatsapp'));
+  document.getElementById('btnMensajeriaWhatsapp').addEventListener('click', ()=>{
+    if(barberoBloqueado()) return;
+    abrirModal('modalMensajeriaWhatsapp');
+  });
 
   /* ===== Archivos multimedia: todas las fotos de clientes ===== */
   function mostrarArchivosMultimedia(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -9703,6 +9983,7 @@
   };
   let ventasTipoActual = 'academy';
   function mostrarVentas(tipo){
+    if(barberoBloqueado()) return;
     ventasTipoActual = tipo;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
@@ -9765,6 +10046,7 @@
 
   /* ===== Campañas: envío masivo de correo ===== */
   function mostrarCampanas(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -10034,6 +10316,7 @@
   }
 
   function mostrarSuscripciones(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -10791,8 +11074,11 @@
             <div id="cuRecursosLista">
               ${(curso.resources||[]).length ? curso.resources.map((r,i)=>`
                 <div class="cu-recurso-item" data-rec="${i}">
-                  <span>📎 ${r.name}</span>
-                  <button type="button" class="cu-card-link del" data-rec-borrar>Quitar</button>
+                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📎 ${escapeHTML(r.name)}</span>
+                  <span style="display:flex;gap:12px;flex:none;align-items:center;">
+                    ${/^https?:\/\//.test(r.url || '') ? `<a class="cu-card-link" href="${escapeHTML(r.url)}" target="_blank" rel="noopener" style="color:#4a5cf0;">Ver</a>` : ''}
+                    <button type="button" class="cu-card-link del" data-rec-borrar>Quitar</button>
+                  </span>
                 </div>`).join('') : '<div class="cu-box-note" style="margin:0;">Sin recursos aún.</div>'}
             </div>
             <div class="cu-fila" style="margin-top:10px;">
@@ -11746,6 +12032,7 @@
   }
 
   function mostrarUsuarios(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -11768,6 +12055,7 @@
 
   /* ---------- Productos: ventas y comisiones ---------- */
   function mostrarProductos(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -12155,7 +12443,11 @@
     } else {
       try{
         const snap = await db.collection('staff').get();
-        usLista = snap.docs.map(d=> d.data());
+        // el id SIEMPRE es el del documento (= uid). Antes se leía de un campo
+        // `id` dentro del doc, que fichas viejas o de prueba pueden no tener ->
+        // data-us quedaba vacío y editar / nueva clave / quitar acceso no
+        // apuntaban a nadie.
+        usLista = snap.docs.map(d=> ({ ...d.data(), id: d.id }));
       }catch(e){
         cont.innerHTML = `<div class="us-vacio">No se pudo cargar: ${e.message}</div>`;
         return;
@@ -12167,7 +12459,7 @@
   function usPintar(){
     const q = document.getElementById('usBuscar').value.trim().toLowerCase();
     const lista = usLista.filter(u=>
-      !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      !q || (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
     const cont = document.getElementById('usTabla');
 
     if(!lista.length){ cont.innerHTML = '<div class="us-vacio">Sin resultados.</div>'; return; }
@@ -12176,17 +12468,21 @@
       lista.map(u=>{
         const rol = ROLES.find(r=> r.id === u.role) || ROLES[2];
         const extras = (u.permissions || []).length;
-        const ini = u.name.split(' ').slice(0,2).map(w=> w[0]).join('').toUpperCase();
+        // Una ficha sin `name`/`email` (p.ej. cuentas de prueba en dev) no debe
+        // reventar toda la lista -- se muestra con lo que haya.
+        const nombre = u.name || u.email || '(sin nombre)';
+        const ini = (u.name || u.email || '').trim().split(/[\s@._-]+/).filter(Boolean)
+          .slice(0,2).map(w=> w[0]).join('').toUpperCase() || '?';
         return `<div class="us-fila ${u.active === false ? 'off' : ''}" data-us="${u.id}">
           <div class="us-quien">
             <div class="us-av">${ini}</div>
             <div style="min-width:0;">
-              <div class="us-nombre">${u.name}</div>
+              <div class="us-nombre">${nombre}</div>
               ${extras ? `<div class="us-sub">+${extras} permiso${extras>1?'s':''} extra</div>`
                        : (u.barber ? '<div class="us-sub">barbero</div>' : '')}
             </div>
           </div>
-          <span class="us-mail">${u.email}</span>
+          <span class="us-mail">${u.email || '—'}</span>
           <span><span class="us-rol" style="background:${rol.color}22;color:${rol.color};">${rol.nombre}</span></span>
           <div class="us-acciones">
             <button class="us-ib" data-editar title="Editar">✎</button>
@@ -12228,7 +12524,7 @@
 
   async function usAbrir(u){
     usEditando = u;
-    document.getElementById('usmTitulo').textContent = u ? 'Editar ' + u.name : 'Nuevo usuario';
+    document.getElementById('usmTitulo').textContent = u ? 'Editar ' + (u.name || u.email || 'usuario') : 'Nuevo usuario';
     document.getElementById('usNombre').value = u?.name || '';
     document.getElementById('usCorreo').value = u?.email || '';
     document.getElementById('usFono').value = u?.phone || '';
@@ -12587,6 +12883,7 @@
   }
 
   document.getElementById('btnArco').addEventListener('click', async ()=>{
+    if(barberoBloqueado()) return;
     abrirModal('modalArco');
     await cargarArco();
   });
@@ -12666,15 +12963,19 @@
   });
 
   document.getElementById('btnPromos').addEventListener('click', ()=>{
+    if(barberoBloqueado()) return;
     abrirModal('modalPromos');
     pintarPromosLista();
   });
 
-  /** Reservas confirmadas para mañana (usa la misma data en vivo del calendario). */
-  function reservasDeManana(){
+  /** Reservas confirmadas para mañana. Consulta puntual (.get) por fecha: el
+      listener en vivo solo cubre la semana visible, que puede no incluir
+      mañana si se está mirando otra fecha. */
+  async function reservasDeManana(){
     const manana = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
-    return firestoreBookings
-      .filter(r=> r.fecha === manana && r.decision === 'aprobada')
+    const snap = await db.collection('bookings').where('fecha', '==', manana).get();
+    return snap.docs.map(d=> ({ id: d.id, ...d.data() }))
+      .filter(r=> r.decision === 'aprobada')
       .sort((a,b)=> (a.startMin||0) - (b.startMin||0));
   }
 
@@ -12722,7 +13023,7 @@
       return;
     }
 
-    const reservas = reservasDeManana();
+    const reservas = await reservasDeManana();
     const enviados = reservas.filter(r=> r.recordatorioEnviado).length;
     document.getElementById('rcTotal').textContent = reservas.length;
     document.getElementById('rcEnviados').textContent = enviados;
@@ -12775,7 +13076,7 @@
       return;
     }
 
-    const pendientes = reservasDeManana().filter(r=> !r.recordatorioEnviado);
+    const pendientes = (await reservasDeManana()).filter(r=> !r.recordatorioEnviado);
     if(!pendientes.length) return;
 
     btn.disabled = true; btn.textContent = 'Enviando...';
@@ -12808,10 +13109,9 @@
       await loadAgendaFromApi();
     } else {
       demoAgenda[currentDate] = appointments.slice();   // agenda inicial de hoy
-      db.collection('bookings').onSnapshot(snap=>{
-        firestoreBookings = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
-        importWebBookings();
-      });
+      // Escucha en vivo SOLO la semana de hoy (lunes–domingo). Antes esto era
+      // un onSnapshot sin límite sobre toda la colección `bookings`.
+      await suscribirBookingsSemana(currentDate);
     }
 
     await pintarSemana();
@@ -13318,6 +13618,7 @@
   let clientesCache = [];
 
   function mostrarClientes(){
+    if(barberoBloqueado()) return;
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';

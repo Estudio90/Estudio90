@@ -4813,6 +4813,46 @@
   let resolverAuthListo;
   const authListo = new Promise(r=> resolverAuthListo = r);
 
+  /* Login unificado -- ÚNICA lógica de enrutamiento por rol (la reusan
+     onAuthStateChanged y doLogin). Prioridad:
+       1. UID de la dueña            -> 'panel'   (sin leer Firestore)
+       2. ficha staff/{uid} activa   -> 'panel'   (BARBER / RECEPTION / ADMIN;
+          el panel interno ya enruta cada rol -- BARBER a su vista propia)
+       3. cualquier otra cuenta      -> 'cliente'
+     Tener además ficha customers/{uid} NO cuenta: si hay ficha staff activa,
+     va al panel.
+
+     Carrera del token: la lectura de staff/{uid} es `allow read: if isStaff()`.
+     Justo tras signIn o al restaurar sesión, el token puede no haber llegado
+     aún al SDK de Firestore -> la regla ve request.auth == null y responde
+     permission-denied por CARRERA, no porque el usuario no sea staff. Para
+     distinguirlo se hace una LECTURA DE CONTROL que cualquier sesión válida
+     puede hacer: su propio customers/{uid} (regla: auth.uid == uid; resuelve
+     aunque el doc no exista). Si la de control pasa, el token ya está y un
+     permission-denied de staff es definitivo -> 'cliente' al instante, sin
+     esperas. Si la de control también falla, es carrera real -> hasta 3
+     intentos, refrescando el token (getIdToken(true)) desde el 2º, con esperas
+     cortas. Nunca se cuelga: agotados los intentos, se asume 'cliente'. */
+  async function destinoDeLogin(user){
+    if(!user) return 'cliente';
+    if(user.uid === OWNER_UID_FALLBACK) return 'panel';
+    for(let intento = 0; intento < 3; intento++){
+      try{ await user.getIdToken(intento > 0); }catch(e){}   // intento>0 -> fuerza refresh
+      let tokenListo = false;
+      try{ await db.collection('customers').doc(user.uid).get(); tokenListo = true; }catch(e){}
+      try{
+        const doc = await db.collection('staff').doc(user.uid).get();
+        if(!doc.exists) return 'cliente';                     // leyó bien y no hay ficha
+        return doc.data().active === false ? 'inactivo' : 'panel';
+      }catch(e){
+        if(tokenListo) return 'cliente';                      // token confirmado -> staff-denied es real
+        if(intento < 2) await new Promise(r=> setTimeout(r, 150));
+      }
+    }
+    return 'cliente';
+  }
+  let redirigiendoAlPanel = false;
+
   auth.onAuthStateChanged(async user=>{
     if(MODE === 'api') { if(resolverAuthListo) resolverAuthListo(); resolverAuthListo = null; return; } // ese modo maneja su propia sesión por token
     if(!user){
@@ -4820,6 +4860,23 @@
       if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
       return;
     }
+
+    // Staff (dueña / admin / recepción / barbero) -> al panel interno, ANTES
+    // de tratar la sesión como cliente. Ficha desactivada -> se cierra sesión.
+    if(!redirigiendoAlPanel){
+      const dest = await destinoDeLogin(user);
+      if(dest === 'panel'){
+        redirigiendoAlPanel = true;
+        if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
+        location.href = 'masterlook-panel-interno.html';
+        return;
+      }
+      if(dest === 'inactivo'){
+        await auth.signOut();   // dispara este mismo observer con !user
+        return;
+      }
+    }
+
     try{
       const doc = await db.collection('customers').doc(user.uid).get();
       customerProfile = doc.exists
@@ -5028,32 +5085,22 @@
         await auth.signInWithEmailAndPassword(email, pass);
       }catch(e){ return showErr('loginErr', 'Correo o contraseña incorrectos.'); }
 
-      // Login unificado: cliente, barbero, recepción y administrador
-      // entran todos por este mismo formulario -- el rol se determina
-      // acá, nunca lo elige el usuario. El UID de la dueña se comprueba
-      // PRIMERO, sin depender de que la lectura de staff/{uid} exista,
-      // esté permitida o responda (si fallara, jamás debe degradarla a
-      // "cliente normal"). Solo para cualquier otra cuenta se consulta
-      // staff/{uid} para decidir BARBER/RECEPTION/ADMIN/cliente -- el
-      // mismo patrón ya usado hasta ahora por actualizarLinkPanelInterno().
-      const esDueña = auth.currentUser.uid === OWNER_UID_FALLBACK;
-      if(esDueña){
+      // Login unificado: cliente, barbero, recepción y administrador entran
+      // todos por este mismo formulario -- el rol se determina acá, nunca lo
+      // elige el usuario. La MISMA lógica que onAuthStateChanged (destinoDeLogin):
+      // dueña por UID / ficha staff activa -> panel; el resto -> cliente. Un
+      // permission-denied por carrera del token no la degrada a "cliente".
+      const dest = await destinoDeLogin(auth.currentUser);
+      if(dest === 'inactivo'){
+        await auth.signOut();
+        return showErr('loginErr', 'Tu acceso fue desactivado. Habla con un administrador.');
+      }
+      if(dest === 'panel'){
         closeAuth();
+        redirigiendoAlPanel = true;
         location.href = 'masterlook-panel-interno.html';
         return;
       }
-      try{
-        const staffDoc = await db.collection('staff').doc(auth.currentUser.uid).get();
-        if(staffDoc.exists){
-          if(staffDoc.data().active === false){
-            await auth.signOut();
-            return showErr('loginErr', 'Tu acceso fue desactivado. Habla con un administrador.');
-          }
-          closeAuth();
-          location.href = 'masterlook-panel-interno.html';
-          return;
-        }
-      }catch(e){ /* lectura denegada = cliente normal, sigue abajo sin tocar nada */ }
     }
 
     if(carritoEsperandoAuth){
