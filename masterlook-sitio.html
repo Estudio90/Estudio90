@@ -99,8 +99,10 @@
     font-family:var(--font-primary); -webkit-font-smoothing:antialiased; padding-bottom:86px;
     font-variant-numeric:tabular-nums; letter-spacing:-.006em;}
   /* Identidad de los títulos en todo el sitio: MAYÚSCULAS + tracking amplio
-     + peso 600. Las pocas excepciones (hero de Inicio, parte de cursos, ...)
-     redefinen estos valores en su propia regla, más específica. */
+     + peso 600. Excepciones (redefinen estos valores en su propia regla, más
+     específica): hero de Inicio, la parte de cursos y TODA la vista Academy
+     (.ac-hero h1 / .ac-why h2 / .ac-cursos h2 / .ac-testi h2 / .ac-cta h2 /
+     .ac-detail-body h3 conservan su tipografía en caja normal). */
   .display,h1,h2,h3{font-family:var(--font-primary); letter-spacing:.1em; text-transform:uppercase; font-weight:600;}
   .mono{font-family:var(--font-primary); font-variant-numeric:tabular-nums;}
   a{color:inherit; text-decoration:none;}
@@ -1188,7 +1190,10 @@
     padding:36px 0 44px;}
   .ac-eyebrow{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.72rem; letter-spacing:.28em;
     text-transform:uppercase; color:var(--ac-text-low); margin-bottom:14px;}
-  .ac-hero h1{font-family:var(--font-primary); line-height:1.08; margin-bottom:18px;}
+  /* Academy conserva su tipografía propia (caja normal, no el tratamiento en
+     MAYÚSCULAS del resto del sitio) -- revertido tras el Lote A. */
+  .ac-hero h1{font-family:var(--font-primary); font-weight:600; letter-spacing:-.01em;
+    font-size:clamp(2rem,4vw,2.9rem); line-height:1.08; margin-bottom:18px; text-transform:none;}
   .ac-hero p{font-size:.95rem; color:var(--ac-text-mid); line-height:1.6; max-width:400px; margin-bottom:24px;}
   .ac-hero-btns{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
   .ac-btn-dark{display:inline-flex; align-items:center; gap:9px; background:var(--ac-text); color:#fff;
@@ -1216,7 +1221,8 @@
   .ac-video-close:hover{background:rgba(255,255,255,.24);}
 
   .ac-why{padding:36px 0; border-top:1px solid var(--ac-line); text-align:center;}
-  .ac-why h2{font-family:var(--font-primary); font-size:1.15rem; margin-bottom:30px;}
+  .ac-why h2{font-family:var(--font-primary); font-size:1.15rem; font-weight:600;
+    letter-spacing:.01em; margin-bottom:30px; text-transform:none;}
   .ac-why-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:20px;}
   .ac-why-item svg{width:26px; height:26px; color:var(--ac-text); margin-bottom:14px;}
   .ac-why-item b{display:block; font-size:.86rem; font-weight:600; letter-spacing:.03em;
@@ -1272,7 +1278,8 @@
   .ac-carousel-dots button.active{background:var(--ac-text); width:16px; border-radius:4px;}
 
   .ac-testi{padding:40px 0; border-top:1px solid var(--ac-line); text-align:center;}
-  .ac-testi h2{font-family:var(--font-primary); font-size:1.2rem; font-weight:600; margin-bottom:8px;}
+  .ac-testi h2{font-family:var(--font-primary); font-size:1.2rem; font-weight:600; margin-bottom:8px;
+    text-transform:none; letter-spacing:-.014em;}
   .ac-testi > .wrap > p, .ac-testi-sub{color:var(--ac-text-mid); font-size:.85rem; margin-bottom:22px;}
   .ac-testi-grid{display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory;
     -webkit-overflow-scrolling:touch; scrollbar-width:none; text-align:left; padding-bottom:2px;}
@@ -1308,7 +1315,7 @@
   .ac-detail-close{position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:50%;
     background:rgba(0,0,0,.45); color:#fff; border:none; font-size:15px; cursor:pointer; z-index:2;}
   .ac-detail-body{padding:20px 22px 24px;}
-  .ac-detail-body h3{font-size:1.02rem; text-transform:uppercase; margin-bottom:8px;}
+  .ac-detail-body h3{font-size:1.02rem; font-weight:700; text-transform:uppercase; letter-spacing:.01em; margin-bottom:8px;}
   .ac-detail-body p{font-size:.85rem; color:var(--ac-text-mid); line-height:1.6; margin-bottom:16px;}
   .ac-detail-meta{display:flex; gap:18px; margin-bottom:18px; flex-wrap:wrap;}
   .ac-detail-meta span{display:flex; align-items:center; gap:6px; font-size:.76rem; color:var(--ac-text-low);}
@@ -1326,7 +1333,8 @@
     background:rgba(255,255,255,.05);}
   .ac-cta-eyebrow{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.66rem; letter-spacing:.2em;
     text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:10px;}
-  .ac-cta h2{font-family:var(--font-primary); font-size:clamp(1.3rem,2.6vw,1.7rem); margin-bottom:10px;}
+  .ac-cta h2{font-family:var(--font-primary); font-size:clamp(1.3rem,2.6vw,1.7rem); margin-bottom:10px;
+    text-transform:none; letter-spacing:-.014em; font-weight:700;}
   .ac-cta p{font-size:.86rem; color:rgba(255,255,255,.68); line-height:1.5; margin-bottom:18px; max-width:360px;}
   .ac-cta .ac-btn-dark{background:#fff; color:#0c0c0c; border-color:#fff;}
   .ac-seal{width:84px; height:84px; border-radius:50%; border:1px solid rgba(255,255,255,.35);
@@ -2208,7 +2216,7 @@
     /* academia (vista completa) */
     .ac-hero{padding:16px 0 22px; gap:16px;}
     .ac-eyebrow{font-size:.6rem; margin-bottom:8px;}
-    .ac-hero h1{margin-bottom:10px;}
+    .ac-hero h1{font-size:1.6rem; margin-bottom:10px;}
     .ac-hero p{font-size:.82rem; margin-bottom:16px;}
     .ac-hero-btns{gap:14px;}
     .ac-btn-dark{padding:10px 16px; font-size:.72rem; gap:7px;}
@@ -2255,12 +2263,12 @@
   /* ═══════════ Ajustes que cruzan varias vistas ═══════════
      La identidad tipográfica de los títulos (MAYÚSCULAS + tracking .1em + peso
      600) vive en la regla base .display,h1,h2,h3 de más arriba; las excepciones
-     de "la parte de cursos" están cada una en su propia regla (.ac-cursos h2,
-     .courses-title, .ac-course-body h3, .ac-detail-body h3). Acá abajo quedan
-     solo tres cosas que tocan más de una vista a la vez y por eso conviene
-     tenerlas juntas: la cabecera, el hero de Tienda y el tamaño de los títulos
-     de sección. Van al final de la hoja a propósito: así ganan la cascada por
-     orden y no necesitan !important. */
+     (la parte de cursos y toda la vista Academy) están cada una en su propia
+     regla. Acá abajo quedan solo dos cosas que tocan más de una vista a la vez
+     y por eso conviene tenerlas juntas: la cabecera y el hero de Tienda; más
+     el tamaño uniforme de "NUESTROS SERVICIOS" / "MÁS VENDIDOS". Van al final
+     de la hoja a propósito: así ganan la cascada por orden y no necesitan
+     !important. */
 
   /* ── Cabecera: wordmark centrado e idéntico en todas las vistas.
         En Inicio (.nav) y en las cabeceras de overlay (.tv-head) el grid
@@ -2337,22 +2345,20 @@
   .st-hero-sin-foto .st-hero-r{ display: none; }
   .st-hero-sin-foto .st-hero-l{ padding-top: 24px; padding-bottom: 4px; }
 
-  /* ── Títulos de sección uniformes (Inicio / Tienda / Academia):
-        "NUESTROS SERVICIOS", "MÁS VENDIDOS", hero de Academia. Mismo tamaño en
-        cada breakpoint: 1.875rem escritorio / 1.5rem tablet / 1.15rem móvil (y
-        ahí puede partir en 2 líneas — con mayúsculas + tracking no cabe en una,
-        que era lo que causaba scroll horizontal). ── */
+  /* ── Títulos de sección uniformes (Inicio / Tienda):
+        "NUESTROS SERVICIOS", "MÁS VENDIDOS". Mismo tamaño en cada breakpoint:
+        1.875rem escritorio / 1.5rem tablet / 1.15rem móvil (y ahí puede partir
+        en 2 líneas — con mayúsculas + tracking no cabe en una, que era lo que
+        causaba scroll horizontal). ── */
   .sec-head h2,
-  .st-section-head h2,
-  .ac-hero h1{ font-size: 1.5rem; }
+  .st-section-head h2{ font-size: 1.5rem; }
   @media (max-width:520px){
     .sec-head h2,
     .st-section-head h2{ font-size: 1.15rem; white-space: normal; }
   }
   @media (min-width:768px){
     .sec-head h2,
-    .st-section-head h2,
-    .ac-hero h1{ font-size: 1.875rem; }
+    .st-section-head h2{ font-size: 1.875rem; }
   }
 </style>
 </head>
