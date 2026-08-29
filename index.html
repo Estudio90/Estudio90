@@ -27,7 +27,7 @@
      MASTER LOOK — barbería & spa
      ========================================================== */
   :root{
-    --font-primary:'General Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --font-primary:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
 
     --negro:#000000;
     --carbon:#121214;
@@ -98,7 +98,10 @@
   body{background:var(--negro); color:var(--hueso);
     font-family:var(--font-primary); -webkit-font-smoothing:antialiased; padding-bottom:86px;
     font-variant-numeric:tabular-nums; letter-spacing:-.006em;}
-  .display,h1,h2,h3{font-family:var(--font-primary); letter-spacing:-.014em;}
+  /* Identidad de los títulos en todo el sitio: MAYÚSCULAS + tracking amplio
+     + peso 600. Las pocas excepciones (hero de Inicio, parte de cursos, ...)
+     redefinen estos valores en su propia regla, más específica. */
+  .display,h1,h2,h3{font-family:var(--font-primary); letter-spacing:.1em; text-transform:uppercase; font-weight:600;}
   .mono{font-family:var(--font-primary); font-variant-numeric:tabular-nums;}
   a{color:inherit; text-decoration:none;}
   ul{list-style:none;}
@@ -123,8 +126,6 @@
   .wm-main{font-family:var(--font-primary); font-size:1.22rem; font-weight:600;
     letter-spacing:.2em; text-transform:uppercase;}
   .wm-main sup{font-size:.44em; font-weight:400;}
-  .wm-sub{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.56rem; letter-spacing:.42em;
-    color:var(--oro); text-transform:uppercase; margin-top:5px;}
   .nav-right{justify-self:end; display:flex; align-items:center; gap:16px;}
   .icon-btn{background:none; border:none; cursor:pointer; color:var(--hueso);
     display:flex; padding:3px; position:relative;}
@@ -198,7 +199,7 @@
     padding:38px 20px; display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:center;}
   .hero-eyebrow{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.66rem; letter-spacing:.3em;
     text-transform:uppercase; color:var(--gris); margin-bottom:8px;}
-  .hero h1{font-size:clamp(2rem,4.6vw,2.8rem); font-weight:500; letter-spacing:.01em;
+  .hero h1{font-size:clamp(2rem,4.6vw,2.8rem);
     color:var(--hero-titulo-color); line-height:1;}
   .hero-raya{width:44px; height:2px; background:var(--gris); margin:16px 0 14px;}
   .hero-txt p{font-size:.92rem; color:var(--gris); line-height:1.6; margin-bottom:18px;}
@@ -272,7 +273,7 @@
   /* ===== títulos de sección ===== */
   section{padding:52px 0;}
   .sec-head{display:flex; align-items:center; gap:18px; margin-bottom:22px;}
-  .sec-head h2{font-size:clamp(1.4rem,3.4vw,1.85rem); font-weight:600; white-space:nowrap;}
+  .sec-head h2{white-space:nowrap;}   /* tamaño uniforme -- ver "Títulos de sección" al final de la hoja */
   .sec-linea{flex:1; height:1px; background:var(--linea);}
   .ver-todos{display:inline-flex; align-items:center; gap:8px; background:none; border:none;
     cursor:pointer; font-size:.86rem; color:var(--gris); white-space:nowrap; transition:.2s;}
@@ -342,13 +343,14 @@
   }
   .ab-eyebrow{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.68rem; letter-spacing:.36em;
     color:var(--oro); text-transform:uppercase; margin-bottom:12px;}
-  .ab-title{font-weight:400; letter-spacing:.16em; font-size:clamp(1.9rem,5vw,3rem); color:var(--hueso);
+  .ab-title{font-size:clamp(1.9rem,5vw,3rem); color:var(--hueso);
     position:relative; display:inline-block; padding:0 34px;}
   .ab-title::before,.ab-title::after{content:""; position:absolute; top:50%;
     width:32px; height:1px; background:var(--oro);}
   .ab-title::before{left:-12px;} .ab-title::after{right:-12px;}
   .ab-sub{margin-top:14px; color:var(--gris); font-size:.94rem;}
-  .courses-title{text-align:center; font-weight:600; font-size:clamp(1.3rem,3vw,1.6rem); margin-bottom:28px;}
+  .courses-title{text-align:center; font-weight:600; font-size:clamp(1.3rem,3vw,1.6rem); margin-bottom:28px;
+    text-transform:none; letter-spacing:-.014em;}
   .see-all{display:block; margin:30px auto 0; padding:13px 30px; border:1px solid var(--linea-fuerte);
     border-radius:99px; background:transparent; color:var(--hueso);
     font-size:.85rem; font-weight:500; cursor:pointer; transition:.2s;}
@@ -362,7 +364,6 @@
     .gar:nth-child(2){border-right:none;}
     .promo-fila{grid-template-columns:1fr;}
     .nav{padding:13px 16px;}
-    .wm-main{font-size:1rem; letter-spacing:.16em;}
     .mode-badge{display:none;}
     .nav-right{gap:13px;}
   }
@@ -446,7 +447,7 @@
 
   /* ===== Paso 4 (Datos de contacto y pago): solo estilo, misma lógica ===== */
   .dp-title{margin-bottom:22px;}
-  .dp-title h2{font-family:var(--font-primary); font-size:1.5rem; font-weight:600; letter-spacing:-.01em;}
+  .dp-title h2{font-family:var(--font-primary); font-size:1.5rem;}
   .dp-title p{color:var(--text-mid); font-size:.86rem; margin-top:8px; line-height:1.55;}
   .dp-field{display:flex; align-items:center; gap:12px; border:1px solid var(--border);
     border-radius:var(--radius-sm); padding:2px 16px; margin-bottom:14px; background:var(--panel);}
@@ -993,11 +994,7 @@
 
   .st-hero{display:grid;grid-template-columns:45% 55%;min-height:min(420px,54vh);}
   .st-hero-l{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(24px,5vw,64px);}
-  .st-hero-eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;color:var(--text-mid);
-    display:flex;align-items:center;gap:10px;margin-bottom:18px;}
-  .st-hero-eyebrow::before{content:'';width:26px;height:1px;background:var(--text-mid);}
-  .st-hero-l h1{font-family:var(--font-primary);font-size:clamp(2.4rem,4.6vw,3.4rem);
-    font-weight:600;line-height:1.08;letter-spacing:-.01em;margin-bottom:18px;}
+  .st-hero-l h1{font-family:var(--font-primary);margin-bottom:18px;}
   .st-hero-l p{color:var(--text-mid);font-size:.98rem;line-height:1.6;max-width:420px;margin-bottom:28px;}
   .st-hero-cta{align-self:flex-start;background:var(--text-hi);color:var(--bg);border:none;
     padding:14px 26px;border-radius:99px;font-family:inherit;font-size:.85rem;font-weight:700;
@@ -1005,10 +1002,6 @@
     transition:background 160ms ease, transform 160ms ease-out;}
   .st-hero-cta:hover{background:var(--accent);}
   .st-hero-cta:active{transform:scale(.97);}
-  .st-hero-feats{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;max-width:420px;}
-  .st-hero-feat{display:flex;align-items:center;gap:9px;font-size:.72rem;font-weight:700;
-    letter-spacing:.02em;color:var(--text-hi);}
-  .st-hero-feat svg{flex:0 0 auto;color:var(--text-mid);}
   /* Mientras no haya foto real de producto (pintarHeroTienda la reemplaza
      apenas exista una con photoUrl), este fondo queda visible tal cual --
      antes era un degradé gris plano que se leía como un espacio roto/vacío. */
@@ -1035,7 +1028,7 @@
 
   .st-section{padding:64px 24px 8px;}
   .st-section-head{max-width:1180px;margin:0 auto 26px;display:flex;align-items:baseline;justify-content:space-between;}
-  .st-section-head h2{font-family:var(--font-primary);font-size:1.05rem;font-weight:700;letter-spacing:.05em;}
+  .st-section-head h2{font-family:var(--font-primary);}
   .st-section-head a{background:none;border:none;cursor:pointer;font-family:inherit;color:var(--text-hi);
     font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px;}
   .st-section-head a:hover{color:var(--text-mid);}
@@ -1113,13 +1106,9 @@
     .st-hero{grid-template-columns:1fr;min-height:0;}
     .st-hero-r{height:180px;min-height:0;order:-1;}
     .st-hero-l{padding:22px 20px;}
-    .st-hero-eyebrow{font-size:.62rem;margin-bottom:10px;}
-    .st-hero-l h1{font-size:1.7rem;margin-bottom:10px;}
+    .st-hero-l h1{margin-bottom:10px;}
     .st-hero-l p{font-size:.82rem;line-height:1.5;margin-bottom:16px;}
     .st-hero-cta{padding:11px 20px;font-size:.76rem;margin-bottom:20px;}
-    .st-hero-feats{gap:8px 14px;}
-    .st-hero-feat{font-size:.64rem;gap:6px;}
-    .st-hero-feat svg{width:13px;height:13px;}
 
     .st-cats-wrap{margin-top:-18px;padding:0 14px;}
     .st-cats{display:flex;overflow-x:auto;gap:4px;padding:12px 8px;scrollbar-width:none;grid-template-columns:none;}
@@ -1129,7 +1118,6 @@
 
     .st-section{padding:32px 16px 4px;}
     .st-section-head{margin-bottom:14px;}
-    .st-section-head h2{font-size:.82rem;}
     .st-section-head a{font-size:.7rem;}
     .st-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
     .st-card-photo{margin-bottom:8px;}
@@ -1200,8 +1188,7 @@
     padding:36px 0 44px;}
   .ac-eyebrow{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.72rem; letter-spacing:.28em;
     text-transform:uppercase; color:var(--ac-text-low); margin-bottom:14px;}
-  .ac-hero h1{font-family:var(--font-primary); font-weight:600; letter-spacing:-.01em;
-    font-size:clamp(2rem,4vw,2.9rem); line-height:1.08; margin-bottom:18px;}
+  .ac-hero h1{font-family:var(--font-primary); line-height:1.08; margin-bottom:18px;}
   .ac-hero p{font-size:.95rem; color:var(--ac-text-mid); line-height:1.6; max-width:400px; margin-bottom:24px;}
   .ac-hero-btns{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
   .ac-btn-dark{display:inline-flex; align-items:center; gap:9px; background:var(--ac-text); color:#fff;
@@ -1229,8 +1216,7 @@
   .ac-video-close:hover{background:rgba(255,255,255,.24);}
 
   .ac-why{padding:36px 0; border-top:1px solid var(--ac-line); text-align:center;}
-  .ac-why h2{font-family:var(--font-primary); font-size:1.15rem; font-weight:600;
-    letter-spacing:.01em; margin-bottom:30px;}
+  .ac-why h2{font-family:var(--font-primary); font-size:1.15rem; margin-bottom:30px;}
   .ac-why-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:20px;}
   .ac-why-item svg{width:26px; height:26px; color:var(--ac-text); margin-bottom:14px;}
   .ac-why-item b{display:block; font-size:.86rem; font-weight:600; letter-spacing:.03em;
@@ -1238,7 +1224,10 @@
   .ac-why-item span{font-size:.78rem; color:var(--ac-text-mid); line-height:1.5;}
 
   .ac-cursos{padding:40px 0; border-top:1px solid var(--ac-line); text-align:center;}
-  .ac-cursos h2{font-family:var(--font-primary); font-size:1.3rem; font-weight:600; margin-bottom:8px;}
+  /* "Nuestros cursos" conserva su estilo propio (caja normal, tracking apretado),
+     no el tratamiento en mayúsculas del resto de títulos. */
+  .ac-cursos h2{font-family:var(--font-primary); font-size:1.3rem; font-weight:600; margin-bottom:8px;
+    text-transform:none; letter-spacing:-.014em;}
   .ac-cursos > .wrap > p, .ac-cursos-sub{color:var(--ac-text-mid); font-size:.88rem; margin-bottom:30px;}
   /* Carrusel horizontal (no grid): las tarjetas se recorren deslizando,
      nunca se apilan verticalmente en ningún ancho de pantalla. */
@@ -1319,7 +1308,7 @@
   .ac-detail-close{position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:50%;
     background:rgba(0,0,0,.45); color:#fff; border:none; font-size:15px; cursor:pointer; z-index:2;}
   .ac-detail-body{padding:20px 22px 24px;}
-  .ac-detail-body h3{font-size:1.02rem; font-weight:700; text-transform:uppercase; letter-spacing:.01em; margin-bottom:8px;}
+  .ac-detail-body h3{font-size:1.02rem; text-transform:uppercase; margin-bottom:8px;}
   .ac-detail-body p{font-size:.85rem; color:var(--ac-text-mid); line-height:1.6; margin-bottom:16px;}
   .ac-detail-meta{display:flex; gap:18px; margin-bottom:18px; flex-wrap:wrap;}
   .ac-detail-meta span{display:flex; align-items:center; gap:6px; font-size:.76rem; color:var(--ac-text-low);}
@@ -1371,7 +1360,7 @@
     color:var(--text-mid); border:1px solid var(--border); padding:5px 12px; border-radius:99px; white-space:nowrap;}
 
   .rv-title{margin-bottom:20px;}
-  .rv-title h2{font-family:var(--font-primary); font-size:1.5rem; font-weight:600; letter-spacing:-.01em;}
+  .rv-title h2{font-family:var(--font-primary); font-size:1.5rem;}
   .rv-title p{color:var(--text-mid); font-size:.9rem; margin-top:5px;}
 
   /* buscador y categorías */
@@ -1655,7 +1644,6 @@
     .slots{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));}
     .tv-head-in{padding:14px 16px; grid-template-columns:auto 1fr auto; gap:8px;}
     .tv-back{font-size:.74rem; padding:6px 8px;}
-    .tv-head .wordmark{font-size:.92rem;}
     .rv-paso{font-size:.65rem; padding:4px 9px;}
     .reservas-vista .wrap{padding:0 16px;}
   }
@@ -1896,8 +1884,6 @@
 
     /* encabezado */
     .nav{padding:10px 14px;}
-    .wm-main{font-size:.9rem; letter-spacing:.13em;}
-    .wm-sub{font-size:.5rem; letter-spacing:.3em; margin-top:3px;}
     .nav-right{gap:9px;}
     .icon-btn svg{width:18px; height:18px;}
     .burger span{width:20px;}
@@ -1946,7 +1932,6 @@
 
     /* títulos de sección */
     .sec-head{gap:10px; margin-bottom:13px;}
-    .sec-head h2{font-size:1.12rem;}
     .ver-todos{font-size:.74rem; gap:6px;}
 
     /* servicios (tarjetas horizontales) */
@@ -2223,7 +2208,7 @@
     /* academia (vista completa) */
     .ac-hero{padding:16px 0 22px; gap:16px;}
     .ac-eyebrow{font-size:.6rem; margin-bottom:8px;}
-    .ac-hero h1{font-size:1.6rem; margin-bottom:10px;}
+    .ac-hero h1{margin-bottom:10px;}
     .ac-hero p{font-size:.82rem; margin-bottom:16px;}
     .ac-hero-btns{gap:14px;}
     .ac-btn-dark{padding:10px 16px; font-size:.72rem; gap:7px;}
@@ -2265,6 +2250,109 @@
     .ac-cta p{font-size:.78rem; margin-bottom:14px;}
     .ac-seal{width:58px; height:58px;}
     .ac-seal-m{font-size:1rem;}
+  }
+
+  /* ═══════════ Ajustes que cruzan varias vistas ═══════════
+     La identidad tipográfica de los títulos (MAYÚSCULAS + tracking .1em + peso
+     600) vive en la regla base .display,h1,h2,h3 de más arriba; las excepciones
+     de "la parte de cursos" están cada una en su propia regla (.ac-cursos h2,
+     .courses-title, .ac-course-body h3, .ac-detail-body h3). Acá abajo quedan
+     solo tres cosas que tocan más de una vista a la vez y por eso conviene
+     tenerlas juntas: la cabecera, el hero de Tienda y el tamaño de los títulos
+     de sección. Van al final de la hoja a propósito: así ganan la cascada por
+     orden y no necesitan !important. */
+
+  /* ── Cabecera: wordmark centrado e idéntico en todas las vistas.
+        En Inicio (.nav) y en las cabeceras de overlay (.tv-head) el grid
+        1fr/auto/1fr descentraba el logo (el botón "Volver" y la fila de
+        iconos no miden lo mismo que la hamburguesa). Se posiciona en
+        absoluto al centro. En los overlays el wordmark venía sin estilo
+        (texto pelado ~14px): se le da el mismo aspecto que en Inicio. ── */
+  .wm-main{ font-size: 1.25rem; font-weight: 700; letter-spacing: .1em; }
+
+  .tv-head-in{ position: relative; min-height: 40px; }
+  .tv-head .wordmark{
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    margin: 0; white-space: nowrap; z-index: 1;
+    font-size: 1.25rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .tv-head .wordmark sup{ font-size: .5em; font-weight: 400; top: -.55em; }
+
+  .tv-head-in > .tv-back{
+    position: absolute; left: clamp(12px, 3vw, 20px);
+    top: 50%; transform: translateY(-50%); z-index: 2;
+  }
+  .tv-head-in > .cart-wrap,
+  .tv-head-in > .icon-btn{
+    position: absolute; right: clamp(12px, 3vw, 20px);
+    top: 50%; transform: translateY(-50%); z-index: 2;
+  }
+  .nav{ position: relative; }
+  .nav > .wordmark{
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1;
+  }
+  .nav > .nav-right{
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 2;
+  }
+  @media (max-width:640px){
+    /* el botón "Volver" se reduce a la flecha para no chocar con el logo centrado */
+    .tv-back{ font-size: 0; padding: 6px 8px; }
+    .tv-back::before{ content: "\2190"; font-size: 1.1rem; }
+  }
+  @media (max-width:520px){
+    /* en móvil el header de Inicio tiene 3 iconos a la derecha: el wordmark
+       a 1.25rem/.1em los rozaba, se achica igual en todas las vistas */
+    .wm-main,
+    .tv-head .wordmark{ font-size: 1.05rem; letter-spacing: .06em; }
+  }
+  @media (min-width:768px){
+    .wm-main{ font-size: 1.5rem; }
+    .tv-head .wordmark{ font-size: 1.5rem; }
+  }
+
+  /* ── Tienda · hero compacto.
+        CON foto de producto -> 2 columnas (texto | foto), como producción.
+        SIN foto -> pintarHeroTienda() añade .st-hero-sin-foto: se oculta el
+        recuadro y el hero pasa a 1 columna contenida (antes: recuadro gris
+        desbordando por la derecha).
+        El 2º encabezado de Tienda (.st-header) se mantiene oculto: tiene
+        referencias de JS (#cartBadge4, navegación por categorías) — las
+        categorías siguen disponibles en los chips de abajo. ── */
+  .st-header{ display: none; }
+  .st-hero-l h1{ font-size: 1.95rem; line-height: 1.15; }
+  @media (max-width:960px){                 /* móvil / tablet: 1 columna, foto arriba */
+    .st-hero-l h1{ font-size: 1.4rem; }
+    .st-hero-r{ height: 150px; }
+    .st-hero-cta{ margin-bottom: 24px; }
+  }
+  @media (min-width:961px){                 /* escritorio: 2 columnas con foto */
+    .st-hero{ min-height: 340px; }
+    .st-hero-cta{ margin-bottom: 28px; }
+  }
+  /* overrides "sin foto" -- después de las reglas de .st-hero para ganarlas por orden */
+  .st-hero-sin-foto{
+    grid-template-columns: 1fr; min-height: 0;
+    max-width: 1180px; margin-left: auto; margin-right: auto;
+  }
+  .st-hero-sin-foto .st-hero-r{ display: none; }
+  .st-hero-sin-foto .st-hero-l{ padding-top: 24px; padding-bottom: 4px; }
+
+  /* ── Títulos de sección uniformes (Inicio / Tienda / Academia):
+        "NUESTROS SERVICIOS", "MÁS VENDIDOS", hero de Academia. Mismo tamaño en
+        cada breakpoint: 1.875rem escritorio / 1.5rem tablet / 1.15rem móvil (y
+        ahí puede partir en 2 líneas — con mayúsculas + tracking no cabe en una,
+        que era lo que causaba scroll horizontal). ── */
+  .sec-head h2,
+  .st-section-head h2,
+  .ac-hero h1{ font-size: 1.5rem; }
+  @media (max-width:520px){
+    .sec-head h2,
+    .st-section-head h2{ font-size: 1.15rem; white-space: normal; }
+  }
+  @media (min-width:768px){
+    .sec-head h2,
+    .st-section-head h2,
+    .ac-hero h1{ font-size: 1.875rem; }
   }
 </style>
 </head>
@@ -2326,7 +2414,6 @@
 
     <div class="wordmark">
       <div class="wm-main">MASTER LOOK<sup>®</sup></div>
-      <div class="wm-sub">Barbería &amp; Spa</div>
     </div>
 
     <div class="nav-right">
@@ -2361,8 +2448,7 @@
 <div class="menu-overlay" id="menuOverlay"></div>
 <aside class="menu-panel" id="menuPanel">
   <div class="menu-top">
-    <div class="wordmark"><div class="wm-main">MASTER LOOK<sup>®</sup></div>
-      <div class="wm-sub">Barbería &amp; Spa</div></div>
+    <div class="wordmark"><div class="wm-main">MASTER LOOK<sup>®</sup></div></div>
     <button class="x-round" id="cerrarMenu">×</button>
   </div>
   <nav class="menu-links">
@@ -3107,16 +3193,9 @@
 
     <div class="st-hero">
       <div class="st-hero-l">
-        <div class="st-hero-eyebrow">GROOMING · ESTILO · MASTERLOOK</div>
         <h1>Cuidado que<br>se nota.</h1>
         <p>Productos de barbería profesionales, los mismos que usamos en el sillón — listos para llevar a casa.</p>
         <button class="st-hero-cta" id="stHeroCta">COMPRAR AHORA <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-        <div class="st-hero-feats">
-          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Uso profesional</div>
-          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 3h6v4l4 10a2 2 0 01-2 3H7a2 2 0 01-2-3l4-10V3z"/></svg>Fórmulas efectivas</div>
-          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 6L9 17l-5-5"/></svg>Los usamos a diario</div>
-          <div class="st-hero-feat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/></svg>Uso diario seguro</div>
-        </div>
       </div>
       <div class="st-hero-r" id="stHeroFoto"></div>
     </div>
@@ -7554,7 +7633,7 @@
   }
 
   document.getElementById('rvVolver').addEventListener('click', ()=>{
-    cerrarReservas();
+    irAInicio();   // "Volver al inicio" -> portada, no history.back()
     if(typeof reiniciarModoReserva === 'function') reiniciarModoReserva();
   });
 
@@ -7582,7 +7661,7 @@
     if(!desdeHistorial && hashActual() === '#tienda') irHistorial('back');
   }
 
-  document.getElementById('tvVolver').addEventListener('click', ()=> cerrarTienda());
+  document.getElementById('tvVolver').addEventListener('click', ()=> irAInicio());
 
   /* ---------- vista de academia ---------- */
   function abrirAcademia(desdeHistorial){
@@ -7653,7 +7732,7 @@
     document.body.style.overflow = '';
     if(!desdeHistorial && hashActual() === '#academia') irHistorial('back');
   }
-  document.getElementById('acVolver').addEventListener('click', ()=> cerrarAcademia());
+  document.getElementById('acVolver').addEventListener('click', ()=> irAInicio());
 
   /* ---------- Mis cursos: clases de los cursos que el cliente compró ---------- */
   async function abrirMisCursos(desdeHistorial){
@@ -7671,7 +7750,7 @@
     document.body.style.overflow = '';
     if(!desdeHistorial && hashActual() === '#mis-cursos') irHistorial('back');
   }
-  document.getElementById('mcVolver').addEventListener('click', ()=> cerrarMisCursos());
+  document.getElementById('mcVolver').addEventListener('click', ()=> irAInicio());
 
   /* ---------- Mis productos: compras de la tienda (PRODUCT_ORDER/CART_ORDER) ---------- */
   async function abrirMisProductos(desdeHistorial){
@@ -7689,7 +7768,7 @@
     document.body.style.overflow = '';
     if(!desdeHistorial && hashActual() === '#mis-productos') irHistorial('back');
   }
-  document.getElementById('mpVolver').addEventListener('click', ()=> cerrarMisProductos());
+  document.getElementById('mpVolver').addEventListener('click', ()=> irAInicio());
 
   /** El link de "Mis productos" del header solo se muestra a clientes con
    *  al menos una compra confirmada (mismo criterio que "Mis cursos"). */
@@ -7809,9 +7888,17 @@
    *  completa que esté abierta (si no, el scroll no se nota porque esas
    *  vistas son position:fixed y tapan todo) y sube al tope de la home. */
   function irAInicio(){
-    cerrarReservas();
-    cerrarTienda();
-    cerrarAcademia();
+    // "Inicio" / "Volver al inicio" van SIEMPRE a la portada. Se cierran todas
+    // las vistas con desdeHistorial=true para NO disparar history.back() (que
+    // llevaría a la vista anterior -- p. ej. Academia si veníamos de ahí -- en
+    // vez de a la portada). Luego se limpia el hash sin navegar.
+    cerrarReservas(true);
+    cerrarTienda(true);
+    cerrarAcademia(true);
+    cerrarMisCursos(true);
+    cerrarMisProductos(true);
+    cerrarComprobante(true);
+    if(hashActual() !== '') irHistorial('limpiar');
     window.scrollTo({ top:0, behavior:'smooth' });
   }
 
@@ -7959,9 +8046,12 @@
    *  ninguna, queda solo el fondo con textura suave. */
   function pintarHeroTienda(){
     const cont = document.getElementById('stHeroFoto');
-    if(!cont || cont.dataset.pintado) return;
+    if(!cont) return;
     const conFoto = productosSiteCache.filter(p=> p.photoUrl);
-    if(!conFoto.length) return; // se reintenta la próxima vez que se pinte la tienda
+    // Sin foto de producto -> se oculta el recuadro y el hero va a una columna
+    // (evita el bloque gris vacío desbordado). Con foto -> layout de 2 columnas.
+    cont.closest('.st-hero')?.classList.toggle('st-hero-sin-foto', !conFoto.length);
+    if(!conFoto.length || cont.dataset.pintado) return; // se reintenta al re-pintar la tienda
     cont.dataset.pintado = '1';
     const principal = conFoto[0];
     cont.innerHTML = `<img src="${principal.photoUrl}" alt="${escapeHTML(principal.name)}">`;
