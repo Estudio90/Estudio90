@@ -1762,6 +1762,120 @@
     .rv-kpi-block:first-child,.rv-bottom-item:first-child{border-top:none;}
     .rv-filtros-card{flex-direction:column;align-items:stretch;}
   }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     Vista Clientes — base de datos con carga paginada server-side.
+     Réplica visual de dev.masterlook.cl/admin/database/clients: por
+     decisión de la dueña esta vista usa la MISMA tipografía system-ui
+     que la referencia (no Bricolage/Poppins del resto del panel).
+     Todo va namespaced bajo #vistaClientes para no afectar nada más.
+     ═══════════════════════════════════════════════════════════════════ */
+  #vistaClientes{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color:#161513;
+    -webkit-font-smoothing:antialiased;
+  }
+  #vistaClientes *{font-family:inherit;}
+
+  .cldb-back{background:none;border:none;color:#5b564c;font-size:13px;cursor:pointer;padding:0;margin-bottom:12px;}
+  .cldb-back:hover{color:#161513;}
+
+  .cldb-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+  .cldb-title{font-size:30px;font-weight:300;line-height:36px;color:#161513;margin:0;letter-spacing:normal;}
+  .cldb-sub{font-size:16px;font-weight:400;color:#5b564c;margin:4px 0 0;}
+  .cldb-add{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;
+    border-radius:999px;background:#cecece;color:#000;font-size:16px;font-weight:700;
+    padding:8px 16px;line-height:1.5;transition:background .15s;}
+  .cldb-add:hover{background:#bebebe;}
+  .cldb-add svg{width:16px;height:16px;}
+
+  .cldb-import{margin-bottom:24px;border:1px dashed rgba(128,128,128,.4);border-radius:12px;
+    background:rgba(240,240,236,.45);padding:16px;}
+  .cldb-import h3{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#161513;margin:0 0 8px;}
+  .cldb-import h3 svg{width:16px;height:16px;color:#808080;}
+  .cldb-import p{font-size:12px;font-weight:400;color:#5b564c;line-height:1.5;margin:0 0 12px;}
+  .cldb-import-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #ecece6;background:#fff;
+    border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;color:#161513;cursor:pointer;transition:background .15s;}
+  .cldb-import-btn:hover{background:#faf9f5;}
+  .cldb-import-btn svg{width:14px;height:14px;}
+
+  .cldb-search-wrap{position:relative;width:100%;max-width:384px;margin-bottom:24px;}
+  .cldb-search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:18px;height:18px;color:#5b564c;pointer-events:none;}
+  .cldb-search{width:100%;border:1px solid #ecece6;border-radius:6px;background:#fff;
+    padding:8px 16px 8px 40px;font-size:14px;color:#161513;height:38px;box-sizing:border-box;}
+  .cldb-search::placeholder{color:#5b564c;}
+  .cldb-search:focus{outline:none;border-color:#808080;}
+
+  .cldb-table-wrap{overflow-x:auto;border:1px solid #ecece6;border-radius:12px;background:#fff;}
+  .cldb-table{width:100%;border-collapse:collapse;font-size:14px;}
+  .cldb-table thead{background:#f7f7f7;}
+  .cldb-table th{font-size:12px;font-weight:500;text-transform:uppercase;color:#5b564c;
+    text-align:left;padding:16px;white-space:nowrap;}
+  .cldb-table td{padding:16px;color:#161513;border-top:1px solid #ecece6;vertical-align:middle;}
+  .cldb-table tbody tr:hover{background:rgba(0,0,0,.03);}
+  .cldb-td-nombre{font-weight:500;}
+  .cldb-truncate{display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cldb-cell-sub{font-size:12px;color:#5b564c;margin-top:2px;}
+  .cldb-th-acc,.cldb-table td:last-child{width:216px;}
+
+  .cldb-actions{display:flex;align-items:center;gap:8px;}
+  .cldb-ib{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+    border:none;border-radius:8px;cursor:pointer;padding:0;transition:background .15s;
+    text-decoration:none;flex-shrink:0;}
+  .cldb-ib svg{width:16px;height:16px;}
+  .cldb-ib-off{opacity:.32;cursor:default;pointer-events:none;filter:grayscale(.6);}
+  /* mismos tonos que la referencia: color -900 al 30% (zinc -800 al 40%), ícono -500 */
+  .cldb-ib.wa{background:rgba(6,78,59,.3);color:#10b981;}
+  .cldb-ib.wa:hover{background:rgba(6,78,59,.5);}
+  .cldb-ib.mail{background:rgba(30,58,138,.3);color:#3b82f6;}
+  .cldb-ib.mail:hover{background:rgba(30,58,138,.5);}
+  .cldb-ib.ver{background:rgba(39,39,42,.4);color:#71717a;}
+  .cldb-ib.ver:hover{background:rgba(39,39,42,.6);}
+  .cldb-ib.editar{background:rgba(120,53,15,.3);color:#f59e0b;}
+  .cldb-ib.editar:hover{background:rgba(120,53,15,.5);}
+  .cldb-ib.borrar{background:rgba(127,29,29,.3);color:#ef4444;}
+  .cldb-ib.borrar:hover{background:rgba(127,29,29,.5);}
+
+  .cldb-empty{padding:40px 16px;text-align:center;color:#5b564c;font-size:14px;}
+
+  .cldb-skel-bar{height:15px;border-radius:6px;background:#ecece6;animation:cldbPulse 1.4s ease-in-out infinite;}
+  @keyframes cldbPulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+  @media (prefers-reduced-motion:reduce){ .cldb-skel-bar{animation:none;} }
+
+  .cldb-pag{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;}
+  .cldb-pag-info{font-size:12px;color:#5b564c;margin:0;}
+  .cldb-pag-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+  .cldb-pag-select{border:1px solid #ecece6;border-radius:8px;background:#fff;padding:8px 12px;
+    font-size:12px;color:#161513;cursor:pointer;}
+  .cldb-pag-btn{border:1px solid #ecece6;border-radius:8px;background:#fff;padding:8px 12px;
+    font-size:12px;font-weight:600;color:#161513;cursor:pointer;transition:background .15s;}
+  .cldb-pag-btn:hover:not(:disabled){background:#faf9f5;}
+  .cldb-pag-btn:disabled{opacity:.4;cursor:default;}
+
+  @media (max-width:720px){
+    .cldb-title{font-size:24px;line-height:30px;}
+    .cldb-head{flex-direction:column;align-items:stretch;}
+    .cldb-add{justify-content:center;}
+    .cldb-search-wrap{max-width:none;}
+    .cldb-table-wrap{border:none;background:none;overflow:visible;}
+    .cldb-table thead{display:none;}
+    .cldb-table,.cldb-table tbody,.cldb-table tr,.cldb-table td{display:block;}
+    .cldb-table tr{border:1px solid #ecece6;border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;}
+    .cldb-table td{border:none;padding:0;}
+    .cldb-table td:last-child{width:auto;}
+    .cldb-truncate{max-width:none;}
+    .cldb-td-nombre{font-size:16px;font-weight:600;margin-bottom:6px;}
+    /* RUT solo si viene con dato */
+    .cldb-table td[data-empty]{display:none;}
+    .cldb-table td[data-label="RUT"]::before{content:"RUT ";color:#9a958c;}
+    .cldb-cell-sub{margin-top:1px;}
+    .cldb-actions{margin-top:12px;gap:12px;}
+    .cldb-ib{width:40px;height:40px;}
+    .cldb-pag{flex-direction:column;align-items:stretch;gap:10px;margin-top:14px;}
+    .cldb-pag-controls{justify-content:space-between;}
+    .cldb-pag-select{flex:1;}
+  }
 </style>
 </head>
 <body>
@@ -2776,28 +2890,61 @@
     <!-- ===== VISTA: USUARIOS Y PERMISOS ===== -->
     <!-- ===== VISTA: CLIENTES (base de datos) ===== -->
     <div id="vistaClientes" style="display:none;">
-      <div class="cx-head">
+      <button class="cldb-back" id="clVolver" type="button">← Volver a la agenda</button>
+
+      <div class="cldb-head">
         <div>
-          <h2 class="cx-title">Clientes</h2>
-          <p class="cx-sub" id="clConteo">Tu base de datos de clientes.</p>
+          <h2 class="cldb-title">Base de Datos - Clientes</h2>
+          <p class="cldb-sub">Gestiona los clientes de la barbería</p>
         </div>
-        <div class="cx-nav">
-          <button class="ctrl-btn" id="clImportar">⬆ Importar clientes</button>
-          <input type="file" id="clArchivo" accept=".csv,.xlsx,.xls" style="display:none;">
-          <button class="ctrl-btn primary" id="clNuevo">+ Nuevo cliente</button>
-          <button class="ctrl-btn" id="clVolver">← Volver a la agenda</button>
-        </div>
+        <button class="cldb-add" id="clNuevo" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Agregar Cliente
+        </button>
       </div>
 
-      <div class="cx-panel">
-        <p class="mg-note" style="margin-bottom:12px;">
-          Para importar, sube un archivo CSV o Excel (.xlsx) con columnas Nombre, Apellido, Correo, Teléfono y RUT
-          (así exportan AgendaPro y programas parecidos).
-        </p>
-        <input type="text" class="cx-search" id="clBuscar" placeholder="Buscar por nombre, correo, teléfono o RUT">
-        <div class="us-tabla" style="margin-top:14px;">
-          <div class="us-fila"><span>Nombre</span><span>Correo</span><span>Teléfono</span><span>Acciones</span></div>
-          <div id="clTabla"></div>
+      <section class="cldb-import">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+          Importar clientes (Excel / CSV)
+        </h3>
+        <p>Sube un Excel (.xlsx, .xls) o CSV con columnas Nombre, Apellido, Correo, Teléfono y RUT (así exportan AgendaPro y programas parecidos). Deduplica por teléfono contra toda la base.</p>
+        <button class="cldb-import-btn" id="clImportar" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+          Subir Excel / CSV
+        </button>
+        <input type="file" id="clArchivo" accept=".csv,.xlsx,.xls" style="display:none;">
+      </section>
+
+      <div class="cldb-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        <input type="text" class="cldb-search" id="clBuscar" placeholder="Buscar por nombre, email o teléfono...">
+      </div>
+
+      <div class="cldb-table-wrap">
+        <table class="cldb-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>RUT</th>
+              <th>Email / Teléfono</th>
+              <th class="cldb-th-acc">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="clTabla"></tbody>
+        </table>
+      </div>
+
+      <div class="cldb-pag" id="clPag" style="display:none;">
+        <p class="cldb-pag-info" id="clPagInfo"></p>
+        <div class="cldb-pag-controls">
+          <select class="cldb-pag-select" id="clPageSize">
+            <option value="20">20 por página</option>
+            <option value="50" selected>50 por página</option>
+            <option value="100">100 por página</option>
+          </select>
+          <button class="cldb-pag-btn" id="clPagPrev" type="button">Anterior</button>
+          <button class="cldb-pag-btn" id="clPagNext" type="button">Siguiente</button>
         </div>
       </div>
     </div>
@@ -6876,19 +7023,149 @@
       !(document.getElementById('nrNombre').value.trim() && nrSeleccion.startsAt);
   }
 
-  /** Autocompletar con clientes ya registrados (por nombre, teléfono o
-   *  correo) al escribir en "Nombre del cliente" -- al elegir uno se
-   *  rellena también el teléfono. Se carga la base de Clientes una sola
-   *  vez, la primera vez que se usa este campo. */
-  let nrClientesListos = false;
-  async function nrAsegurarClientesCache(){
-    if(nrClientesListos) return;
-    nrClientesListos = true;
-    try{
-      const snap = await db.collection('clientes').get();
-      clientesCache = snap.docs.map(d=> d.data());
-    }catch(e){ nrClientesListos = false; }
+  /* ═══ Búsqueda de clientes server-side (compartida por la vista Clientes
+     y el autocomplete de Nueva Reserva). NUNCA carga toda la colección:
+     usa los campos derivados (nombreLower / emailLower / telefonoDigitos /
+     busca) que agrega la migración, con consultas acotadas por .limit(). ═══ */
+  function clNorm(s){
+    return nrNormalizar(s).replace(/\s+/g,' ').trim();
   }
+  /** Teléfono chileno -> 9 dígitos locales (sin +56 / 0 de prefijo). */
+  function clTelefonoDigitos(tel){
+    let d = nrSoloDigitos(tel);
+    if(d.length === 11 && d.startsWith('56')) d = d.slice(2);
+    else if(d.length === 10 && d.startsWith('0')) d = d.slice(1);
+    return d;
+  }
+  /** Prefijos de una palabra desde 2 hasta 14 chars: "gonzalez" ->
+   *  ["go","gon","gonz",...]. Permite buscar por inicio de CUALQUIER
+   *  palabra del nombre/apellido/correo con array-contains.
+   *  Recorre code points (no unidades UTF-16): un nombre con caracteres
+   *  fuera del BMP usa pares suplentes y slice() sobre unidades los
+   *  partiría, dejando un suplente suelto que Firestore vuelve U+FFFD. */
+  function clPrefijos(palabra){
+    const chars = [...String(palabra||'')].slice(0, 14);
+    const out = [];
+    for(let i = 2; i <= chars.length; i++) out.push(chars.slice(0, i).join(''));
+    return out;
+  }
+  /** Campos derivados (nuevos, nunca pisan datos originales). Única fuente
+   *  -- la usan clGuardar, la importación CSV y el script de migración. */
+  function clDerivados(datos){
+    const nombre = clNorm(datos.nombre);
+    const apellido = clNorm(datos.apellido);
+    const emailLower = String(datos.email||'').trim().toLowerCase();
+    const emailLocal = clNorm(emailLower.split('@')[0].replace(/[._\-]+/g,' '));
+    const palabras = [...new Set(
+      (nombre + ' ' + apellido + ' ' + emailLocal).split(' ').filter(p=> p.length >= 2)
+    )];
+    const busca = [...new Set(palabras.flatMap(clPrefijos))].slice(0, 140);
+    return {
+      nombreLower: (nombre + ' ' + apellido).trim(),
+      emailLower,
+      telefonoDigitos: clTelefonoDigitos(datos.telefono),
+      busca,
+      buscaVersion: 2,
+    };
+  }
+  /** ¿el doc tiene los 5 campos derivados al día CONTRA sus datos actuales?
+   *  Compara contenido, no solo buscaVersion -- así detecta un doc que una
+   *  pestaña vieja actualizó con merge (cambió nombre/tel/email pero dejó los
+   *  derivados viejos y buscaVersion:2 intacto). */
+  function clYaMigrado(doc){
+    if(doc.buscaVersion !== 2) return false;
+    const d = clDerivados(doc);
+    return d.nombreLower === doc.nombreLower
+      && d.emailLower === doc.emailLower
+      && d.telefonoDigitos === doc.telefonoDigitos
+      && Array.isArray(doc.busca)
+      && d.busca.length === doc.busca.length
+      && d.busca.every((x,i)=> x === doc.busca[i]);
+  }
+  /** Repara en segundo plano cualquier doc de `lista` cuyos derivados no
+   *  coincidan con sus datos actuales. Sin lecturas extra (los docs ya están
+   *  en memoria). Idempotente: si ya está al día no escribe nada. */
+  async function clSanearEnPantalla(lista){
+    try{
+      const malos = (lista || []).filter(c=> c && c.id && !clYaMigrado(c));
+      if(!malos.length) return 0;
+      const batch = db.batch();
+      malos.forEach(c=> batch.set(db.collection('clientes').doc(c.id), clDerivados(c), { merge:true }));
+      await batch.commit();
+      malos.forEach(c=> Object.assign(c, clDerivados(c)));  // refresca la copia local
+      return malos.length;
+    }catch(e){ return 0; }
+  }
+  /** Decide la estrategia de consulta según lo que tecleó el usuario. */
+  function clRutearBusqueda(qRaw){
+    const q = (qRaw||'').trim();
+    if(!q) return { tipo:'todos' };
+    if(q.includes('@')) return { tipo:'email', valor:q.toLowerCase() };
+    if(/^[\s()+\-.\d]+$/.test(q)){
+      const raw = nrSoloDigitos(q);
+      if(raw.length >= 2){
+        // varios prefijos candidatos: normalizado (sin 56/0), tal cual, y
+        // -- si son 8 dígitos -- con el "9" del móvil delante.
+        const cand = new Set([clTelefonoDigitos(q), raw]);
+        if(raw.length === 8) cand.add('9' + raw);
+        return { tipo:'telefono', candidatos:[...cand].filter(Boolean) };
+      }
+    }
+    const norm = clNorm(q);
+    const terminos = norm.split(' ').filter(Boolean);
+    // el término más largo va al array-contains (el más selectivo); el resto
+    // se filtra en local. Así "j gonzalez" consulta por "gonzalez".
+    let idx = 0;
+    terminos.forEach((t,i)=>{ if(t.length > terminos[idx].length) idx = i; });
+    return { tipo:'texto', valor:norm, seed: terminos[idx] || norm, resto: terminos.filter((_,i)=> i !== idx) };
+  }
+  /** Ejecuta la consulta acotada y devuelve docs ordenados por nombre y
+   *  sin duplicados. limitN = resultados a devolver. topeCand = candidatos
+   *  a traer del array-contains antes del filtro/orden local (chico para el
+   *  autocomplete, más amplio para la vista). */
+  async function clConsultarClientes(ruta, limitN, topeCand){
+    const col = db.collection('clientes');
+    const tope = topeCand || Math.min(Math.max(limitN * 3, 120), 200);
+    const FIN = '';
+    if(ruta.tipo === 'email'){
+      const v = ruta.valor;
+      const snap = await col.where('emailLower','>=',v).where('emailLower','<=',v+FIN).limit(limitN).get();
+      return snap.docs.map(d=> d.data());
+    }
+    if(ruta.tipo === 'telefono'){
+      const vistos = new Set(); const out = [];
+      for(const v of ruta.candidatos){
+        const snap = await col.where('telefonoDigitos','>=',v).where('telefonoDigitos','<=',v+FIN).limit(limitN).get();
+        snap.docs.forEach(d=>{ if(!vistos.has(d.id)){ vistos.add(d.id); out.push(d.data()); } });
+        if(out.length >= limitN) break;
+      }
+      return out.slice(0, limitN);
+    }
+    // texto: array-contains del término más largo (sin orderBy -> índice
+    // automático, sin índice compuesto). Los demás términos se filtran en
+    // local (como prefijo de alguna palabra del nombre) sobre ese conjunto.
+    const snap = await col.where('busca','array-contains',ruta.seed).limit(tope).get();
+    let docs = snap.docs.map(d=> d.data());
+    if(ruta.resto.length){
+      docs = docs.filter(c=>{
+        const palabras = String(c.nombreLower||'').split(' ');
+        return ruta.resto.every(t=> palabras.some(w=> w.startsWith(t)));
+      });
+    }
+    try{
+      const es = await col.where('emailLower','>=',ruta.valor).where('emailLower','<=',ruta.valor+FIN).limit(limitN).get();
+      const vistos = new Set(docs.map(d=> d.id));
+      es.docs.forEach(d=>{ if(!vistos.has(d.id)) docs.push(d.data()); });
+    }catch(e){}
+    docs.sort((a,b)=> String(a.nombreLower||'').localeCompare(String(b.nombreLower||'')));
+    return docs.slice(0, limitN);
+  }
+
+  /* Autocompletar "Nombre del cliente" con consultas pequeñas server-side
+     (antes bajaba los ~4.000 clientes al primer foco). Cache por texto
+     durante la vida del campo; se limpia al crear una reserva. */
+  const nrCacheBusqueda = new Map();
+  let nrBuscarTimer = null;
 
   /** minúsculas + sin tildes/diacríticos -- así "Maria"/"maria"/"María"
    *  comparan igual, sin tocar ni guardar nada, solo al momento de buscar. */
@@ -6898,33 +7175,15 @@
   function nrSoloDigitos(s){
     return String(s||'').replace(/\D/g,'');
   }
-  /** true si ALGUNA palabra del texto (nombre, apellido, o ambos juntos)
-   *  EMPIEZA por la búsqueda -- así "fernanda" encuentra a alguien cuyo
-   *  nombre completo es "María Fernanda González" aunque "fernanda" no sea
-   *  la primera palabra, sin caer en union genérica que ensucie resultados
-   *  de una sola letra (esa sigue siendo solo por inicio de palabra). */
-  function nrCoincidePorPalabra(texto, query){
-    return nrNormalizar(texto).split(/\s+/).some(palabra=> palabra.startsWith(query));
-  }
-
-  function nrBuscarClientes(q){
-    const original = q.trim();
-    if(!original) return [];
-    const query = nrNormalizar(original);
-    const queryDigitos = nrSoloDigitos(original);
-    return clientesCache.filter(c=>{
-      if(nrCoincidePorPalabra((c.nombre||'') + ' ' + (c.apellido||''), query)) return true;
-      // correo: coincidencia en cualquier parte, pero solo desde 3
-      // caracteres -- con 1-2 letras casi cualquier @gmail.com/@hotmail.com
-      // la contiene, y los resultados dejan de ser útiles (ej. "m" no debe
-      // devolver a todo cliente con Gmail).
-      if(query.length >= 3 && (c.email||'').toLowerCase().includes(query)) return true;
-      // teléfono: se compara por dígitos (ignora +56, espacios, guiones,
-      // paréntesis) -- "91234" debe encontrar "+56 9 1234 5678" aunque el
-      // 9 y el 1234 estén separados por un espacio en el dato guardado.
-      if(queryDigitos && nrSoloDigitos(c.telefono).includes(queryDigitos)) return true;
-      return false;
-    }).slice(0, 30);
+  async function nrBuscarClientes(q){
+    const original = (q||'').trim();
+    if(original.length < 2) return [];
+    if(nrCacheBusqueda.has(original)) return nrCacheBusqueda.get(original);
+    try{
+      const docs = await clConsultarClientes(clRutearBusqueda(original), 8, 40);
+      nrCacheBusqueda.set(original, docs);
+      return docs;
+    }catch(e){ return []; }
   }
 
   function nrPintarSugerencias(lista){
@@ -6953,11 +7212,16 @@
 
   document.getElementById('nrNombre').addEventListener('input', ()=>{
     validarNuevaReserva();
-    nrPintarSugerencias(nrBuscarClientes(document.getElementById('nrNombre').value));
+    const val = document.getElementById('nrNombre').value;
+    clearTimeout(nrBuscarTimer);
+    nrBuscarTimer = setTimeout(async ()=>{
+      const lista = await nrBuscarClientes(val);
+      if(document.getElementById('nrNombre').value === val) nrPintarSugerencias(lista);
+    }, 250);
   });
   document.getElementById('nrNombre').addEventListener('focus', async ()=>{
-    await nrAsegurarClientesCache();
-    nrPintarSugerencias(nrBuscarClientes(document.getElementById('nrNombre').value));
+    const val = document.getElementById('nrNombre').value;
+    if(val.trim().length >= 2) nrPintarSugerencias(await nrBuscarClientes(val));
   });
   document.getElementById('nrNombre').addEventListener('blur', ()=>{
     setTimeout(()=>{ document.getElementById('nrSugerencias').style.display = 'none'; }, 150);
@@ -7021,7 +7285,7 @@
 
       // (la ficha del cliente ya se creó/actualizó del lado del servidor,
       // dentro de crearReservaLocal -- una sola fuente para ese upsert)
-      nrClientesListos = false; // para que la próxima vez que se use el campo traiga este cliente ya cargado
+      nrCacheBusqueda.clear(); // el autocomplete volverá a consultar y traerá este cliente nuevo
 
       // No la dibujamos a mano acá: el listener en vivo de "bookings" (el mismo
       // que usan las reservas del sitio) la va a traer y pintar solo en cuanto
@@ -13614,8 +13878,30 @@
     document.getElementById('fichaVerFotos').addEventListener('click', ()=> abrirFotosCliente(a.client));
   }
 
-  /* ---------- Clientes: base de datos propia, con importación CSV ---------- */
-  let clientesCache = [];
+  /* ---------- Clientes: base de datos con carga paginada server-side ----------
+     Réplica visual de dev.masterlook.cl/admin/database/clients. NO carga los
+     ~4.000 clientes: pagina con orderBy('nombreLower')+startAfter y busca
+     server-side con los campos derivados (ver clDerivados()). La única lectura
+     de la colección completa vive aislada en la importación CSV. */
+  let clEditandoId = null;
+
+  const clEstado = {
+    pageSize: 50,
+    pagina: 0,             // 0-indexed
+    cursores: [null],      // cursores[i] = doc snapshot "startAfter" de la página i
+    total: null,
+    docsPagina: [],
+    filtro: '',
+    opSeq: 0,              // toda operación (página o búsqueda) descarta las anteriores
+  };
+
+  const CLDB_ICO = {
+    wa:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
+    mail:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>',
+    ver:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+    editar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>',
+    borrar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
+  };
 
   function mostrarClientes(){
     if(barberoBloqueado()) return;
@@ -13637,75 +13923,277 @@
   document.getElementById('btnClientes').addEventListener('click', mostrarClientes);
   document.getElementById('clVolver').addEventListener('click', clVolverAgenda);
 
+  /** Carga inicial de la vista: página 1 + conteo total + autorreparación. */
   async function clCargar(){
-    const cont = document.getElementById('clTabla');
-    cont.innerHTML = '<div class="us-vacio">Cargando...</div>';
+    clEstado.pagina = 0;
+    clEstado.cursores = [null];
+    clEstado.filtro = '';
+    document.getElementById('clBuscar').value = '';
+    clContarTotal();            // async, sin await -> repinta la barra cuando llega
+    await clCargarPagina(0);
+    clRepararRecientes();       // async, sin await -> refresca si encuentra algo
+  }
+
+  /** Red de seguridad: un cliente creado desde una PESTAÑA VIEJA del panel
+   *  (o que la migración no alcanzó) queda sin los campos derivados y sería
+   *  INVISIBLE en el listado (orderBy('nombreLower') excluye docs sin el
+   *  campo). Al abrir Clientes se revisan los ~25 más recientes por
+   *  createdAt y se completan (merge, solo los 5 campos, desde su propio
+   *  dato). Acotado, idempotente, sin bajar toda la colección. Si no hay
+   *  permiso de escritura (RECEPTION sin CLIENTES_EDITAR) falla en silencio
+   *  y lo repara el próximo ADMIN que abra la vista. */
+  async function clRepararRecientes(){
+    const opAlEmpezar = clEstado.opSeq;
     try{
-      const snap = await db.collection('clientes').get();
-      clientesCache = snap.docs.map(d=> d.data());
+      const snap = await db.collection('clientes').orderBy('createdAt', 'desc').limit(25).get();
+      // no solo los que NUNCA se migraron: también los que una pestaña vieja
+      // dejó con derivados desactualizados (compara contenido, no buscaVersion).
+      const rezagados = snap.docs.filter(d=> !clYaMigrado(d.data()));
+      if(!rezagados.length) return;
+      const batch = db.batch();
+      rezagados.forEach(d=> batch.set(d.ref, clDerivados(d.data()), { merge:true }));
+      await batch.commit();
+      // refresca la primera página SOLO si el usuario no se movió mientras tanto
+      if(clEstado.opSeq === opAlEmpezar && !clEstado.filtro && clEstado.pagina === 0){
+        clEstado.cursores = [null];
+        clContarTotal();
+        await clCargarPagina(0);
+      }
+    }catch(e){ /* sin permiso o sin red -> lo hace el próximo ADMIN */ }
+  }
+
+  /** Total de clientes vía aggregation query REST (el SDK compat 10.x no
+   *  expone .count()). ~1 lectura. Si falla, la barra muestra "Página N". */
+  async function clContarTotal(){
+    try{
+      const u = firebase.auth().currentUser;
+      if(!u) throw new Error('sin sesión');
+      const idToken = await u.getIdToken();
+      const proj = firebase.app().options.projectId;
+      const r = await fetch(`https://firestore.googleapis.com/v1/projects/${proj}/databases/(default)/documents:runAggregationQuery`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structuredAggregationQuery: {
+          structuredQuery: { from: [{ collectionId: 'clientes' }] },
+          aggregations: [{ alias: 'n', count: {} }],
+        } }),
+      });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      const hit = Array.isArray(j) ? j.find(x=> x.result) : null;
+      clEstado.total = hit ? Number(hit.result.aggregateFields.n.integerValue) : null;
+    }catch(e){ clEstado.total = null; }
+    // solo repinta si hay un listado ya en pantalla (no durante skeleton ni búsqueda)
+    if(!clEstado.filtro && clEstado.docsPagina.length) clRenderPaginacion();
+  }
+
+  /** Trae una página del listado ordenado por nombre (sin búsqueda activa). */
+  async function clCargarPagina(n){
+    const seq = ++clEstado.opSeq;
+    clEstado.filtro = '';
+    clRenderSkeleton();
+    try{
+      const startAfter = clEstado.cursores[n] || null;
+      let q = db.collection('clientes').orderBy('nombreLower').limit(clEstado.pageSize);
+      if(startAfter) q = q.startAfter(startAfter);
+      const snap = await q.get();
+      if(seq !== clEstado.opSeq) return;   // llegó una operación más nueva
+      clEstado.docsPagina = snap.docs.map(d=> d.data());
+      clEstado.pagina = n;
+      if(snap.docs.length === clEstado.pageSize){
+        clEstado.cursores[n + 1] = snap.docs[snap.docs.length - 1];
+      }
+      clRenderTabla(clEstado.docsPagina);
+      clRenderPaginacion();
     }catch(e){
-      cont.innerHTML = `<div class="us-vacio">No se pudo cargar: ${e.message}</div>`;
+      if(seq !== clEstado.opSeq) return;
+      document.getElementById('clTabla').innerHTML =
+        `<tr><td colspan="4" class="cldb-empty">No se pudo cargar: ${escapeHTML(e.message||'')}</td></tr>`;
+      document.getElementById('clPag').style.display = 'none';
+    }
+  }
+
+  let clBuscarTimer = null;
+  document.getElementById('clBuscar').addEventListener('input', (e)=>{
+    const q = e.target.value;
+    clearTimeout(clBuscarTimer);
+    if(!q.trim()){
+      clEstado.pagina = 0;
+      clEstado.cursores = [null];
+      clCargarPagina(0);                    // ++opSeq cancela cualquier búsqueda en vuelo
       return;
     }
-    clPintar();
+    clBuscarTimer = setTimeout(()=> clEjecutarBusqueda(q), 300);
+  });
+
+  async function clEjecutarBusqueda(q){
+    const seq = ++clEstado.opSeq;
+    clEstado.filtro = q;
+    clRenderSkeleton();
+    try{
+      const docs = await clConsultarClientes(clRutearBusqueda(q), clEstado.pageSize);
+      if(seq !== clEstado.opSeq) return;
+      clEstado.docsPagina = docs;
+      clRenderTabla(docs, { busqueda:true });
+      clRenderPaginacion({ busqueda:true, resultados:docs.length });
+    }catch(e){
+      if(seq !== clEstado.opSeq) return;
+      document.getElementById('clTabla').innerHTML =
+        `<tr><td colspan="4" class="cldb-empty">No se pudo buscar: ${escapeHTML(e.message||'')}</td></tr>`;
+      document.getElementById('clPag').style.display = 'none';
+    }
   }
 
-  function clPintar(){
-    document.getElementById('clConteo').textContent =
-      `${clientesCache.length} cliente${clientesCache.length === 1 ? '' : 's'} registrado${clientesCache.length === 1 ? '' : 's'}`;
+  function clRenderSkeleton(){
+    const anchos = ['70%','45%','80%','160px'];
+    let filas = '';
+    for(let i=0;i<8;i++){
+      filas += '<tr>' + anchos.map(w=> `<td><div class="cldb-skel-bar" style="width:${w}"></div></td>`).join('') + '</tr>';
+    }
+    document.getElementById('clTabla').innerHTML = filas;
+    document.getElementById('clPag').style.display = 'none';
+  }
 
-    const qOriginal = document.getElementById('clBuscar').value.trim();
-    const q = nrNormalizar(qOriginal);
-    const qDigitos = nrSoloDigitos(qOriginal);
-    const lista = clientesCache.filter(c=>{
-      if(!q) return true;
-      if([c.nombre, c.apellido, c.email, c.rut].some(v=> nrNormalizar(v).includes(q))) return true;
-      if(qDigitos && nrSoloDigitos(c.telefono).includes(qDigitos)) return true;
-      return false;
+  function clRenderTabla(docs, opts={}){
+    const tbody = document.getElementById('clTabla');
+    if(!docs.length){
+      tbody.innerHTML = `<tr><td colspan="4" class="cldb-empty">${opts.busqueda ? 'Sin resultados para esa búsqueda.' : 'No hay clientes registrados.'}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = docs.map(c=>{
+      const nombre = ((c.nombre||'') + ' ' + (c.apellido||'')).trim() || '(sin nombre)';
+      const tel = c.telefono || '';
+      const telDig = clTelefonoDigitos(tel);
+      const waNum = telDig.length >= 8 ? ('56' + telDig) : '';
+      const email = c.email || '';
+      const rut = (c.rut || '').trim();
+      return `<tr data-id="${escapeHTML(c.id)}">
+        <td class="cldb-td-nombre"><span class="cldb-truncate" title="${escapeHTML(nombre)}">${escapeHTML(nombre)}</span></td>
+        <td data-label="RUT"${rut ? '' : ' data-empty'}>${rut ? escapeHTML(rut) : '—'}</td>
+        <td class="cldb-td-contacto">
+          ${email ? `<div class="cldb-truncate" title="${escapeHTML(email)}">${escapeHTML(email)}</div>` : ''}
+          ${tel ? `<div class="cldb-cell-sub cldb-truncate" title="${escapeHTML(tel)}">${escapeHTML(tel)}</div>` : ''}
+          ${(!email && !tel) ? '<div style="color:#9a958c">—</div>' : ''}
+        </td>
+        <td>
+          <div class="cldb-actions">
+            ${waNum
+              ? `<a class="cldb-ib wa" href="https://wa.me/${escapeHTML(waNum)}" target="_blank" rel="noreferrer" title="Contactar por WhatsApp">${CLDB_ICO.wa}</a>`
+              : `<span class="cldb-ib wa cldb-ib-off" title="Sin teléfono">${CLDB_ICO.wa}</span>`}
+            ${email
+              ? `<a class="cldb-ib mail" href="mailto:${escapeHTML(email)}" title="Contactar por email">${CLDB_ICO.mail}</a>`
+              : `<span class="cldb-ib mail cldb-ib-off" title="Sin correo">${CLDB_ICO.mail}</span>`}
+            <button class="cldb-ib ver" data-ver type="button" title="Ver perfil">${CLDB_ICO.ver}</button>
+            <button class="cldb-ib editar" data-editar type="button" title="Editar cliente">${CLDB_ICO.editar}</button>
+            <button class="cldb-ib borrar" data-borrar type="button" title="Eliminar cliente">${CLDB_ICO.borrar}</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const c = docs.find(x=> x.id === tr.dataset.id);
+      if(!c) return;
+      const nombre = ((c.nombre||'') + ' ' + (c.apellido||'')).trim();
+      const ver = tr.querySelector('[data-ver]');
+      const ed  = tr.querySelector('[data-editar]');
+      const bo  = tr.querySelector('[data-borrar]');
+      if(ver) ver.addEventListener('click', ()=> abrirFichaCliente({ client: nombre, phone: c.telefono, email: c.email }));
+      if(ed)  ed.addEventListener('click', ()=> clEditar(c.id));
+      if(bo)  bo.addEventListener('click', ()=> clBorrar(c.id));
     });
-    const cont = document.getElementById('clTabla');
-    if(!lista.length){ cont.innerHTML = '<div class="us-vacio">Sin resultados.</div>'; return; }
 
-    cont.innerHTML = lista.map(c=> `
-      <div class="us-fila" data-id="${c.id}">
-        <span>${escapeHTML(((c.nombre||'') + ' ' + (c.apellido||'')).trim())}</span>
-        <span>${escapeHTML(c.email || '—')}</span>
-        <span>${escapeHTML(c.telefono || '—')}</span>
-        <span class="us-acciones">
-          <button class="us-ib" data-ver="${c.id}" title="Ver ficha">👁</button>
-          <button class="us-ib off" data-borrar="${c.id}" title="Eliminar">🗑</button>
-        </span>
-      </div>`).join('');
-
-    cont.querySelectorAll('[data-ver]').forEach(b=>
-      b.addEventListener('click', ()=>{
-        const c = clientesCache.find(x=> x.id === b.dataset.ver);
-        if(c) abrirFichaCliente({ client: ((c.nombre||'') + ' ' + (c.apellido||'')).trim(), phone:c.telefono, email:c.email });
-      }));
-    cont.querySelectorAll('[data-borrar]').forEach(b=> b.addEventListener('click', ()=> clBorrar(b.dataset.borrar)));
+    // saneo en segundo plano: cualquier fila visible con derivados
+    // desactualizados (p.ej. editada desde una pestaña vieja) se corrige sin
+    // lecturas extra. Solo relevante durante la ventana de transición.
+    clSanearEnPantalla(docs);
   }
 
-  document.getElementById('clBuscar').addEventListener('input', clPintar);
+  function clRenderPaginacion(opts={}){
+    const pag = document.getElementById('clPag');
+    const info = document.getElementById('clPagInfo');
+    const prev = document.getElementById('clPagPrev');
+    const next = document.getElementById('clPagNext');
+    const sel = document.getElementById('clPageSize');
+    pag.style.display = 'flex';
+
+    if(opts.busqueda){
+      const n = opts.resultados || 0;
+      const tope = n >= clEstado.pageSize;
+      info.textContent = n === 0 ? 'Sin resultados'
+        : tope ? `Mostrando los primeros ${n} — afiná la búsqueda`
+        : `${n} resultado${n === 1 ? '' : 's'}`;
+      prev.style.display = next.style.display = sel.style.display = 'none';
+      return;
+    }
+    prev.style.display = next.style.display = sel.style.display = '';
+    const enPantalla = clEstado.docsPagina.length;
+    const p = clEstado.pagina;
+    if(clEstado.total != null){
+      const paginas = Math.max(1, Math.ceil(clEstado.total / clEstado.pageSize));
+      const desde = p * clEstado.pageSize + (enPantalla ? 1 : 0);
+      const hasta = p * clEstado.pageSize + enPantalla;
+      info.textContent = `${desde}–${hasta} de ${clEstado.total.toLocaleString('es-CL')} · Página ${p + 1} de ${paginas}`;
+    }else{
+      info.textContent = `Página ${p + 1}`;
+    }
+    prev.disabled = p === 0;
+    next.disabled = enPantalla < clEstado.pageSize;
+  }
+
+  document.getElementById('clPagPrev').addEventListener('click', ()=>{
+    if(clEstado.pagina > 0) clCargarPagina(clEstado.pagina - 1);
+  });
+  document.getElementById('clPagNext').addEventListener('click', ()=>{
+    clCargarPagina(clEstado.pagina + 1);
+  });
+  document.getElementById('clPageSize').addEventListener('change', (e)=>{
+    clEstado.pageSize = parseInt(e.target.value, 10) || 50;
+    clEstado.pagina = 0;
+    clEstado.cursores = [null];
+    clCargarPagina(0);
+  });
 
   async function clBorrar(id){
-    const c = clientesCache.find(x=> x.id === id);
-    if(!c) return;
-    if(!(await mgConfirm(`¿Eliminar a ${c.nombre} de la base de clientes?\n\nEsto no borra sus reservas.`))) return;
+    const c = clEstado.docsPagina.find(x=> x.id === id);
+    const nombre = c ? (((c.nombre||'') + ' ' + (c.apellido||'')).trim() || 'este cliente') : 'este cliente';
+    if(!(await mgConfirm(`¿Eliminar a ${nombre} de la base de clientes?\n\nEsto no borra sus reservas.`))) return;
     try{
       await db.collection('clientes').doc(id).delete();
       showToast('Cliente eliminado');
-      await clCargar();
+      clContarTotal();
+      if(clEstado.filtro) clEjecutarBusqueda(clEstado.filtro);
+      else await clCargarPagina(clEstado.pagina);
     }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
   }
 
+  function clAbrirModalCliente(titulo){
+    const h = document.querySelector('#modalCliente .mg-head h3');
+    if(h) h.textContent = titulo;
+    abrirModal('modalCliente');
+  }
+
   document.getElementById('clNuevo').addEventListener('click', ()=>{
+    clEditandoId = null;
     document.getElementById('clNombre').value = '';
     document.getElementById('clApellido').value = '';
     document.getElementById('clCorreo').value = '';
     document.getElementById('clTelefono').value = '';
     document.getElementById('clRut').value = '';
-    abrirModal('modalCliente');
+    clAbrirModalCliente('Nuevo cliente');
   });
+
+  function clEditar(id){
+    const c = clEstado.docsPagina.find(x=> x.id === id);
+    if(!c) return;
+    clEditandoId = id;
+    document.getElementById('clNombre').value = c.nombre || '';
+    document.getElementById('clApellido').value = c.apellido || '';
+    document.getElementById('clCorreo').value = c.email || '';
+    document.getElementById('clTelefono').value = c.telefono || '';
+    document.getElementById('clRut').value = c.rut || '';
+    clAbrirModalCliente('Editar cliente');
+  }
 
   document.getElementById('clGuardar').addEventListener('click', async ()=>{
     const nombre = document.getElementById('clNombre').value.trim();
@@ -13718,21 +14206,37 @@
       telefono,
       rut: document.getElementById('clRut').value.trim(),
     };
-    // Si ya existe un cliente con este mismo teléfono, se actualiza en vez
-    // de crear un duplicado (mismo criterio que usan las reservas).
-    const existente = telefono ? clientesCache.find(c=> c.telefono === telefono) : null;
+    const derivados = clDerivados(datos);
+    const telDig = derivados.telefonoDigitos;
     try{
-      if(existente){
-        await db.collection('clientes').doc(existente.id).set(datos, { merge:true });
-      } else {
-        const id = 'c' + Date.now();
-        await db.collection('clientes').doc(id).set({ id, ...datos, createdAt: new Date().toISOString() });
+      // Dedup por TELÉFONO NORMALIZADO (telefonoDigitos): "+56 9 1234 5678",
+      // "912345678", "9 1234 5678" son el mismo número. La consulta excluye
+      // SIEMPRE el propio doc -> un cliente nunca es duplicado de sí mismo.
+      let otroConMismoTel = null;
+      if(telDig){
+        const dup = await db.collection('clientes').where('telefonoDigitos', '==', telDig).limit(5).get();
+        otroConMismoTel = dup.docs.find(d=> d.id !== clEditandoId) || null;
       }
-    }
-    catch(e){ return showToast('No se pudo guardar: ' + e.message); }
-    showToast(existente ? 'Ya existía un cliente con ese teléfono -- se actualizaron sus datos' : 'Cliente agregado');
+      if(clEditandoId){
+        await db.collection('clientes').doc(clEditandoId).set({ ...datos, ...derivados }, { merge:true });
+        showToast(otroConMismoTel
+          ? 'Cliente actualizado — ojo: otro cliente tiene este mismo teléfono'
+          : 'Cliente actualizado');
+      }else if(otroConMismoTel){
+        // Creando y ya existe alguien con ese teléfono -> se actualiza ese.
+        await db.collection('clientes').doc(otroConMismoTel.id).set({ ...datos, ...derivados }, { merge:true });
+        showToast('Ya existía un cliente con ese teléfono — se actualizaron sus datos');
+      }else{
+        const id = 'c' + Date.now();
+        await db.collection('clientes').doc(id).set({ id, ...datos, ...derivados, createdAt: new Date().toISOString() });
+        showToast('Cliente agregado');
+      }
+    }catch(e){ return showToast('No se pudo guardar: ' + e.message); }
+    clEditandoId = null;
     cerrarModales();
-    await clCargar();
+    clContarTotal();
+    if(clEstado.filtro) clEjecutarBusqueda(clEstado.filtro);
+    else await clCargarPagina(clEstado.pagina);
   });
 
   /** CSV sencillo: soporta campos entre comillas con comas adentro. */
@@ -13817,11 +14321,16 @@
 
     if(!datos.length){ showToast('No se encontraron clientes válidos en el archivo'); ev.target.value=''; return; }
 
-    // Sin duplicar por teléfono: si ya existe un cliente con ese teléfono
-    // (cargado antes o repetido dentro del mismo archivo) se actualiza en
-    // vez de crear uno nuevo -- sin teléfono no hay con qué comparar, esos
-    // siempre se crean.
-    const idPorTelefono = new Map(clientesCache.filter(c=> c.telefono).map(c=> [c.telefono, c.id]));
+    // Deduplicación por teléfono contra TODA la base -- es la única operación
+    // que aún lee la colección completa (acción admin, poco frecuente).
+    // Aislada acá a propósito: la carga normal de Clientes NO hace este .get().
+    let baseCompleta = [];
+    try{
+      const snapBase = await db.collection('clientes').get();
+      baseCompleta = snapBase.docs.map(d=> d.data());
+    }catch(e){ showToast('No se pudo leer la base para deduplicar: ' + e.message); ev.target.value=''; return; }
+    const idPorTelefono = new Map(baseCompleta.filter(c=> c.telefono).map(c=> [c.telefono, c.id]));
+    const clientePorId = new Map(baseCompleta.map(c=> [c.id, c]));
     const telefonosDeEsteArchivo = new Set();
     const aCrear = [];
     const aActualizar = [];
@@ -13852,10 +14361,13 @@
       const batch = db.batch();
       tanda.forEach(op=>{
         if(op.tipo === 'actualizar'){
-          batch.set(db.collection('clientes').doc(op.id), quitarVacios(op.datos), { merge:true });
+          const limpio = quitarVacios(op.datos);
+          // los campos derivados se recalculan sobre el resultado ya fusionado
+          const fusion = { ...(clientePorId.get(op.id) || {}), ...limpio };
+          batch.set(db.collection('clientes').doc(op.id), { ...limpio, ...clDerivados(fusion) }, { merge:true });
         } else {
           const id = 'c' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
-          batch.set(db.collection('clientes').doc(id), { id, ...op.datos, createdAt: new Date().toISOString() });
+          batch.set(db.collection('clientes').doc(id), { id, ...op.datos, ...clDerivados(op.datos), createdAt: new Date().toISOString() });
         }
       });
       try{ await batch.commit(); procesados += tanda.length; showToast(`Importando... ${procesados}/${operaciones.length}`); }
