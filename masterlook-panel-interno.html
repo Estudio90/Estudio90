@@ -7143,14 +7143,39 @@
     }
     // texto: array-contains del término más largo (sin orderBy -> índice
     // automático, sin índice compuesto). Los demás términos se filtran en
-    // local (como prefijo de alguna palabra del nombre) sobre ese conjunto.
+    // local. Cada término extra cuenta si es entry del array `busca` (prefijo
+    // >=2 de alguna palabra de nombre/apellido/correo) o prefijo de una
+    // palabra de nombreLower (cubre términos de 1 letra).
+    const cumpleTerminos = (c, terms) => {
+      if(!terms.length) return true;
+      const busca = c.busca || [];
+      const palabras = String(c.nombreLower||'').split(' ');
+      return terms.every(t=> busca.includes(t) || palabras.some(w=> w.startsWith(t)));
+    };
     const snap = await col.where('busca','array-contains',ruta.seed).limit(tope).get();
-    let docs = snap.docs.map(d=> d.data());
-    if(ruta.resto.length){
-      docs = docs.filter(c=>{
-        const palabras = String(c.nombreLower||'').split(' ');
-        return ruta.resto.every(t=> palabras.some(w=> w.startsWith(t)));
-      });
+    let docs = snap.docs.map(d=> d.data()).filter(c=> cumpleTerminos(c, ruta.resto));
+    // Fallback acotado: si es multi-palabra y la 1ª consulta llegó EXACTAMENTE
+    // al tope, el candidato pudo quedar afuera (p.ej. "juan pe" con cientos de
+    // "Juan"). Se consulta por otro término y se cruza por id en memoria. Solo
+    // corre cuando de verdad se topó -> no encarece las búsquedas normales.
+    if(ruta.resto.length && snap.size === tope){
+      try{
+        const vistos = new Set(docs.map(d=> d.id));
+        const sumar = (arr, terms)=> arr.forEach(c=>{
+          if(!vistos.has(c.id) && cumpleTerminos(c, terms)){ vistos.add(c.id); docs.push(c); }
+        });
+        const alt = ruta.resto.slice().sort((a,b)=> b.length - a.length)[0];
+        if(alt && alt.length >= 2){
+          const restoParaAlt = [ruta.seed, ...ruta.resto.filter((t,i)=> i !== ruta.resto.indexOf(alt))];
+          const snap2 = await col.where('busca','array-contains',alt).limit(tope).get();
+          sumar(snap2.docs.map(d=> d.data()), restoParaAlt);
+        }else{
+          // términos extra de 1 letra: no hay con qué hacer array-contains ->
+          // se re-consulta el mismo seed con un tope más alto (acotado).
+          const snapMas = await col.where('busca','array-contains',ruta.seed).limit(Math.min(tope * 3, 500)).get();
+          sumar(snapMas.docs.map(d=> d.data()), ruta.resto);
+        }
+      }catch(e){}
     }
     try{
       const es = await col.where('emailLower','>=',ruta.valor).where('emailLower','<=',ruta.valor+FIN).limit(limitN).get();
@@ -7180,7 +7205,10 @@
     if(original.length < 2) return [];
     if(nrCacheBusqueda.has(original)) return nrCacheBusqueda.get(original);
     try{
-      const docs = await clConsultarClientes(clRutearBusqueda(original), 8, 40);
+      // topeCand 150 = igual que la vista Clientes (cubre nombres de hasta
+      // ~150 ocurrencias; el más común hoy son ~133 "Matías"). El fallback
+      // de clConsultarClientes cubre el resto.
+      const docs = await clConsultarClientes(clRutearBusqueda(original), 8, 150);
       nrCacheBusqueda.set(original, docs);
       return docs;
     }catch(e){ return []; }
