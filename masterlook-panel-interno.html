@@ -3090,14 +3090,18 @@
             <div class="col-preview-item">
               <span class="col-preview-label">Celular</span>
               <div class="col-preview-slot" id="colSlotCelular">
-                <iframe class="col-preview-frame" id="colFrameCelular" src="masterlook-sitio.html"
+                <!-- src se asigna en mostrarColores() (solo al abrir Colores y
+                     solo si el panel NO está embebido en un iframe) -- cada
+                     iframe es una instancia completa del sitio. -->
+                <iframe class="col-preview-frame" id="colFrameCelular"
                   style="width:390px;height:780px;transform-origin:top left;"></iframe>
               </div>
             </div>
             <div class="col-preview-item col-preview-item-pc">
               <span class="col-preview-label">Computador</span>
               <div class="col-preview-slot" id="colSlotPc">
-                <iframe class="col-preview-frame" id="colFramePc" src="masterlook-sitio.html"
+                <!-- src se asigna en mostrarColores() (ver colFrameCelular). -->
+                <iframe class="col-preview-frame" id="colFramePc"
                   style="width:1280px;height:800px;transform-origin:top left;"></iframe>
               </div>
             </div>
@@ -7946,9 +7950,24 @@
     document.getElementById('kpiRow').style.display = 'none';
     document.getElementById('vistaColores').style.display = '';
     ocultarFlotante(true);
+    cargarPreviewsColores();
     await cargarColoresGuardados();
     colActualizarPreview();
     colEscalarPreviews();
+  }
+
+  /** Carga las 2 vistas previas (cada una es una instancia COMPLETA del sitio:
+   *  Firebase, listeners, video de portada). Se hace solo al abrir Colores por
+   *  primera vez -- antes el src iba fijo en el HTML y 2 sitios se cargaban en
+   *  cada visita al panel. Y nunca si el propio panel corre embebido en un
+   *  iframe (window.self !== window.top): eso evita de raíz que un panel
+   *  anidado vuelva a generar iframes. */
+  function cargarPreviewsColores(){
+    if(window.self !== window.top) return;
+    ['colFrameCelular','colFramePc'].forEach(id=>{
+      const f = document.getElementById(id);
+      if(f && !f.getAttribute('src')) f.setAttribute('src','masterlook-sitio.html');
+    });
   }
 
   /** Encoge cada iframe con CSS scale para que quepa entero en su caja, sin

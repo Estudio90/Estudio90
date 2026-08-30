@@ -4863,7 +4863,14 @@
 
     // Staff (dueña / admin / recepción / barbero) -> al panel interno, ANTES
     // de tratar la sesión como cliente. Ficha desactivada -> se cierra sesión.
-    if(!redirigiendoAlPanel){
+    // window.self === window.top: si este sitio está EMBEBIDO en un iframe (la
+    // vista previa "Colores" del panel lo carga en 2 iframes), NO redirige ni
+    // cierra sesión -- comparte la sesión de Firebase con el panel de arriba.
+    // Sin esta guarda, el sitio embebido se va al panel, que carga 2 sitios
+    // más, que se van al panel... recursión infinita de iframes -> se agota la
+    // memoria de la pestaña (Safari en iPhone la mata: "Ocurrió un problema
+    // varias veces"). Embebido -> se comporta como una visita normal.
+    if(!redirigiendoAlPanel && window.self === window.top){
       const dest = await destinoDeLogin(user);
       if(dest === 'panel'){
         redirigiendoAlPanel = true;
@@ -5095,7 +5102,9 @@
         await auth.signOut();
         return showErr('loginErr', 'Tu acceso fue desactivado. Habla con un administrador.');
       }
-      if(dest === 'panel'){
+      // window.self === window.top: no redirigir al panel si este sitio corre
+      // embebido en un iframe (ver la misma guarda en onAuthStateChanged).
+      if(dest === 'panel' && window.self === window.top){
         closeAuth();
         redirigiendoAlPanel = true;
         location.href = 'masterlook-panel-interno.html';
