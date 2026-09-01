@@ -20,6 +20,10 @@
      handshake (~100-300 ms en móvil). -->
 <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<!-- Cloud Functions (buscar horarios, crear el hold, pago): abrir DNS+TLS al
+     host real -- staging o producción según el hostname -- para que la
+     primera llamada no pague el handshake (~100-250 ms en móvil). -->
+<script>(function(){var h='https://us-central1-'+(location.hostname==='estudio90.github.io'?'estudio90':'estudio90-dev')+'.cloudfunctions.net';var l=document.createElement('link');l.rel='preconnect';l.href=h;l.crossOrigin='';document.head.appendChild(l);}())</script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -4186,14 +4190,32 @@
    *  nombre de profesional: nunca nombre de cliente, precio, ni ID de
    *  reserva. Cacheada por fecha ya consultada en esta sesión. */
   let ocupacionPorFecha = {};
+  const ocupacionEnVuelo = {}; // fecha -> Promise mientras se está pidiendo
   async function asegurarOcupacion(fecha){
     if(ocupacionPorFecha[fecha]) return ocupacionPorFecha[fecha];
-    try{
-      const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
-      const data = await resp.json();
-      ocupacionPorFecha[fecha] = (resp.ok && data.ocupacion) ? data.ocupacion : {};
-    }catch(e){ ocupacionPorFecha[fecha] = {}; }
-    return ocupacionPorFecha[fecha];
+    // Si ya hay una petición en curso para esta fecha (p.ej. la búsqueda
+    // automática al entrar al paso 2 y el clic del usuario en "Lo antes
+    // posible" casi a la vez, o la precarga en background), se reusa esa
+    // misma promesa en vez de disparar otra llamada idéntica.
+    if(ocupacionEnVuelo[fecha]) return ocupacionEnVuelo[fecha];
+    ocupacionEnVuelo[fecha] = (async () => {
+      let resultado = {};
+      try{
+        const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
+        const data = await resp.json().catch(() => ({}));
+        // SOLO se cachea una respuesta real (200 con ocupacion). Un error
+        // transitorio (429/500/red) NO envenena la caché con "sin ocupación":
+        // esta llamada devuelve {} pero la próxima vuelve a preguntar, para
+        // no mostrar un slot libre que en realidad está tomado.
+        if(resp.ok && data.ocupacion){
+          resultado = data.ocupacion;
+          ocupacionPorFecha[fecha] = resultado;
+        }
+      }catch(e){ /* red caída -> no se cachea, se reintenta */ }
+      delete ocupacionEnVuelo[fecha];
+      return resultado;
+    })();
+    return ocupacionEnVuelo[fecha];
   }
 
   /** Arma el correo de confirmación/cancelación, estilo AgendaPro. */
@@ -6967,21 +6989,24 @@
       if(horarioDelDia(iso)) candidatos.push({ i, iso });
     }
 
-    // Búsqueda PROGRESIVA por tandas de 6 días (6 + 6 + 2, manteniendo el
-    // límite de 14). El caso normal -- hay hora esta semana -- resuelve con
-    // la primera tanda: 6 llamadas a obtenerOcupacionDia en vez de 14. Solo
-    // si NINGÚN día de la tanda tiene hueco se pide la siguiente. Mismo
-    // resultado funcional que pedir los 14 de una: sigue encontrando el
-    // primer hueco disponible en los próximos 14 días, y si no hay ninguno
-    // muestra el mismo mensaje. asegurarOcupacion() cachea por fecha, así
-    // que ninguna tanda repite una consulta ya hecha.
-    const TANDA = 6;
+    // Búsqueda PROGRESIVA por tandas de 3 días (era 6), manteniendo el límite
+    // de 14. El caso normal -- hay hora hoy/mañana -- resuelve con la primera
+    // tanda: 3 llamadas concurrentes a obtenerOcupacionDia. Dentro de la tanda
+    // los días se EVALÚAN EN ORDEN a medida que su fetch resuelve, así el
+    // primer día con hueco se muestra sin esperar a los otros dos. Si ningún
+    // día de la tanda tiene hueco, se pide la siguiente de inmediato. Mismo
+    // resultado funcional que antes: sigue encontrando el primer hueco de los
+    // próximos 14 días, y si no hay ninguno muestra el mismo mensaje.
+    // asegurarOcupacion() cachea por fecha -- ninguna tanda repite una consulta.
+    const TANDA = 3;
     for(let desde = 0; desde < candidatos.length; desde += TANDA){
       const tanda = candidatos.slice(desde, desde + TANDA);
-      await Promise.all(tanda.map(c => asegurarOcupacion(c.iso)));
+      const promesas = tanda.map(c => asegurarOcupacion(c.iso)); // disparan ya, en paralelo
 
-      for(const { i, iso } of tanda){
-        const slots = await calcularSlots(iso); // ya cacheado, no vuelve a pedir red
+      for(let k = 0; k < tanda.length; k++){
+        await promesas[k];                       // espera SOLO hasta este día
+        const { i, iso } = tanda[k];
+        const slots = await calcularSlots(iso);  // ya cacheado, sin red
         if(slots.length){
           const s = slots[0];
           const cuando = (i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : fmtFechaLarga(iso)) + ' a las ' + s.label;
@@ -6995,11 +7020,28 @@
             if(btn) btn.click();
             document.getElementById('slotPick').scrollIntoView({behavior:'smooth', block:'center'});
           }
+
+          // Precarga en background la ocupación de los días que siguen -- así
+          // tocar/avanzar el calendario a esos días es instantáneo
+          // (asegurarOcupacion cachea). Diferido un instante para no competir
+          // con el render del horario que se acaba de mostrar; sin await.
+          setTimeout(() => precargarOcupacionEnFondo(candidatos, desde + k + 1, 5), 250);
           return;
         }
       }
     }
     if(detalle) detalle.textContent = 'Sin horarios en los próximos 14 días';
+  }
+
+  /** Trae en segundo plano la ocupación de hasta `n` días candidatos (desde
+   *  el índice dado). Best-effort: no se espera, y si una consulta falla se
+   *  ignora (asegurarOcupacion no cachea el error, así que un día así se
+   *  volverá a pedir cuando el usuario navegue hasta él). Solo pide los días
+   *  que aún no están en caché. */
+  function precargarOcupacionEnFondo(candidatos, desdeIdx, n){
+    (candidatos || []).slice(desdeIdx, desdeIdx + n).forEach(c => {
+      if(!ocupacionPorFecha[c.iso]) asegurarOcupacion(c.iso).catch(()=>{});
+    });
   }
 
   document.getElementById('rvPronto')?.addEventListener('click', ()=> buscarPrimerHorario(true));
