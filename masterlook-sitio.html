@@ -1670,19 +1670,6 @@
   .cart-overlay{position:fixed;inset:0;background:rgba(20,19,17,.42);z-index:85;display:none;}
   .cart-overlay.open{display:block;}
 
-  /* Overlay mientras se crea el hold + la transacción Webpay. Bloquea toda
-     interacción (incluido un 2º tap en "Pagar") hasta que el navegador se
-     va a Transbank. Es puramente visual -- no dispara ninguna llamada ni
-     toca la lógica del pago. */
-  .wp-loader{position:fixed; inset:0; z-index:400; display:none;
-    background:rgba(20,19,17,.93); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
-    align-items:center; justify-content:center; flex-direction:column; gap:18px; padding:32px; text-align:center;}
-  .wp-loader.open{display:flex;}
-  .wp-loader-spin{width:38px; height:38px; border:3px solid rgba(255,255,255,.22);
-    border-top-color:#fff; border-radius:50%; animation:wpSpin .8s linear infinite;}
-  @keyframes wpSpin{to{transform:rotate(360deg)}}
-  .wp-loader-txt{color:#fff; font-size:1rem; font-weight:600; max-width:280px; line-height:1.4;}
-  .wp-loader-sub{color:rgba(255,255,255,.6); font-size:.82rem; max-width:280px; line-height:1.4;}
   .cart-panel{
     position:fixed;top:0;right:0;bottom:0;width:min(390px,100vw);background:var(--panel);
     z-index:86;transform:translateX(100%);transition:transform .25s ease;
@@ -3510,11 +3497,6 @@
 <!-- ===== Carrito + Checkout (panel unificado, ver plan) ===== -->
 <div class="cart-overlay" id="cartOverlay"></div>
 
-<div class="wp-loader" id="wpLoader" role="alertdialog" aria-live="assertive" aria-label="Conectando con Webpay">
-  <div class="wp-loader-spin"></div>
-  <div class="wp-loader-txt">Conectando de forma segura con Webpay…</div>
-  <div class="wp-loader-sub">No cierres esta pantalla. Te vamos a redirigir a Transbank para completar el pago.</div>
-</div>
 <aside class="cart-panel" id="cartPanel">
   <div class="cart-head">
     <div>
@@ -4660,23 +4642,31 @@
     pintarPromos();
   });
 
-  /* Guard de doble envío + loader. `pagoEnCurso` ignora un 2º click; el
-     overlay tapa la pantalla al instante (el botón que el usuario toca es
-     el sticky, cuyo texto no cambiaba, así que sin esto no había ninguna
-     señal). NO toca la lógica del pago: la idempotencia real la sigue
+  /* Guard de doble/triple clic. `pagoEnCurso` ignora cualquier clic extra
+     mientras se crea el hold + la transacción y hasta el redirect. El único
+     cambio visual es el texto del propio botón -- sin overlay, sin bloquear
+     la pantalla. NO toca la lógica del pago: la idempotencia real la sigue
      dando adquirirIntentoPago en el servidor. */
   let pagoEnCurso = false;
-  function mostrarLoaderWebpay(){ document.getElementById('wpLoader')?.classList.add('open'); }
-  function ocultarLoaderWebpay(){ document.getElementById('wpLoader')?.classList.remove('open'); }
+  const TXT_BTN_PAGAR_SVC = 'Pagar y agendar';
+  /* El usuario puede tocar el botón del form (#confirmBtn) o el de la barra
+     fija móvil (#rvBarraBtn) -- los dos disparan el mismo pago, así que el
+     estado "Redirigiendo a Webpay…" se pone/saca en ambos. Cambia en el
+     primer frame tras el clic. */
+  function pagoServicioRedirigiendo(activo){
+    ['confirmBtn','rvBarraBtn'].forEach(id=>{
+      const b = document.getElementById(id);
+      if(!b) return;
+      b.disabled = activo;
+      b.textContent = activo ? 'Redirigiendo a Webpay…' : TXT_BTN_PAGAR_SVC;
+    });
+  }
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     if(llevarAlDatoFaltante()) return;
     if(pagoEnCurso) return;
     pagoEnCurso = true;
-    mostrarLoaderWebpay();
-    const btn = document.getElementById('confirmBtn');
-    btn.disabled = true;
-    btn.textContent = 'Reservando...';
+    pagoServicioRedirigiendo(true);   // primer frame: sólo el texto del botón
 
     const datos = {
       name: nameInput.value.trim(),
@@ -4715,9 +4705,7 @@
         }
       }catch(e){
         pagoEnCurso = false;
-        ocultarLoaderWebpay();
-        btn.disabled = false;
-        btn.textContent = 'Confirmar reserva';
+        pagoServicioRedirigiendo(false);
         toast(e.message);
         return;
       }
@@ -4786,9 +4774,7 @@
           redirectToWebpay(pago.url, pago.token);
         }catch(e){
           pagoEnCurso = false;
-          ocultarLoaderWebpay();
-          btn.disabled = false;
-          btn.textContent = 'Confirmar reserva';
+          pagoServicioRedirigiendo(false);
           toast(e.message);
         }
         return;
@@ -4821,8 +4807,7 @@
     nameInput.value=''; phoneInput.value=''; document.getElementById('cEmail').value='';
     document.getElementById('toStep2').disabled = true;
     document.getElementById('toStep3').disabled = true;
-    document.getElementById('confirmBtn').disabled = false;
-    pagoEnCurso = false; ocultarLoaderWebpay();
+    pagoEnCurso = false; pagoServicioRedirigiendo(false);
     checkConfirmar();
     document.getElementById('formZone').style.display = 'block';
     document.getElementById('confirmMsg').classList.remove('show');
@@ -6072,8 +6057,20 @@
   async function intentarPagarCheckout(){
     if(!carrito.length) return;
     const btn = document.getElementById('ckPagarWebpay');
+    const btnMp = document.getElementById('ckPagarMercadoPago');
     const labelEl = document.getElementById('ckPagarWebpayLabel');
+    const subEl = document.getElementById('ckPagarWebpaySub');
     const labelOriginal = labelEl.textContent;
+    const subOriginal = subEl ? subEl.textContent : '';
+    /* Único cambio visual: el texto del propio botón -> "Redirigiendo a
+       Webpay…", sin overlay ni bloqueo de pantalla. Ante cualquier error
+       antes del redirect se restaura tal cual estaba. */
+    const restaurarBtnCheckout = ()=>{
+      btn.disabled = false;
+      labelEl.textContent = labelOriginal;
+      if(subEl) subEl.textContent = subOriginal;
+      if(btnMp) btnMp.disabled = false;
+    };
 
     // Un solo pago Webpay puede cubrir curso+producto juntos (CART_ORDER,
     // ver plan) -- cada tipo sigue siendo su propia transacción cuando el
@@ -6111,7 +6108,9 @@
       : { courseId: cursos[0].id, items: productos.map(i=> ({ id:i.id, qty:i.qty })) };
 
     btn.disabled = true;
-    labelEl.textContent = 'Procesando...';
+    if(btnMp) btnMp.disabled = true;
+    labelEl.textContent = 'Redirigiendo a Webpay…';
+    if(subEl) subEl.textContent = '';
 
     // Chequeo rápido de UX (nunca autoritativo -- el servidor decide de
     // verdad con ACCOUNT_EXISTS más abajo, que es la protección real).
@@ -6119,7 +6118,7 @@
       try{
         const metodos = await auth.fetchSignInMethodsForEmail(correo);
         if(metodos && metodos.length){
-          btn.disabled = false; labelEl.textContent = labelOriginal;
+          restaurarBtnCheckout();
           toast('Ya existe una cuenta con este correo. Inicia sesión para continuar.');
           abrirAuthParaCarrito(correo);
           return;
@@ -6152,7 +6151,7 @@
       const pago = await resp.json();
       if(!resp.ok){
         if(pago.error === 'ACCOUNT_EXISTS'){
-          btn.disabled = false; labelEl.textContent = labelOriginal;
+          restaurarBtnCheckout();
           toast(pago.message || 'Ya existe una cuenta con este correo. Inicia sesión para continuar.');
           abrirAuthParaCarrito(correo);
           return;
@@ -6161,7 +6160,7 @@
       }
       redirectToWebpay(pago.url, pago.token);
     }catch(e){
-      btn.disabled = false; labelEl.textContent = labelOriginal;
+      restaurarBtnCheckout();
       toast(e.message);
     }
   }
