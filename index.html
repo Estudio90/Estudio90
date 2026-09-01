@@ -15,6 +15,11 @@
      .hero-bg más abajo. -->
 <link rel="preconnect" href="https://vz-3106d8eb-0d1.b-cdn.net" crossorigin>
 <link rel="dns-prefetch" href="https://vz-3106d8eb-0d1.b-cdn.net">
+<!-- fotos de catálogo (Firebase Storage) y datos en vivo (Firestore): abrir
+     DNS+TLS desde ya para que la primera imagen/consulta no espere el
+     handshake (~100-300 ms en móvil). -->
+<link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -1664,6 +1669,20 @@
   /* ===== carrito ===== */
   .cart-overlay{position:fixed;inset:0;background:rgba(20,19,17,.42);z-index:85;display:none;}
   .cart-overlay.open{display:block;}
+
+  /* Overlay mientras se crea el hold + la transacción Webpay. Bloquea toda
+     interacción (incluido un 2º tap en "Pagar") hasta que el navegador se
+     va a Transbank. Es puramente visual -- no dispara ninguna llamada ni
+     toca la lógica del pago. */
+  .wp-loader{position:fixed; inset:0; z-index:400; display:none;
+    background:rgba(20,19,17,.93); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    align-items:center; justify-content:center; flex-direction:column; gap:18px; padding:32px; text-align:center;}
+  .wp-loader.open{display:flex;}
+  .wp-loader-spin{width:38px; height:38px; border:3px solid rgba(255,255,255,.22);
+    border-top-color:#fff; border-radius:50%; animation:wpSpin .8s linear infinite;}
+  @keyframes wpSpin{to{transform:rotate(360deg)}}
+  .wp-loader-txt{color:#fff; font-size:1rem; font-weight:600; max-width:280px; line-height:1.4;}
+  .wp-loader-sub{color:rgba(255,255,255,.6); font-size:.82rem; max-width:280px; line-height:1.4;}
   .cart-panel{
     position:fixed;top:0;right:0;bottom:0;width:min(390px,100vw);background:var(--panel);
     z-index:86;transform:translateX(100%);transition:transform .25s ease;
@@ -3490,6 +3509,12 @@
 
 <!-- ===== Carrito + Checkout (panel unificado, ver plan) ===== -->
 <div class="cart-overlay" id="cartOverlay"></div>
+
+<div class="wp-loader" id="wpLoader" role="alertdialog" aria-live="assertive" aria-label="Conectando con Webpay">
+  <div class="wp-loader-spin"></div>
+  <div class="wp-loader-txt">Conectando de forma segura con Webpay…</div>
+  <div class="wp-loader-sub">No cierres esta pantalla. Te vamos a redirigir a Transbank para completar el pago.</div>
+</div>
 <aside class="cart-panel" id="cartPanel">
   <div class="cart-head">
     <div>
@@ -4635,8 +4660,20 @@
     pintarPromos();
   });
 
+  /* Guard de doble envío + loader. `pagoEnCurso` ignora un 2º click; el
+     overlay tapa la pantalla al instante (el botón que el usuario toca es
+     el sticky, cuyo texto no cambiaba, así que sin esto no había ninguna
+     señal). NO toca la lógica del pago: la idempotencia real la sigue
+     dando adquirirIntentoPago en el servidor. */
+  let pagoEnCurso = false;
+  function mostrarLoaderWebpay(){ document.getElementById('wpLoader')?.classList.add('open'); }
+  function ocultarLoaderWebpay(){ document.getElementById('wpLoader')?.classList.remove('open'); }
+
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     if(llevarAlDatoFaltante()) return;
+    if(pagoEnCurso) return;
+    pagoEnCurso = true;
+    mostrarLoaderWebpay();
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
     btn.textContent = 'Reservando...';
@@ -4677,6 +4714,8 @@
           return;
         }
       }catch(e){
+        pagoEnCurso = false;
+        ocultarLoaderWebpay();
         btn.disabled = false;
         btn.textContent = 'Confirmar reserva';
         toast(e.message);
@@ -4703,7 +4742,13 @@
           // correo de contacto de esta reserva (ver reservas.js). Sin
           // sesión, no se manda nada -- la reserva de invitado sigue
           // igual que siempre.
-          const holdHeaders = { 'Content-Type': 'application/json' };
+          // text/plain (no application/json) para que la reserva de invitado
+          // sea "simple request" y NO dispare el preflight CORS -- una vuelta
+          // OPTIONS que en frío cuesta ~2-3 s. El cuerpo sigue siendo JSON;
+          // la Function lo parsea. Si hay sesión, el header Authorization
+          // reintroduce el preflight (no es evitable), pero la mayoría de las
+          // reservas son de invitado.
+          const holdHeaders = { 'Content-Type': 'text/plain' };
           if(auth.currentUser){
             try{ holdHeaders['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken(); }catch(e){}
           }
@@ -4724,7 +4769,9 @@
 
           const pagoResp = await fetch(FUNCTIONS_BASE + '/webpayCrearTransaccion', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            // text/plain: sin Authorization acá, así que esto SÍ elimina el
+            // preflight CORS por completo (~2-3 s en frío). Cuerpo JSON igual.
+            headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
               tipo: 'RESERVATION_DEPOSIT',
               datos: {
@@ -4738,6 +4785,8 @@
           if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo iniciar el pago del anticipo');
           redirectToWebpay(pago.url, pago.token);
         }catch(e){
+          pagoEnCurso = false;
+          ocultarLoaderWebpay();
           btn.disabled = false;
           btn.textContent = 'Confirmar reserva';
           toast(e.message);
@@ -4773,6 +4822,7 @@
     document.getElementById('toStep2').disabled = true;
     document.getElementById('toStep3').disabled = true;
     document.getElementById('confirmBtn').disabled = false;
+    pagoEnCurso = false; ocultarLoaderWebpay();
     checkConfirmar();
     document.getElementById('formZone').style.display = 'block';
     document.getElementById('confirmMsg').classList.remove('show');
@@ -6480,7 +6530,7 @@
     const img = videoIdReal ? bunnyThumbUrl(videoIdReal) : c.photoUrl;
     foto.innerHTML = videoIdReal
       ? `<video muted loop playsinline autoplay data-src="${bunnyPlaylistUrl(videoIdReal)}"></video>`
-      : (img ? `<img src="${img}" alt="">` : iconoDeCurso(c));
+      : (img ? `<img src="${img}" alt="" loading="lazy">` : iconoDeCurso(c));
     if(videoIdReal){
       const v = foto.querySelector('video');
       adjuntarHls(v, bunnyPlaylistUrl(videoIdReal));
@@ -6552,7 +6602,7 @@
     grid.innerHTML = testimoniosData.map((t,i)=> `
       <button class="ac-testi-card" data-testi="${i}">
         <div class="ac-testi-thumb">
-          ${t.thumbUrl ? `<img src="${t.thumbUrl}" alt="">` : ''}
+          ${t.thumbUrl ? `<img src="${t.thumbUrl}" alt="" loading="lazy">` : ''}
           <span class="ac-testi-tag">${t.tag === 'PRESENCIAL' ? 'Presencial' : 'Online'}</span>
           <span class="ac-testi-play">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -6918,30 +6968,36 @@
       if(horarioDelDia(iso)) candidatos.push({ i, iso });
     }
 
-    // Se piden TODOS los días candidatos en paralelo -- antes se pedían
-    // uno por uno, en serie (hasta 14 ida-y-vuelta seguidas a la Cloud
-    // Function cada vez que un cliente llegaba a este paso, la causa real
-    // de la demora reportada). asegurarOcupacion() ya cachea por fecha,
-    // así que esto nunca duplica una consulta ya hecha (ej. la de loadSlots
-    // para la fecha ya seleccionada).
-    await Promise.all(candidatos.map(c => asegurarOcupacion(c.iso)));
+    // Búsqueda PROGRESIVA por tandas de 6 días (6 + 6 + 2, manteniendo el
+    // límite de 14). El caso normal -- hay hora esta semana -- resuelve con
+    // la primera tanda: 6 llamadas a obtenerOcupacionDia en vez de 14. Solo
+    // si NINGÚN día de la tanda tiene hueco se pide la siguiente. Mismo
+    // resultado funcional que pedir los 14 de una: sigue encontrando el
+    // primer hueco disponible en los próximos 14 días, y si no hay ninguno
+    // muestra el mismo mensaje. asegurarOcupacion() cachea por fecha, así
+    // que ninguna tanda repite una consulta ya hecha.
+    const TANDA = 6;
+    for(let desde = 0; desde < candidatos.length; desde += TANDA){
+      const tanda = candidatos.slice(desde, desde + TANDA);
+      await Promise.all(tanda.map(c => asegurarOcupacion(c.iso)));
 
-    for(const { i, iso } of candidatos){
-      const slots = await calcularSlots(iso); // ya cacheado, no vuelve a pedir red
-      if(slots.length){
-        const s = slots[0];
-        const cuando = (i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : fmtFechaLarga(iso)) + ' a las ' + s.label;
-        if(detalle) detalle.textContent = cuando;
+      for(const { i, iso } of tanda){
+        const slots = await calcularSlots(iso); // ya cacheado, no vuelve a pedir red
+        if(slots.length){
+          const s = slots[0];
+          const cuando = (i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : fmtFechaLarga(iso)) + ' a las ' + s.label;
+          if(detalle) detalle.textContent = cuando;
 
-        if(aplicar){
-          document.getElementById('bookDate').value = iso;
-          pintarDias();
-          await loadSlots();
-          const btn = document.querySelector(`#slotPick .slot[data-min="${s.min}"]`);
-          if(btn) btn.click();
-          document.getElementById('slotPick').scrollIntoView({behavior:'smooth', block:'center'});
+          if(aplicar){
+            document.getElementById('bookDate').value = iso;
+            pintarDias();
+            await loadSlots();
+            const btn = document.querySelector(`#slotPick .slot[data-min="${s.min}"]`);
+            if(btn) btn.click();
+            document.getElementById('slotPick').scrollIntoView({behavior:'smooth', block:'center'});
+          }
+          return;
         }
-        return;
       }
     }
     if(detalle) detalle.textContent = 'Sin horarios en los próximos 14 días';
@@ -7090,27 +7146,23 @@
     if(!wrap) return;
     state.upsellSeleccion = [];
     state.upsellCatalogo = [];
-    try{
-      const [snapProductos, negocioDoc] = await Promise.all([
-        db.collection('products').limit(8).get(),
-        db.collection('settings').doc('negocio').get(),
-      ]);
-      const pct = negocioDoc.exists ? Number(negocioDoc.data().descuentoProductoReserva) : NaN;
-      state.upsellDescuentoPct = Number.isFinite(pct) ? pct : 10;
-      document.getElementById('dpUpsellPct').textContent = state.upsellDescuentoPct;
+    // productosSiteCache y horarioNegocio ya están sincronizados en vivo
+    // (onSnapshot de `products` y de `settings/negocio`, montados al cargar
+    // la página). Cero red acá. Fallbacks seguros: 10% si el descuento no
+    // llegó, y ocultar el bloque si todavía no hay productos en caché.
+    const pct = Number(horarioNegocio.descuentoProductoReserva);
+    state.upsellDescuentoPct = Number.isFinite(pct) ? pct : 10;
+    document.getElementById('dpUpsellPct').textContent = state.upsellDescuentoPct;
 
-      state.upsellCatalogo = snapProductos.docs
-        .map(d=> ({ id: d.id, ...d.data() }))
-        .filter(p=> p.active !== false)
-        .slice(0, 4)
-        .map(p=> ({ id: p.id, name: p.name, price: Number(p.price || 0), photoUrl: p.photoUrl || '' }));
+    // Mismo criterio que antes: los primeros 4 productos activos
+    // (productosSiteCache ya viene filtrado por active !== false).
+    state.upsellCatalogo = (productosSiteCache || [])
+      .slice(0, 4)
+      .map(p=> ({ id: p.id, name: p.name, price: Number(p.priceClp || 0), photoUrl: p.photoUrl || '' }));
 
-      if(!state.upsellCatalogo.length){ wrap.style.display = 'none'; return; }
-      pintarUpsell();
-      wrap.style.display = 'block';
-    }catch(e){
-      wrap.style.display = 'none';
-    }
+    if(!state.upsellCatalogo.length){ wrap.style.display = 'none'; return; }
+    pintarUpsell();
+    wrap.style.display = 'block';
   }
 
   function pintarUpsell(){
@@ -7119,7 +7171,7 @@
       const agregado = (state.upsellSeleccion || []).some(s=> s.id === p.id);
       return `
         <div class="dp-upsell-item ${agregado ? 'agregado' : ''}" data-id="${p.id}">
-          <div class="dp-upsell-item-thumb">${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : ICONO_BOLSA}</div>
+          <div class="dp-upsell-item-thumb">${p.photoUrl ? `<img src="${p.photoUrl}" alt="" loading="lazy">` : ICONO_BOLSA}</div>
           <div class="dp-upsell-item-txt">
             <b>${p.name}</b>
             <span><span class="dp-upsell-item-tachado">${money(p.price)}</span><span class="dp-upsell-item-final">${money(precioConDescuentoUI(p.price))}</span></span>
@@ -7153,18 +7205,15 @@
   async function cargarAnticipoResumen(){
     const citas = (state.plan && state.plan.length) ? state.plan.filter(x=> !x.sinCupo) : [{ servicioId: state.serviceId }];
     let total = 0;
-    try{
-      for(const c of citas){
-        if(c.servicioId){
-          const doc = await db.collection('services').doc(c.servicioId).get();
-          const anticipo = doc.exists && typeof doc.data().anticipo === 'number' ? doc.data().anticipo : ANTICIPO_POR_DEFECTO_UI;
-          total += anticipo;
-        } else {
-          total += ANTICIPO_POR_DEFECTO_UI;
-        }
-      }
-    }catch(e){
-      total = ANTICIPO_POR_DEFECTO_UI * citas.length;
+    // El anticipo de cada servicio ya viene en catalog.services (lo pobló
+    // loadCatalog al arrancar; para llegar a este paso el usuario tuvo que
+    // elegir un servicio de esa misma lista). Es SOLO informativo: webpay.js
+    // (calcularMonto) vuelve a leer el doc y recalcula el monto real que se
+    // cobra. Fallback: si por lo que sea el servicio no está en catálogo,
+    // se usa el anticipo por defecto -- igual que antes.
+    for(const c of citas){
+      const svc = c.servicioId ? (catalog.services || []).find(s=> s.id === c.servicioId) : null;
+      total += (svc && typeof svc.anticipo === 'number') ? svc.anticipo : ANTICIPO_POR_DEFECTO_UI;
     }
     state.anticipoReal = total;
     const pct = state.price ? Math.round(total / state.price * 100) : 0;
@@ -7643,6 +7692,9 @@
               priceClp:x.priceClp, minutes:x.minutes,
               featured: x.featured ?? base?.featured ?? false,
               cat: x.cat || base?.cat,
+              // anticipo: para mostrar el monto ANTES de ir a Webpay sin
+              // re-leer el doc (el server lo recalcula igual en calcularMonto).
+              anticipo: typeof x.anticipo === 'number' ? x.anticipo : null,
               photoUrl: x.photoUrl || '',
             };
           });
@@ -8045,7 +8097,7 @@
     grid.innerHTML = lista.map(p=>`
       <div class="st-card">
         <div class="st-card-photo">
-          ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${escapeHTML(p.name)}">` : '<span class="ph">🧴</span>'}
+          ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${escapeHTML(p.name)}" loading="lazy">` : '<span class="ph">🧴</span>'}
           ${p.featured ? '<span class="st-card-tag">Bestseller</span>' : ''}
         </div>
         <h4>${escapeHTML(p.name)}</h4>
