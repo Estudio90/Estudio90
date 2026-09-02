@@ -5951,7 +5951,9 @@
     document.getElementById('cartBannerMixto').style.display = (hayCursos && hayProductos) ? '' : 'none';
     document.getElementById('cartPaisBlock').style.display = hayCursos ? '' : 'none';
     document.getElementById('cartPickupBox').style.display = hayProductos ? '' : 'none';
-    document.getElementById('cartMercadoPagoBlock').style.display = hayCursos ? '' : 'none';
+    // Mercado Pago: SOLO si el carrito contiene únicamente cursos. Curso +
+    // producto -> Webpay (que sí paga los dos juntos en una transacción).
+    document.getElementById('cartMercadoPagoBlock').style.display = (hayCursos && !hayProductos) ? '' : 'none';
 
     const label = document.getElementById('ckPagarWebpayLabel');
     const sub = document.getElementById('ckPagarWebpaySub');
@@ -6071,9 +6073,89 @@
     abrirAuthParaCarrito(document.getElementById('ckCorreo').value.trim());
   });
 
-  document.getElementById('ckPagarMercadoPago')?.addEventListener('click', ()=>{
-    toast('Mercado Pago todavía no está disponible: elige Webpay para pagar.');
-  });
+  document.getElementById('ckPagarMercadoPago')?.addEventListener('click', pagarCursoConMercadoPago);
+  /** Mercado Pago — SOLO cursos. El carrito acá siempre tiene 1 curso y 0
+   *  productos (el botón no se muestra en otro caso). El servidor recalcula
+   *  el monto leyendo Firestore; el navegador nunca lo manda. Nunca se
+   *  concede acceso acá: el webhook (mpWebhook) lo hace tras verificar el
+   *  pago contra Mercado Pago. */
+  async function pagarCursoConMercadoPago(){
+    const cursos = carrito.filter(i=> i.kind === 'COURSE');
+    const productos = carrito.filter(i=> i.kind !== 'COURSE');
+    if(!cursos.length || productos.length){
+      toast('Mercado Pago es solo para cursos. Usa Webpay para pagar productos.');
+      return;
+    }
+    const btnMp = document.getElementById('ckPagarMercadoPago');
+    const btnWp = document.getElementById('ckPagarWebpay');
+    const textoOriginal = btnMp.textContent;
+    const restaurar = ()=>{ btnMp.disabled = false; btnMp.textContent = textoOriginal; if(btnWp) btnWp.disabled = false; };
+
+    const conSesion = !!auth.currentUser;
+    let nombre = '', correo = '', password = '', fono = '', pais = '';
+    if(conSesion){
+      correo = auth.currentUser.email || '';
+      pais = document.getElementById('ckPais').value || '';
+    } else {
+      nombre = document.getElementById('ckNombre').value.trim();
+      correo = document.getElementById('ckCorreo').value.trim().toLowerCase();
+      password = document.getElementById('ckPassword').value;
+      const cod = document.getElementById('ckFonoCod').value;
+      const digitos = document.getElementById('ckFono').value.trim();
+      fono = digitos ? `+${cod}${digitos}` : '';
+      pais = document.getElementById('ckPais').value || '';
+      if(!nombre) return toast('Escribe tu nombre completo');
+      if(!/^\S+@\S+\.\S+$/.test(correo)) return toast('Escribe un correo válido');
+      if(password && password.length < 6) return toast('La contraseña debe tener al menos 6 caracteres');
+    }
+
+    btnMp.disabled = true; if(btnWp) btnWp.disabled = true;
+    btnMp.textContent = 'Redirigiendo a Mercado Pago…';
+
+    if(!conSesion){
+      try{
+        const metodos = await auth.fetchSignInMethodsForEmail(correo);
+        if(metodos && metodos.length){
+          restaurar();
+          toast('Ya existe una cuenta con este correo. Inicia sesión para continuar.');
+          abrirAuthParaCarrito(correo);
+          return;
+        }
+      }catch(e){ /* si falla el chequeo, el servidor igual protege */ }
+    }
+
+    try{
+      const headers = { 'Content-Type': 'application/json' };
+      const body = { courseIds: cursos.map(c=> c.id), buyerEmail: correo };
+      if(conSesion){
+        headers['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken();
+        if(pais) body.buyerCountry = pais;
+      } else {
+        body.buyerName = nombre;
+        if(fono) body.buyerPhone = fono;
+        if(password) body.buyerPassword = password;
+        if(pais) body.buyerCountry = pais;
+      }
+      const resp = await fetch(FUNCTIONS_BASE + '/mpCrearPreferencia', {
+        method: 'POST', headers, body: JSON.stringify(body),
+      });
+      const data = await resp.json();
+      if(!resp.ok){
+        if(data.error === 'ACCOUNT_EXISTS'){
+          restaurar();
+          toast(data.message || 'Ya existe una cuenta con este correo. Inicia sesión para continuar.');
+          abrirAuthParaCarrito(correo);
+          return;
+        }
+        throw new Error(data.error || 'No se pudo iniciar el pago');
+      }
+      if(!data.init_point) throw new Error('No se pudo iniciar el pago');
+      location.href = data.init_point;
+    }catch(e){
+      restaurar();
+      toast(e.message);
+    }
+  }
 
   document.getElementById('ckPagarWebpay').addEventListener('click', intentarPagarCheckout);
   async function intentarPagarCheckout(){
@@ -6305,7 +6387,10 @@
   async function manejarRetornoWebpay(){
     const params = new URLSearchParams(location.search);
     const resultado = params.get('pago');
-    const orden = params.get('orden');
+    const proveedor = params.get('provider');
+    // Mercado Pago vuelve con ?provider=mercadopago&ref=…; Webpay con &orden=…
+    const esMP = proveedor === 'mercadopago';
+    const orden = esMP ? params.get('ref') : params.get('orden');
     const token = params.get('t');
     if(!resultado) return;
 
@@ -6313,13 +6398,29 @@
     // (y para que el token nunca quede visible en la barra más que este instante)
     history.replaceState(null, '', location.pathname + location.hash);
 
-    if(resultado === 'confirmado' && orden){
+    // El sitio NUNCA concede acceso: solo consulta el estado que el backend
+    // ya decidió (Webpay: obtenerEstadoPago tras commit; Mercado Pago:
+    // mpEstadoPago, que refleja lo que mpWebhook confirmó contra la API de MP).
+    const endpointEstado = esMP ? '/mpEstadoPago' : '/obtenerEstadoPago';
+    const bodyEstado = esMP ? { ref: orden, t: token } : { buyOrder: orden, t: token };
+
+    if((resultado === 'confirmado' || (esMP && resultado === 'pendiente')) && orden){
       try{
-        const resp = await fetch(FUNCTIONS_BASE + '/obtenerEstadoPago', {
+        const resp = await fetch(FUNCTIONS_BASE + endpointEstado, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ buyOrder: orden, t: token }),
+          body: JSON.stringify(bodyEstado),
         });
         const p = resp.ok ? await resp.json() : null;
+
+        // Mercado Pago puede volver mientras el webhook aún no llegó: si el
+        // estado todavía no es "confirmado", se avisa sin conceder nada.
+        if(esMP && (!p || p.estado !== 'confirmado')){
+          toast(p && p.estado === 'pending'
+            ? 'Estamos confirmando tu pago con Mercado Pago. Te avisaremos por correo apenas quede listo.'
+            : 'Estamos verificando tu pago. Si el cargo aparece en tu cuenta, escríbenos.');
+          carrito = []; guardarCarrito(); pintarCarrito();
+          return;
+        }
 
         // Regla de negocio: toda compra aprobada de producto/curso/carrito
         // mixto crea una cuenta automáticamente (ver plan/webpay.js). Si el
