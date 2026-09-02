@@ -6387,40 +6387,34 @@
   async function manejarRetornoWebpay(){
     const params = new URLSearchParams(location.search);
     const resultado = params.get('pago');
-    const proveedor = params.get('provider');
-    // Mercado Pago vuelve con ?provider=mercadopago&ref=…; Webpay con &orden=…
-    const esMP = proveedor === 'mercadopago';
-    const orden = esMP ? params.get('ref') : params.get('orden');
+    const provider = params.get('provider');
+    const orden = params.get('orden');
+    const ref = params.get('ref');
     const token = params.get('t');
+    // MP agrega payment_id/collection_id al back_url; es solo una pista para
+    // que mpEstadoPago consulte la API de MP -- nunca se concede acceso por él.
+    const mpPaymentId = params.get('payment_id') || params.get('collection_id') || '';
     if(!resultado) return;
 
     // limpiamos la URL de inmediato para que un refresco no vuelva a procesar
     // (y para que el token nunca quede visible en la barra más que este instante)
     history.replaceState(null, '', location.pathname + location.hash);
 
-    // El sitio NUNCA concede acceso: solo consulta el estado que el backend
-    // ya decidió (Webpay: obtenerEstadoPago tras commit; Mercado Pago:
-    // mpEstadoPago, que refleja lo que mpWebhook confirmó contra la API de MP).
-    const endpointEstado = esMP ? '/mpEstadoPago' : '/obtenerEstadoPago';
-    const bodyEstado = esMP ? { ref: orden, t: token } : { buyOrder: orden, t: token };
+    // Mercado Pago: vuelve con ?provider=mercadopago&ref=... -- flujo aparte,
+    // con polling acotado contra mpEstadoPago (ver más abajo). El camino
+    // Webpay de acá queda EXACTAMENTE como estaba.
+    if(provider === 'mercadopago'){
+      await manejarRetornoMercadoPago(ref, token, resultado, mpPaymentId);
+      return;
+    }
 
-    if((resultado === 'confirmado' || (esMP && resultado === 'pendiente')) && orden){
+    if(resultado === 'confirmado' && orden){
       try{
-        const resp = await fetch(FUNCTIONS_BASE + endpointEstado, {
+        const resp = await fetch(FUNCTIONS_BASE + '/obtenerEstadoPago', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(bodyEstado),
+          body: JSON.stringify({ buyOrder: orden, t: token }),
         });
         const p = resp.ok ? await resp.json() : null;
-
-        // Mercado Pago puede volver mientras el webhook aún no llegó: si el
-        // estado todavía no es "confirmado", se avisa sin conceder nada.
-        if(esMP && (!p || p.estado !== 'confirmado')){
-          toast(p && p.estado === 'pending'
-            ? 'Estamos confirmando tu pago con Mercado Pago. Te avisaremos por correo apenas quede listo.'
-            : 'Estamos verificando tu pago. Si el cargo aparece en tu cuenta, escríbenos.');
-          carrito = []; guardarCarrito(); pintarCarrito();
-          return;
-        }
 
         // Regla de negocio: toda compra aprobada de producto/curso/carrito
         // mixto crea una cuenta automáticamente (ver plan/webpay.js). Si el
@@ -6460,6 +6454,135 @@
     } else {
       toast('Ocurrió un problema al procesar el pago. Intenta de nuevo.');
     }
+  }
+
+  /** Panel "Estamos confirmando tu pago..." -- reutiliza el mismo modal del
+   *  comprobante (vistaComprobante), así al confirmar abrirComprobante() solo
+   *  reemplaza el contenido, sin parpadeo ni un diseño nuevo. */
+  function mostrarConfirmandoPago(txt){
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true);
+    document.getElementById('vistaComprobante').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">' + txt + '</div>';
+  }
+
+  /** ref + token de retorno del último comprobante Mercado Pago confirmado en
+   *  ESTA pestaña (sessionStorage: por-pestaña, se borra al cerrarla). Solo
+   *  sirve para volver a pedir el comprobante tras un refresco -- NO concede
+   *  acceso: obtenerComprobantePago revalida el token contra el hash guardado
+   *  server-side y exige estado 'confirmado'. */
+  function tokenComprobanteGuardado(ref){
+    try{
+      const g = JSON.parse(sessionStorage.getItem('mpComprobantePend') || 'null');
+      return (g && g.ref === ref) ? g.t : undefined;
+    }catch(e){ return undefined; }
+  }
+
+  /** Retorno de Mercado Pago. NUNCA concede acceso ni afirma "aprobado" por
+   *  el ?pago= de la URL: el acceso lo otorga mpWebhook tras verificar el
+   *  pago contra la API de MP, y la aprobación solo se da por buena cuando
+   *  mpEstadoPago -- que contrasta server-side contra MP -- devuelve
+   *  'confirmando' o 'confirmado'. Polling acotado contra mpEstadoPago
+   *  mientras el webhook todavía está procesando (un approved puede volver
+   *  al navegador antes de que termine el fulfillment).
+   *
+   *  Estados de mpEstadoPago:
+   *    confirmado  -> fulfillment listo: abrir comprobante, limpiar carrito
+   *    confirmando -> aprobado en MP, fulfillment en curso: seguir esperando
+   *    pendiente   -> MP dice pending/in_process: sin acceso, carrito intacto
+   *    rechazado   -> MP dice rejected: mensaje según statusDetail, carrito intacto
+   *    cancelado   -> MP dice cancelled: carrito intacto
+   *    iniciado    -> MP todavía no tiene el pago: seguir esperando
+   *
+   *  El carrito SOLO se limpia con estado === 'confirmado'. En rechazado /
+   *  pendiente / cancelado / timeout se conserva intacto para reintentar
+   *  con los mismos cursos. */
+  async function manejarRetornoMercadoPago(ref, token, resultado, mpPaymentId){
+    if(!ref || !token){
+      toast('No pudimos identificar tu pago. Si el cargo aparece en tu cuenta, escríbenos.');
+      return;
+    }
+
+    const consultar = async ()=>{
+      try{
+        const resp = await fetch(FUNCTIONS_BASE + '/mpEstadoPago', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ ref, t: token, paymentId: mpPaymentId || undefined }),
+        });
+        return resp.ok ? await resp.json() : null;
+      }catch(e){ return null; }
+    };
+
+    const mensajeRechazo = (d)=>{
+      d = String(d || '');
+      if(d === 'cc_rejected_insufficient_amount')
+        return 'Tu pago no pudo realizarse por fondos insuficientes. Puedes intentar nuevamente con otro medio de pago.';
+      if(d.indexOf('cc_rejected_bad_filled') === 0 || d === 'cc_rejected_card_error')
+        return 'No pudimos procesar el pago. Revisa los datos ingresados e inténtalo nuevamente.';
+      if(d === 'cc_rejected_call_for_authorize' || d === 'rejected_by_bank' || d === 'cc_rejected_other_reason' || d === 'cc_rejected_max_attempts' || d === 'cc_rejected_blacklist')
+        return 'Tu pago fue rechazado por el emisor de la tarjeta. Intenta con otro medio de pago.';
+      if(d === 'cc_rejected_high_risk')
+        return 'Tu pago no pudo completarse. Intenta con otro medio de pago o contáctanos.';
+      return 'No pudimos procesar el pago. Intenta nuevamente con otro medio de pago.';
+    };
+
+    mostrarConfirmandoPago(resultado === 'rechazado'
+      ? 'Verificando el resultado de tu pago…'
+      : 'Estamos confirmando tu pago…');
+
+    // Solo el contraste server-side cuenta como aprobación. ?pago= de la URL NO.
+    let aprobadoVistoEnBackend = false;
+    const INTENTOS = 12, ESPERA_MS = 2500; // ~30 s
+
+    for(let i = 0; i < INTENTOS; i++){
+      const p = await consultar();
+      const e = p && p.estado;
+      if(e === 'confirmando' || e === 'confirmado') aprobadoVistoEnBackend = true;
+
+      if(e === 'confirmado'){
+        carrito = []; guardarCarrito(); pintarCarrito();   // ÚNICO punto que limpia el carrito
+        try{ sessionStorage.setItem('mpComprobantePend', JSON.stringify({ ref, t: token })); }catch(_){}
+        if(p.customToken){
+          try{
+            await auth.signInWithCustomToken(p.customToken);
+            await esperarPerfilListo(auth.currentUser.uid);
+            functions.httpsCallable('confirmarHandoffLogin')({ buyOrder: ref }).catch(()=>{});
+          }catch(_){}
+        }
+        await abrirComprobante(ref, true, token);   // el MISMO comprobante de Webpay
+        return;
+      }
+      if(e === 'rechazado'){
+        cerrarComprobante(true);
+        toast(mensajeRechazo(p.statusDetail));
+        return;   // carrito INTACTO -> puede reintentar
+      }
+      if(e === 'cancelado'){
+        cerrarComprobante(true);
+        toast('Pago cancelado. Tu carrito sigue disponible para reintentar.');
+        return;   // carrito INTACTO
+      }
+      if(e === 'pendiente'){
+        cerrarComprobante(true);
+        toast('Tu pago está siendo procesado. Te avisaremos por correo apenas se acredite.');
+        return;   // carrito INTACTO
+      }
+
+      // 'confirmando' o 'iniciado' -> el webhook aún no terminó: esperar y reintentar.
+      await new Promise(r=> setTimeout(r, ESPERA_MS));
+    }
+
+    // Se agotó el polling. NUNCA se afirma "aprobado" por la URL -- solo si
+    // mpEstadoPago (con su contraste contra MP) devolvió 'confirmando'.
+    cerrarComprobante(true);
+    if(aprobadoVistoEnBackend){
+      toast('Tu pago fue aprobado y lo estamos acreditando. Te enviaremos el comprobante apenas finalice.');
+    } else if(resultado === 'rechazado'){
+      toast('No pudimos procesar el pago. Tu carrito sigue disponible para reintentar.');
+    } else {
+      toast('Estamos verificando tu pago. Te avisaremos apenas tengamos la confirmación.');
+    }
+    // carrito INTACTO en todos los caminos de timeout
   }
   manejarRetornoWebpay();
 
@@ -8176,7 +8299,7 @@
     else if(h === '#academia'){ cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirAcademia(true); }
     else if(h === '#mis-cursos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisProductos(true); cerrarComprobante(true); abrirMisCursos(true); }
     else if(h === '#mis-productos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); abrirMisProductos(true); }
-    else if(h.indexOf('#comprobante=') === 0){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); abrirComprobante(h.slice('#comprobante='.length), false); }
+    else if(h.indexOf('#comprobante=') === 0){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); abrirComprobante(h.slice('#comprobante='.length), false, tokenComprobanteGuardado(h.slice('#comprobante='.length))); }
     else { cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); }
   });
 
@@ -8397,7 +8520,7 @@
     if(hashActual() === '#academia') abrirAcademia(true);
     if(hashActual() === '#mis-cursos') abrirMisCursos(true);
     if(hashActual() === '#mis-productos') abrirMisProductos(true);
-    if(hashActual().indexOf('#comprobante=') === 0) abrirComprobante(hashActual().slice('#comprobante='.length), false);
+    if(hashActual().indexOf('#comprobante=') === 0){ const _bo = hashActual().slice('#comprobante='.length); abrirComprobante(_bo, false, tokenComprobanteGuardado(_bo)); }
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }
     });
