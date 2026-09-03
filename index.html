@@ -3522,7 +3522,7 @@
       <div class="cart-total-row"><span>Total estimado:</span><b id="cartTotal">$0</b></div>
 
       <div class="cart-banner" id="cartBannerMixto" style="display:none;">
-        Puedes pagar productos y cursos juntos con Webpay. Mercado Pago solo aplica a los cursos.
+        Tu carrito tiene cursos y productos juntos. Por ahora se compran por separado: deja <b>solo cursos</b> o <b>solo productos</b> para poder continuar con el pago.
       </div>
 
       <div id="cartPaisBlock" style="display:none;">
@@ -5932,6 +5932,21 @@
   function agregarAlCarrito(id, name, price, kind, photoUrl){
     const ya = carrito.find(i=> i.id === id);
     if(ya && kind === 'COURSE') return toast('Ese curso ya está en tu carrito');
+
+    // Mientras Webpay no procese cursos y Mercado Pago no procese productos, no
+    // se permite mezclar cursos y productos en el mismo carrito -- se compran por
+    // separado. Un carrito mixto viejo guardado en localStorage NO se toca: se
+    // conservan sus artículos y el pago queda bloqueado hasta que el cliente lo
+    // separe (ver intentarPagarCheckout / pagarCursoConMercadoPago).
+    const hayCursosCarrito    = carrito.some(i=> i.kind === 'COURSE');
+    const hayProductosCarrito = carrito.some(i=> i.kind !== 'COURSE');
+    if(kind === 'COURSE' && hayProductosCarrito){
+      return toast('Los cursos y los productos se compran por separado. Vacía los productos del carrito para agregar un curso.');
+    }
+    if(kind !== 'COURSE' && hayCursosCarrito){
+      return toast('Los cursos y los productos se compran por separado. Vacía los cursos del carrito para agregar un producto.');
+    }
+
     if(ya) ya.qty++;
     else carrito.push({ id, name, price:Number(price), qty:1, kind, photoUrl: photoUrl || '' });
     guardarCarrito();
@@ -5954,10 +5969,12 @@
     // Mercado Pago: SOLO si el carrito contiene únicamente cursos. Curso +
     // producto -> Webpay (que sí paga los dos juntos en una transacción).
     document.getElementById('cartMercadoPagoBlock').style.display = (hayCursos && !hayProductos) ? '' : 'none';
-    // Webpay/Transbank: oculto cuando el carrito es SOLO cursos -- esos se
-    // pagan con Mercado Pago. Curso + producto (un solo Webpay) y el
-    // carrito de solo productos lo conservan tal cual.
-    document.getElementById('ckPagarWebpay').style.display = (hayCursos && !hayProductos) ? 'none' : '';
+    // Webpay/Transbank: oculto SIEMPRE que el carrito tenga cursos.
+    //  - solo cursos       -> se paga con Mercado Pago (bloque de abajo).
+    //  - cursos + productos -> carrito mixto viejo: sin botón de pago hasta que
+    //    el cliente lo separe (Webpay no procesa cursos todavía y Mercado Pago
+    //    no procesa productos). El banner y los guards de pago lo explican.
+    document.getElementById('ckPagarWebpay').style.display = hayCursos ? 'none' : '';
 
     const label = document.getElementById('ckPagarWebpayLabel');
     const sub = document.getElementById('ckPagarWebpaySub');
@@ -6086,8 +6103,9 @@
   async function pagarCursoConMercadoPago(){
     const cursos = carrito.filter(i=> i.kind === 'COURSE');
     const productos = carrito.filter(i=> i.kind !== 'COURSE');
-    if(!cursos.length || productos.length){
-      toast('Mercado Pago es solo para cursos. Usa Webpay para pagar productos.');
+    if(!cursos.length){ toast('No hay cursos en tu carrito.'); return; }
+    if(productos.length){
+      toast('Tu carrito tiene cursos y productos juntos. Deja solo cursos o solo productos para continuar con el pago.');
       return;
     }
     const btnMp = document.getElementById('ckPagarMercadoPago');
@@ -6186,6 +6204,12 @@
     // propio paso y nunca pasa por este panel.
     const cursos = carrito.filter(i=> i.kind === 'COURSE');
     const productos = carrito.filter(i=> i.kind !== 'COURSE');
+    // Carrito mixto (curso + producto): solo posible con un carrito guardado
+    // antes del guard de agregarAlCarrito. No se puede pagar hasta separarlo
+    // (Webpay no procesa cursos todavía y Mercado Pago no procesa productos).
+    if(cursos.length && productos.length){
+      return toast('Tu carrito tiene cursos y productos juntos. Deja solo cursos o solo productos para continuar con el pago.');
+    }
     if(cursos.length > 1) return toast('Compra un curso a la vez.');
     // Carrito con exactamente 1 curso y 0 productos -> Mercado Pago:
     // Webpay/Transbank queda oculto para cursos, asi que este camino (el
