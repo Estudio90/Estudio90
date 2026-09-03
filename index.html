@@ -5954,6 +5954,10 @@
     // Mercado Pago: SOLO si el carrito contiene únicamente cursos. Curso +
     // producto -> Webpay (que sí paga los dos juntos en una transacción).
     document.getElementById('cartMercadoPagoBlock').style.display = (hayCursos && !hayProductos) ? '' : 'none';
+    // Webpay/Transbank: oculto cuando el carrito es SOLO cursos -- esos se
+    // pagan con Mercado Pago. Curso + producto (un solo Webpay) y el
+    // carrito de solo productos lo conservan tal cual.
+    document.getElementById('ckPagarWebpay').style.display = (hayCursos && !hayProductos) ? 'none' : '';
 
     const label = document.getElementById('ckPagarWebpayLabel');
     const sub = document.getElementById('ckPagarWebpaySub');
@@ -6183,6 +6187,13 @@
     const cursos = carrito.filter(i=> i.kind === 'COURSE');
     const productos = carrito.filter(i=> i.kind !== 'COURSE');
     if(cursos.length > 1) return toast('Compra un curso a la vez.');
+    // Carrito con exactamente 1 curso y 0 productos -> Mercado Pago:
+    // Webpay/Transbank queda oculto para cursos, asi que este camino (el
+    // boton oculto y el auto-checkout tras login/registro via
+    // carritoEsperandoAuth -> intentarPagarCheckout) tiene que ir a MP,
+    // igual que el boton "Pagar cursos con Mercado Pago". Curso + producto
+    // y el carrito de solo productos siguen por Webpay igual que antes.
+    if(cursos.length && !productos.length) return pagarCursoConMercadoPago();
 
     const conSesion = !!auth.currentUser;
     let nombre = '', correo = '', password = '', fono = '', pais = '';
