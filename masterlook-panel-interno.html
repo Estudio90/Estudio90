@@ -704,6 +704,53 @@
   .cu-clase-in:hover,.cu-clase-in:focus{border-color:var(--border);background:#fff;outline:none;}
   .cu-clase-in--min{width:52px;}
 
+  /* ===== editor "Contenido del curso" -- acordeón de módulos + clases ===== */
+  #cuContenido{display:flex;flex-direction:column;gap:9px;margin-top:12px;}
+  .cu-mod{border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden;}
+  .cu-mod.cu-dragover{border-color:#1A1815;box-shadow:0 0 0 2px rgba(26,24,21,.12);}
+  .cu-mod.cu-dragging{opacity:.4;}
+  .cu-mod-head{display:flex;align-items:center;gap:8px;padding:11px 12px;cursor:pointer;user-select:none;}
+  .cu-mod-head:hover{background:#fafafb;}
+  .cu-mod-grab{cursor:grab;color:#b8b7bd;font-size:14px;flex:0 0 auto;line-height:1;}
+  .cu-mod-grab:active{cursor:grabbing;}
+  .cu-mod-caret{font-size:10px;color:#87868f;width:12px;flex:0 0 auto;}
+  .cu-mod-title{font-size:13.5px;font-weight:700;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cu-mod-meta{font-size:11px;color:#87868f;flex:1;white-space:nowrap;}
+  .cu-mod-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:#d8d7dd;}
+  .cu-mod-dot--ok{background:#189d79;} .cu-mod-dot--partial{background:#e0a72e;} .cu-mod-dot--draft{background:#c8c7cd;} .cu-mod-dot--none{background:#ececef;}
+  .cu-mod-acts{display:flex;gap:4px;flex:0 0 auto;}
+  .cu-mod-body{border-top:1px solid var(--border);}
+  .cu-mod-body.closed{display:none;}
+  .cu-lrow{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #f0f0f2;font-size:12.5px;}
+  .cu-mod-body > .cu-lrow:first-child{border-top:none;}
+  .cu-lrow.cu-dragging{opacity:.35;}
+  .cu-lrow.cu-dragover{box-shadow:inset 0 2px 0 #1A1815;}
+  .cu-lgrab{cursor:grab;color:#c3c2c8;font-size:13px;flex:0 0 auto;line-height:1;}
+  .cu-lord{width:20px;height:20px;border-radius:6px;background:#f1f1f4;display:flex;align-items:center;justify-content:center;font-family:var(--font-primary);font-variant-numeric:tabular-nums;font-size:10.5px;color:#57565f;flex:0 0 auto;}
+  .cu-ltitle{font-weight:600;flex:0 1 auto;min-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cu-ldur{font-size:11px;color:#9a999f;flex:0 0 auto;white-space:nowrap;}
+  .cu-lbadges{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center;}
+  .cu-lacts{display:flex;gap:3px;flex:0 0 auto;}
+  .cu-lacts .cu-ib{width:26px;height:26px;font-size:11px;}
+  .cu-badge{font-size:9px;padding:2px 6px;border-radius:99px;white-space:nowrap;font-weight:600;letter-spacing:.02em;}
+  .cu-badge--pub{background:#e7f6f1;color:#189d79;}
+  .cu-badge--draft{background:#f1f1f4;color:#87868f;}
+  .cu-badge--free{background:#eef2ff;color:#4a5cf0;}
+  .cu-badge--none{background:#f7f7f9;color:#9a999f;}
+  .cu-lrow-empty{padding:14px 12px;color:#9a999f;font-size:11.5px;text-align:center;}
+  .cu-lrow-add,.cu-mod-add{width:100%;text-align:left;background:none;border:none;font-family:inherit;font-size:11.5px;font-weight:600;
+    color:#57565f;cursor:pointer;padding:10px 12px;letter-spacing:.02em;}
+  .cu-lrow-add{border-top:1px solid #f0f0f2;color:#4a5cf0;}
+  .cu-mod-add{border:1px dashed var(--border);border-radius:10px;text-align:center;color:#57565f;}
+  .cu-mod-add:hover,.cu-lrow-add:hover{background:#fafafb;}
+  .cu-tgl{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-hi);cursor:pointer;}
+  @media (max-width:560px){
+    .cu-mod-meta{flex:0 0 100%;order:5;padding-left:20px;}
+    .cu-lbadges{flex:0 0 100%;order:5;}
+    .cu-lgrab{display:none;}
+    .cu-mod-grab{display:none;}
+  }
+
   @media (max-width:900px){
     .cu-campos{grid-template-columns:1fr;}
     .cu-add{grid-template-columns:1fr;}
@@ -2687,6 +2734,76 @@
       </div>
       <p class="mg-note" id="cuBorrarTexto" style="margin-bottom:16px;"></p>
       <button class="mg-btn solid full" id="cuBorrarConfirmar" style="background:#c0392b;">Quitar</button>
+    </div>
+
+    <!-- Aula: editar una clase (módulo/clases) -->
+    <div class="mg-modal" id="modalCuEditarClase">
+      <div class="mg-head">
+        <h3 id="ecTitulo3">Editar clase</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div class="cu-campo full"><label>Título</label><input type="text" id="ecTitulo"></div>
+      <div class="cu-campo full" style="margin-top:10px;"><label>Descripción (opcional)</label><textarea id="ecDesc" rows="2"></textarea></div>
+      <div class="cu-campos" style="margin-top:10px;margin-bottom:6px;">
+        <div class="cu-campo"><label>Duración (min, opcional)</label><input type="number" id="ecMin" min="0" class="mono-in"></div>
+        <div class="cu-campo"><label>Módulo</label><select id="ecModulo" class="mg-input"></select></div>
+      </div>
+      <div class="cu-fila" style="justify-content:space-between;margin:10px 0;flex-wrap:wrap;">
+        <label class="cu-tgl"><span class="mg-sw"><input type="checkbox" id="ecFree"><span class="mg-sw-track"></span></span> Muestra gratuita</label>
+        <label class="cu-tgl"><span class="mg-sw"><input type="checkbox" id="ecPub"><span class="mg-sw-track"></span></span> Publicada</label>
+      </div>
+      <div class="cu-box" style="margin-top:6px;">
+        <div class="cu-box-title">Video de la clase</div>
+        <div class="cu-fila" style="justify-content:space-between;">
+          <span id="ecVideoEstado" class="cu-box-note" style="margin:0;flex:1;">Sin video.</span>
+          <button type="button" class="cu-card-link" id="ecVerVideo" style="display:none;">▶ Ver</button>
+          <button type="button" class="cu-card-link" id="ecRefreshVideo" style="display:none;">🔄 Estado</button>
+        </div>
+        <div id="ecUploadEstado" class="cl-upload-estado" style="display:none;">
+          <div class="cl-upload-bar"><div class="cl-upload-bar-fill" id="ecUploadFill" style="width:0%;"></div></div>
+          <div class="cl-upload-fila"><span id="ecUploadTexto">Subiendo… 0%</span><button type="button" class="cu-card-link" id="ecUploadRetry" style="display:none;">Reintentar</button></div>
+        </div>
+        <button type="button" class="mg-btn ghost full" id="ecSubirVideo" style="margin-top:10px;">⬆ Subir / reemplazar video</button>
+      </div>
+      <div class="cu-box" style="margin-top:8px;">
+        <div class="cu-box-title">Material de la clase</div>
+        <div class="cu-box-note">PDF, guías, fichas o plantillas que el alumno podrá descargar dentro de esta clase. Los videos nunca se descargan.</div>
+        <div id="ecRecursosLista" style="margin-top:8px;"></div>
+        <div class="cu-fila" style="margin-top:10px;">
+          <input type="text" id="ecRecursoNombre" placeholder="Nombre (ej. Guía de ondulación)" style="flex:1;min-width:140px;">
+          <button type="button" class="mg-btn ghost" id="ecRecursoBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;align-items:center;">
+        <button class="cu-card-link del" id="ecBorrar" style="margin-right:auto;">Eliminar clase</button>
+        <button class="mg-btn ghost" data-close>Cancelar</button>
+        <button class="mg-btn solid" id="ecGuardar">Guardar</button>
+      </div>
+    </div>
+
+    <!-- Aula: mover una clase -->
+    <div class="mg-modal" id="modalCuMoverClase">
+      <div class="mg-head">
+        <h3>Mover clase</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="mcClaseTitulo" style="margin-bottom:14px;"></p>
+      <div class="cu-fila" style="margin-bottom:14px;">
+        <button class="mg-btn ghost" id="mcArriba" style="flex:1;">↑ Subir</button>
+        <button class="mg-btn ghost" id="mcAbajo" style="flex:1;">↓ Bajar</button>
+      </div>
+      <div class="cu-campo full"><label>Mover al módulo</label><select id="mcModulo" class="mg-input"></select></div>
+      <button class="mg-btn solid full" id="mcMoverModulo" style="margin-top:12px;">Mover al módulo elegido</button>
+    </div>
+
+    <!-- Aula: eliminar módulo -->
+    <div class="mg-modal" id="modalCuBorrarModulo">
+      <div class="mg-head">
+        <h3>Eliminar módulo</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="cuBorrarModTexto" style="margin-bottom:16px;"></p>
+      <button class="mg-btn solid full" id="cuBorrarModConfirmar" style="background:#c0392b;">Eliminar módulo</button>
     </div>
 
     <div class="mg-modal" id="modalTsBorrar">
@@ -9875,7 +9992,6 @@
      ========================================================== */
   let cuCursos = [];
   let cuActual = null;      // { curso, clases }
-  let cuRecursoArchivo = null;
   let clArchivoElegido = null;
 
   /* Prioridad de estados de video de Bunny -- MISMA lógica que puedeAvanzar()
@@ -9893,12 +10009,11 @@
      este panel (nombre, precio, foto, id del video, recursos...), con merge,
      en UN único documento: el del curso que cambió.
 
-     NUNCA escribe streamStatus / trailerStreamStatus / lessons: el estado de
-     procesamiento del video es del webhook de Bunny, y las lecciones las
-     guarda cuGuardarClasesSilencioso() preservando ese estado. Así, abrir o
-     editar el panel con datos viejos en memoria no puede revertir a
-     'processing' un video que Bunny ya dejó 'ready', ni tocar cursos que no
-     se editaron. */
+     NUNCA escribe streamStatus ni lessons[]: el estado de procesamiento del
+     video es del webhook de Bunny; las clases viven en subcolecciones y las
+     guarda el editor de "Contenido del curso". Así, abrir o editar el panel
+     con datos viejos en memoria no puede revertir a 'processing' un video que
+     Bunny ya dejó 'ready', ni tocar cursos que no se editaron. */
   async function guardarCurso(courseId){
     if(MODE === 'api') return;
     const c = cuCursos.find(x=> x.id === courseId);
@@ -9911,8 +10026,14 @@
       accessDurationDays: c.accessDurationDays || 30,
       photoUrl: c.photoUrl || '',
       streamVideoId: c.streamVideoId || '',
-      trailerStreamVideoId: c.trailerStreamVideoId || '',
-      resources: c.resources || [],
+      // `resources` (material del curso) ya NO se escribe acá: el material es
+      // por clase (courses/{id}/lessons/{lid}.resources). El campo viejo del
+      // doc del curso se deja intacto (merge) por si algún curso ya lo tenía.
+      // Aula: módulos + resumen. Solo se escriben si ya existen en memoria
+      // (curso nuevo, o editor abierto) -- el escritor autoritativo durante
+      // la edición es cuGuardarModulos(). Nunca se toca el array legacy lessons[].
+      ...(Array.isArray(c.modules) ? { modules: c.modules } : {}),
+      ...(c.outline ? { outline: c.outline } : {}),
       // El enlace de acceso NO va en el doc público del catálogo (lo lee
       // entero cualquier visitante). Se borra de acá si venía de una
       // versión anterior y se guarda en la subcolección privada.
@@ -11406,13 +11527,26 @@
       }
     } else {
       const c = cuCursos.find(x=> x.id === id);
-      cuActual = { curso:{...c}, clases:(c.lessons || []).map(l=> ({...l})) };
-      // El enlace de acceso vive en courses/{id}/privado/config, fuera del
-      // doc público -- se lee solo acá, al abrir el editor.
+      const ref = db.collection('courses').doc(id);
+      // Modelo nuevo del aula: módulos en el doc, clases + video en subcolecciones.
+      // El array legacy `lessons[]` NO se lee -- solo queda como respaldo de rollback.
+      let lessonsSnap = { docs: [] }, mediaSnap = { docs: [] }, priv = null;
       try{
-        const priv = await db.collection('courses').doc(id).collection('privado').doc('config').get();
-        cuActual.curso.accessUrl = priv.exists ? (priv.data().accessUrl || '') : (cuActual.curso.accessUrl || '');
-      }catch(e){ /* sin doc todavía: se queda con lo que haya en memoria */ }
+        [lessonsSnap, mediaSnap, priv] = await Promise.all([
+          ref.collection('lessons').get(),
+          ref.collection('lessonMedia').get(),
+          ref.collection('privado').doc('config').get(),
+        ]);
+      }catch(e){ /* colecciones vacías/sin permiso: se maneja abajo */ }
+      const media = {};
+      mediaSnap.docs.forEach(d=> media[d.id] = { id:d.id, ...d.data() });
+      cuActual = {
+        curso: {...c},
+        modulos: (Array.isArray(c.modules) ? c.modules : []).map(m=> ({...m})),
+        clases: lessonsSnap.docs.map(d=> ({ id:d.id, ...d.data() })),
+        media,
+      };
+      cuActual.curso.accessUrl = (priv && priv.exists) ? (priv.data().accessUrl || '') : (c.accessUrl || '');
     }
 
     cuPintarDetalle();
@@ -11430,19 +11564,8 @@
       ${curso.photoUrl ? `background-image:url('${curso.photoUrl}');` : ''}">${curso.photoUrl ? '' : '🖼'}</div>`;
   }
 
-  /** Miniatura del video corto de vista previa (15-20 seg) de un curso --
-   *  siempre gratis/público (isFree:true fijo), pensado para reproducirse
-   *  como portada del inicio del sitio cuando el curso está "Recomendado". */
-  function cuTrailerThumbHtml(curso){
-    const host = (curso.trailerStreamVideoId && curso.trailerStreamStatus === 'ready')
-      ? `https://${BUNNY_CDN_PUBLIC}/${curso.trailerStreamVideoId}/thumbnail.jpg` : '';
-    return `<div class="cu-thumb" id="cuTrailerThumb" title="Clic para cambiar" style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
-      background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
-      ${host ? `background-image:url('${host}');` : ''}">${curso.trailerStreamVideoId ? (host ? '' : '…') : '🎬'}</div>`;
-  }
-
   function cuPintarDetalle(){
-    const { curso, clases } = cuActual;
+    const { curso } = cuActual;
 
     document.getElementById('cuDetalle').innerHTML = `
       <div class="cu-editor-head">
@@ -11467,7 +11590,8 @@
           <label class="cu-lbl">Precio ($)</label>
           <input type="number" id="cuPrecio" min="0" step="1000" value="${curso.priceClp || 0}">
 
-          <label class="cu-lbl">Imagen o video principal del curso</label>
+          <label class="cu-lbl">Portada del curso <span style="text-transform:none;">(imagen o video)</span></label>
+          <p class="mg-note" style="margin:-4px 0 8px;">Se muestra en la tarjeta del curso (Academy e inicio) y en la portada del aula. Un video se reproduce como muestra; siempre público.</p>
           <div class="cu-fila">
             ${cuMediaThumbHtml(curso)}
             <button type="button" class="mg-btn ghost" id="cuMediaBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
@@ -11475,17 +11599,6 @@
             ${curso.streamVideoId && curso.streamStatus === 'ready' ? `<button type="button" class="cu-card-link" id="cuVerMedia" title="Previsualizar el video">▶ Ver</button>` : ''}
             ${curso.streamVideoId && curso.streamStatus === 'processing' ? `<button type="button" class="cu-card-link" id="cuRefrescarMedia" title="Verificar si ya terminó de procesarse">🔄</button>` : ''}
             ${(curso.photoUrl || curso.streamVideoId) ? `<button type="button" class="cu-card-link del" id="cuQuitarMedia">Quitar</button>` : ''}
-          </div>
-
-          <label class="cu-lbl">Video breve de vista previa <span style="text-transform:none;">(15-20 seg, opcional)</span></label>
-          <p class="mg-note" style="margin:-4px 0 8px;">Para que el cliente vea, antes de comprar, más o menos lo que verá en el curso. Siempre gratis y público -- se muestra en la tarjeta del curso (Academy e inicio) mientras no exista una foto/video de portada propio.</p>
-          <div class="cu-fila">
-            ${cuTrailerThumbHtml(curso)}
-            <button type="button" class="mg-btn ghost" id="cuTrailerBtn" style="flex:none;padding:8px 14px;">⬆ Elegir video</button>
-            ${curso.trailerStreamVideoId ? badgeEstadoVideo(curso.trailerStreamStatus) : ''}
-            ${curso.trailerStreamVideoId && curso.trailerStreamStatus === 'ready' ? `<button type="button" class="cu-card-link" id="cuVerTrailer" title="Previsualizar el video">▶ Ver</button>` : ''}
-            ${curso.trailerStreamVideoId && curso.trailerStreamStatus === 'processing' ? `<button type="button" class="cu-card-link" id="cuRefrescarTrailer" title="Verificar si ya terminó de procesarse">🔄</button>` : ''}
-            ${curso.trailerStreamVideoId ? `<button type="button" class="cu-card-link del" id="cuQuitarTrailer">Quitar</button>` : ''}
           </div>
 
           <label class="cu-lbl">Descripción</label>
@@ -11505,26 +11618,7 @@
             Visible en el sitio
           </label>
 
-          <div class="cu-box">
-            <div class="cu-box-title">Recursos del curso</div>
-            <div class="cu-box-note">Guías, plantillas u otros archivos descargables para el alumno.</div>
-            <div id="cuRecursosLista">
-              ${(curso.resources||[]).length ? curso.resources.map((r,i)=>`
-                <div class="cu-recurso-item" data-rec="${i}">
-                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📎 ${escapeHTML(r.name)}</span>
-                  <span style="display:flex;gap:12px;flex:none;align-items:center;">
-                    ${/^https?:\/\//.test(r.url || '') ? `<a class="cu-card-link" href="${escapeHTML(r.url)}" target="_blank" rel="noopener" style="color:#4a5cf0;">Ver</a>` : ''}
-                    <button type="button" class="cu-card-link del" data-rec-borrar>Quitar</button>
-                  </span>
-                </div>`).join('') : '<div class="cu-box-note" style="margin:0;">Sin recursos aún.</div>'}
-            </div>
-            <div class="cu-fila" style="margin-top:10px;">
-              <input type="text" id="cuRecursoNombre" placeholder="Nombre del recurso (ej. Guía PDF)" style="flex:1;min-width:140px;">
-              <button type="button" class="mg-btn ghost" id="cuRecursoBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
-              <span class="cu-archivo-nombre" id="cuRecursoArchivoNombre">ningún archivo</span>
-            </div>
-            <button type="button" class="mg-btn solid full" id="cuAgregarRecurso" style="margin-top:10px;">+ Agregar recurso</button>
-          </div>
+          <p class="mg-note" style="margin:14px 0 0;">El <b>material descargable</b> (PDF, guías, fichas...) se agrega ahora <b>por clase</b>, desde el editor de cada clase en "Contenido del curso".</p>
 
           <button class="mg-btn solid full" id="cuGuardar" style="margin-top:18px;">Guardar datos del curso</button>
 
@@ -11537,61 +11631,10 @@
             </div>
           </div>
 
-          <div class="cu-box">
-            <div class="cu-box-title">Lecciones en video</div>
-            <div class="cu-clases" id="cuClases">
-              ${clases.length ? clases.map((l,i)=>`
-                <div class="cu-clase ${l.active === false ? 'off' : ''}" data-cl="${l.id}">
-                  <div class="cu-num">${i+1}</div>
-                  <div class="cu-thumb-sm" data-cl-thumb title="Subir o reemplazar el video de esta clase"
-                       style="width:44px;height:44px;border-radius:8px;cursor:pointer;background-color:#eee;flex:0 0 auto;
-                         background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
-                         ${l.streamVideoId && l.streamStatus==='ready' ? `background-image:url('https://${l.isFree ? BUNNY_CDN_PUBLIC : BUNNY_CDN_PRIVATE}/${l.streamVideoId}/thumbnail.jpg');` : ''}">${l.streamVideoId ? '' : '🎬'}</div>
-                  <div class="cu-cinfo">
-                    <div class="cu-ctitulo">
-                      <input type="text" class="cu-clase-in" data-cl-titulo value="${(l.title||'').replace(/"/g,'&quot;')}">
-                      ${badgeEstadoVideo(l.streamStatus)}
-                      ${l.streamVideoId && l.streamStatus === 'processing' ? `<button type="button" class="cu-card-link" data-cl-refrescar title="Verificar si ya terminó de procesarse" style="margin-left:4px;">🔄</button>` : ''}
-                      ${l.streamVideoId && l.streamStatus === 'ready' ? `<button type="button" class="cu-card-link" data-cl-ver title="Ver el video" style="margin-left:4px;">▶ Ver</button>` : ''}
-                    </div>
-                    <div class="cu-curl" style="display:flex;align-items:center;gap:10px;">
-                      <input type="number" class="cu-clase-in cu-clase-in--min" data-cl-min placeholder="min" min="0" value="${l.durationMin ?? ''}">
-                      <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-mid);white-space:nowrap;">
-                        <input type="checkbox" data-cl-libre style="width:auto;" ${l.isFree ? 'checked' : ''}> Muestra gratis
-                      </label>
-                    </div>
-                  </div>
-                  <div class="cu-cbtns">
-                    <button class="cu-ib" data-subir title="Subir">↑</button>
-                    <button class="cu-ib" data-bajar title="Bajar">↓</button>
-                    <button class="cu-ib del" data-borrar title="Quitar">✕</button>
-                  </div>
-                </div>`).join('')
-                : '<div class="cu-vacio">Sin lecciones aún.</div>'}
-            </div>
-            <div class="cu-fila" style="margin-top:12px;">
-              <input type="text" id="clTitulo" placeholder="Ej: Técnica avanzada" style="flex:1;min-width:140px;">
-            </div>
-            <div class="cu-fila" style="margin-top:8px;">
-              <input type="number" id="clMin" placeholder="min" min="0" style="width:70px;">
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);white-space:nowrap;">
-                <input type="checkbox" id="clLibre" style="width:auto;"> Muestra gratis
-              </label>
-              <button type="button" class="mg-btn ghost" id="clArchivoBtn" style="flex:none;padding:8px 14px;">Seleccionar archivo</button>
-              <span class="cu-archivo-nombre" id="clArchivoNombre">ningún archivo seleccionado</span>
-            </div>
-            <div id="clUploadEstado" class="cl-upload-estado" style="display:none;">
-              <div class="cl-upload-info">
-                <span id="clUploadNombre"></span>
-                <span id="clUploadTamano"></span>
-              </div>
-              <div class="cl-upload-bar"><div class="cl-upload-bar-fill" id="clUploadBarFill" style="width:0%;"></div></div>
-              <div class="cl-upload-fila">
-                <span id="clUploadTexto">Subiendo… 0%</span>
-                <button type="button" class="cu-card-link" id="clUploadReintentar" style="display:none;">Reintentar</button>
-              </div>
-            </div>
-            <button class="mg-btn solid full" id="clAgregar" style="margin-top:10px;">+ Subir lección</button>
+          <div class="cu-box" id="cuContenidoBox">
+            <div class="cu-box-title">Contenido del curso</div>
+            <div class="cu-box-note">Módulos y clases. Los alumnos solo ven lo publicado. Arrastra <b>⠿</b> para reordenar, o usa los botones (mejor en móvil).</div>
+            <div id="cuContenido"></div>
           </div>
         </div>
 
@@ -11615,17 +11658,13 @@
   }
 
   function cuPintarPreview(){
-    const { curso, clases } = cuActual;
+    const { curso } = cuActual;
     const media = document.getElementById('cuPreviewMedia');
     if(media){
-      // Portada principal primero (video listo, o foto); si el curso no
-      // tiene ninguna de las dos, se usa el video breve de vista previa
-      // como respaldo -- así la vista previa no se queda con el ícono
-      // vacío cuando lo único que hay cargado es ese video.
+      // Portada del curso: video listo -> su thumbnail; si no, la foto.
       const url = curso.streamVideoId && curso.streamStatus === 'ready'
         ? `https://${BUNNY_CDN_PUBLIC}/${curso.streamVideoId}/thumbnail.jpg`
-        : curso.photoUrl || (curso.trailerStreamVideoId && curso.trailerStreamStatus === 'ready'
-            ? `https://${BUNNY_CDN_PUBLIC}/${curso.trailerStreamVideoId}/thumbnail.jpg` : '');
+        : (curso.photoUrl || '');
       media.style.backgroundImage = url ? `url('${url}')` : '';
       media.textContent = url ? '' : '🎬';
     }
@@ -11635,43 +11674,22 @@
     if(descEl) descEl.textContent = curso.description || '';
     const lecEl = document.getElementById('cuPreviewLecciones');
     if(lecEl){
-      const activas = clases.filter(l=> l.active !== false);
-      lecEl.innerHTML = activas.length
-        ? activas.map(l=> `<div class="cu-preview-leccion">🎬 ${l.title}${l.isFree ? '<span class="cu-libre">MUESTRA</span>' : ''}</div>`).join('')
-        : '<div class="cu-preview-vacio">Sin lecciones publicadas.</div>';
+      const mods = (cuActual.modulos || []).slice().sort((a,b)=> a.order - b.order);
+      const publicadas = (cuActual.clases || []).filter(l=> l.published);
+      lecEl.innerHTML = publicadas.length
+        ? mods.map(m=>{
+            const ls = publicadas.filter(l=> l.moduleId === m.id).sort((a,b)=> a.order - b.order);
+            if(!ls.length) return '';
+            return `<div class="cu-preview-lecciones-tit" style="margin-top:10px;">${escapeHTML(m.title)}</div>` +
+              ls.map(l=> `<div class="cu-preview-leccion">🎬 ${escapeHTML(l.title)}${l.isFree ? '<span class="cu-libre">MUESTRA</span>' : ''}</div>`).join('');
+          }).join('')
+        : '<div class="cu-preview-vacio">Sin clases publicadas.</div>';
     }
   }
 
   function cuConectarDetalle(){
-    document.querySelectorAll('#cuClases .cu-clase').forEach(row=>{
-      const id = row.dataset.cl;
-      const i = cuActual.clases.findIndex(l=> l.id === id);
-      const l = cuActual.clases[i];
+    renderContenido();   // acordeón de módulos + clases (se auto-conecta)
 
-      row.querySelector('[data-subir]').addEventListener('click', ()=> cuMover(i, -1));
-      row.querySelector('[data-bajar]').addEventListener('click', ()=> cuMover(i, 1));
-      row.querySelector('[data-borrar]').addEventListener('click', ()=> cuBorrarClase(i));
-      row.querySelector('[data-cl-thumb]').addEventListener('click', ()=> cuSubirVideoClase(i));
-
-      row.querySelector('[data-cl-titulo]').addEventListener('change', (e)=>{
-        l.title = e.target.value.trim() || l.title;
-        cuGuardarClasesSilencioso();
-      });
-      row.querySelector('[data-cl-min]').addEventListener('change', (e)=>{
-        l.durationMin = e.target.value ? Number(e.target.value) : null;
-        cuGuardarClasesSilencioso();
-      });
-      row.querySelector('[data-cl-libre]').addEventListener('change', (e)=>{
-        l.isFree = e.target.checked;
-        cuGuardarClasesSilencioso();
-      });
-      row.querySelector('[data-cl-refrescar]')?.addEventListener('click', ()=> cuRefrescarEstadoClase(i));
-      row.querySelector('[data-cl-ver]')?.addEventListener('click', ()=> cuVerVideoClase(i));
-    });
-
-    document.getElementById('clAgregar').addEventListener('click', cuAgregarClase);
-    document.getElementById('clArchivoBtn').addEventListener('click', cuElegirArchivoClase);
-    document.getElementById('clUploadReintentar').addEventListener('click', cuAgregarClase);
     document.getElementById('cuGuardar').addEventListener('click', cuGuardarCurso);
     document.getElementById('cuCancelar').addEventListener('click', cuVolverListado);
     document.getElementById('cuMediaThumb').addEventListener('click', ()=> cuSubirMedia(cuActual.curso.id));
@@ -11679,16 +11697,7 @@
     document.getElementById('cuVerMedia')?.addEventListener('click', ()=> verVideoSubido(cuActual.curso.streamVideoId, true));
     document.getElementById('cuQuitarMedia')?.addEventListener('click', ()=> cuQuitarMedia(cuActual.curso.id));
     document.getElementById('cuRefrescarMedia')?.addEventListener('click', ()=> cuRefrescarEstadoMedia(cuActual.curso.id));
-    document.getElementById('cuTrailerThumb').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
-    document.getElementById('cuTrailerBtn').addEventListener('click', ()=> cuSubirTrailer(cuActual.curso.id));
-    document.getElementById('cuVerTrailer')?.addEventListener('click', ()=> verVideoSubido(cuActual.curso.trailerStreamVideoId, true));
-    document.getElementById('cuQuitarTrailer')?.addEventListener('click', ()=> cuQuitarTrailer(cuActual.curso.id));
-    document.getElementById('cuRefrescarTrailer')?.addEventListener('click', ()=> cuRefrescarEstadoTrailer(cuActual.curso.id));
     document.getElementById('cuRecomendado').addEventListener('change', (e)=> cuCambiarRecomendacion(cuActual.curso.id, e.target.checked));
-    document.getElementById('cuRecursoBtn').addEventListener('click', cuSubirRecurso);
-    document.getElementById('cuAgregarRecurso').addEventListener('click', cuAgregarRecurso);
-    document.querySelectorAll('#cuRecursosLista [data-rec-borrar]').forEach(btn=>
-      btn.addEventListener('click', (e)=> cuEliminarRecurso(Number(e.target.closest('[data-rec]').dataset.rec))));
     document.getElementById('cuPermitirBtn').addEventListener('click', cuPermitirUsuario);
 
     ['cuNombre','cuDesc'].forEach(id=>
@@ -11702,8 +11711,8 @@
   /** Sube (o reemplaza) la foto de un curso y la deja lista para el sitio público. */
   /** Hostnames del CDN de Bunny Stream -- solo usados para armar la
    *  miniatura de vista previa acá en el panel (no son secretos). */
-  const BUNNY_CDN_PUBLIC = 'vz-3106d8eb-0d1.b-cdn.net';
-  const BUNNY_CDN_PRIVATE = 'vz-77fac3a5-715.b-cdn.net';
+  const BUNNY_CDN_PUBLIC  = ES_STAGING ? 'vz-d80b701c-61b.b-cdn.net' : 'vz-3106d8eb-0d1.b-cdn.net';
+  const BUNNY_CDN_PRIVATE = ES_STAGING ? 'vz-e1e242f9-2e8.b-cdn.net' : 'vz-77fac3a5-715.b-cdn.net';
 
   /** Vista previa de un video ya subido (clase de curso, o el video de
    *  presentación de Academy) -- deja que quien lo sube confirme que quedó
@@ -11780,6 +11789,12 @@
       error: { txt:'Error', cls:'err' },
     }[status];
     return info ? `<span class="cu-video-badge cu-video-badge--${info.cls}">${info.txt}</span>` : '';
+  }
+
+  function formatBytesCL(bytes){
+    if(!bytes) return '0 MB';
+    const mb = bytes / (1024*1024);
+    return mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB';
   }
 
   /** Cuánto tiempo sin NINGÚN progreso (ni error, ni éxito) se tolera antes
@@ -11972,41 +11987,6 @@
     cuPintarDetalle();
   }
 
-  /** Video breve de vista previa (15-20 seg) -- SIEMPRE público (isFree:true
-   *  fijo, nunca protegido), a diferencia de la portada principal que puede
-   *  ser privada; este video existe justo para que alguien SIN comprar
-   *  pueda verlo, así que no tendría sentido protegerlo con token. */
-  function cuSubirTrailer(cursoId){
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.addEventListener('change', async ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      const thumb = document.getElementById('cuTrailerThumb');
-      if(thumb) thumb.innerHTML = '0%';
-      try{
-        const c = cuCursos.find(x=> x.id === cursoId);
-        const { videoId } = await subirVideoABunny(file, {
-          contexto: 'curso-trailer', contextoId: cursoId, isFree: true,
-          title: `Vista previa — ${cuActual?.curso?.name || cursoId}`,
-          onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
-        });
-        if(c){ c.trailerStreamVideoId = videoId; c.trailerStreamStatus = 'processing'; }
-        if(cuActual?.curso?.id === cursoId){ cuActual.curso.trailerStreamVideoId = videoId; cuActual.curso.trailerStreamStatus = 'processing'; }
-        await guardarCurso(cursoId);
-        // estado aparte de guardarCurso: video nuevo -> 'processing'
-        await db.collection('courses').doc(cursoId).set({ trailerStreamStatus: 'processing' }, { merge: true });
-        showToast('Video de vista previa subido, procesándose…');
-        cuPintarDetalle();
-      }catch(e){
-        showToast('No se pudo subir el video: ' + e.message);
-        if(thumb) thumb.textContent = '🎬';
-      }
-    });
-    input.click();
-  }
-
   /** Verificación manual del estado real en Bunny -- el webhook automático
    *  puede llegar a avisar "procesando" ANTES de que este mismo panel
    *  termine de guardar el streamVideoId en Firestore (la subida real del
@@ -12030,78 +12010,136 @@
       showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
     }catch(e){ showToast('No se pudo verificar: ' + e.message); }
   }
-  async function cuRefrescarEstadoTrailer(cursoId){
-    const c = cuCursos.find(x=> x.id === cursoId);
-    if(!c || !c.trailerStreamVideoId) return;
-    try{
-      const r = await functions.httpsCallable('obtenerEstadoVideo')({ videoId: c.trailerStreamVideoId, libreria: 'public' });
-      c.trailerStreamStatus = r.data.estado;
-      if(cuActual?.curso?.id === cursoId) cuActual.curso.trailerStreamStatus = r.data.estado;
-      const rem = (await db.collection('courses').doc(cursoId).get()).data() || {};
-      await db.collection('courses').doc(cursoId).set(
-        { trailerStreamStatus: estadoVideoNoRetrocede(r.data.estado, rem.trailerStreamStatus) }, { merge: true });
-      cuPintarDetalle();
-      showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
-    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
+  /* ---------- Material descargable POR CLASE (courses/{id}/lessons/{lid}.resources) ----------
+     El archivo va a courseResources/{courseId}/{lessonId}/{resourceId} (ruta
+     determinística). NO se llama getDownloadURL(): Storage lo tiene con
+     `read: if false` y la descarga pasa siempre por la Cloud Function
+     `descargarRecursoClase` (sesión + ADMIN|entitlement + clase publicada +
+     recurso activo). En el doc de la clase se guarda solo metadata. */
+  const EC_MAX_RECURSO_MB = 100;
+  function ecIdRecurso(){ return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function ecTamano(bytes){
+    if(!bytes && bytes !== 0) return '';
+    if(bytes < 1024) return bytes + ' B';
+    if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+    return (bytes/1024/1024).toFixed(bytes < 10*1024*1024 ? 1 : 0) + ' MB';
+  }
+  function ecIconoArchivo(tipo, nombre){
+    const n = (nombre || '').toLowerCase(), t = (tipo || '').toLowerCase();
+    if(t.includes('pdf') || n.endsWith('.pdf')) return '📄';
+    if(t.includes('word') || /\.(docx?|rtf|odt)$/.test(n)) return '📝';
+    if(t.includes('sheet') || t.includes('excel') || /\.(xlsx?|csv|ods)$/.test(n)) return '📊';
+    if(t.includes('zip') || t.includes('compressed') || /\.(zip|rar|7z)$/.test(n)) return '🗜';
+    if(t.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/.test(n)) return '🖼';
+    if(t.startsWith('video/')) return '🎬';
+    return '📎';
   }
 
-  async function cuQuitarTrailer(cursoId){
-    const c = cuCursos.find(x=> x.id === cursoId);
-    if(c){ c.trailerStreamVideoId = ''; c.trailerStreamStatus = ''; }
-    if(cuActual?.curso?.id === cursoId){ cuActual.curso.trailerStreamVideoId = ''; cuActual.curso.trailerStreamStatus = ''; }
-    try{
-      await guardarCurso(cursoId);
-      await db.collection('courses').doc(cursoId).set({ trailerStreamStatus: '' }, { merge: true });
-      showToast('Video de vista previa quitado');
-    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
-    cuPintarDetalle();
+  function ecRenderRecursos(){
+    const cont = document.getElementById('ecRecursosLista');
+    if(!cont) return;
+    const l = cuActual.clases.find(x=> x.id === ecLessonId) || {};
+    const recs = Array.isArray(l.resources) ? l.resources : [];
+    cont.innerHTML = recs.length ? recs.map(r=> `
+      <div class="cu-recurso-item" data-rid="${escapeHTML(r.id)}">
+        <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;">
+          <span style="flex:none;">${ecIconoArchivo(r.contentType, r.fileName)}</span>
+          <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(r.name)}</span>
+          ${r.active === false ? '<span class="cu-badge cu-badge--draft" style="flex:none;">Oculto</span>' : ''}
+        </span>
+        <span style="display:flex;gap:12px;flex:none;align-items:center;">
+          <span class="cu-box-note" style="margin:0;">${ecTamano(r.size)}</span>
+          <button type="button" class="cu-card-link" data-rec-ver>Ver</button>
+          <button type="button" class="cu-card-link" data-rec-toggle>${r.active === false ? 'Mostrar' : 'Ocultar'}</button>
+          <button type="button" class="cu-card-link del" data-rec-quitar>Quitar</button>
+        </span>
+      </div>`).join('') : '<div class="cu-box-note" style="margin:0;">Esta clase no tiene material.</div>';
+
+    cont.querySelectorAll('[data-rid]').forEach(row=>{
+      const rid = row.dataset.rid;
+      row.querySelector('[data-rec-ver]')?.addEventListener('click', ()=> ecVerRecurso(rid));
+      row.querySelector('[data-rec-toggle]')?.addEventListener('click', ()=> ecToggleRecurso(rid));
+      row.querySelector('[data-rec-quitar]')?.addEventListener('click', ()=> ecQuitarRecurso(rid));
+    });
   }
 
-  /** Sube un archivo cualquiera (PDF, plantilla, etc.) como recurso
-   *  descargable del curso -- Firebase Storage, igual que las fotos. */
-  function cuSubirRecurso(){
+  function ecElegirRecurso(){
+    const nombre = document.getElementById('ecRecursoNombre').value.trim();
     const input = document.createElement('input');
     input.type = 'file';
-    input.addEventListener('change', ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      cuRecursoArchivo = file;
-      document.getElementById('cuRecursoArchivoNombre').textContent = file.name;
-    });
+    input.accept = '.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.csv,.ods,.ppt,.pptx,.zip,.png,.jpg,.jpeg,.webp,image/*,application/pdf';
+    input.addEventListener('change', ()=>{ if(input.files[0]) ecAgregarRecurso(input.files[0]); });
     input.click();
   }
 
-  async function cuAgregarRecurso(){
-    const nombre = document.getElementById('cuRecursoNombre').value.trim();
-    if(!nombre) return showToast('Escribe el nombre del recurso');
-    if(!cuRecursoArchivo) return showToast('Elige un archivo primero');
-
-    const btn = document.getElementById('cuAgregarRecurso');
-    btn.disabled = true; btn.textContent = 'Subiendo...';
+  async function ecAgregarRecurso(file){
+    if(!ecLessonId) return;
+    const nombre = document.getElementById('ecRecursoNombre').value.trim() || file.name.replace(/\.[^.]+$/, '');
+    if(file.size > EC_MAX_RECURSO_MB * 1024 * 1024) return showToast(`El archivo supera los ${EC_MAX_RECURSO_MB} MB`);
+    const btn = document.getElementById('ecRecursoBtn');
+    if(btn){ btn.disabled = true; btn.textContent = 'Subiendo…'; }
     try{
-      const ruta = `courseResources/${cuActual.curso.id}/${Date.now()}-${cuRecursoArchivo.name}`;
-      const ref = storage.ref(ruta);
-      await ref.put(cuRecursoArchivo);
-      const url = await ref.getDownloadURL();
-      cuActual.curso.resources = [...(cuActual.curso.resources||[]), { name: nombre, url }];
-      const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
-      if(enLista) enLista.resources = cuActual.curso.resources;
-      await guardarCurso(cuActual.curso.id);
-      cuRecursoArchivo = null;
-      showToast('Recurso agregado');
-      cuPintarDetalle();
+      const l = cuActual.clases.find(x=> x.id === ecLessonId);
+      const rid = ecIdRecurso();
+      // ruta determinística: la CF la reconstruye con courseId/lessonId/resourceId
+      await storage.ref(`courseResources/${cuActual.curso.id}/${ecLessonId}/${rid}`)
+        .put(file, { contentType: file.type || 'application/octet-stream' });
+      const recurso = {
+        id: rid, name: nombre.slice(0, 120), fileName: file.name.slice(0, 160),
+        contentType: file.type || 'application/octet-stream', size: file.size,
+        active: true, createdAt: Date.now(),
+      };
+      const nuevos = [...(Array.isArray(l.resources) ? l.resources : []), recurso];
+      await cuGuardarLeccion(ecLessonId, { resources: nuevos });   // escribe lessons/{lid}, NUNCA lessons[]
+      document.getElementById('ecRecursoNombre').value = '';
+      ecRenderRecursos();
+      showToast('Material agregado');
     }catch(e){
-      showToast('No se pudo subir el recurso: ' + e.message);
-      btn.disabled = false; btn.textContent = '+ Agregar recurso';
+      showToast('No se pudo subir el material: ' + e.message);
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = '⬆ Elegir archivo'; }
     }
   }
 
-  async function cuEliminarRecurso(i){
-    cuActual.curso.resources.splice(i, 1);
-    const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
-    if(enLista) enLista.resources = cuActual.curso.resources;
-    try{ await guardarCurso(cuActual.curso.id); }catch(e){ showToast('No se pudo guardar: ' + e.message); }
-    cuPintarDetalle();
+  async function ecToggleRecurso(rid){
+    const l = cuActual.clases.find(x=> x.id === ecLessonId);
+    if(!l || !Array.isArray(l.resources)) return;
+    const nuevos = l.resources.map(r=> r.id === rid ? { ...r, active: r.active === false } : r);
+    try{ await cuGuardarLeccion(ecLessonId, { resources: nuevos }); ecRenderRecursos(); }
+    catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  }
+
+  async function ecQuitarRecurso(rid){
+    if(!(await mgConfirm('¿Quitar este material de la clase?'))) return;
+    const l = cuActual.clases.find(x=> x.id === ecLessonId);
+    if(!l || !Array.isArray(l.resources)) return;
+    const nuevos = l.resources.filter(r=> r.id !== rid);
+    try{
+      await cuGuardarLeccion(ecLessonId, { resources: nuevos });
+      ecRenderRecursos();
+      // borra el archivo (best-effort; si falla, el recurso ya no se ve igual)
+      storage.ref(`courseResources/${cuActual.curso.id}/${ecLessonId}/${rid}`).delete().catch(()=>{});
+      showToast('Material quitado');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
+  }
+
+  /** Previsualiza el material desde el panel -- pasa por la MISMA CF que el
+   *  alumno (que deja entrar a ADMIN sin entitlement), pide modo:inline y
+   *  abre el blob. Nunca materializa una URL de Storage. */
+  async function ecVerRecurso(rid){
+    try{
+      const tok = await firebase.auth().currentUser.getIdToken();
+      const resp = await fetch(FUNCTIONS_BASE + '/descargarRecursoClase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ courseId: cuActual.curso.id, lessonId: ecLessonId, resourceId: rid, modo: 'inline' }),
+      });
+      if(!resp.ok){ const j = await resp.json().catch(()=> ({})); return showToast(j.error || 'No se pudo abrir el material'); }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(()=> URL.revokeObjectURL(url), 60000);
+    }catch(e){ showToast('No se pudo abrir el material: ' + e.message); }
   }
 
   /** Otorga acceso manual al curso actual por correo, reusando la misma
@@ -12124,230 +12162,656 @@
     }
   }
 
-  /** Sincroniza cuActual.clases -> cuActual.curso.lessons y guarda SOLO el
-   *  array de lecciones en Firestore (merge), sin toast -- usada por cada
-   *  edición chica (reordenar, cambiar título/minutos/gratis) para que nada
-   *  se pierda sin tener que apretar "Guardar cambios".
-   *
-   *  El único escritor del array `lessons`. Antes de escribir relee las
-   *  lecciones de Firestore y, por cada una (match por id), conserva el
-   *  streamStatus real que dejó el webhook de Bunny -- solo usa el estado
-   *  local si el panel cambió el video de esa lección (streamVideoId
-   *  distinto) o si Firestore aún no sabe nada. Así, guardar un cambio de
-   *  título nunca revierte a 'processing' un video que ya estaba 'ready'. */
-  async function cuGuardarClasesSilencioso(){
-    cuActual.curso.lessons = cuActual.clases;
+  /* ==================================================================
+   *  AULA -- editor "Contenido del curso" (módulos + clases)
+   *  Modelo nuevo:
+   *    courses/{id}.modules[]          -- [{id,title,order}]  (en el doc)
+   *    courses/{id}/lessons/{lid}      -- metadata PÚBLICA (sin streamVideoId)
+   *    courses/{id}/lessonMedia/{lid}  -- streamVideoId/streamStatus/streamLibrary
+   *  El array legacy courses/{id}.lessons[] NO se vuelve a escribir.
+   * ================================================================== */
+
+  const cuModulosAbiertos = new Set();   // qué módulos están desplegados (persiste en sesión)
+  const _fv = () => firebase.firestore.FieldValue.serverTimestamp();
+  const cuRef = () => db.collection('courses').doc(cuActual.curso.id);
+
+  function cuClasesDe(modId){
+    return cuActual.clases.filter(l=> l.moduleId === modId).sort((a,b)=> (a.order||0) - (b.order||0));
+  }
+
+  async function cuRecomputarOutline(){
+    const pub = cuActual.clases.filter(l=> l.published === true);
+    const outline = {
+      lessonCount: pub.length,
+      totalMinutes: pub.reduce((s,l)=> s + (Number(l.durationMin) || 0), 0),
+      moduleCount: cuActual.modulos.length,
+      updatedAt: _fv(),
+    };
+    await cuRef().set({ outline }, { merge: true });
+    cuActual.curso.outline = outline;
     const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
-    if(enLista) enLista.lessons = cuActual.clases;
-    try{
-      const ref = db.collection('courses').doc(cuActual.curso.id);
-      let remotas = [];
-      try{ const s = await ref.get(); if(s.exists) remotas = s.data().lessons || []; }catch(e){}
-      const remotaPorId = {};
-      remotas.forEach(l=>{ if(l && l.id) remotaPorId[l.id] = l; });
-      const lessons = cuActual.clases.map(l=>{
-        const r = remotaPorId[l.id];
-        if(!r) return { ...l };
-        const mismoVideo = (l.streamVideoId || '') === (r.streamVideoId || '');
-        return { ...l, streamStatus: mismoVideo
-          ? estadoVideoNoRetrocede(l.streamStatus, r.streamStatus)
-          : (l.streamStatus || '') };
-      });
-      await ref.set({ lessons }, { merge: true });
-    }
-    catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    if(enLista) enLista.outline = outline;
   }
 
-  async function cuMover(i, dir){
-    const j = i + dir;
-    if(j < 0 || j >= cuActual.clases.length) return;
-    const arr = cuActual.clases;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-
-    if(MODE === 'api'){
-      try{
-        await api(`/shop/admin/products/${cuActual.curso.id}/lessons/order`, {
-          method:'PUT', body: JSON.stringify({ order: arr.map(l=> l.id) })
-        });
-      }catch(e){ showToast(e.message); }
-    } else {
-      await cuGuardarClasesSilencioso();
-    }
-    cuPintarDetalle();
+  /** Guarda 1 doc de clase (solo campos PÚBLICOS -- nunca streamVideoId). */
+  async function cuGuardarLeccion(lessonId, patch){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(l) Object.assign(l, patch);
+    await cuRef().collection('lessons').doc(lessonId)
+      .set({ ...patch, id: lessonId, updatedAt: _fv() }, { merge: true });
   }
 
-  /** Sube (o reemplaza) el video de una clase -- va a la librería pública de
-   *  Bunny si es "muestra gratis", o a la privada (con token obligatorio)
-   *  si es una clase paga. */
-  function cuSubirVideoClase(i){
-    const l = cuActual.clases[i];
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.addEventListener('change', async ()=>{
-      const file = input.files[0];
-      if(!file) return;
-      const thumb = document.querySelector(`#cuClases .cu-clase[data-cl="${l.id}"] [data-cl-thumb]`);
-      if(thumb) thumb.innerHTML = '0%';
-      try{
-        const { videoId } = await subirVideoABunny(file, {
-          contexto: 'leccion', contextoId: `${cuActual.curso.id}:${l.id}`, isFree: l.isFree,
-          title: l.title, onProgress: (pct)=>{ if(thumb) thumb.innerHTML = pct + '%'; },
-        });
-        l.streamVideoId = videoId; l.streamStatus = 'processing';
-        await cuGuardarClasesSilencioso();
-        showToast('Video de la clase subido, procesándose…');
-        cuPintarDetalle();
-      }catch(e){
-        showToast('No se pudo subir el video: ' + e.message);
-        if(thumb) thumb.textContent = '🎬';
+  /** Guarda 1 doc de lessonMedia (privado). */
+  async function cuGuardarMedia(lessonId, patch){
+    const m = cuActual.media[lessonId] || (cuActual.media[lessonId] = { id: lessonId });
+    Object.assign(m, patch);
+    await cuRef().collection('lessonMedia').doc(lessonId)
+      .set({ ...patch, updatedAt: _fv() }, { merge: true });
+  }
+
+  /** Renumera order = 10,20,30... para las clases de un módulo (tras mover/borrar). */
+  async function cuReordenarClasesDe(modId){
+    const ls = cuClasesDe(modId);
+    const writes = [];
+    ls.forEach((l,i)=>{
+      const nuevo = (i+1) * 10;
+      if(l.order !== nuevo || l.moduleId !== modId){
+        l.order = nuevo; l.moduleId = modId;
+        writes.push(cuGuardarLeccion(l.id, { order: nuevo, moduleId: modId }));
       }
     });
-    input.click();
+    await Promise.all(writes);
   }
 
-  /** Consulta el estado real en Bunny (por si el aviso automático se demoró
-   *  o se perdió) y actualiza la clase con lo que Bunny diga de verdad. */
-  async function cuRefrescarEstadoClase(i){
-    const l = cuActual.clases[i];
-    if(!l.streamVideoId) return;
-    try{
-      const r = await functions.httpsCallable('obtenerEstadoVideo')({
-        videoId: l.streamVideoId, libreria: l.isFree ? 'public' : 'private',
+  async function cuGuardarModulos(){
+    cuActual.modulos.forEach((m,i)=> m.order = (i+1) * 10);
+    await cuRef().set({ modules: cuActual.modulos.map(m=> ({ id:m.id, title:m.title, order:m.order })) }, { merge: true });
+    await cuRecomputarOutline();
+    const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
+    if(enLista) enLista.modules = cuActual.modulos.map(m=> ({...m}));
+  }
+
+  /* ---------- render del acordeón ---------- */
+
+  function cuEstadoVideoDeClase(l){
+    const md = cuActual.media[l.id];
+    if(md && md.streamVideoId) return md.streamStatus || 'processing';   // processing|ready|error
+    if(l.externalUrl) return 'ext';
+    return 'sinvideo';
+  }
+  const CU_VBADGE = {
+    sinvideo: '<span class="cu-badge cu-badge--none">Sin video</span>',
+    ext:      '<span class="cu-badge cu-badge--none">Enlace externo</span>',
+    processing:'<span class="cu-video-badge cu-video-badge--proc">Procesando…</span>',
+    ready:    '<span class="cu-video-badge cu-video-badge--ok">Ready</span>',
+    error:    '<span class="cu-video-badge cu-video-badge--err">Error</span>',
+  };
+
+  function renderContenido(){
+    const cont = document.getElementById('cuContenido');
+    if(!cont) return;
+    if(!Array.isArray(cuActual.modulos)) cuActual.modulos = [];
+    if(!Array.isArray(cuActual.clases)) cuActual.clases = [];
+    if(!cuActual.media || typeof cuActual.media !== 'object') cuActual.media = {};
+
+    // Curso viejo sin migrar (tiene lessons[] pero cero subcolección/módulos)
+    const legacy = Array.isArray(cuActual.curso.lessons) ? cuActual.curso.lessons.length : 0;
+    if(legacy && !cuActual.clases.length && !cuActual.modulos.length){
+      cont.innerHTML = `<div class="cu-vacio">Este curso tiene <b>${legacy}</b> clase(s) en el formato anterior.<br>
+        <button class="mg-btn solid" id="cuMigrarEste" style="margin-top:10px;">Migrar a módulos ahora</button></div>`;
+      document.getElementById('cuMigrarEste').addEventListener('click', cuMigrarEsteCurso);
+      return;
+    }
+
+    cuActual.modulos.sort((a,b)=> (a.order||0) - (b.order||0));
+    cont.innerHTML = (cuActual.modulos.length
+        ? cuActual.modulos.map(renderModulo).join('')
+        : '<div class="cu-vacio">Sin módulos todavía.</div>')
+      + `<button class="cu-mod-add" id="cuAddModulo">+ Añadir módulo</button>`;
+
+    cuConectarContenido();
+  }
+
+  function renderModulo(m){
+    const ls = cuClasesDe(m.id);
+    const pub = ls.filter(l=> l.published).length;
+    const abierto = cuModulosAbiertos.has(m.id);
+    const dot = !ls.length ? 'none' : (pub === ls.length ? 'ok' : (pub === 0 ? 'draft' : 'partial'));
+    return `
+      <div class="cu-mod" data-mod="${m.id}">
+        <div class="cu-mod-head" data-mod-toggle>
+          <span class="cu-mod-grab" data-mod-grab draggable="true" title="Arrastrar para reordenar">⠿</span>
+          <span class="cu-mod-caret">${abierto ? '▾' : '▸'}</span>
+          <span class="cu-mod-title">${escapeHTML(m.title)}</span>
+          <span class="cu-mod-meta">${ls.length} clase${ls.length!==1?'s':''} · ${pub} publicada${pub!==1?'s':''}</span>
+          <span class="cu-mod-dot cu-mod-dot--${dot}" title="${dot==='ok'?'Todo publicado':dot==='partial'?'Publicación parcial':dot==='draft'?'Todo en borrador':'Vacío'}"></span>
+          <span class="cu-mod-acts">
+            <button class="cu-ib" data-mod-up title="Subir módulo">↑</button>
+            <button class="cu-ib" data-mod-down title="Bajar módulo">↓</button>
+            <button class="cu-ib" data-mod-rename title="Renombrar">✎</button>
+            <button class="cu-ib del" data-mod-del title="Eliminar módulo">✕</button>
+          </span>
+        </div>
+        <div class="cu-mod-body ${abierto ? '' : 'closed'}" data-mod-drop>
+          ${ls.length ? ls.map((l,i)=> renderClaseRow(l, i)).join('') : '<div class="cu-lrow-empty">Sin clases en este módulo.</div>'}
+          <button class="cu-lrow-add" data-add-clase="${m.id}">+ Añadir clase</button>
+        </div>
+      </div>`;
+  }
+
+  function renderClaseRow(l, idx){
+    const vst = cuEstadoVideoDeClase(l);
+    const md = cuActual.media[l.id] || {};
+    return `
+      <div class="cu-lrow" data-cl="${l.id}" data-mod="${l.moduleId}">
+        <span class="cu-lgrab" data-l-grab draggable="true" title="Arrastrar">⠿</span>
+        <span class="cu-lord">${idx+1}</span>
+        <span class="cu-ltitle" title="${escapeHTML(l.title)}">${escapeHTML(l.title)}</span>
+        <span class="cu-ldur">${l.durationMin ? l.durationMin + ' min' : '—'}</span>
+        <span class="cu-lbadges">
+          ${CU_VBADGE[vst] || ''}
+          <span class="cu-badge ${l.published ? 'cu-badge--pub' : 'cu-badge--draft'}">${l.published ? 'Publicada' : 'Borrador'}</span>
+          ${l.isFree ? '<span class="cu-badge cu-badge--free">Muestra</span>' : ''}
+        </span>
+        <span class="cu-lacts">
+          ${md.streamVideoId && md.streamStatus === 'ready' ? '<button class="cu-ib" data-l-ver title="Previsualizar">▶</button>' : ''}
+          ${md.streamVideoId && md.streamStatus === 'processing' ? '<button class="cu-ib" data-l-refresh title="Actualizar estado">🔄</button>' : ''}
+          <button class="cu-ib" data-l-edit title="Editar">✎</button>
+          <button class="cu-ib" data-l-move title="Mover">⇅</button>
+          <button class="cu-ib" data-l-pub title="${l.published ? 'Despublicar' : 'Publicar'}">${l.published ? '◉' : '○'}</button>
+          <button class="cu-ib del" data-l-del title="Eliminar">✕</button>
+        </span>
+      </div>`;
+  }
+
+  /* ---------- wiring ---------- */
+
+  function cuConectarContenido(){
+    const cont = document.getElementById('cuContenido');
+    if(!cont) return;
+
+    document.getElementById('cuAddModulo')?.addEventListener('click', cuAgregarModulo);
+
+    cont.querySelectorAll('.cu-mod').forEach(modEl=>{
+      const modId = modEl.dataset.mod;
+      modEl.querySelector('[data-mod-toggle]').addEventListener('click', (e)=>{
+        if(e.target.closest('button') || e.target.closest('[data-mod-grab]')) return;
+        if(cuModulosAbiertos.has(modId)) cuModulosAbiertos.delete(modId); else cuModulosAbiertos.add(modId);
+        renderContenido();
       });
-      l.streamStatus = r.data.estado;
-      await cuGuardarClasesSilencioso();
-      cuPintarDetalle();
-      showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
-    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
+      modEl.querySelector('[data-mod-up]').addEventListener('click', ()=> cuMoverModulo(modId, -1));
+      modEl.querySelector('[data-mod-down]').addEventListener('click', ()=> cuMoverModulo(modId, 1));
+      modEl.querySelector('[data-mod-rename]').addEventListener('click', ()=> cuRenombrarModulo(modId));
+      modEl.querySelector('[data-mod-del]').addEventListener('click', ()=> cuBorrarModulo(modId));
+      modEl.querySelector('[data-add-clase]').addEventListener('click', ()=> cuAgregarClase(modId));
+
+      modEl.querySelectorAll('.cu-lrow').forEach(row=>{
+        const lid = row.dataset.cl;
+        row.querySelector('[data-l-edit]').addEventListener('click', ()=> cuEditarClase(lid));
+        row.querySelector('[data-l-move]').addEventListener('click', ()=> cuAbrirMoverClase(lid));
+        row.querySelector('[data-l-pub]').addEventListener('click', ()=> cuTogglePublicar(lid));
+        row.querySelector('[data-l-del]').addEventListener('click', ()=> cuBorrarClase(lid));
+        row.querySelector('[data-l-ver]')?.addEventListener('click', ()=> cuVerVideoClase(lid));
+        row.querySelector('[data-l-refresh]')?.addEventListener('click', ()=> cuRefrescarEstadoClase(lid));
+      });
+    });
+
+    cuConectarDnD(cont);
   }
 
-  async function cuBorrarClase(i){
-    const l = cuActual.clases[i];
+  /* ---------- drag & drop (con botones como alternativa en móvil) ---------- */
+
+  let cuDrag = null;  // { tipo:'modulo'|'clase', id, modOrigen }
+
+  function cuConectarDnD(cont){
+    cont.querySelectorAll('[data-mod-grab]').forEach(g=>{
+      const modEl = g.closest('.cu-mod');
+      g.addEventListener('dragstart', e=>{
+        cuDrag = { tipo:'modulo', id: modEl.dataset.mod };
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', modEl.dataset.mod); }catch(_){}
+        setTimeout(()=> modEl.classList.add('cu-dragging'), 0);
+      });
+      g.addEventListener('dragend', ()=>{ modEl.classList.remove('cu-dragging'); cuLimpiarDragover(); cuDrag = null; });
+    });
+    cont.querySelectorAll('[data-l-grab]').forEach(g=>{
+      const row = g.closest('.cu-lrow');
+      g.addEventListener('dragstart', e=>{
+        e.stopPropagation();
+        cuDrag = { tipo:'clase', id: row.dataset.cl, modOrigen: row.dataset.mod };
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', row.dataset.cl); }catch(_){}
+        setTimeout(()=> row.classList.add('cu-dragging'), 0);
+      });
+      g.addEventListener('dragend', ()=>{ row.classList.remove('cu-dragging'); cuLimpiarDragover(); cuDrag = null; });
+    });
+
+    cont.querySelectorAll('.cu-mod').forEach(modEl=>{
+      modEl.addEventListener('dragover', e=>{
+        if(!cuDrag) return;
+        e.preventDefault();
+        cuLimpiarDragover();
+        if(cuDrag.tipo === 'modulo' && cuDrag.id !== modEl.dataset.mod) modEl.classList.add('cu-dragover');
+      });
+      modEl.addEventListener('drop', async e=>{
+        if(cuDrag && cuDrag.tipo === 'modulo'){ e.preventDefault(); await cuSoltarModulo(modEl.dataset.mod); }
+      });
+    });
+    cont.querySelectorAll('.cu-lrow').forEach(row=>{
+      row.addEventListener('dragover', e=>{
+        if(!cuDrag || cuDrag.tipo !== 'clase') return;
+        e.preventDefault();
+        cuLimpiarDragover();
+        if(cuDrag.id !== row.dataset.cl) row.classList.add('cu-dragover');
+      });
+      row.addEventListener('drop', async e=>{
+        if(cuDrag && cuDrag.tipo === 'clase' && cuDrag.id !== row.dataset.cl){
+          e.preventDefault(); e.stopPropagation();
+          await cuSoltarClase(row.dataset.cl, row.dataset.mod);
+        }
+      });
+    });
+    cont.querySelectorAll('[data-mod-drop]').forEach(body=>{
+      body.addEventListener('dragover', e=>{ if(cuDrag && cuDrag.tipo === 'clase'){ e.preventDefault(); } });
+      body.addEventListener('drop', async e=>{
+        if(cuDrag && cuDrag.tipo === 'clase' && e.target.closest('.cu-lrow') == null){
+          e.preventDefault();
+          const modDestino = body.closest('.cu-mod').dataset.mod;
+          await cuSoltarClaseEnModulo(cuDrag.id, modDestino);   // al final del módulo
+        }
+      });
+    });
+  }
+  function cuLimpiarDragover(){ document.querySelectorAll('.cu-dragover').forEach(x=> x.classList.remove('cu-dragover')); }
+
+  async function cuSoltarModulo(targetModId){
+    const from = cuActual.modulos.findIndex(m=> m.id === cuDrag.id);
+    const to = cuActual.modulos.findIndex(m=> m.id === targetModId);
+    if(from < 0 || to < 0 || from === to) return;
+    const [mv] = cuActual.modulos.splice(from, 1);
+    cuActual.modulos.splice(to, 0, mv);
+    await cuGuardarModulos();
+    renderContenido(); cuPintarPreview();
+  }
+
+  async function cuSoltarClase(targetLessonId, targetModId){
+    const drag = cuActual.clases.find(l=> l.id === cuDrag.id);
+    const target = cuActual.clases.find(l=> l.id === targetLessonId);
+    if(!drag || !target) return;
+    drag.moduleId = targetModId;
+    // insertar justo ANTES del target dentro de su módulo
+    const ls = cuClasesDe(targetModId).filter(l=> l.id !== drag.id);
+    const idx = ls.findIndex(l=> l.id === targetLessonId);
+    ls.splice(idx < 0 ? ls.length : idx, 0, drag);
+    ls.forEach((l,i)=> l.order = (i+1) * 10);
+    const modOrigen = cuDrag.modOrigen;
+    await Promise.all(ls.map(l=> cuGuardarLeccion(l.id, { order:l.order, moduleId:targetModId })));
+    if(modOrigen && modOrigen !== targetModId) await cuReordenarClasesDe(modOrigen);
+    await cuRecomputarOutline();
+    cuModulosAbiertos.add(targetModId);
+    renderContenido(); cuPintarPreview();
+  }
+
+  async function cuSoltarClaseEnModulo(lessonId, modDestino){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(!l || l.moduleId === modDestino) return;
+    const modOrigen = l.moduleId;
+    const maxOrd = Math.max(0, ...cuClasesDe(modDestino).map(x=> x.order || 0));
+    l.moduleId = modDestino; l.order = maxOrd + 10;
+    await cuGuardarLeccion(lessonId, { moduleId: modDestino, order: l.order });
+    await cuReordenarClasesDe(modOrigen);
+    await cuRecomputarOutline();
+    cuModulosAbiertos.add(modDestino);
+    renderContenido(); cuPintarPreview();
+  }
+
+  /* ---------- módulos: CRUD ---------- */
+
+  async function cuAgregarModulo(){
+    const nombre = await mgPrompt('Nombre del módulo', 'Nuevo módulo', { titulo:'Añadir módulo' });
+    if(nombre == null) return;
+    const t = nombre.trim();
+    if(!t) return;
+    const id = 'm' + Date.now().toString(36);
+    cuActual.modulos.push({ id, title: t, order: (cuActual.modulos.length + 1) * 10 });
+    cuModulosAbiertos.add(id);
+    await cuGuardarModulos();
+    renderContenido(); cuPintarPreview();
+    showToast('Módulo añadido');
+  }
+
+  async function cuRenombrarModulo(modId){
+    const m = cuActual.modulos.find(x=> x.id === modId);
+    if(!m) return;
+    const nombre = await mgPrompt('Nombre del módulo', m.title, { titulo:'Renombrar módulo' });
+    if(nombre == null) return;
+    const t = nombre.trim();
+    if(!t || t === m.title) return;
+    m.title = t;
+    await cuGuardarModulos();
+    renderContenido(); cuPintarPreview();
+  }
+
+  async function cuMoverModulo(modId, dir){
+    const i = cuActual.modulos.findIndex(m=> m.id === modId);
+    const j = i + dir;
+    if(j < 0 || j >= cuActual.modulos.length) return;
+    [cuActual.modulos[i], cuActual.modulos[j]] = [cuActual.modulos[j], cuActual.modulos[i]];
+    await cuGuardarModulos();
+    renderContenido(); cuPintarPreview();
+  }
+
+  function cuBorrarModulo(modId){
+    const m = cuActual.modulos.find(x=> x.id === modId);
+    if(!m) return;
+    const ls = cuClasesDe(modId);
+    document.getElementById('cuBorrarModTexto').textContent = ls.length
+      ? `¿Eliminar el módulo "${m.title}" y sus ${ls.length} clase(s)? Los videos NO se borran de Bunny, pero las clases dejan de existir para los alumnos.`
+      : `¿Eliminar el módulo "${m.title}"?`;
+    abrirModal('modalCuBorrarModulo');
+    const btn = document.getElementById('cuBorrarModConfirmar');
+    const nuevo = btn.cloneNode(true);
+    btn.replaceWith(nuevo);
+    nuevo.addEventListener('click', async ()=>{
+      cerrarModales();
+      const cid = cuActual.curso.id;
+      await Promise.all(ls.flatMap(l=> [
+        cuRef().collection('lessons').doc(l.id).delete(),
+        cuRef().collection('lessonMedia').doc(l.id).delete(),
+      ]));
+      cuActual.clases = cuActual.clases.filter(l=> l.moduleId !== modId);
+      ls.forEach(l=> delete cuActual.media[l.id]);
+      cuActual.modulos = cuActual.modulos.filter(x=> x.id !== modId);
+      cuModulosAbiertos.delete(modId);
+      await cuGuardarModulos();
+      renderContenido(); cuPintarPreview(); cuCargarLista();
+      showToast('Módulo eliminado');
+    });
+  }
+
+  /* ---------- clases: CRUD ---------- */
+
+  async function cuAgregarClase(modId){
+    const m = cuActual.modulos.find(x=> x.id === modId);
+    if(!m) return;
+    const titulo = await mgPrompt('Título de la clase', '', { titulo:'Añadir clase' });
+    if(titulo == null) return;
+    const t = titulo.trim();
+    if(!t) return showToast('La clase necesita un título');
+    const id = 'l' + Date.now().toString(36);
+    const maxOrd = Math.max(0, ...cuClasesDe(modId).map(l=> l.order || 0));
+    const nueva = { id, moduleId: modId, order: maxOrd + 10, title: t, description:'', durationMin: null, published: false, isFree: false };
+    cuActual.clases.push(nueva);
+    await cuGuardarLeccion(id, { moduleId: modId, order: nueva.order, title: t, description:'', durationMin: null, published: false, isFree: false, createdAt: _fv() });
+    cuModulosAbiertos.add(modId);
+    renderContenido(); cuPintarPreview();
+    showToast('Clase creada en borrador');
+    cuEditarClase(id);
+  }
+
+  /** Puede publicarse si: no lleva video (clase de solo texto/recurso), o su
+   *  video ya está 'ready'. Nunca si el video está processing/error. */
+  function cuPuedePublicar(l){
+    const md = cuActual.media[l.id];
+    if(md && md.streamVideoId) return md.streamStatus === 'ready';
+    return true; // sin video -> se permite (clase sin video)
+  }
+
+  async function cuTogglePublicar(lessonId){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(!l) return;
+    if(!l.published && !cuPuedePublicar(l)){
+      const md = cuActual.media[lessonId] || {};
+      return showToast('No se puede publicar: el video está ' + (md.streamStatus || 'procesándose') + '.');
+    }
+    const nuevo = !l.published;
+    await cuGuardarLeccion(lessonId, { published: nuevo });
+    await cuRecomputarOutline();
+    renderContenido(); cuPintarPreview();
+    showToast(nuevo ? 'Clase publicada' : 'Clase pasada a borrador');
+  }
+
+  function cuBorrarClase(lessonId){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(!l) return;
     document.getElementById('cuBorrarTexto').textContent =
-      `¿Quitar la clase "${l.title}"? Los alumnos dejarán de verla.`;
+      `¿Quitar la clase "${l.title}"? El video no se borra de Bunny, pero la clase deja de existir para los alumnos.`;
     abrirModal('modalCuBorrarClase');
     const btn = document.getElementById('cuBorrarConfirmar');
     const nuevo = btn.cloneNode(true);
     btn.replaceWith(nuevo);
     nuevo.addEventListener('click', async ()=>{
       cerrarModales();
-      if(MODE === 'api'){
-        try{ await api(`/shop/admin/products/lessons/${l.id}`, { method:'DELETE' }); }
-        catch(e){ return showToast(e.message); }
-      }
-      cuActual.clases.splice(i, 1);
-      if(MODE !== 'api') await cuGuardarClasesSilencioso();
-      cuPintarDetalle();
-      cuCargarLista();
+      const modId = l.moduleId;
+      await Promise.all([
+        cuRef().collection('lessons').doc(lessonId).delete(),
+        cuRef().collection('lessonMedia').doc(lessonId).delete(),
+      ]);
+      cuActual.clases = cuActual.clases.filter(x=> x.id !== lessonId);
+      delete cuActual.media[lessonId];
+      await cuReordenarClasesDe(modId);
+      await cuRecomputarOutline();
+      renderContenido(); cuPintarPreview(); cuCargarLista();
       showToast('Clase eliminada');
     });
   }
 
-  function formatBytesCL(bytes){
-    if(!bytes) return '0 MB';
-    const mb = bytes / (1024*1024);
-    return mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB';
+  /* ---------- clases: modal de edición ---------- */
+
+  let ecLessonId = null;
+  let ecUploadCtrl = null;
+
+  function cuEditarClase(lessonId){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(!l) return;
+    ecLessonId = lessonId;
+    ecUploadCtrl = null;
+    document.getElementById('ecTitulo').value = l.title || '';
+    document.getElementById('ecDesc').value = l.description || '';
+    document.getElementById('ecMin').value = l.durationMin ?? '';
+    document.getElementById('ecFree').checked = !!l.isFree;
+    document.getElementById('ecPub').checked = !!l.published;
+    const sel = document.getElementById('ecModulo');
+    sel.innerHTML = cuActual.modulos.slice().sort((a,b)=> a.order-b.order)
+      .map(m=> `<option value="${m.id}" ${m.id === l.moduleId ? 'selected' : ''}>${escapeHTML(m.title)}</option>`).join('');
+    document.getElementById('ecUploadEstado').style.display = 'none';
+    document.getElementById('ecRecursoNombre').value = '';
+    ecPintarEstadoVideo();
+    ecRenderRecursos();
+    abrirModal('modalCuEditarClase');
   }
 
-  /** Controlador de la subida en curso (si hay una) -- se guarda para que
-   *  "Reintentar" continúe la MISMA subida (mismo video en Bunny) en vez
-   *  de crear una nueva desde cero. `clClasePendiente` es la clase que se
-   *  está armando mientras dura la subida (mismo `id`, para no duplicarla
-   *  si el usuario toca "Subir"/"Reintentar" varias veces).*/
-  let clUploadController = null;
-  let clClasePendiente = null;
-
-  function clPintarEstado({ texto, pct, error, mostrarReintentar }){
-    const cont = document.getElementById('clUploadEstado');
-    const fill = document.getElementById('clUploadBarFill');
-    const txt = document.getElementById('clUploadTexto');
-    const btnReintentar = document.getElementById('clUploadReintentar');
-    cont.style.display = '';
-    cont.classList.toggle('error', !!error);
-    if(pct != null) fill.style.width = pct + '%';
-    txt.textContent = texto;
-    btnReintentar.style.display = mostrarReintentar ? '' : 'none';
+  function ecPintarEstadoVideo(){
+    const l = cuActual.clases.find(x=> x.id === ecLessonId) || {};
+    const md = cuActual.media[ecLessonId] || {};
+    const est = document.getElementById('ecVideoEstado');
+    const ver = document.getElementById('ecVerVideo');
+    const refr = document.getElementById('ecRefreshVideo');
+    const map = { processing:'Procesando en Bunny…', ready:'Video listo (Ready)', error:'Error al procesar el video' };
+    est.textContent = md.streamVideoId ? (map[md.streamStatus] || 'Video subido')
+      : (l.externalUrl ? 'Enlace externo: ' + l.externalUrl : 'Sin video. La clase puede publicarse igual (solo texto/recurso).');
+    ver.style.display = (md.streamVideoId && md.streamStatus === 'ready') ? '' : 'none';
+    refr.style.display = (md.streamVideoId && md.streamStatus === 'processing') ? '' : 'none';
   }
 
-  function cuElegirArchivoClase(){
+  document.getElementById('ecGuardar').addEventListener('click', async ()=>{
+    const l = cuActual.clases.find(x=> x.id === ecLessonId);
+    if(!l) return;
+    const titulo = document.getElementById('ecTitulo').value.trim();
+    if(!titulo) return showToast('La clase necesita un título');
+    const minRaw = document.getElementById('ecMin').value;
+    const durationMin = minRaw ? Math.max(0, Math.round(Number(minRaw))) || null : null;
+    const isFree = document.getElementById('ecFree').checked;
+    const publicar = document.getElementById('ecPub').checked;
+    const modId = document.getElementById('ecModulo').value;
+
+    if(publicar && !l.published){
+      const puede = (()=>{ const md = cuActual.media[ecLessonId]; if(md && md.streamVideoId) return md.streamStatus === 'ready'; return true; })();
+      if(!puede) return showToast('No se puede publicar: el video todavía no está listo. Guarda como borrador y publica cuando esté Ready.');
+    }
+
+    const patch = { title: titulo, description: document.getElementById('ecDesc').value.trim(), durationMin, isFree, published: publicar };
+    const cambioModulo = modId && modId !== l.moduleId;
+    const modOrigen = l.moduleId;
+    if(cambioModulo){
+      patch.moduleId = modId;
+      patch.order = Math.max(0, ...cuClasesDe(modId).map(x=> x.order || 0)) + 10;
+    }
+    await cuGuardarLeccion(ecLessonId, patch);
+    if(cambioModulo) await cuReordenarClasesDe(modOrigen);
+    await cuRecomputarOutline();
+    cerrarModales();
+    renderContenido(); cuPintarPreview(); cuCargarLista();
+    showToast('Clase guardada');
+  });
+
+  document.getElementById('ecBorrar').addEventListener('click', ()=>{
+    const id = ecLessonId;
+    cerrarModales();
+    cuBorrarClase(id);
+  });
+
+  document.getElementById('ecVerVideo').addEventListener('click', ()=> cuVerVideoClase(ecLessonId));
+  document.getElementById('ecRefreshVideo').addEventListener('click', ()=> cuRefrescarEstadoClase(ecLessonId).then(ecPintarEstadoVideo));
+  document.getElementById('ecRecursoBtn').addEventListener('click', ecElegirRecurso);
+
+  document.getElementById('ecSubirVideo').addEventListener('click', ()=>{
+    const l = cuActual.clases.find(x=> x.id === ecLessonId);
+    if(!l) return;
+    const isFree = document.getElementById('ecFree').checked;
     const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'video/*';
-    input.addEventListener('change', ()=>{
+    input.type = 'file'; input.accept = 'video/*';
+    input.addEventListener('change', async ()=>{
       const file = input.files[0];
       if(!file) return;
-      clArchivoElegido = file;
-      clUploadController = null;
-      clClasePendiente = null;
-      document.getElementById('clArchivoNombre').textContent = file.name;
-      document.getElementById('clUploadEstado').style.display = 'none';
-      document.getElementById('clUploadNombre').textContent = file.name;
-      document.getElementById('clUploadTamano').textContent = formatBytesCL(file.size);
+      const box = document.getElementById('ecUploadEstado');
+      const fill = document.getElementById('ecUploadFill');
+      const txt = document.getElementById('ecUploadTexto');
+      const retry = document.getElementById('ecUploadRetry');
+      box.style.display = ''; retry.style.display = 'none';
+      fill.style.width = '0%'; txt.textContent = 'Subiendo… 0%';
+      document.getElementById('ecSubirVideo').disabled = true;
+      const correr = async ()=>{
+        try{
+          if(!ecUploadCtrl){
+            ecUploadCtrl = crearSubidaLeccionConReintento(file, {
+              contexto:'leccion', contextoId:`${cuActual.curso.id}:${ecLessonId}`, isFree, title: l.title,
+              onProgress:(pct)=>{ fill.style.width = pct + '%'; txt.textContent = `Subiendo… ${pct}%`; },
+            });
+          }
+          const { videoId } = await ecUploadCtrl.attempt();
+          txt.textContent = 'Procesando en Bunny…'; fill.style.width = '100%';
+          await cuGuardarMedia(ecLessonId, { streamVideoId: videoId, streamStatus: 'processing', streamLibrary: isFree ? 'public' : 'private' });
+          ecUploadCtrl = null;
+          setTimeout(()=>{ box.style.display = 'none'; }, 1500);
+          ecPintarEstadoVideo();
+          renderContenido();
+          showToast('Video subido, procesándose en Bunny.');
+        }catch(e){
+          txt.textContent = 'No se pudo subir. ' + (e.message || '');
+          box.classList.add('error'); retry.style.display = '';
+        }finally{
+          document.getElementById('ecSubirVideo').disabled = false;
+        }
+      };
+      retry.onclick = correr;
+      correr();
     });
     input.click();
+  });
+
+  /* ---------- clases: preview admin + estado ---------- */
+
+  function cuVerVideoClase(lessonId){
+    const md = cuActual.media[lessonId];
+    if(!md || !md.streamVideoId) return showToast('Esta clase no tiene video.');
+    verVideoSubido(md.streamVideoId, md.streamLibrary === 'public');
   }
 
-  async function cuAgregarClase(){
-    const titulo = document.getElementById('clTitulo').value.trim();
-    const min = document.getElementById('clMin').value;
-    const libre = document.getElementById('clLibre').checked || cuActual.clases.length === 0;
-
-    if(!titulo) return showToast('Escribe el título de la clase');
-    if(!clArchivoElegido) return showToast('Elige un archivo de video primero');
-
-    // Si ya hay un intento en curso para este mismo archivo (reintento),
-    // se reusa la MISMA clase y el MISMO controlador -- nunca se crea una
-    // clase ni un video duplicado por tocar "Subir"/"Reintentar" de nuevo.
-    const nueva = clClasePendiente || (clClasePendiente = {
-      id: 'l' + Date.now(),
-      title: titulo, durationMin: min ? Number(min) : null,
-      isFree: libre, active: true,
-      streamVideoId: '', streamStatus: 'processing',
-    });
-
-    const btnAgregar = document.getElementById('clAgregar');
-    btnAgregar.disabled = true;
-    clPintarEstado({ texto: 'Subiendo… 0%', pct: 0 });
-
-    if(!clUploadController){
-      clUploadController = crearSubidaLeccionConReintento(clArchivoElegido, {
-        contexto: 'leccion', contextoId: `${cuActual.curso.id}:${nueva.id}`, isFree: nueva.isFree, title: nueva.title,
-        onProgress: (pct)=> clPintarEstado({ texto: `Subiendo… ${pct}%`, pct }),
-      });
-    }
-
+  async function cuRefrescarEstadoClase(lessonId){
+    const md = cuActual.media[lessonId];
+    if(!md || !md.streamVideoId) return;
     try{
-      const { videoId } = await clUploadController.attempt();
-      nueva.streamVideoId = videoId;
-      clPintarEstado({ texto: 'Procesando video…', pct: 100 });
-
-      if(MODE === 'api'){
-        try{
-          const r = await api(`/shop/admin/products/${cuActual.curso.id}/lessons`, {
-            method:'POST',
-            body: JSON.stringify({ title:titulo, durationMin:nueva.durationMin, isFree:nueva.isFree })
-          });
-          nueva.id = r.lesson.id;
-        }catch(e){ clPintarEstado({ texto: e.message, error:true, mostrarReintentar:false }); return; }
-      }
-
-      cuActual.clases.push(nueva);
-      if(MODE !== 'api') await cuGuardarClasesSilencioso();
-      clArchivoElegido = null;
-      clUploadController = null;
-      clClasePendiente = null;
-      cuPintarDetalle();
-      cuCargarLista();
-      showToast('Video listo, clase agregada' + (nueva.isFree ? ' (muestra gratuita)' : '') + ' -- terminará de procesarse en Bunny en un momento.');
-    }catch(e){
-      clPintarEstado({
-        texto: 'No pudimos subir el video. ' + (e.message || ''),
-        error: true, mostrarReintentar: true,
+      const r = await functions.httpsCallable('obtenerEstadoVideo')({
+        videoId: md.streamVideoId, libreria: md.streamLibrary === 'public' ? 'public' : 'private',
       });
-    }finally{
-      btnAgregar.disabled = false;
+      await cuGuardarMedia(lessonId, { streamStatus: r.data.estado });
+      renderContenido(); cuPintarPreview();
+      showToast(r.data.estado === 'ready' ? 'El video ya está listo' : 'Todavía está procesándose');
+    }catch(e){ showToast('No se pudo verificar: ' + e.message); }
+  }
+
+  /* ---------- mover clase (modal -- alternativa a arrastrar) ---------- */
+
+  let mcLessonId = null;
+  function cuAbrirMoverClase(lessonId){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(!l) return;
+    mcLessonId = lessonId;
+    document.getElementById('mcClaseTitulo').textContent = `"${l.title}" — módulo actual: ${(cuActual.modulos.find(m=> m.id === l.moduleId)||{}).title || '—'}`;
+    const sel = document.getElementById('mcModulo');
+    sel.innerHTML = cuActual.modulos.slice().sort((a,b)=> a.order-b.order)
+      .map(m=> `<option value="${m.id}" ${m.id === l.moduleId ? 'selected' : ''}>${escapeHTML(m.title)}</option>`).join('');
+    abrirModal('modalCuMoverClase');
+  }
+  document.getElementById('mcArriba').addEventListener('click', ()=> cuMoverClaseEnModulo(mcLessonId, -1));
+  document.getElementById('mcAbajo').addEventListener('click', ()=> cuMoverClaseEnModulo(mcLessonId, 1));
+  document.getElementById('mcMoverModulo').addEventListener('click', async ()=>{
+    const destino = document.getElementById('mcModulo').value;
+    cerrarModales();
+    await cuSoltarClaseEnModulo(mcLessonId, destino);
+  });
+
+  async function cuMoverClaseEnModulo(lessonId, dir){
+    const l = cuActual.clases.find(x=> x.id === lessonId);
+    if(!l) return;
+    const ls = cuClasesDe(l.moduleId);
+    const i = ls.findIndex(x=> x.id === lessonId);
+    const j = i + dir;
+    if(j < 0 || j >= ls.length) return;
+    const o1 = ls[i].order, o2 = ls[j].order;
+    ls[i].order = o2; ls[j].order = o1;
+    await Promise.all([ cuGuardarLeccion(ls[i].id, { order: o2 }), cuGuardarLeccion(ls[j].id, { order: o1 }) ]);
+    renderContenido(); cuPintarPreview();
+  }
+
+  /* ---------- migrar un curso viejo desde el panel (red de seguridad) ---------- */
+
+  async function cuMigrarEsteCurso(){
+    const legacy = cuActual.curso.lessons || [];
+    if(!legacy.length) return;
+    const ok = await mgConfirm(`Convertir las ${legacy.length} clase(s) de este curso al formato de módulos. El array viejo NO se borra. ¿Continuar?`, { titulo:'Migrar curso', textoConfirmar:'Migrar' });
+    if(!ok) return;
+    const mod = { id:'m1', title:'Contenido del curso', order:10 };
+    let pub = 0, totalMin = 0;
+    const clases = [], media = {};
+    for(let i = 0; i < legacy.length; i++){
+      const l = legacy[i];
+      const dur = (()=>{ const n = Number(l.durationMin); return Number.isFinite(n) && n > 0 ? Math.round(n) : null; })();
+      const videoListo = !!l.streamVideoId && l.streamStatus === 'ready';
+      const esYoutube = !!l.videoUrl && !l.streamVideoId;
+      const published = (l.active !== false) && videoListo;
+      if(published){ pub++; if(dur) totalMin += dur; }
+      const doc = { id: l.id, moduleId:'m1', order:(i+1)*10, title:(l.title||`Clase ${i+1}`).trim(), durationMin: dur, published, isFree: !!l.isFree, createdAt: _fv(), updatedAt: _fv() };
+      if(l.description) doc.description = String(l.description);
+      if(esYoutube){ doc.externalUrl = String(l.videoUrl); doc.published = false; }
+      await cuRef().collection('lessons').doc(l.id).set(doc, { merge:true });
+      clases.push(doc);
+      if(l.streamVideoId){
+        const md = { streamVideoId:String(l.streamVideoId), streamStatus:String(l.streamStatus||'processing'), streamLibrary: l.isFree ? 'public':'private', updatedAt:_fv() };
+        await cuRef().collection('lessonMedia').doc(l.id).set(md, { merge:true });
+        media[l.id] = { id:l.id, ...md };
+      }
     }
+    await cuRef().set({ modules:[mod], outline:{ lessonCount:pub, totalMinutes:totalMin, moduleCount:1, updatedAt:_fv() } }, { merge:true });
+    cuActual.modulos = [mod];
+    cuActual.clases = clases;
+    cuActual.media = media;
+    cuModulosAbiertos.add('m1');
+    const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
+    if(enLista){ enLista.modules = [mod]; }
+    renderContenido(); cuPintarPreview(); cuCargarLista();
+    showToast('Curso migrado a módulos');
   }
 
   async function cuGuardarCurso(){
@@ -12382,9 +12846,9 @@
     const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
     if(enLista) Object.assign(enLista, datos);
 
-    // 1 solo write, 1 solo documento: el de este curso. Las lecciones ya se
-    // guardan solas en cada edición (cuGuardarClasesSilencioso), así que este
-    // botón no las toca.
+    // 1 solo write, 1 solo documento: el de este curso. Módulos y clases se
+    // guardan solos en cada edición del acordeón (subcolecciones), así que
+    // este botón no los toca.
     try{ await guardarCurso(cuActual.curso.id); }
     catch(e){ btn.disabled = false; btn.textContent = 'Guardar cambios'; return showToast('No se pudo guardar: ' + e.message); }
 
@@ -12411,7 +12875,10 @@
       const nuevo = {
         id:'c' + Date.now(), name:nombre, description:'', priceClp:precio,
         priceUsd:null, active:true, featured:false, accessUrl:'',
-        accessDurationDays:30, resources:[], lessons:[]
+        accessDurationDays:30, lessons:[],
+        // el curso nace con el modelo nuevo del aula: 1 módulo, 0 clases
+        modules:[{ id:'m1', title:'Contenido del curso', order:10 }],
+        outline:{ lessonCount:0, totalMinutes:0, moduleCount:1 },
       };
       cuCursos.push(nuevo);
       try{ await guardarCurso(nuevo.id); }   // el curso nuevo queda en Firestore de inmediato
