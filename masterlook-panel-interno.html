@@ -11618,7 +11618,7 @@
             Visible en el sitio
           </label>
 
-          <p class="mg-note" style="margin:14px 0 0;">El <b>material descargable</b> (PDF, guías, fichas...) se agrega ahora <b>por clase</b>, desde el editor de cada clase en "Contenido del curso".</p>
+          <p class="mg-note" style="margin:14px 0 0;">El <b>material por clase</b> se agrega desde el editor de cada clase, en "Contenido del curso". El <b>material general del curso</b> (no ligado a ninguna clase) se agrega abajo, en "Materiales del curso".</p>
 
           <button class="mg-btn solid full" id="cuGuardar" style="margin-top:18px;">Guardar datos del curso</button>
 
@@ -11628,6 +11628,16 @@
             <div class="cu-fila">
               <input type="email" id="cuPermitirEmail" placeholder="correo@cliente.cl" style="flex:1;min-width:140px;">
               <button type="button" class="mg-btn solid" id="cuPermitirBtn" style="flex:none;padding:8px 16px;">Buscar</button>
+            </div>
+          </div>
+
+          <div class="cu-box" id="cuMaterialesBox">
+            <div class="cu-box-title">Materiales del curso</div>
+            <div class="cu-box-note">Documentos generales del curso completo (guía, checklist, plantillas...), independientes de las clases. Distinto de "Material de la clase".</div>
+            <div id="cmRecursosLista" style="margin-top:8px;"></div>
+            <div class="cu-fila" style="margin-top:10px;">
+              <input type="text" id="cmRecursoNombre" placeholder="Nombre (ej. Guía general del curso)" style="flex:1;min-width:140px;">
+              <button type="button" class="mg-btn ghost" id="cmRecursoBtn" style="flex:none;padding:8px 14px;">⬆ Elegir archivo</button>
             </div>
           </div>
 
@@ -11689,6 +11699,7 @@
 
   function cuConectarDetalle(){
     renderContenido();   // acordeón de módulos + clases (se auto-conecta)
+    cmRenderRecursos();  // materiales del curso (independiente de las clases)
 
     document.getElementById('cuGuardar').addEventListener('click', cuGuardarCurso);
     document.getElementById('cuCancelar').addEventListener('click', cuVolverListado);
@@ -11699,6 +11710,7 @@
     document.getElementById('cuRefrescarMedia')?.addEventListener('click', ()=> cuRefrescarEstadoMedia(cuActual.curso.id));
     document.getElementById('cuRecomendado').addEventListener('change', (e)=> cuCambiarRecomendacion(cuActual.curso.id, e.target.checked));
     document.getElementById('cuPermitirBtn').addEventListener('click', cuPermitirUsuario);
+    document.getElementById('cmRecursoBtn').addEventListener('click', cmElegirRecurso);
 
     ['cuNombre','cuDesc'].forEach(id=>
       document.getElementById(id).addEventListener('input', ()=>{
@@ -12133,6 +12145,126 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
         body: JSON.stringify({ courseId: cuActual.curso.id, lessonId: ecLessonId, resourceId: rid, modo: 'inline' }),
+      });
+      if(!resp.ok){ const j = await resp.json().catch(()=> ({})); return showToast(j.error || 'No se pudo abrir el material'); }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(()=> URL.revokeObjectURL(url), 60000);
+    }catch(e){ showToast('No se pudo abrir el material: ' + e.message); }
+  }
+
+  /* ===== Materiales del curso -- independiente del material por clase =====
+   *  Mismo patrón que ec* (arriba), a nivel `courses/{id}.courseResources`
+   *  en vez de `courses/{id}/lessons/{lid}.resources`. Reusa ecIdRecurso/
+   *  ecTamano/ecIconoArchivo/EC_MAX_RECURSO_MB tal cual (son genéricos).
+   *
+   *  cuGuardarCourseResources hace 3 cosas (no solo el write): a diferencia
+   *  de las clases -- que SÍ se releen fresco de Firestore en cada cuAbrir()
+   *  -- el doc del curso viene del cache `cuCursos` (se puebla 1 vez por
+   *  carga de página). Si solo hiciéramos el write, cerrar y reabrir el
+   *  mismo curso en la misma sesión mostraría el material como "desaparecido"
+   *  (seguiría bien guardado, pero el panel leería la copia vieja del cache).
+   *  Mismo patrón que ya usan cuGuardarModulos/cuRecomputarOutline. */
+  async function cuGuardarCourseResources(nuevos){
+    await cuRef().set({ courseResources: nuevos }, { merge: true });
+    cuActual.curso.courseResources = nuevos;
+    const enLista = cuCursos.find(c=> c.id === cuActual.curso.id);
+    if(enLista) enLista.courseResources = nuevos;
+  }
+
+  function cmRenderRecursos(){
+    const cont = document.getElementById('cmRecursosLista');
+    if(!cont) return;
+    const recs = Array.isArray(cuActual.curso.courseResources) ? cuActual.curso.courseResources : [];
+    cont.innerHTML = recs.length ? recs.map(r=> `
+      <div class="cu-recurso-item" data-rid="${escapeHTML(r.id)}">
+        <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;">
+          <span style="flex:none;">${ecIconoArchivo(r.contentType, r.fileName)}</span>
+          <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(r.name)}</span>
+          ${r.active === false ? '<span class="cu-badge cu-badge--draft" style="flex:none;">Oculto</span>' : ''}
+        </span>
+        <span style="display:flex;gap:12px;flex:none;align-items:center;">
+          <span class="cu-box-note" style="margin:0;">${ecTamano(r.size)}</span>
+          <button type="button" class="cu-card-link" data-rec-ver>Ver</button>
+          <button type="button" class="cu-card-link" data-rec-toggle>${r.active === false ? 'Mostrar' : 'Ocultar'}</button>
+          <button type="button" class="cu-card-link del" data-rec-quitar>Quitar</button>
+        </span>
+      </div>`).join('') : '<div class="cu-box-note" style="margin:0;">Este curso no tiene material general.</div>';
+
+    cont.querySelectorAll('[data-rid]').forEach(row=>{
+      const rid = row.dataset.rid;
+      row.querySelector('[data-rec-ver]')?.addEventListener('click', ()=> cmVerRecurso(rid));
+      row.querySelector('[data-rec-toggle]')?.addEventListener('click', ()=> cmToggleRecurso(rid));
+      row.querySelector('[data-rec-quitar]')?.addEventListener('click', ()=> cmQuitarRecurso(rid));
+    });
+  }
+
+  function cmElegirRecurso(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.csv,.ods,.ppt,.pptx,.zip,.png,.jpg,.jpeg,.webp,image/*,application/pdf';
+    input.addEventListener('change', ()=>{ if(input.files[0]) cmAgregarRecurso(input.files[0]); });
+    input.click();
+  }
+
+  async function cmAgregarRecurso(file){
+    const nombre = document.getElementById('cmRecursoNombre').value.trim() || file.name.replace(/\.[^.]+$/, '');
+    if(file.size > EC_MAX_RECURSO_MB * 1024 * 1024) return showToast(`El archivo supera los ${EC_MAX_RECURSO_MB} MB`);
+    const btn = document.getElementById('cmRecursoBtn');
+    if(btn){ btn.disabled = true; btn.textContent = 'Subiendo…'; }
+    try{
+      const rid = ecIdRecurso();
+      // ruta determinística: la CF la reconstruye con courseId/resourceId
+      await storage.ref(`courseResources/${cuActual.curso.id}/general/${rid}`)
+        .put(file, { contentType: file.type || 'application/octet-stream' });
+      const recurso = {
+        id: rid, name: nombre.slice(0, 120), fileName: file.name.slice(0, 160),
+        contentType: file.type || 'application/octet-stream', size: file.size,
+        active: true, createdAt: Date.now(),
+      };
+      const actuales = Array.isArray(cuActual.curso.courseResources) ? cuActual.curso.courseResources : [];
+      await cuGuardarCourseResources([...actuales, recurso]);   // escribe courses/{id}.courseResources, NUNCA resources[] legacy
+      document.getElementById('cmRecursoNombre').value = '';
+      cmRenderRecursos();
+      showToast('Material agregado');
+    }catch(e){
+      showToast('No se pudo subir el material: ' + e.message);
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = '⬆ Elegir archivo'; }
+    }
+  }
+
+  async function cmToggleRecurso(rid){
+    const actuales = Array.isArray(cuActual.curso.courseResources) ? cuActual.curso.courseResources : [];
+    const nuevos = actuales.map(r=> r.id === rid ? { ...r, active: r.active === false } : r);
+    try{ await cuGuardarCourseResources(nuevos); cmRenderRecursos(); }
+    catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  }
+
+  async function cmQuitarRecurso(rid){
+    if(!(await mgConfirm('¿Quitar este material general del curso?'))) return;
+    const actuales = Array.isArray(cuActual.curso.courseResources) ? cuActual.curso.courseResources : [];
+    const nuevos = actuales.filter(r=> r.id !== rid);
+    try{
+      await cuGuardarCourseResources(nuevos);
+      cmRenderRecursos();
+      // borra el archivo (best-effort; si falla, el recurso ya no se ve igual)
+      storage.ref(`courseResources/${cuActual.curso.id}/general/${rid}`).delete().catch(()=>{});
+      showToast('Material quitado');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
+  }
+
+  /** Previsualiza el material desde el panel -- pasa por la MISMA CF que el
+   *  alumno (que deja entrar a ADMIN sin entitlement), pide modo:inline y
+   *  abre el blob. Nunca materializa una URL de Storage. */
+  async function cmVerRecurso(rid){
+    try{
+      const tok = await firebase.auth().currentUser.getIdToken();
+      const resp = await fetch(FUNCTIONS_BASE + '/descargarRecursoCurso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ courseId: cuActual.curso.id, resourceId: rid, modo: 'inline' }),
       });
       if(!resp.ok){ const j = await resp.json().catch(()=> ({})); return showToast(j.error || 'No se pudo abrir el material'); }
       const blob = await resp.blob();

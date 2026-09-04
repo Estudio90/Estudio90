@@ -2537,10 +2537,11 @@
   .mc-player-stage video{position:absolute; inset:0; width:100%; height:100%; background:#000;}
   .mc-player-stage:fullscreen{border-radius:0;}
   .mc-player-stage:fullscreen video{object-fit:contain;}
-  .mc-wm{position:absolute; top:8%; left:6%; z-index:3; pointer-events:none; user-select:none;
-    font-family:var(--font-primary); font-size:.72rem; letter-spacing:.04em; opacity:.42;
+  .mc-wm{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:3;
+    pointer-events:none; user-select:none;
+    font-family:var(--font-primary); font-size:.62rem; letter-spacing:.04em; opacity:.42;
     color:rgba(255,255,255,.55); text-shadow:0 1px 3px rgba(0,0,0,.6);
-    padding:3px 7px; white-space:nowrap; transition:opacity .8s ease, top .8s ease, left .8s ease;
+    padding:3px 7px; white-space:nowrap; transition:opacity .8s ease;
     max-width:70%; overflow:hidden; text-overflow:ellipsis;}
   @media (prefers-reduced-motion:reduce){ .mc-wm{transition:opacity .8s ease;} }
   .mc-player-msg{position:absolute; inset:0; z-index:2; display:flex; align-items:center;
@@ -8446,7 +8447,7 @@
     cursos:[],            // [{id, curso, modulos, clases, progreso}]
     cursoActivo:null,     // referencia dentro de mcState.cursos
     leccionActiva:null,   // {id, ...clase}
-    player:null,          // {video, hls, wmTimer, courseId, lessonId}
+    player:null,          // {video, hls, courseId, lessonId}
   };
 
   async function abrirMisCursos(desdeHistorial){
@@ -8918,6 +8919,7 @@
           </div>
         </div>
       </div>
+      ${mcMaterialesCursoHtml(item.curso)}
       <h2 class="mc-sec-title">Contenido del curso</h2>
       ${modulosHtml || '<div class="mc-empty">Este curso todavía no tiene clases publicadas.</div>'}
     `;
@@ -8928,6 +8930,7 @@
       h.addEventListener('click', ()=> h.closest('.mc-mod').classList.toggle('is-open')));
     cont.querySelectorAll('.mc-lesson').forEach(b=>
       b.addEventListener('click', ()=> mcAbrirClase(b.dataset.leccion)));
+    mcConectarMaterialCurso();
     observarVideosLazy(cont);
   }
 
@@ -9010,21 +9013,7 @@
     adjuntarHls(video, url);
     video.play().catch(()=>{});
 
-    mcState.player = { video, hls: video._hls || null, wmTimer:null, ref, reintentado:false };
-
-    // marca de agua: reposición periódica por posiciones que no tapan los controles
-    if(watermark){
-      const wm = document.getElementById('mcWm');
-      const mover = ()=>{
-        if(!document.getElementById('mcWm')) return;
-        const pos = mcWmPos[Math.floor(Math.random()*mcWmPos.length)];
-        wm.style.opacity = '0';
-        setTimeout(()=>{ wm.style.top = pos.top; wm.style.left = pos.left;
-          wm.style.right = 'auto'; wm.style.bottom = 'auto'; wm.style.opacity = '.42'; }, 260);
-      };
-      mover();
-      mcState.player.wmTimer = setInterval(mover, 7000);
-    }
+    mcState.player = { video, hls: video._hls || null, ref, reintentado:false };
 
     // botón de pantalla completa propio (mantiene la marca de agua dentro)
     const fs = document.getElementById('mcFsBtn');
@@ -9058,16 +9047,10 @@
       }
     });
   }
-  const mcWmPos = [
-    { top:'8%',  left:'6%'  }, { top:'8%',  left:'50%' }, { top:'8%',  left:'78%' },
-    { top:'42%', left:'6%'  }, { top:'42%', left:'74%' },
-    { top:'70%', left:'8%'  }, { top:'70%', left:'70%' },
-  ];
 
   function mcDestruirPlayer(){
     const p = mcState.player;
     if(p){
-      if(p.wmTimer) clearInterval(p.wmTimer);
       try{ p.video.pause(); }catch(e){}
       try{ if(p.video._hls){ p.video._hls.destroy(); p.video._hls = null; } }catch(e){}
       try{ p.video.removeAttribute('src'); p.video.load(); }catch(e){}
@@ -9193,6 +9176,79 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
         body: JSON.stringify({ courseId: item.id, lessonId: clase.id, resourceId }),
+      });
+      if(!resp.ok){
+        const j = await resp.json().catch(()=> ({}));
+        toast(j.error || 'No se pudo descargar el material');
+        return;
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (rec && (rec.fileName || rec.name)) || 'material';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 30000);
+    }catch(e){
+      toast('No se pudo descargar: ' + (e.message || e));
+    }finally{
+      if(btn){ btn.disabled = false; btn.classList.remove('is-loading'); }
+    }
+  }
+
+  /* ===== Materiales del curso -- independiente del material por clase =====
+   *  Mismo patrón que mcMaterialHtml/mcConectarMaterial/mcDescargarRecurso
+   *  (arriba), a nivel `curso.courseResources` en vez de `clase.resources`.
+   *  Se muestran en la portada interna del curso (mcRenderCurso), NO dentro
+   *  del reproductor. Si no hay ninguno activo, no se renderiza ni el
+   *  título -- sin hueco visual. */
+  function mcRecursosCursoActivos(curso){
+    return (Array.isArray(curso && curso.courseResources) ? curso.courseResources : [])
+      .filter(r=> r && r.id && r.active !== false);
+  }
+  function mcMaterialesCursoHtml(curso){
+    const recs = mcRecursosCursoActivos(curso);
+    if(!recs.length) return '';
+    // Sin wrapper .mc-material/.mc-material-tit (eso es el estilo de
+    // sub-sección DENTRO del reproductor) -- acá es una sección de página,
+    // hermana de "Contenido del curso", con el mismo <h2 class="mc-sec-title">.
+    return `
+      <h2 class="mc-sec-title">Materiales del curso</h2>
+      ${recs.map(r=> `
+        <div class="mc-res" data-rid="${mcEscape(r.id)}">
+          <span class="mc-res-ico">${mcEscape(mcIconoRecurso(r.contentType, r.fileName))}</span>
+          <span class="mc-res-mid">
+            <span class="mc-res-name">${mcEscape(r.name || r.fileName || 'Material')}</span>
+            <span class="mc-res-meta">${mcEscape(mcTipoRecurso(r.contentType, r.fileName))}${r.size ? ' · ' + mcFmtPeso(r.size) : ''}</span>
+          </span>
+          <button class="mc-res-btn" type="button" data-descargar-curso>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+            <span>Descargar</span>
+          </button>
+        </div>`).join('')}`;
+  }
+  function mcConectarMaterialCurso(){
+    const cont = document.getElementById('mcCursoCont');
+    if(!cont) return;
+    cont.querySelectorAll('.mc-res [data-descargar-curso]').forEach(btn=>{
+      btn.addEventListener('click', ()=> mcDescargarRecursoCurso(btn.closest('.mc-res').dataset.rid, btn));
+    });
+  }
+  async function mcDescargarRecursoCurso(resourceId, btn){
+    const item = mcState.cursoActivo;
+    if(!item) return;
+    const fbUser = auth.currentUser;
+    if(!fbUser){ toast('Inicia sesión para descargar el material'); return; }
+    const rec = mcRecursosCursoActivos(item.curso).find(r=> r.id === resourceId);
+    if(btn){ btn.disabled = true; btn.classList.add('is-loading'); }
+    try{
+      const tok = await fbUser.getIdToken();
+      const resp = await fetch(FUNCTIONS_BASE + '/descargarRecursoCurso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ courseId: item.id, resourceId }),
       });
       if(!resp.ok){
         const j = await resp.json().catch(()=> ({}));
