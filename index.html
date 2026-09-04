@@ -13,8 +13,9 @@
      (DNS+TLS) desde ya, para que cuando el <video> pida el m3u8 no tenga
      que esperar ese primer viaje de red -- ver el script justo después de
      .hero-bg más abajo. -->
-<link rel="preconnect" href="https://vz-3106d8eb-0d1.b-cdn.net" crossorigin>
-<link rel="dns-prefetch" href="https://vz-3106d8eb-0d1.b-cdn.net">
+<!-- Bunny Stream (librería pública): preconnect al pull zone del ENTORNO -- prod
+     o dev, nunca hardcodeado. estudio90.github.io = prod; cualquier otro host = dev. -->
+<script>(function(){var h=location.hostname==='estudio90.github.io'?'vz-3106d8eb-0d1.b-cdn.net':'vz-d80b701c-61b.b-cdn.net';['preconnect','dns-prefetch'].forEach(function(r){var l=document.createElement('link');l.rel=r;l.href='https://'+h;if(r==='preconnect')l.crossOrigin='';document.head.appendChild(l);});}())</script>
 <!-- fotos de catálogo (Firebase Storage) y datos en vivo (Firestore): abrir
      DNS+TLS desde ya para que la primera imagen/consulta no espere el
      handshake (~100-300 ms en móvil). -->
@@ -2370,6 +2371,251 @@
     .sec-head h2,
     .st-section-head h2{ font-size: 1.875rem; }
   }
+
+  /* ===================================================================
+     AULA DE ACADEMY (ETAPA 3) — experiencia del alumno.
+     Curso -> Módulos -> Clases -> Progreso. Vive dentro de #vistaMisCursos
+     como 3 pantallas: .mc-screen[data-mc="grid"|"curso"|"player"].
+     Estética Masterlook: negro / blanco / grises, mucho aire, sin colores
+     llamativos. Todo con los tokens ya existentes.
+     =================================================================== */
+  .mc-screen{display:none;}
+  .mc-screen.is-active{display:block; animation:mcFade .32s ease both;}
+  @keyframes mcFade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion:reduce){ .mc-screen.is-active{animation:none;} }
+
+  .mc-wrap{max-width:1080px; margin:0 auto; padding:0 20px;
+    padding-bottom:calc(120px + env(safe-area-inset-bottom));}
+
+  /* ---------- barra superior de cada pantalla ---------- */
+  .mc-bar{display:flex; align-items:center; gap:12px; margin:22px 0 6px; min-width:0;}
+  .mc-back{display:inline-flex; align-items:center; gap:7px; background:none;
+    border:1px solid var(--border); color:var(--text-mid); cursor:pointer;
+    font-family:inherit; font-size:.8rem; padding:8px 13px; border-radius:99px;
+    transition:border-color .2s, color .2s; white-space:nowrap;}
+  .mc-back:hover{border-color:var(--border-strong); color:var(--text-hi);}
+  .mc-back svg{width:14px; height:14px;}
+
+  .mc-h1{font-family:var(--font-primary); font-size:1.55rem; line-height:1.22;
+    color:var(--text-hi); text-wrap:balance; margin:16px 0 4px;
+    text-transform:none; letter-spacing:-0.01em; font-weight:600;}
+  .mc-sub{color:var(--text-mid); font-size:.9rem; line-height:1.5;}
+
+  /* ---------- "Continúa donde quedaste" ---------- */
+  .mc-resume{display:grid; grid-template-columns:132px 1fr; gap:0;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; margin:14px 0 30px;}
+  .mc-resume-cover{background:var(--panel-2) center/cover no-repeat; position:relative;
+    min-height:110px;}
+  .mc-resume-cover::after{content:""; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, var(--panel));}
+  .mc-resume-body{padding:16px 18px; min-width:0; display:flex; flex-direction:column; gap:8px;}
+  .mc-eyebrow{font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-low); font-weight:600;}
+  .mc-resume-name{font-family:var(--font-primary); font-size:1.06rem; color:var(--text-hi);
+    line-height:1.25; overflow:hidden; text-overflow:ellipsis; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .mc-resume-meta{font-size:.8rem; color:var(--text-mid);}
+
+  /* ---------- rejilla de cursos ---------- */
+  .mc-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:18px; margin-top:6px;}
+  .mc-card{background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column;
+    cursor:pointer; transition:border-color .2s, transform .2s;}
+  .mc-card:hover{border-color:var(--border-strong); transform:translateY(-2px);}
+  .mc-card-cover{aspect-ratio:16/9; background:var(--panel-2) center/cover no-repeat;
+    position:relative; display:flex; align-items:center; justify-content:center;}
+  .mc-card-cover .mc-ico{width:34px; height:34px; color:rgba(255,255,255,.4);}
+  .mc-card-cover video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .mc-card-body{padding:15px 16px 17px; display:flex; flex-direction:column; gap:11px; flex:1;}
+  .mc-card-name{font-family:var(--font-primary); font-size:1.02rem; color:var(--text-hi);
+    line-height:1.28;}
+  .mc-card-foot{margin-top:auto; display:flex; flex-direction:column; gap:9px;}
+
+  /* ---------- barra de progreso (compartida) ---------- */
+  .mc-prog{display:flex; flex-direction:column; gap:6px;}
+  .mc-prog-track{height:4px; border-radius:999px; background:rgba(255,255,255,.11); overflow:hidden;}
+  .mc-prog-fill{height:100%; background:var(--text-hi); border-radius:999px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);}
+  .mc-prog-line{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    font-size:.76rem; color:var(--text-mid); font-variant-numeric:tabular-nums;}
+  .mc-prog-line b{color:var(--text-hi); font-weight:600;}
+
+  /* ---------- pastilla de estado de acceso ---------- */
+  .mc-pill{display:inline-flex; align-items:center; gap:6px; font-size:.7rem;
+    color:var(--text-mid); border:1px solid var(--border); border-radius:99px;
+    padding:4px 10px; white-space:nowrap; align-self:flex-start;}
+  .mc-pill i{width:6px; height:6px; border-radius:50%; background:var(--ok); flex:none;}
+  .mc-pill.is-warn i{background:var(--oro-claro);}
+  .mc-pill.is-off i{background:var(--text-low);}
+
+  /* ---------- botones del aula ---------- */
+  .mc-btn{display:inline-flex; align-items:center; justify-content:center; gap:9px;
+    background:var(--text-hi); color:var(--bg); border:1px solid var(--text-hi);
+    padding:12px 20px; border-radius:var(--radius-sm); font-size:.84rem; font-weight:600;
+    font-family:inherit; cursor:pointer; transition:opacity .2s; width:100%;}
+  .mc-btn:hover{opacity:.86;}
+  .mc-btn svg{width:15px; height:15px;}
+  .mc-btn.is-ghost{background:none; color:var(--text-hi); border-color:var(--border-strong);}
+  .mc-btn.is-ghost:hover{opacity:1; border-color:var(--text-hi);}
+  .mc-btn:disabled{opacity:.4; cursor:not-allowed;}
+
+  /* ---------- portada interna del curso ---------- */
+  .mc-hero{border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+    background:var(--panel); margin:14px 0 22px;}
+  .mc-hero-cover{aspect-ratio:16/7; max-height:300px; background:var(--panel-2) center/cover no-repeat;
+    position:relative; display:flex; align-items:center; justify-content:center;}
+  .mc-hero-cover video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .mc-hero-cover .mc-ico{width:44px; height:44px; color:rgba(255,255,255,.34);}
+  .mc-hero-body{padding:20px;}
+  .mc-hero-body .mc-h1{margin-top:0;}
+  .mc-hero-panel{display:flex; flex-direction:column; gap:14px; margin-top:16px;
+    padding-top:16px; border-top:1px solid var(--border);}
+  @media (min-width:620px){
+    .mc-hero-panel{flex-direction:row; align-items:center;}
+    .mc-hero-panel .mc-prog{flex:1;}
+    .mc-hero-panel .mc-btn{width:auto; flex:none; padding-left:28px; padding-right:28px;}
+  }
+
+  .mc-sec-title{font-family:var(--font-primary); font-size:1.05rem; color:var(--text-hi);
+    margin:26px 0 12px; letter-spacing:.01em;}
+
+  /* ---------- acordeón de módulos ---------- */
+  .mc-mod{border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--panel); margin-bottom:10px; overflow:hidden;}
+  .mc-mod-head{display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:none; border:none; cursor:pointer; font-family:inherit; color:var(--text-hi);
+    padding:15px 16px; min-height:52px;}
+  .mc-mod-head:hover{background:var(--panel-2);}
+  .mc-mod-caret{width:15px; height:15px; flex:none; color:var(--text-mid);
+    transition:transform .25s;}
+  .mc-mod.is-open .mc-mod-caret{transform:rotate(90deg);}
+  .mc-mod-titles{flex:1; min-width:0;}
+  .mc-mod-eyebrow{display:block; font-size:.62rem; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--text-low); font-weight:600;}
+  .mc-mod-name{display:block; font-size:.95rem; line-height:1.3; margin-top:3px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mc-mod-count{font-size:.74rem; color:var(--text-mid); flex:none;
+    font-variant-numeric:tabular-nums; display:flex; align-items:center; gap:5px;}
+  .mc-mod-count svg{width:13px; height:13px; color:var(--ok);}
+  .mc-mod-body{display:none; padding:4px 8px 10px;}
+  .mc-mod.is-open .mc-mod-body{display:block;}
+
+  /* ---------- fila de clase ---------- */
+  .mc-lesson{display:flex; align-items:center; gap:13px; width:100%; text-align:left;
+    background:none; border:none; border-radius:10px; cursor:pointer; font-family:inherit;
+    color:var(--text-hi); padding:11px 12px; min-height:48px; position:relative;
+    transition:background .18s;}
+  .mc-lesson:hover{background:var(--panel-2);}
+  .mc-lesson[disabled]{cursor:default; opacity:.55;}
+  .mc-lesson[disabled]:hover{background:none;}
+  .mc-lesson.is-current{background:var(--panel-2);}
+  .mc-lesson.is-current::before{content:""; position:absolute; left:0; top:8px; bottom:8px;
+    width:3px; border-radius:2px; background:var(--text-hi);}
+  .mc-lesson-mark{width:22px; height:22px; flex:none; border-radius:50%;
+    border:1.5px solid var(--border-strong); display:flex; align-items:center;
+    justify-content:center; font-size:.72rem; color:var(--text-mid);
+    font-variant-numeric:tabular-nums;}
+  .mc-lesson-mark.is-done{background:var(--ok); border-color:var(--ok); color:#fff;}
+  .mc-lesson-mark.is-done svg{width:12px; height:12px;}
+  .mc-lesson-mid{flex:1; min-width:0;}
+  .mc-lesson-title{font-size:.9rem; line-height:1.35;
+    overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;}
+  .mc-lesson-meta{font-size:.74rem; color:var(--text-mid); margin-top:2px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .mc-tag{font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+    color:var(--text-mid); border:1px solid var(--border-strong); border-radius:4px;
+    padding:2px 5px; line-height:1;}
+  .mc-lesson-now{font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text-hi); font-weight:700; flex:none;}
+
+  /* ---------- reproductor de clase ---------- */
+  .mc-player-stage{position:relative; width:100%; aspect-ratio:16/9; background:#000;
+    border-radius:var(--radius-sm); overflow:hidden; margin:14px 0 4px;}
+  .mc-player-stage video{position:absolute; inset:0; width:100%; height:100%; background:#000;}
+  .mc-player-stage:fullscreen{border-radius:0;}
+  .mc-player-stage:fullscreen video{object-fit:contain;}
+  .mc-wm{position:absolute; top:8%; left:6%; z-index:3; pointer-events:none; user-select:none;
+    font-family:var(--font-primary); font-size:.72rem; letter-spacing:.04em; opacity:.42;
+    color:rgba(255,255,255,.55); text-shadow:0 1px 3px rgba(0,0,0,.6);
+    padding:3px 7px; white-space:nowrap; transition:opacity .8s ease, top .8s ease, left .8s ease;
+    max-width:70%; overflow:hidden; text-overflow:ellipsis;}
+  @media (prefers-reduced-motion:reduce){ .mc-wm{transition:opacity .8s ease;} }
+  .mc-player-msg{position:absolute; inset:0; z-index:2; display:flex; align-items:center;
+    justify-content:center; text-align:center; padding:24px; color:var(--text-mid);
+    font-size:.86rem; line-height:1.5;}
+  .mc-fs-btn{position:absolute; top:10px; right:10px; z-index:4; width:34px; height:34px;
+    border-radius:9px; border:1px solid rgba(255,255,255,.22); background:rgba(0,0,0,.42);
+    color:#fff; font-size:15px; line-height:1; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; backdrop-filter:blur(4px);
+    transition:background .2s, opacity .2s; opacity:.5;}
+  .mc-player-stage:hover .mc-fs-btn{opacity:1;}
+  .mc-fs-btn:hover{background:rgba(0,0,0,.7);}
+  .mc-player-stage:fullscreen .mc-fs-btn{top:16px; right:16px;}
+
+  /* Clase de solo material (sin video) -- no se monta reproductor */
+  .mc-solo-material{display:flex; align-items:center; gap:11px; margin:14px 0 4px;
+    padding:16px 18px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--panel); color:var(--text-mid); font-size:.86rem;}
+  .mc-solo-material svg{width:22px; height:22px; flex:none; color:var(--text-low);}
+
+  .mc-player-info{padding:16px 2px 0;}
+  .mc-player-info .mc-h1{font-size:1.3rem; margin:6px 0 0;}
+  .mc-player-desc{color:var(--text-mid); font-size:.9rem; line-height:1.6; margin-top:10px;
+    white-space:pre-line;}
+  .mc-player-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;}
+  .mc-player-actions .mc-btn{width:auto; flex:1 1 auto; min-width:180px;}
+  .mc-done-toggle.is-done{background:var(--ok-tint); border-color:var(--ok); color:var(--text-hi);}
+
+  /* Material de esta clase */
+  .mc-material{margin-top:20px; padding-top:18px; border-top:1px solid var(--border);}
+  .mc-material-tit{font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-low); font-weight:600; margin-bottom:10px;}
+  .mc-res{display:flex; align-items:center; gap:13px; background:var(--panel);
+    border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 13px;
+    margin-bottom:8px; min-width:0;}
+  .mc-res-ico{flex:none; width:42px; height:42px; border-radius:9px; background:var(--panel-2);
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-size:.56rem; font-weight:700; letter-spacing:.03em; color:var(--text-mid);}
+  .mc-res-mid{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+  .mc-res-name{font-size:.9rem; color:var(--text-hi); line-height:1.3;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mc-res-meta{font-size:.74rem; color:var(--text-mid);}
+  .mc-res-btn{flex:none; display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+    background:var(--text-hi); color:var(--bg); border:1px solid var(--text-hi);
+    border-radius:99px; padding:8px 15px; font-family:inherit; font-size:.78rem; font-weight:600;
+    transition:opacity .2s;}
+  .mc-res-btn:hover{opacity:.86;}
+  .mc-res-btn svg{width:14px; height:14px;}
+  .mc-res-btn:disabled, .mc-res-btn.is-loading{opacity:.5; cursor:default;}
+  .mc-res-btn.is-loading svg{animation:mcSpin .8s linear infinite;}
+  @keyframes mcSpin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){ .mc-res-btn.is-loading svg{animation:none;} }
+  .mc-nav{display:flex; gap:10px; margin-top:12px;}
+  .mc-nav .mc-btn{width:auto; flex:1; min-width:0; padding-left:12px; padding-right:12px;
+    font-size:.8rem;}
+  .mc-nav .mc-btn span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  .mc-empty{text-align:center; color:var(--text-mid); font-size:.9rem; line-height:1.6;
+    padding:48px 20px;}
+  .mc-empty a{color:var(--text-hi); text-decoration:underline; cursor:pointer;}
+
+  @media (max-width:560px){
+    .mc-wrap{padding:0 14px; padding-bottom:calc(120px + env(safe-area-inset-bottom));}
+    .mc-h1{font-size:1.3rem;}
+    .mc-grid{grid-template-columns:1fr; gap:14px;}
+    .mc-resume{grid-template-columns:96px 1fr;}
+    .mc-resume-cover{min-height:96px;}
+    .mc-player-info .mc-h1{font-size:1.12rem;}
+    .mc-player-actions .mc-btn{min-width:0; width:100%; flex:none;}
+    .mc-nav{flex-direction:column;}
+    .mc-nav .mc-btn{width:100%;}
+    .mc-res{flex-wrap:wrap;}
+    .mc-res-mid{flex-basis:calc(100% - 55px);}
+    .mc-res-btn{width:100%; justify-content:center; margin-top:4px; padding:11px;}
+  }
 </style>
 </head>
 <body>
@@ -3437,13 +3683,41 @@
       <span></span>
     </div>
   </header>
-  <div class="wrap tv-body">
-    <div class="rv-title" style="margin-top:24px;">
-      <h2>Mis cursos</h2>
-      <p>Tus clases, listas para ver cuando quieras.</p>
+
+  <!-- ETAPA 3 — Aula del alumno: 3 pantallas, una visible a la vez.
+       grid = Mis cursos · curso = portada interna · player = reproductor. -->
+  <section class="mc-screen" data-mc="grid">
+    <div class="mc-wrap">
+      <h1 class="mc-h1" style="margin-top:22px;">Mis cursos</h1>
+      <p class="mc-sub">Tu formación en Masterlook Academy, disponible cuando quieras.</p>
+      <div id="mcResume"></div>
+      <div id="mcGrid" class="mc-grid" style="margin-top:22px;"></div>
     </div>
-    <div id="misCursosLista"></div>
-  </div>
+  </section>
+
+  <section class="mc-screen" data-mc="curso">
+    <div class="mc-wrap">
+      <div class="mc-bar">
+        <button class="mc-back" id="mcCursoBack" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Mis cursos
+        </button>
+      </div>
+      <div id="mcCursoCont"></div>
+    </div>
+  </section>
+
+  <section class="mc-screen" data-mc="player">
+    <div class="mc-wrap">
+      <div class="mc-bar">
+        <button class="mc-back" id="mcPlayerBack" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Volver al contenido
+        </button>
+      </div>
+      <div id="mcPlayerCont"></div>
+    </div>
+  </section>
 </div>
 
 <div id="vistaMisProductos" class="tienda-vista">
@@ -3785,7 +4059,9 @@
    *  quitar el src, para no tener que descargarlo de nuevo) al salir. */
   /** Hostname del CDN de la librería pública de Bunny Stream -- portadas de
    *  curso, muestra, hero y video de Academy (todo lo público, sin firma). */
-  const BUNNY_CDN_PUBLIC = 'vz-3106d8eb-0d1.b-cdn.net';
+  const BUNNY_CDN_PUBLIC = location.hostname === 'estudio90.github.io'
+    ? 'vz-3106d8eb-0d1.b-cdn.net'   // Bunny PROD (library pública 732402)
+    : 'vz-d80b701c-61b.b-cdn.net';  // Bunny DEV (library pública 743683) -- aislado de prod
   function bunnyPlaylistUrl(streamVideoId){
     return `https://${BUNNY_CDN_PUBLIC}/${streamVideoId}/playlist.m3u8`;
   }
@@ -4943,8 +5219,11 @@
 
     try{
       const doc = await db.collection('customers').doc(user.uid).get();
+      // `name` primero como default -> si la ficha lo trae, gana; si la ficha
+      // existe pero NO lo trae (dato incompleto), queda el correo y el resto
+      // del flujo (renderAccount, chat) no revienta.
       customerProfile = doc.exists
-        ? { uid:user.uid, ...doc.data() }
+        ? { uid:user.uid, name:user.email, email:user.email, ...doc.data() }
         : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
     }catch(e){ customerProfile = null; }
 
@@ -4958,7 +5237,7 @@
       const r = await functions.httpsCallable('vincularMisReservas')();
       if(r?.data?.vinculadas > 0){
         const doc2 = await db.collection('customers').doc(user.uid).get();
-        if(doc2.exists) customerProfile = { uid:user.uid, ...doc2.data() };
+        if(doc2.exists) customerProfile = { uid:user.uid, name:user.email, email:user.email, ...doc2.data() };
       }
     }catch(e){ /* no crítico -- "Mi cuenta" igual funciona con lo que ya tenía */ }
 
@@ -4983,7 +5262,10 @@
   });
 
   function initials(name){
-    return name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    // Defensivo: una ficha de cliente sin `name` no debe reventar el render.
+    name = String(name || '').trim();
+    if(!name) return '·';
+    return name.split(/\s+/).slice(0,2).map(w=> w[0] || '').join('').toUpperCase() || '·';
   }
   function toast(msg){
     const t = document.getElementById('toast');
@@ -5311,7 +5593,7 @@
   /** Al abrir el chat, si el cliente tiene una hora pendiente se la recordamos primero — así lo animamos a confirmarla. */
   function chatSaludoInicial(){
     const user = currentUser();
-    const nombre = user ? user.name.split(' ')[0] : '';
+    const nombre = user ? String(user.name || '').split(' ')[0] : '';
     const ultima = chatUltimaReservaDe(user);
 
     if(ultima && ultima.decision === 'pendiente'){
@@ -5530,13 +5812,18 @@
       return;
     }
 
+    // Defensivo: si la ficha del cliente no trae `name` (dato incompleto),
+    // NO reventar el render -- de lo que dependía el resto del flujo de login
+    // (resolverAuthListo()). Fallback: correo, o "Mi cuenta".
+    const nombreSeguro = String(user.name || user.email || 'Mi cuenta').trim() || 'Mi cuenta';
+
     // ---- modo API: los datos vienen del servidor ----
     if(MODE === 'api'){
       section.classList.add('show');
-      label.textContent = user.name.split(' ')[0];
-      avatar.textContent = initials(user.name);
-      document.getElementById('bigAvatar').textContent = initials(user.name);
-      document.getElementById('accName').textContent = user.name;
+      label.textContent = nombreSeguro.split(' ')[0];
+      avatar.textContent = initials(nombreSeguro);
+      document.getElementById('bigAvatar').textContent = initials(nombreSeguro);
+      document.getElementById('accName').textContent = nombreSeguro;
       document.getElementById('accEmail').textContent = user.email;
       document.getElementById('accSince').textContent =
         'Cliente desde ' + new Date(user.createdAt).toLocaleDateString('es-CL',{month:'long', year:'numeric'});
@@ -5626,10 +5913,10 @@
       : '';
 
     section.classList.add('show');
-    label.textContent = user.name.split(' ')[0];
-    avatar.textContent = initials(user.name);
-    document.getElementById('bigAvatar').textContent = initials(user.name);
-    document.getElementById('accName').textContent = user.name;
+    label.textContent = nombreSeguro.split(' ')[0];
+    avatar.textContent = initials(nombreSeguro);
+    document.getElementById('bigAvatar').textContent = initials(nombreSeguro);
+    document.getElementById('accName').textContent = nombreSeguro;
     document.getElementById('accEmail').textContent = user.email;
     document.getElementById('accSince').textContent = 'Cliente desde ' + desde;
     document.getElementById('accPoints').textContent = puntos;
@@ -8117,8 +8404,8 @@
     }
   }
   /** Reproductor compartido (modal de pantalla completa): usado por el video
-   *  de presentación de Academy y por las clases de "Mis cursos" -- misma
-   *  ventana, mismo elemento <video>, solo cambia qué URL se le pasa. */
+   *  de presentación de Academy y por los testimonios. Las clases de un curso
+   *  usan el aula (pantalla "player" de #vistaMisCursos), no este modal. */
   function abrirReproductor(url){
     const player = document.getElementById('acVideoPlayer');
     adjuntarHls(player, url);
@@ -8148,23 +8435,103 @@
   }
   document.getElementById('acVolver').addEventListener('click', ()=> irAInicio());
 
-  /* ---------- Mis cursos: clases de los cursos que el cliente compró ---------- */
+  /* ============================================================
+     AULA DE ACADEMY (ETAPA 3) — experiencia del alumno.
+     3 pantallas dentro de #vistaMisCursos: grid / curso / player.
+     El backend (obtenerTokenReproduccion, guardarProgresoLeccion)
+     es la única barrera de seguridad; esta UI solo la refleja.
+     ============================================================ */
+  const mcState = {
+    abierta:false, screen:'grid', histDepth:0,
+    cursos:[],            // [{id, curso, modulos, clases, progreso}]
+    cursoActivo:null,     // referencia dentro de mcState.cursos
+    leccionActiva:null,   // {id, ...clase}
+    player:null,          // {video, hls, wmTimer, courseId, lessonId}
+  };
+
   async function abrirMisCursos(desdeHistorial){
     const user = currentUser();
     if(!user){ toast('Inicia sesión para ver tus cursos'); return; }
-    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true);
-    document.getElementById('vistaMisCursos').classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.getElementById('vistaMisCursos').scrollTop = 0;
-    if(!desdeHistorial && hashActual() !== '#mis-cursos') irHistorial('push', 'mis-cursos');
-    await pintarMisCursos();
+    const vista = document.getElementById('vistaMisCursos');
+    const yaAbierta = vista.classList.contains('open');
+
+    if(!yaAbierta){
+      cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true);
+      vista.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      vista.scrollTop = 0;
+      mcState.abierta = true;
+      mcState.histDepth = 0;
+      if(!desdeHistorial && hashActual() !== '#mis-cursos'){
+        irHistorial('push', 'mis-cursos');
+        mcState.histDepth = 1;
+      } else if(hashActual() === '#mis-cursos'){
+        mcState.histDepth = 1;
+      }
+      mcMostrar('grid');
+      await mcCargarCursos();
+      return;
+    }
+    // Ya abierta y volvimos por el historial: sincronizar la pantalla
+    // visible con el estado que guardó history.pushState. Se vuelve a pintar
+    // para reflejar progreso/checks que hayan cambiado en el reproductor.
+    if(desdeHistorial){
+      const st = history.state || {};
+      const scr = st.mcScreen || 'grid';
+      mcState.histDepth = st.mcDepth || 1;
+      if(scr === 'player' && mcState.leccionActiva && mcState.cursoActivo){ mcMostrar('player'); }
+      else if(scr === 'curso' && mcState.cursoActivo){ mcDestruirPlayer(); mcRenderCurso(); mcMostrar('curso'); }
+      else { mcDestruirPlayer(); mcRenderGrid(); mcMostrar('grid'); }
+    }
   }
+
   function cerrarMisCursos(desdeHistorial){
-    document.getElementById('vistaMisCursos').classList.remove('open');
+    const vista = document.getElementById('vistaMisCursos');
+    if(!vista.classList.contains('open')) return;
+    vista.classList.remove('open');
     document.body.style.overflow = '';
-    if(!desdeHistorial && hashActual() === '#mis-cursos') irHistorial('back');
+    mcDestruirPlayer();
+    mcState.abierta = false;
+    mcState.screen = 'grid';
+    const n = mcState.histDepth; mcState.histDepth = 0;
+    if(!desdeHistorial && n > 0){ try{ history.go(-n); }catch(e){ irHistorial('limpiar'); } }
   }
+
+  /** Muestra una de las 3 pantallas del aula (sin tocar el historial). */
+  function mcMostrar(screen){
+    mcState.screen = screen;
+    document.querySelectorAll('#vistaMisCursos .mc-screen').forEach(s=>
+      s.classList.toggle('is-active', s.dataset.mc === screen));
+    const vista = document.getElementById('vistaMisCursos');
+    vista.scrollTop = 0;
+    try{ window.scrollTo(0,0); }catch(e){}
+    // el botón del header solo tiene sentido en la rejilla
+    const volver = document.getElementById('mcVolver');
+    if(volver) volver.style.visibility = (screen === 'grid') ? '' : 'hidden';
+  }
+
+  /** Navega "hacia dentro" (grid->curso->player) empujando una entrada de
+   *  historial, para que el botón atrás del navegador retroceda de a una
+   *  pantalla en vez de salir del aula de golpe. */
+  function mcEntrar(screen){
+    const d = (mcState.histDepth || 1) + 1;
+    try{ history.pushState({ mcScreen: screen, mcDepth: d }, '', '#mis-cursos'); mcState.histDepth = d; }
+    catch(e){ /* sin history: navegación directa, funciona igual */ }
+    mcMostrar(screen);
+  }
+
+  /** Retrocede una pantalla (botones "← Volver…", Escape). Con historial
+   *  disponible deja que popstate + abrirMisCursos() sincronicen la pantalla. */
+  function mcRetroceder(){
+    if(mcState.screen === 'grid'){ cerrarMisCursos(); return; }
+    if(mcState.histDepth > 1){ try{ history.back(); return; }catch(e){} }
+    if(mcState.screen === 'player'){ mcDestruirPlayer(); mcRenderCurso(); mcMostrar('curso'); }
+    else { mcRenderGrid(); mcMostrar('grid'); }
+  }
+
   document.getElementById('mcVolver').addEventListener('click', ()=> irAInicio());
+  document.getElementById('mcCursoBack').addEventListener('click', mcRetroceder);
+  document.getElementById('mcPlayerBack').addEventListener('click', mcRetroceder);
 
   /* ---------- Mis productos: compras de la tienda (PRODUCT_ORDER/CART_ORDER) ---------- */
   async function abrirMisProductos(desdeHistorial){
@@ -8251,50 +8618,600 @@
     }catch(e){ link.style.display = 'none'; }
   }
 
-  async function pintarMisCursos(){
-    const cont = document.getElementById('misCursosLista');
-    cont.innerHTML = '<div class="cx-empty">Cargando...</div>';
+  const mcSvgCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+  const mcSvgCaret = '<svg class="mc-mod-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+  const mcSvgIco   = '<svg class="mc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-5 10 5-10 5-10-5z"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"/><path d="M22 8v6.5"/></svg>';
+  const mcSvgPlay  = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  const mcSvgPrev  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
+  const mcSvgNext  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+
+  function mcFmtDur(min){
+    min = Math.round(min || 0);
+    if(!min) return '';
+    if(min < 60) return min + ' min';
+    const h = Math.floor(min/60), m = min%60;
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
+  function mcEscape(s){ return escapeHTML(s == null ? '' : String(s)); }
+
+  /** Portada del curso (opción única "Portada del curso"): video listo -> su
+   *  miniatura pública; si no, la foto; si no, un ícono. Devuelve {style, video, icon}. */
+  function mcCover(curso){
+    const esVideo = curso.streamVideoId && curso.streamStatus === 'ready';
+    if(esVideo){
+      return {
+        style: `background-image:url('${bunnyThumbUrl(curso.streamVideoId)}');`,
+        video: `<video data-src="${bunnyPlaylistUrl(curso.streamVideoId)}" muted loop playsinline preload="none"></video>`,
+        icon: '',
+      };
+    }
+    if(curso.photoUrl) return { style:`background-image:url('${mcEscape(curso.photoUrl)}');`, video:'', icon:'' };
+    return { style:'', video:'', icon: mcSvgIco };
+  }
+
+  function mcEstadoAcceso(ent){
+    const ms = ent && ent.accessExpirationDate ? ent.accessExpirationDate.toMillis() : 0;
+    if(!ms) return { txt:'Acceso activo', cls:'' };
+    const dias = Math.ceil((ms - Date.now()) / 86400000);
+    if(dias <= 0) return { txt:'Acceso vencido', cls:'is-off' };
+    if(dias <= 14) return { txt:`Vence en ${dias} día${dias>1?'s':''}`, cls:'is-warn' };
+    return { txt:'Acceso activo', cls:'' };
+  }
+
+  /** Barra de progreso reutilizable. */
+  function mcProgHtml(pct, hechas, total){
+    pct = Math.max(0, Math.min(100, Math.round(pct || 0)));
+    return `<div class="mc-prog">
+      <div class="mc-prog-track"><div class="mc-prog-fill" style="width:${pct}%;"></div></div>
+      <div class="mc-prog-line"><span><b>${pct}%</b> completado</span><span>${hechas}/${total} clase${total===1?'':'s'}</span></div>
+    </div>`;
+  }
+
+  /* ---------- carga de datos ---------- */
+  async function mcCargarCursos(){
+    const grid = document.getElementById('mcGrid');
+    const resume = document.getElementById('mcResume');
+    resume.innerHTML = '';
+    grid.innerHTML = '<div class="mc-empty">Cargando tus cursos…</div>';
     const user = currentUser();
-    if(!user){ cont.innerHTML = '<div class="cx-empty">Inicia sesión para ver tus cursos.</div>'; return; }
+    if(!user){ grid.innerHTML = '<div class="mc-empty">Inicia sesión para ver tus cursos.</div>'; return; }
 
-    let entitlements = [];
-    try{
-      entitlements = await obtenerEntitlementsActivos(user.uid);
-    }catch(e){ cont.innerHTML = `<div class="cx-empty">No se pudieron cargar tus cursos: ${e.message}</div>`; return; }
+    let ents = [];
+    try{ ents = await obtenerEntitlementsActivos(user.uid); }
+    catch(e){ grid.innerHTML = `<div class="mc-empty">No se pudieron cargar tus cursos.<br><span style="font-size:.8rem;">${mcEscape(e.message)}</span></div>`; return; }
 
-    if(!entitlements.length){
-      cont.innerHTML = '<div class="cx-empty">Todavía no tienes cursos. <span style="text-decoration:underline;cursor:pointer;" onclick="cerrarMisCursos();abrirAcademia();">Ver cursos disponibles</span></div>';
+    // 1 entitlement por curso (el más reciente si hubiera duplicados)
+    const porCurso = new Map();
+    ents.forEach(e=>{
+      const prev = porCurso.get(e.courseId);
+      if(!prev || (e.accessStartDate?.toMillis()||0) > (prev.accessStartDate?.toMillis()||0)) porCurso.set(e.courseId, e);
+    });
+    if(!porCurso.size){
+      grid.innerHTML = '<div class="mc-empty">Todavía no tienes cursos.<br><a onclick="cerrarMisCursos();abrirAcademia();">Ver cursos disponibles</a></div>';
       return;
     }
 
-    const cursoDocs = await Promise.all(entitlements.map(e=> db.collection('courses').doc(e.courseId).get()));
-    cont.innerHTML = cursoDocs.filter(d=> d.exists).map(d=>{
-      const c = d.data();
-      const lecciones = (c.lessons || []).filter(l=> l.active !== false);
-      return `
-      <div class="panel-card" style="margin-bottom:16px;">
-        <h3 class="display" style="margin-bottom:12px;">${c.name}</h3>
-        ${lecciones.length ? lecciones.map(l=> `
-          <div class="mc-leccion" data-curso="${c.id}" data-leccion="${l.id}"
-               style="display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--border);cursor:pointer;">
-            <span style="flex:0 0 auto;">▶</span>
-            <span style="flex:1;">${l.title}${l.durationMin ? ` <span style="color:var(--text-mid);font-size:0.82rem;">· ${l.durationMin} min</span>` : ''}</span>
-            ${l.isFree ? '<span class="cu-libre">MUESTRA</span>' : ''}
-          </div>`).join('')
-          : '<div class="empty-hist">Este curso todavía no tiene clases publicadas.</div>'}
-      </div>`;
-    }).join('');
+    const entradas = [...porCurso.entries()];
+    const cursos = await Promise.all(entradas.map(async ([courseId, ent])=>{
+      try{
+        const cRef = db.collection('courses').doc(courseId);
+        const [cDoc, lecSnap, progDoc] = await Promise.all([
+          cRef.get(),
+          cRef.collection('lessons').where('published','==',true).get(),
+          cRef.collection('progress').doc(user.uid).get(),
+        ]);
+        if(!cDoc.exists) return null;
+        const curso = cDoc.data(); curso.id = courseId;
+        const modulos = (curso.modules || []).slice().sort((a,b)=> (a.order||0)-(b.order||0));
+        const ordenMod = {}; modulos.forEach((m,i)=> ordenMod[m.id] = i);
+        const clases = lecSnap.docs.map(d=> ({ id:d.id, ...d.data() }))
+          .sort((a,b)=> (ordenMod[a.moduleId]??99) - (ordenMod[b.moduleId]??99) || (a.order||0)-(b.order||0));
+        const p = progDoc.exists ? progDoc.data() : {};
+        const progreso = {
+          percent: p.percent || 0,
+          hechas: new Set(Array.isArray(p.completedLessonIds) ? p.completedLessonIds : []),
+          lastLessonId: p.lastLessonId || null,
+          lastModuleId: p.lastModuleId || null,
+          updatedAt: p.updatedAt ? p.updatedAt.toMillis() : 0,
+          startedAt: p.startedAt ? p.startedAt.toMillis() : 0,
+        };
+        return { id:courseId, ent, curso, modulos, clases, progreso };
+      }catch(e){ console.warn('mc: curso', courseId, e.message); return null; }
+    }));
 
-    cont.querySelectorAll('.mc-leccion').forEach(row=>
-      row.addEventListener('click', ()=> abrirReproductorClase(row.dataset.curso, row.dataset.leccion)));
+    mcState.cursos = cursos.filter(Boolean).sort((a,b)=> (b.progreso.updatedAt||0)-(a.progreso.updatedAt||0) || a.curso.name.localeCompare(b.curso.name));
+    mcRenderGrid();
+    mcActualizarResumenCuenta();
   }
 
-  async function abrirReproductorClase(courseId, lessonId){
+  /** cuántas de las publicadas actuales están completadas (denominador vivo). */
+  function mcProgresoVivo(item){
+    const total = item.clases.length;
+    const hechas = item.clases.filter(l=> item.progreso.hechas.has(l.id)).length;
+    const percent = total ? Math.round(hechas/total*100) : 0;
+    return { total, hechas, percent };
+  }
+
+  /** Texto del botón principal según el avance del alumno. */
+  function mcTextoCta(item, pv){
+    if(!pv.total) return { txt:'Sin clases aún', ghost:true };
+    if(pv.percent >= 100) return { txt:'Repasar curso', ghost:true };
+    if(item.progreso.startedAt || pv.hechas > 0) return { txt:'Continuar curso', ghost:false };
+    return { txt:'Comenzar curso', ghost:true };
+  }
+
+  /* ---------- pantalla 1: rejilla ---------- */
+  function mcRenderGrid(){
+    const grid = document.getElementById('mcGrid');
+    const resume = document.getElementById('mcResume');
+
+    // "Continúa donde quedaste": curso ya empezado (abrió al menos una clase o
+    // completó alguna) y aún no terminado. mcState.cursos viene ordenado por
+    // updatedAt desc, así que el primero que cumpla es el más reciente.
+    const cont = mcState.cursos.find(it=>{
+      const pv = mcProgresoVivo(it);
+      return (it.progreso.startedAt || pv.hechas > 0) && pv.percent < 100 && pv.total > 0;
+    });
+    if(cont){
+      const cv = mcCover(cont.curso);
+      const pv = mcProgresoVivo(cont);
+      const sig = mcClaseParaContinuar(cont);
+      const mod = cont.modulos.find(m=> m.id === (sig && sig.moduleId));
+      resume.innerHTML = `
+        <div class="mc-eyebrow" style="margin:24px 0 8px;">Continúa donde quedaste</div>
+        <div class="mc-resume" data-curso="${mcEscape(cont.id)}" role="button" tabindex="0">
+          <div class="mc-resume-cover" style="${cv.style}"></div>
+          <div class="mc-resume-body">
+            <div class="mc-resume-name">${mcEscape(cont.curso.name)}</div>
+            <div class="mc-resume-meta">${sig ? (mod ? mcEscape(mod.title)+' · ' : '') + mcEscape(sig.title) : 'Empieza el curso'}</div>
+            ${mcProgHtml(pv.percent, pv.hechas, pv.total)}
+            <div><span class="mc-btn" style="display:inline-flex;width:auto;padding:9px 18px;margin-top:2px;">${mcSvgPlay}<span>Continuar</span></span></div>
+          </div>
+        </div>`;
+      const card = resume.querySelector('.mc-resume');
+      const ir = ()=> mcAbrirCurso(cont.id);
+      card.addEventListener('click', ir);
+      card.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ir(); } });
+    } else {
+      resume.innerHTML = '';
+    }
+
+    if(!mcState.cursos.length){
+      grid.innerHTML = '<div class="mc-empty">Todavía no tienes cursos.<br><a onclick="cerrarMisCursos();abrirAcademia();">Ver cursos disponibles</a></div>';
+      return;
+    }
+
+    grid.innerHTML = mcState.cursos.map(it=>{
+      const cv = mcCover(it.curso);
+      const pv = mcProgresoVivo(it);
+      const est = mcEstadoAcceso(it.ent);
+      const cta = mcTextoCta(it, pv);
+      return `
+      <article class="mc-card" data-curso="${mcEscape(it.id)}" role="button" tabindex="0">
+        <div class="mc-card-cover" style="${cv.style}">${cv.video || cv.icon}</div>
+        <div class="mc-card-body">
+          <div class="mc-card-name">${mcEscape(it.curso.name)}</div>
+          <span class="mc-pill ${est.cls}"><i></i>${est.txt}</span>
+          <div class="mc-card-foot">
+            ${mcProgHtml(pv.percent, pv.hechas, pv.total)}
+            <span class="mc-btn ${cta.ghost ? 'is-ghost' : ''}" style="pointer-events:none;">${cta.txt}</span>
+          </div>
+        </div>
+      </article>`;
+    }).join('');
+
+    grid.querySelectorAll('.mc-card').forEach(card=>{
+      const ir = ()=> mcAbrirCurso(card.dataset.curso);
+      card.addEventListener('click', ir);
+      card.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ir(); } });
+    });
+    observarVideosLazy(grid);
+  }
+
+  function mcActualizarResumenCuenta(){
+    const el = document.getElementById('accCursosResumen');
+    if(!el) return;
+    const n = mcState.cursos.length;
+    if(!n){ el.textContent = 'Revisa tu progreso y mira tus clases cuando quieras.'; return; }
+    const enCurso = mcState.cursos.filter(it=>{
+      const pv = mcProgresoVivo(it);
+      return (it.progreso.startedAt || pv.hechas > 0) && pv.percent < 100;
+    }).length;
+    el.textContent = n === 1
+      ? `1 curso · ${mcProgresoVivo(mcState.cursos[0]).percent}% completado`
+      : (enCurso ? `${n} cursos · ${enCurso} en progreso` : `${n} curso${n>1?'s':''}`);
+  }
+
+  /* ---------- pantalla 2: portada interna del curso ---------- */
+  /** A qué clase lleva "Continuar curso": lo que el alumno tiene pendiente.
+   *  1) la última vista, si sigue publicada y NO está completada (ahí se quedó);
+   *  2) si no, la primera sin completar (siguiente pendiente);
+   *  3) si ya completó todo, la última vista o la primera del curso. */
+  function mcClaseParaContinuar(item){
+    const last = item.progreso.lastLessonId && item.clases.find(l=> l.id === item.progreso.lastLessonId);
+    if(last && !item.progreso.hechas.has(last.id)) return last;
+    const pend = item.clases.find(l=> !item.progreso.hechas.has(l.id));
+    return pend || last || item.clases[0] || null;
+  }
+
+  function mcAbrirCurso(courseId){
+    const item = mcState.cursos.find(c=> c.id === courseId);
+    if(!item){ toast('No se pudo abrir el curso'); return; }
+    mcState.cursoActivo = item;
+    mcEntrar('curso');
+    mcRenderCurso();
+  }
+
+  function mcRenderCurso(){
+    const item = mcState.cursoActivo;
+    if(!item) return;
+    const cont = document.getElementById('mcCursoCont');
+    const cv = mcCover(item.curso);
+    const pv = mcProgresoVivo(item);
+    const est = mcEstadoAcceso(item.ent);
+    const cta = mcTextoCta(item, pv);
+    const sig = mcClaseParaContinuar(item);
+    const abrirMod = sig ? sig.moduleId : (item.modulos[0] && item.modulos[0].id);
+
+    let nClaseGlobal = 0;
+    const filaClase = (l)=>{
+      const done = item.progreso.hechas.has(l.id);
+      const actual = sig && l.id === sig.id;
+      const num = ++nClaseGlobal;
+      return `
+        <button class="mc-lesson ${actual ? 'is-current' : ''}" data-leccion="${mcEscape(l.id)}" type="button">
+          <span class="mc-lesson-mark ${done ? 'is-done' : ''}">${done ? mcSvgCheck : num}</span>
+          <span class="mc-lesson-mid">
+            <span class="mc-lesson-title">${mcEscape(l.title)}</span>
+            <span class="mc-lesson-meta">
+              ${l.durationMin ? `<span>${mcFmtDur(l.durationMin)}</span>` : ''}
+              ${l.isFree ? '<span class="mc-tag">Muestra</span>' : ''}
+              ${done ? '<span style="color:var(--ok);">Completada</span>' : ''}
+            </span>
+          </span>
+          ${actual ? '<span class="mc-lesson-now">Actual</span>' : ''}
+        </button>`;
+    };
+    const moduloBloque = (titulo, eyebrow, clases, key, abierto)=>{
+      const hechasMod = clases.filter(l=> item.progreso.hechas.has(l.id)).length;
+      return `
+      <div class="mc-mod ${abierto ? 'is-open' : ''}" data-mod="${mcEscape(key)}">
+        <button class="mc-mod-head" type="button">
+          ${mcSvgCaret}
+          <span class="mc-mod-titles">
+            <span class="mc-mod-eyebrow">${eyebrow}</span>
+            <span class="mc-mod-name">${mcEscape(titulo)}</span>
+          </span>
+          <span class="mc-mod-count">${hechasMod === clases.length ? mcSvgCheck : ''}<span>${hechasMod}/${clases.length}</span></span>
+        </button>
+        <div class="mc-mod-body">${clases.map(filaClase).join('')}</div>
+      </div>`;
+    };
+
+    const idsDeModulo = new Set(item.modulos.map(m=> m.id));
+    let modulosHtml = item.modulos.map((m, mi)=>{
+      const clases = item.clases.filter(l=> l.moduleId === m.id);
+      if(!clases.length) return '';
+      return moduloBloque(m.title, `Módulo ${mi + 1} · ${clases.length} clase${clases.length===1?'':'s'}`, clases, m.id, m.id === abrirMod);
+    }).join('');
+    // Clases sin módulo válido (curso a medio migrar): no deben quedar ocultas.
+    const huerfanas = item.clases.filter(l=> !l.moduleId || !idsDeModulo.has(l.moduleId));
+    if(huerfanas.length){
+      modulosHtml += moduloBloque('Clases del curso', `${huerfanas.length} clase${huerfanas.length===1?'':'s'}`, huerfanas, '_sinmod', !modulosHtml || (sig && huerfanas.some(l=> l.id === sig.id)));
+    }
+
+    const totalMin = item.curso.outline && item.curso.outline.totalMinutes
+      ? item.curso.outline.totalMinutes
+      : item.clases.reduce((s,l)=> s + (l.durationMin||0), 0);
+
+    cont.innerHTML = `
+      <div class="mc-hero">
+        <div class="mc-hero-cover" style="${cv.style}">${cv.video || cv.icon}</div>
+        <div class="mc-hero-body">
+          <h1 class="mc-h1">${mcEscape(item.curso.name)}</h1>
+          ${item.curso.description ? `<p class="mc-sub" style="margin-top:8px;">${mcEscape(item.curso.description)}</p>` : ''}
+          <div style="margin-top:14px;"><span class="mc-pill ${est.cls}"><i></i>${est.txt}</span>
+            ${totalMin ? `<span class="mc-pill" style="margin-left:8px;"><i style="background:var(--text-low);"></i>${mcFmtDur(totalMin)} en total</span>` : ''}</div>
+          <div class="mc-hero-panel">
+            ${mcProgHtml(pv.percent, pv.hechas, pv.total)}
+            <button class="mc-btn${cta.ghost ? ' is-ghost' : ''}" id="mcHeroCta" type="button" ${sig ? '' : 'disabled'}>${mcSvgPlay}<span>${cta.txt}</span></button>
+          </div>
+        </div>
+      </div>
+      <h2 class="mc-sec-title">Contenido del curso</h2>
+      ${modulosHtml || '<div class="mc-empty">Este curso todavía no tiene clases publicadas.</div>'}
+    `;
+
+    const ctaBtn = document.getElementById('mcHeroCta');
+    if(ctaBtn) ctaBtn.addEventListener('click', ()=>{ if(sig) mcAbrirClase(sig.id); });
+    cont.querySelectorAll('.mc-mod-head').forEach(h=>
+      h.addEventListener('click', ()=> h.closest('.mc-mod').classList.toggle('is-open')));
+    cont.querySelectorAll('.mc-lesson').forEach(b=>
+      b.addEventListener('click', ()=> mcAbrirClase(b.dataset.leccion)));
+    observarVideosLazy(cont);
+  }
+
+  /* ---------- pantalla 3: reproductor de clase ---------- */
+  async function mcAbrirClase(lessonId){
+    const item = mcState.cursoActivo;
+    if(!item) return;
+    const clase = item.clases.find(l=> l.id === lessonId);
+    if(!clase){ toast('Clase no disponible'); return; }
+    const yaEnPlayer = mcState.screen === 'player';
+    mcDestruirPlayer();
+    mcState.leccionActiva = clase;
+    if(yaEnPlayer){
+      // anterior/siguiente: no apila otra entrada, solo actualiza la actual
+      try{ history.replaceState({ mcScreen:'player', mcDepth: mcState.histDepth }, '', '#mis-cursos'); }catch(e){}
+      mcMostrar('player');
+    } else {
+      mcEntrar('player');
+    }
+
+    const cont = document.getElementById('mcPlayerCont');
+    const modulo = item.modulos.find(m=> m.id === clase.moduleId);
+    cont.innerHTML = `
+      <div class="mc-player-stage" id="mcStage">
+        <div class="mc-player-msg" id="mcStageMsg">Cargando la clase…</div>
+      </div>
+      <div class="mc-player-info">
+        <div class="mc-eyebrow">${mcEscape(modulo ? modulo.title : 'Clase')}</div>
+        <h1 class="mc-h1">${mcEscape(clase.title)}</h1>
+        ${clase.description ? `<p class="mc-player-desc">${mcEscape(clase.description)}</p>` : ''}
+        ${mcMaterialHtml(clase)}
+        <div class="mc-player-actions">
+          <button class="mc-btn mc-done-toggle" id="mcDoneBtn" type="button"></button>
+        </div>
+        <div class="mc-nav" id="mcNav"></div>
+      </div>`;
+
+    mcPintarDone();
+    mcPintarNav();
+    mcConectarMaterial();
+
+    // marca de "última clase vista" -- no bloquea la reproducción
+    functions.httpsCallable('guardarProgresoLeccion')({ courseId:item.id, lessonId, action:'seen' })
+      .then(r=>{ item.progreso.lastLessonId = lessonId; item.progreso.lastModuleId = clase.moduleId || null; })
+      .catch(()=>{});
+
     try{
-      const r = await functions.httpsCallable('obtenerTokenReproduccion')({ courseId, lessonId });
-      abrirReproductor(r.data.playbackUrl);
+      const r = await functions.httpsCallable('obtenerTokenReproduccion')({ courseId:item.id, lessonId });
+      if(mcState.screen !== 'player' || mcState.leccionActiva !== clase) return;   // el alumno ya salió
+      if(r.data && r.data.noVideo){
+        // clase de solo material -- sin reproductor. Quita el "escenario" negro.
+        const stage = document.getElementById('mcStage');
+        if(stage){
+          const tieneMat = mcRecursosActivos(clase).length > 0;
+          stage.className = 'mc-solo-material';
+          stage.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-5z"/></svg>
+            <span>${tieneMat ? 'Clase de material de apoyo' : 'Esta clase todavía no tiene contenido'}</span>`;
+        }
+      } else {
+        mcMontarVideo(r.data.playbackUrl, r.data.watermark || '', { courseId:item.id, lessonId });
+      }
     }catch(e){
-      toast(e.message || 'No se pudo abrir la clase');
+      const msg = document.getElementById('mcStageMsg');
+      if(msg) msg.textContent = e.message || 'No se pudo abrir esta clase.';
+    }
+  }
+
+  function mcMontarVideo(url, watermark, ref){
+    mcDestruirPlayer();
+    const stage = document.getElementById('mcStage');
+    if(!stage) return;
+    stage.innerHTML = `
+      <video id="mcVideo" controls playsinline
+             controlsList="nodownload noplaybackrate nofullscreen"
+             disablepictureinpicture oncontextmenu="return false"></video>
+      ${watermark ? `<div class="mc-wm" id="mcWm">${mcEscape(watermark)}</div>` : ''}
+      <button class="mc-fs-btn" id="mcFsBtn" type="button" aria-label="Pantalla completa">⤢</button>`;
+    const video = document.getElementById('mcVideo');
+    adjuntarHls(video, url);
+    video.play().catch(()=>{});
+
+    mcState.player = { video, hls: video._hls || null, wmTimer:null, ref, reintentado:false };
+
+    // marca de agua: reposición periódica por posiciones que no tapan los controles
+    if(watermark){
+      const wm = document.getElementById('mcWm');
+      const mover = ()=>{
+        if(!document.getElementById('mcWm')) return;
+        const pos = mcWmPos[Math.floor(Math.random()*mcWmPos.length)];
+        wm.style.opacity = '0';
+        setTimeout(()=>{ wm.style.top = pos.top; wm.style.left = pos.left;
+          wm.style.right = 'auto'; wm.style.bottom = 'auto'; wm.style.opacity = '.42'; }, 260);
+      };
+      mover();
+      mcState.player.wmTimer = setInterval(mover, 7000);
+    }
+
+    // botón de pantalla completa propio (mantiene la marca de agua dentro)
+    const fs = document.getElementById('mcFsBtn');
+    if(fs) fs.addEventListener('click', ()=>{
+      const el = document.getElementById('mcStage');
+      if(document.fullscreenElement){ document.exitFullscreen && document.exitFullscreen(); }
+      else if(el && el.requestFullscreen){ el.requestFullscreen().catch(()=>{}); }
+      else if(video.webkitEnterFullscreen){ video.webkitEnterFullscreen(); }   // iOS: nativo
+    });
+
+    // token vencido a mitad de reproducción -> un reintento pidiendo otro
+    if(video._hls && window.Hls){
+      video._hls.on(Hls.Events.ERROR, async (_ev, data)=>{
+        if(!data || !data.fatal || mcState.player?.reintentado) return;
+        if(data.type !== Hls.ErrorTypes.NETWORK_ERROR) return;
+        mcState.player.reintentado = true;
+        try{
+          const r = await functions.httpsCallable('obtenerTokenReproduccion')(ref);
+          const t = video.currentTime;
+          adjuntarHls(video, r.data.playbackUrl);
+          video.addEventListener('loadedmetadata', ()=>{ try{ video.currentTime = t; video.play().catch(()=>{}); }catch(e){} }, { once:true });
+        }catch(e){ /* se queda con el error nativo */ }
+      });
+    }
+
+    // al terminar el video, ofrecer marcar como completada
+    video.addEventListener('ended', ()=>{
+      const item = mcState.cursoActivo;
+      if(item && mcState.leccionActiva && !item.progreso.hechas.has(mcState.leccionActiva.id)){
+        mcMarcarCompletada(true);
+      }
+    });
+  }
+  const mcWmPos = [
+    { top:'8%',  left:'6%'  }, { top:'8%',  left:'50%' }, { top:'8%',  left:'78%' },
+    { top:'42%', left:'6%'  }, { top:'42%', left:'74%' },
+    { top:'70%', left:'8%'  }, { top:'70%', left:'70%' },
+  ];
+
+  function mcDestruirPlayer(){
+    const p = mcState.player;
+    if(p){
+      if(p.wmTimer) clearInterval(p.wmTimer);
+      try{ p.video.pause(); }catch(e){}
+      try{ if(p.video._hls){ p.video._hls.destroy(); p.video._hls = null; } }catch(e){}
+      try{ p.video.removeAttribute('src'); p.video.load(); }catch(e){}
+    }
+    mcState.player = null;
+    if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(()=>{}); }
+  }
+
+  function mcPintarDone(){
+    const btn = document.getElementById('mcDoneBtn');
+    const item = mcState.cursoActivo, clase = mcState.leccionActiva;
+    if(!btn || !item || !clase) return;
+    const done = item.progreso.hechas.has(clase.id);
+    btn.classList.toggle('is-done', done);
+    btn.innerHTML = done ? mcSvgCheck + '<span>Clase completada</span>' : mcSvgCheck + '<span>Marcar como completada</span>';
+    btn.onclick = ()=> mcMarcarCompletada(!done);
+  }
+
+  function mcPintarNav(){
+    const nav = document.getElementById('mcNav');
+    const item = mcState.cursoActivo, clase = mcState.leccionActiva;
+    if(!nav || !item || !clase) return;
+    const idx = item.clases.findIndex(l=> l.id === clase.id);
+    const prev = idx > 0 ? item.clases[idx-1] : null;
+    const next = idx >= 0 && idx < item.clases.length-1 ? item.clases[idx+1] : null;
+    nav.innerHTML = `
+      <button class="mc-btn is-ghost" type="button" id="mcPrev" ${prev?'':'disabled'}>${mcSvgPrev}<span>${prev ? 'Clase anterior' : 'Primera clase'}</span></button>
+      <button class="mc-btn" type="button" id="mcNext" ${next?'':'disabled'}><span>${next ? 'Siguiente clase' : 'Última clase'}</span>${mcSvgNext}</button>`;
+    if(prev) document.getElementById('mcPrev').addEventListener('click', ()=> mcAbrirClase(prev.id));
+    if(next) document.getElementById('mcNext').addEventListener('click', ()=> mcAbrirClase(next.id));
+  }
+
+  async function mcMarcarCompletada(done){
+    const item = mcState.cursoActivo, clase = mcState.leccionActiva;
+    if(!item || !clase) return;
+    const btn = document.getElementById('mcDoneBtn');
+    if(btn) btn.disabled = true;
+    try{
+      const r = await functions.httpsCallable('guardarProgresoLeccion')({
+        courseId: item.id, lessonId: clase.id, action: done ? 'complete' : 'uncomplete',
+      });
+      if(done) item.progreso.hechas.add(clase.id); else item.progreso.hechas.delete(clase.id);
+      if(r && r.data && typeof r.data.percent === 'number') item.progreso.percent = r.data.percent;
+      item.progreso.updatedAt = Date.now();
+      toast(done ? 'Clase marcada como completada' : 'Clase desmarcada');
+    }catch(e){
+      toast(e.message || 'No se pudo guardar tu progreso');
+    }finally{
+      if(btn) btn.disabled = false;
+      mcPintarDone();
+      mcActualizarResumenCuenta();
+    }
+  }
+
+  /* ---------- Material de esta clase (recursos descargables) ----------
+     Se muestra SOLO si la clase tiene recursos activos. La descarga pasa
+     por la Cloud Function descargarRecursoClase (sesión + entitlement +
+     clase publicada + recurso activo); nunca hay una URL de Storage en el
+     DOM. Los videos siguen sin ninguna opción de descarga. */
+  function mcFmtPeso(b){
+    if(!b && b !== 0) return '';
+    if(b < 1024) return b + ' B';
+    if(b < 1024*1024) return Math.round(b/1024) + ' KB';
+    return (b/1024/1024).toFixed(b < 10*1024*1024 ? 1 : 0) + ' MB';
+  }
+  function mcIconoRecurso(tipo, nombre){
+    const n = (nombre||'').toLowerCase(), t = (tipo||'').toLowerCase();
+    if(t.includes('pdf') || n.endsWith('.pdf')) return 'PDF';
+    if(t.includes('word') || /\.(docx?|rtf|odt)$/.test(n)) return 'DOC';
+    if(t.includes('sheet') || t.includes('excel') || /\.(xlsx?|csv|ods)$/.test(n)) return 'XLS';
+    if(t.includes('presentation') || /\.(pptx?|odp)$/.test(n)) return 'PPT';
+    if(t.includes('zip') || t.includes('compressed') || /\.(zip|rar|7z)$/.test(n)) return 'ZIP';
+    if(t.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/.test(n)) return 'IMG';
+    return 'ARCHIVO';
+  }
+  function mcTipoRecurso(tipo, nombre){
+    const ic = mcIconoRecurso(tipo, nombre);
+    return ic === 'ARCHIVO' ? 'Archivo' : ic;
+  }
+  function mcRecursosActivos(clase){
+    return (Array.isArray(clase && clase.resources) ? clase.resources : [])
+      .filter(r=> r && r.id && r.active !== false);
+  }
+  function mcMaterialHtml(clase){
+    const recs = mcRecursosActivos(clase);
+    if(!recs.length) return '';
+    return `
+      <div class="mc-material">
+        <div class="mc-material-tit">Material de esta clase</div>
+        ${recs.map(r=> `
+          <div class="mc-res" data-rid="${mcEscape(r.id)}">
+            <span class="mc-res-ico">${mcEscape(mcIconoRecurso(r.contentType, r.fileName))}</span>
+            <span class="mc-res-mid">
+              <span class="mc-res-name">${mcEscape(r.name || r.fileName || 'Material')}</span>
+              <span class="mc-res-meta">${mcEscape(mcTipoRecurso(r.contentType, r.fileName))}${r.size ? ' · ' + mcFmtPeso(r.size) : ''}</span>
+            </span>
+            <button class="mc-res-btn" type="button" data-descargar>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+              <span>Descargar</span>
+            </button>
+          </div>`).join('')}
+      </div>`;
+  }
+  function mcConectarMaterial(){
+    const cont = document.getElementById('mcPlayerCont');
+    if(!cont) return;
+    cont.querySelectorAll('.mc-res [data-descargar]').forEach(btn=>{
+      btn.addEventListener('click', ()=> mcDescargarRecurso(btn.closest('.mc-res').dataset.rid, btn));
+    });
+  }
+  async function mcDescargarRecurso(resourceId, btn){
+    const item = mcState.cursoActivo, clase = mcState.leccionActiva;
+    if(!item || !clase) return;
+    // El token de descarga es del usuario de Firebase (auth.currentUser),
+    // no del perfil del cliente (currentUser() = customerProfile, sin getIdToken).
+    const fbUser = auth.currentUser;
+    if(!fbUser){ toast('Inicia sesión para descargar el material'); return; }
+    const rec = mcRecursosActivos(clase).find(r=> r.id === resourceId);
+    if(btn){ btn.disabled = true; btn.classList.add('is-loading'); }
+    try{
+      const tok = await fbUser.getIdToken();
+      const resp = await fetch(FUNCTIONS_BASE + '/descargarRecursoClase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ courseId: item.id, lessonId: clase.id, resourceId }),
+      });
+      if(!resp.ok){
+        const j = await resp.json().catch(()=> ({}));
+        toast(j.error || 'No se pudo descargar el material');
+        return;
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (rec && (rec.fileName || rec.name)) || 'material';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 30000);
+    }catch(e){
+      toast('No se pudo descargar: ' + (e.message || e));
+    }finally{
+      if(btn){ btn.disabled = false; btn.classList.remove('is-loading'); }
     }
   }
 
@@ -8309,7 +9226,13 @@
     cerrarReservas(true);
     cerrarTienda(true);
     cerrarAcademia(true);
+    // Aula: además de cerrar la vista, hay que sacar del historial las
+    // entradas de pantalla (curso/clase) que empujó el alumno -- si no, el
+    // botón atrás del navegador reabriría el aula.
+    const mcN = mcState.histDepth;
     cerrarMisCursos(true);
+    mcState.histDepth = 0;
+    if(mcN > 0){ try{ history.go(-mcN); }catch(e){} }
     cerrarMisProductos(true);
     cerrarComprobante(true);
     if(hashActual() !== '') irHistorial('limpiar');
@@ -8318,10 +9241,11 @@
 
   document.addEventListener('keydown', e=>{
     if(e.key !== 'Escape') return;
+    if(document.fullscreenElement) return;   // Esc en pantalla completa: lo maneja el navegador
     if(document.getElementById('vistaTienda').classList.contains('open')) cerrarTienda();
     else if(document.getElementById('vistaAcademia').classList.contains('open')) cerrarAcademia();
     else if(document.getElementById('vistaReservas').classList.contains('open')) cerrarReservas();
-    else if(document.getElementById('vistaMisCursos').classList.contains('open')) cerrarMisCursos();
+    else if(document.getElementById('vistaMisCursos').classList.contains('open')) mcRetroceder();
     else if(document.getElementById('vistaMisProductos').classList.contains('open')) cerrarMisProductos();
     else if(document.getElementById('vistaComprobante').classList.contains('open')) cerrarComprobante();
   });
