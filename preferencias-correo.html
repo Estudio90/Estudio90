@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Preferencias de correo · Master Look</title>
+<style>
+  /* Página pública -- se abre desde el pie de un correo, por token, sin
+     login. Diseño propio de Master Look (morado #8046CE, Arial como en las
+     plantillas de correo). Autocontenida: sin dependencias externas, para
+     que un enlace de correo cargue rápido y sin fallos. */
+  :root{
+    --morado:#8046CE; --morado-hover:#6f39b8; --morado-suave:#F3EEFC;
+    --texto:#2C3941; --texto-medio:#4C5559; --texto-bajo:#8A9296;
+    --borde:#E0E4E4; --fondo:#F0F3F4; --ok:#2E9E52; --error:#C0392B;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--fondo); color:var(--texto);
+    font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.5;
+    display:flex; align-items:flex-start; justify-content:center; min-height:100vh; padding:32px 16px;}
+  .card{background:#fff; width:100%; max-width:480px; border-radius:12px;
+    box-shadow:0 1px 3px rgba(16,24,32,.08), 0 8px 24px rgba(16,24,32,.06); overflow:hidden;}
+  .card-top{padding:22px 28px; border-bottom:1px solid var(--borde);}
+  .wordmark{font-weight:700; font-size:15px; letter-spacing:1.2px; color:var(--texto); text-transform:uppercase;}
+  .wordmark b{color:var(--morado);}
+  .card-body{padding:24px 28px 28px;}
+  h1{font-size:19px; font-weight:700; margin:0 0 4px;}
+  .sub{color:var(--texto-medio); font-size:13.5px; margin:0 0 20px;}
+  .sub .em{color:var(--texto); font-weight:700;}
+
+  .opt{border:1px solid var(--borde); border-radius:9px; padding:14px 16px; margin-bottom:12px;}
+  .opt-head{display:flex; align-items:flex-start; gap:12px;}
+  .opt-txt{flex:1;}
+  .opt-titulo{font-weight:700; font-size:14.5px;}
+  .opt-desc{color:var(--texto-bajo); font-size:12.5px; margin-top:2px;}
+  .opt.fija{background:var(--fondo);}
+  .opt.fija .opt-titulo{color:var(--texto-medio);}
+
+  /* toggle */
+  .sw{position:relative; width:42px; height:24px; flex:none; margin-top:1px;}
+  .sw input{opacity:0; width:0; height:0;}
+  .sw span{position:absolute; inset:0; background:#cfd6d8; border-radius:999px; transition:background .15s;}
+  .sw span::before{content:""; position:absolute; width:18px; height:18px; left:3px; top:3px;
+    background:#fff; border-radius:50%; transition:transform .15s; box-shadow:0 1px 2px rgba(0,0,0,.2);}
+  .sw input:checked + span{background:var(--morado);}
+  .sw input:checked + span::before{transform:translateX(18px);}
+  .sw input:disabled + span{opacity:.55;}
+
+  .btn{width:100%; margin-top:8px; padding:12px 16px; border:none; border-radius:8px;
+    background:var(--morado); color:#fff; font-family:inherit; font-size:14.5px; font-weight:700;
+    cursor:pointer;}
+  .btn:hover{background:var(--morado-hover);}
+  .btn:disabled{opacity:.5; cursor:default;}
+
+  .msg{margin-top:14px; font-size:13.5px; padding:11px 14px; border-radius:8px; display:none;}
+  .msg.ok{display:block; background:#EAF9EF; color:var(--ok);}
+  .msg.err{display:block; background:#FDECEA; color:var(--error);}
+  .msg.info{display:block; background:var(--fondo); color:var(--texto-medio);}
+
+  .estado-carga{padding:40px 28px; text-align:center; color:var(--texto-bajo); font-size:14px;}
+  .pie{padding:16px 28px; border-top:1px solid var(--borde); color:var(--texto-bajo); font-size:11.5px;}
+  #contenido{display:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-top"><span class="wordmark">MASTER <b>LOOK</b></span></div>
+
+  <div class="estado-carga" id="cargando">Cargando tus preferencias…</div>
+
+  <div class="card-body" id="contenido">
+    <h1>Preferencias de correo</h1>
+    <p class="sub">Estás gestionando los correos de <span class="em" id="correoTxt">—</span>.</p>
+
+    <div class="opt fija">
+      <div class="opt-head">
+        <label class="sw"><input type="checkbox" checked disabled><span></span></label>
+        <div class="opt-txt">
+          <div class="opt-titulo">Correos del servicio</div>
+          <div class="opt-desc">Confirmaciones de reserva, comprobantes de pago e información de tus compras. Siempre activos — no se pueden desactivar.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="opt-head">
+        <label class="sw"><input type="checkbox" id="swMarketing"><span></span></label>
+        <div class="opt-txt">
+          <div class="opt-titulo">Novedades y promociones</div>
+          <div class="opt-desc">Ofertas, lanzamientos, cursos y novedades de Master Look. Puedes activarlo o desactivarlo cuando quieras.</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="btnGuardar">Guardar preferencias</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="pie">Recibiste este enlace en un correo de Master Look. Si no lo solicitaste, puedes cerrar esta página.</div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var FN_BASE = location.hostname === 'estudio90.github.io'
+    ? 'https://us-central1-estudio90.cloudfunctions.net'
+    : 'https://us-central1-estudio90-dev.cloudfunctions.net';
+  var URL_BAJA = FN_BASE + '/emailBaja';
+
+  var token = new URLSearchParams(location.search).get('t') || '';
+  var cargando = document.getElementById('cargando');
+  var contenido = document.getElementById('contenido');
+  var sw = document.getElementById('swMarketing');
+  var btn = document.getElementById('btnGuardar');
+  var msg = document.getElementById('msg');
+  var motivoSupresion = null;
+
+  function mostrarMsg(texto, tipo){
+    msg.textContent = texto;
+    msg.className = 'msg ' + (tipo === 'ok' ? 'ok' : tipo === 'info' ? 'info' : 'err');
+  }
+  function errorFatal(texto){
+    cargando.textContent = texto;
+    cargando.style.display = 'block';
+    contenido.style.display = 'none';
+  }
+
+  if(!token){ errorFatal('Este enlace no es válido.'); return; }
+
+  fetch(URL_BAJA + '?t=' + encodeURIComponent(token))
+    .then(function(r){ return r.json().then(function(j){ return { status:r.status, j:j }; }); })
+    .then(function(res){
+      if(!res.j || !res.j.ok){
+        errorFatal('Este enlace no es válido o ya expiró. Escríbenos si necesitas ayuda.');
+        return;
+      }
+      document.getElementById('correoTxt').textContent = res.j.email || 'tu correo';
+      sw.checked = !!res.j.recibeMarketing;
+      motivoSupresion = res.j.motivoSupresion || null;
+      // Si ya está de baja y NO puede reactivarse solo (rebote / queja de spam
+      // / bloqueo / supresión administrativa): nota neutral, sin alarma. El
+      // toggle queda desactivado -- volver a activar da 'bloqueado' de todos
+      // modos, así que mejor no ofrecerlo.
+      if(!res.j.recibeMarketing && !res.j.puedeReactivarseSolo){
+        sw.disabled = true;
+        mostrarMsg('No estás recibiendo correos promocionales de Master Look. Si crees que es un error, escríbenos.', 'info');
+      }
+      cargando.style.display = 'none';
+      contenido.style.display = 'block';
+    })
+    .catch(function(){ errorFatal('No pudimos cargar tus preferencias. Intenta de nuevo en un momento.'); });
+
+  btn.addEventListener('click', function(){
+    btn.disabled = true;
+    var textoOriginal = btn.textContent;
+    btn.textContent = 'Guardando…';
+    msg.className = 'msg';
+    fetch(URL_BAJA, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ t: token, marketing: sw.checked }),
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.ok && j.estado === 'de_baja'){
+          mostrarMsg('Listo. No recibirás más correos promocionales de Master Look. Los correos del servicio (reservas, comprobantes) seguirán llegando.', 'ok');
+        }else if(j && j.ok && j.estado === 'suscrito'){
+          mostrarMsg('Listo. Volverás a recibir novedades y promociones de Master Look.', 'ok');
+        }else if(j && j.ok && j.estado === 'bloqueado'){
+          sw.checked = false;
+          mostrarMsg('No podemos reactivar las promociones para este correo de forma automática.', 'err');
+        }else{
+          mostrarMsg('No se pudo guardar. Intenta de nuevo.', 'err');
+        }
+      })
+      .catch(function(){ mostrarMsg('No se pudo guardar. Intenta de nuevo.', 'err'); })
+      .finally(function(){ btn.disabled = false; btn.textContent = textoOriginal; });
+  });
+})();
+</script>
+</body>
+</html>
