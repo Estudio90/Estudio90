@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>MASTER LOOK · Email marketing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+<script src="config-comun.js"></script>
+<script src="masterlook-nav-comun.js"></script>
+<link rel="stylesheet" href="masterlook-estilos-comunes.css">
+<style>
+  /* ===========================================================
+     MASTER LOOK · Email marketing -- réplica visual fiel de
+     AgendaPro (app.agendapro.com/clients/email_marketing/*),
+     con la marca cambiada a Master Look. SOLO estudio90-dev.
+
+     Paleta extraída con getComputedStyle() de la página real
+     (no a ojo): morado #8046CE, fondo de contenido #F0F3F4,
+     texto principal #2C3941 / secundario #4C5559, borde de
+     tabla #E0E4E4, pastilla "Enviado" #E4F6FE/#5595B3.
+     =========================================================== */
+  :root{
+    /* Puenteado a masterlook-estilos-comunes.css -- esta página YA
+       tenía estos valores (fue la referencia visual original), así que
+       el puente no cambia nada acá; lo que gana es que ahora ambos
+       archivos comparten una sola fuente de verdad (--accent/--bg/...
+       del archivo común) en vez de dos copias que se puedan desincronizar. */
+    --morado:var(--accent); --morado-hover:var(--accent-hover); --morado-suave:var(--accent-tint);
+    --fondo:var(--bg); --tarjeta:var(--panel);
+    --texto-alto:var(--text-hi); --texto-medio:var(--text-mid); --texto-bajo:var(--text-low);
+    --borde:var(--border); --borde-suave:var(--border);
+    --pill-enviado-bg:#E4F6FE; --pill-enviado-fg:#5595B3;
+    --pill-borrador-bg:#F0F3F4; --pill-borrador-fg:#8A9296;
+    --pill-programado-bg:#FFF4E0; --pill-programado-fg:#B3822E;
+    --verde-banner-bg:#EAF9EF; --verde-banner-fg:#2E9E52;
+    --rojo:var(--danger);
+    --sombra:0 1px 2px rgba(16,24,32,.06), 0 1px 3px rgba(16,24,32,.08);
+    --sombra-modal:0 12px 32px rgba(16,24,32,.18);
+    /* --radio/--radio-chico ahora puenteados a --radius/--radius-sm del
+       archivo común (ya corregidos ahí a estos mismos valores: 8px/6px) --
+       antes eran un literal propio sin relación con el token compartido. */
+    --radio:var(--radius); --radio-chico:var(--radius-sm);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--fondo); color:var(--texto-alto);
+    font-family:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:14px; line-height:1.45;}
+  button{font-family:inherit; cursor:pointer;}
+  a{color:inherit; text-decoration:none;}
+  svg{display:block; flex:none;}
+
+  /* ---------- barra superior ----------
+     Ahora es el header COMPARTIDO (.mlhdr/.mlhdr-*, definidas en
+     masterlook-estilos-comunes.css, generadas por MLNav.renderHeader() --
+     ver el <script> junto al contenedor más abajo). Esta página fue la
+     fuente visual original de esas medidas, pero ya no tiene su propio
+     CSS de header/logo/avatar por separado. */
+
+  /* ---------- layout: sidebar + contenido ---------- */
+  .shell{display:flex; align-items:flex-start; min-height:calc(100vh - 52px);}
+  .sidebar{width:220px; flex:none; background:var(--tarjeta); min-height:calc(100vh - 52px);
+    padding:24px 0; border-right:1px solid var(--borde-suave);}
+  .sb-title{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--texto-bajo); padding:0 28px; margin:0 0 6px;}
+  .sb-item{display:flex; align-items:center; gap:10px; padding:12px 28px; font-size:15px;
+    color:var(--texto-medio); border-left:3px solid transparent; cursor:pointer;}
+  .sb-item svg{width:17px; height:17px; opacity:.85;}
+  .sb-item.on{color:var(--morado); font-weight:500; border-left-color:var(--morado); background:var(--morado-suave);}
+  .sb-item:hover:not(.on){background:var(--fondo);}
+
+  .content{flex:1; min-width:0; padding:28px 32px; background:var(--fondo); min-height:calc(100vh - 52px);}
+  .page{max-width:1180px; margin:0 auto;}
+
+  .page-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap;}
+  .page-title{font-size:22px; font-weight:700; color:var(--texto-alto); margin:0;}
+  .banner-verde{display:inline-flex; align-items:center; gap:8px; background:var(--verde-banner-bg);
+    color:var(--verde-banner-fg); font-size:13px; padding:9px 14px; border-radius:var(--radio-chico);}
+  .banner-verde svg{width:15px; height:15px;}
+
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
+  .btn{display:inline-flex; align-items:center; gap:8px; font-size:14px; padding:9px 16px;
+    border-radius:var(--radio-chico); border:1px solid transparent; white-space:nowrap;}
+  .btn svg{width:15px; height:15px;}
+  .btn-outline{background:var(--tarjeta); color:var(--texto-medio); border-color:var(--borde);}
+  .btn-outline:hover{background:var(--fondo);}
+  .btn-solid{background:var(--morado); color:#fff; font-weight:500;}
+  .btn-solid:hover{background:var(--morado-hover);}
+  .btn-texto{background:none; color:var(--morado); padding:9px 4px; font-weight:500;}
+  .btn-texto.btn-armado{background:var(--morado-suave); border-radius:5px; font-weight:700;}
+  .btn-texto:disabled{opacity:.55; cursor:default;}
+  .btn[disabled]{opacity:.5; cursor:default;}
+
+  .conteo{font-size:12px; color:var(--texto-bajo); margin:0 0 8px;}
+
+  .tarjeta{background:var(--tarjeta); border-radius:var(--radio); box-shadow:var(--sombra); overflow:visible;}
+  table{width:100%; border-collapse:collapse;}
+  thead th{text-align:left; font-size:13px; font-weight:700; color:var(--texto-medio);
+    padding:14px 20px; border-bottom:1px solid var(--borde); white-space:nowrap;}
+  th .ord{display:inline-flex; align-items:center; gap:5px; cursor:pointer;}
+  th .ord svg{width:11px; height:11px; opacity:.55;}
+  tbody td{padding:16px 20px; border-bottom:1px solid var(--borde-suave); font-size:14px; vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFBFB;}
+  .campana-nombre{font-weight:500; color:var(--texto-alto);}
+  .audiencia-tag{display:inline-block;}
+  .audiencia-extra{color:var(--texto-bajo); font-size:12px; margin-left:4px;}
+
+  .pill{display:inline-block; font-size:12px; padding:5px 12px; border-radius:999px; font-weight:500;}
+  .pill-enviado{background:var(--pill-enviado-bg); color:var(--pill-enviado-fg);}
+  .pill-borrador{background:var(--pill-borrador-bg); color:var(--pill-borrador-fg);}
+  .pill-programado{background:var(--pill-programado-bg); color:var(--pill-programado-fg);}
+
+  .acciones{position:relative;}
+  .acciones-btn{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--morado);
+    background:var(--morado-suave); border:none; border-radius:var(--radio-chico); padding:7px 12px; font-weight:500;}
+  .acciones-btn svg{width:12px; height:12px;}
+  .acciones-menu{position:absolute; right:0; top:calc(100% + 6px); background:var(--tarjeta);
+    border-radius:var(--radio-chico); box-shadow:var(--sombra-modal); border:1px solid var(--borde-suave);
+    min-width:180px; padding:6px; z-index:50; display:none;}
+  .acciones-menu.abierto{display:block;}
+  .acciones-menu button{display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+    background:none; border:none; padding:9px 10px; border-radius:6px; font-size:13.5px; color:var(--texto-medio);}
+  .acciones-menu button:hover{background:var(--fondo);}
+  .acciones-menu button svg{width:15px; height:15px; opacity:.7;}
+  .acciones-menu button.rojo{color:var(--rojo);}
+
+  .paginacion{display:flex; align-items:center; justify-content:space-between; padding:14px 20px; font-size:13px; color:var(--texto-medio);}
+  .pag-links{display:flex; align-items:center; gap:14px;}
+  .pag-links button{background:none; border:none; color:var(--texto-medio); font-size:13px; display:flex; align-items:center; gap:4px;}
+  .pag-links button[disabled]{color:var(--texto-bajo); opacity:.5;}
+  .pag-actual{color:var(--morado); font-weight:700;}
+
+  /* ---------- panel "Filtrar por" ---------- */
+  .filtro-wrap{position:relative;}
+  .filtro-panel{position:absolute; top:calc(100% + 6px); left:0; width:300px; background:var(--tarjeta);
+    border-radius:var(--radio); box-shadow:var(--sombra-modal); border:1px solid var(--borde-suave);
+    padding:18px; z-index:60; display:none;}
+  .filtro-panel.abierto{display:block;}
+  .filtro-label{font-size:12px; font-weight:700; color:var(--texto-medio); margin:0 0 6px; display:block;}
+  .filtro-campo{width:100%; padding:9px 11px; border:1px solid var(--borde); border-radius:6px;
+    font-size:13.5px; color:var(--texto-alto); font-family:inherit; margin-bottom:14px; background:var(--tarjeta);}
+  .filtro-acciones{display:flex; align-items:center; justify-content:space-between; margin-top:2px;}
+
+  /* ---------- modal genérico ---------- */
+  .modal-fondo{position:fixed; inset:0; background:rgba(20,26,31,.5); z-index:200;
+    display:none; align-items:center; justify-content:center; padding:24px;}
+  .modal-fondo.abierto{display:flex;}
+  .modal{background:var(--tarjeta); border-radius:var(--radio); box-shadow:var(--sombra-modal);
+    width:100%; max-width:560px; max-height:88vh; overflow:auto;}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:20px 24px;
+    border-bottom:1px solid var(--borde-suave);}
+  .modal-head h3{margin:0; font-size:17px; font-weight:700; color:var(--texto-alto);}
+  .modal-cerrar{width:30px; height:30px; border:none; background:none; color:var(--texto-bajo);
+    display:flex; align-items:center; justify-content:center; border-radius:50%;}
+  .modal-cerrar:hover{background:var(--fondo);}
+  .modal-body{padding:20px 24px;}
+  .modal-pie{padding:16px 24px; border-top:1px solid var(--borde-suave); display:flex; justify-content:flex-end; gap:10px;}
+
+  /* ---------- monitor de entregabilidad (bloque 9) ---------- */
+  .rep-cab{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    background:var(--fondo); border-radius:var(--radio-chico); padding:14px 16px; margin-bottom:14px;}
+  .rep-cab strong{display:block; font-size:14px; color:var(--texto-alto); margin-bottom:3px;}
+  .rep-cab span{font-size:12.5px; color:var(--texto-bajo);}
+  .rep-salud{flex:none; font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; white-space:nowrap;}
+  .rep-salud[data-salud="saludable"]{background:var(--verde-banner-bg); color:var(--verde-banner-fg);}
+  .rep-salud[data-salud="atencion"]{background:var(--pill-programado-bg); color:var(--pill-programado-fg);}
+  .rep-salud[data-salud="riesgo"]{background:#FDECEA; color:var(--rojo);}
+  .rep-salud[data-salud="sin-datos"]{background:var(--pill-borrador-bg); color:var(--pill-borrador-fg);}
+  .rep-resumen{background:var(--morado-suave); border-radius:var(--radio-chico); padding:11px 14px;
+    font-size:12.5px; color:var(--texto-medio); display:flex; flex-wrap:wrap; gap:4px 14px; margin-bottom:16px;}
+  .rep-resumen b{color:var(--texto-alto); font-weight:700;}
+  .rep-vacio{padding:34px 20px; text-align:center; color:var(--texto-bajo); font-size:13.5px;
+    background:var(--fondo); border-radius:var(--radio-chico);}
+  .rep-aviso-eventos{font-size:12px; color:var(--pill-programado-fg); background:var(--pill-programado-bg);
+    border-radius:var(--radio-chico); padding:9px 12px; margin-bottom:14px;}
+  .rep-seccion{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--texto-bajo); margin:16px 0 8px;}
+  .rep-seccion:first-child{margin-top:0;}
+  .rep-metricas{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .rep-mx{border:1px solid var(--borde-suave); border-radius:var(--radio-chico); padding:11px 12px; position:relative;}
+  .rep-mx-num{font-size:19px; font-weight:700; color:var(--texto-alto); line-height:1.2;}
+  .rep-mx-pct{font-size:12px; font-weight:500; color:var(--texto-bajo);}
+  .rep-mx-label{font-size:11.5px; color:var(--texto-medio); margin-top:3px;}
+  .rep-mx-sub{font-size:11px; color:var(--texto-bajo); margin-top:1px;}
+  .rep-mx[data-nivel="warn"]{border-color:var(--pill-programado-fg); background:var(--pill-programado-bg);}
+  .rep-mx[data-nivel="warn"] .rep-mx-pct{color:var(--pill-programado-fg);}
+  .rep-mx[data-nivel="risk"]{border-color:var(--rojo); background:#FDECEA;}
+  .rep-mx[data-nivel="risk"] .rep-mx-pct{color:var(--rojo);}
+  .rep-mx[data-destacado] .rep-mx-num{font-size:22px;}
+  .rep-nota{font-size:11.5px; color:var(--texto-bajo); line-height:1.55; margin:16px 0 0;
+    padding-top:12px; border-top:1px solid var(--borde-suave);}
+
+  /* ---------- Audiencias ---------- */
+  .aud-campo-label{font-size:12px; font-weight:700; color:var(--texto-medio); margin:0 0 6px; display:block;}
+  .aud-seg{display:flex; flex-direction:column; gap:2px; margin-bottom:14px;}
+  .aud-seg label{display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--borde);
+    border-radius:var(--radio-chico); cursor:pointer; font-size:13.5px; color:var(--texto-alto);}
+  .aud-seg label:has(input:checked){border-color:var(--morado); background:var(--morado-suave);}
+  .aud-seg input[type=radio]{margin-top:2px; accent-color:var(--morado); flex:none;}
+  .aud-seg-sub{display:block; font-size:12px; color:var(--texto-bajo); margin-top:2px;}
+  .aud-seg-extra{margin:8px 0 0 28px;}
+  .aud-seg-extra .filtro-campo{margin-bottom:0;}
+  .aud-dias-inline{display:flex; align-items:center; gap:8px; margin:8px 0 0 28px; font-size:13px; color:var(--texto-medio);}
+  .aud-dias-inline input{width:72px; padding:7px 9px; border:1px solid var(--borde); border-radius:6px; font-family:inherit; font-size:13px;}
+  .aud-resultado{background:var(--fondo); border-radius:var(--radio-chico); padding:14px 16px; margin-top:14px; font-size:13px; color:var(--texto-medio); display:none;}
+  .aud-resultado.visible{display:block;}
+  .aud-resultado .aud-total{font-size:22px; font-weight:700; color:var(--texto-alto);}
+  .aud-resultado .aud-total small{font-size:13px; font-weight:400; color:var(--texto-bajo);}
+  .aud-desglose{display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:8px; font-size:12px; color:var(--texto-bajo);}
+  .aud-desglose b{color:var(--texto-medio); font-weight:500;}
+  .aud-muestra{margin-top:8px; font-size:11.5px; color:var(--texto-bajo); word-break:break-all; line-height:1.6;}
+  .aud-vacio{padding:36px 20px; text-align:center; color:var(--texto-bajo); font-size:13.5px;}
+
+  /* ---------- paso 3: configurar / programar campaña ---------- */
+  .cfg-grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; align-items:start;}
+  @media (max-width:1000px){ .cfg-grid{grid-template-columns:1fr;} }
+  .cfg-campo{margin-bottom:16px;}
+  .cfg-campo label{display:block; font-size:12px; font-weight:700; color:var(--texto-medio); margin-bottom:6px;}
+  .cfg-campo input, .cfg-campo select, .cfg-campo textarea{width:100%; padding:9px 11px; border:1px solid var(--borde);
+    border-radius:6px; font-size:13.5px; color:var(--texto-alto); font-family:inherit; background:var(--tarjeta);}
+  .cfg-campo textarea{min-height:64px; resize:vertical;}
+  .cfg-campo .cfg-fijo{background:var(--fondo); color:var(--texto-medio);}
+  .cfg-hint{font-size:11.5px; color:var(--texto-bajo); margin-top:4px;}
+  .cfg-prueba{display:flex; gap:8px; align-items:center;}
+  .cfg-prueba input{flex:1;}
+  .cfg-prueba .btn{white-space:nowrap;}
+  .cfg-preview{border:1px solid var(--borde); border-radius:var(--radio); overflow:hidden; background:#fff;}
+  .cfg-preview-head{font-size:12px; font-weight:700; color:var(--texto-medio); padding:10px 14px; border-bottom:1px solid var(--borde); background:var(--fondo);}
+  .cfg-preview iframe{width:100%; height:560px; border:0; display:block;}
+  .cfg-msg{font-size:12.5px; padding:10px 12px; border-radius:8px; margin-top:8px; display:none;}
+  .cfg-msg.ok{display:block; background:#EAF9EF; color:var(--verde-banner-fg);}
+  .cfg-msg.err{display:block; background:#FDECEA; color:var(--rojo);}
+  .cfg-msg.info{display:block; background:var(--fondo); color:var(--texto-medio);}
+  .cfg-acciones{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; padding-top:16px; border-top:1px solid var(--borde);}
+  /* ---------- preflight / "Resumen del envío" (bloque 12) ---------- */
+  .pf-caja{border:1px solid var(--borde); border-radius:var(--radio-chico); padding:12px 14px; margin-top:16px; background:var(--fondo);}
+  .pf-cab{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .pf-cab strong{font-size:13px; color:var(--texto-alto);}
+  .pf-cab .pf-sello{font-size:11px; color:var(--texto-bajo); margin-left:auto; margin-right:8px;}
+  .pf-hint{font-size:11.5px; color:var(--texto-bajo); margin-top:8px;}
+  .pf-cuerpo{margin-top:10px;}
+  .pf-seccion-tit{font-size:11px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--texto-bajo); margin:2px 0 6px;}
+  .pf-lista{display:flex; flex-direction:column; gap:5px;}
+  .pf-adv{margin-top:10px;}
+  .pf-item{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--texto-medio); line-height:1.45;}
+  .pf-item .pf-ico{flex:none; width:15px; height:15px; margin-top:1px;}
+  .pf-item[data-nivel="ok"] .pf-ico{color:var(--verde-banner-fg);}
+  .pf-item[data-nivel="fail"] > span{color:var(--rojo);}
+  .pf-item[data-nivel="fail"] .pf-ico{color:var(--rojo);}
+  .pf-item[data-nivel="warn"] > span{color:var(--pill-programado-fg);}
+  .pf-item[data-nivel="warn"] .pf-ico{color:var(--pill-programado-fg);}
+  .pf-item b{color:var(--texto-alto); font-weight:600;}
+  .pf-item small{color:var(--texto-bajo); font-weight:400;}
+  .pf-resumen{margin-top:12px; padding-top:10px; border-top:1px solid var(--borde);}
+  .pf-res-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px 14px; font-size:12.5px;}
+  .pf-res-grid div{display:flex; flex-direction:column; gap:1px;}
+  .pf-res-grid span{color:var(--texto-bajo); font-size:11px;}
+  .pf-res-grid b{color:var(--texto-alto); font-weight:700; font-variant-numeric:tabular-nums;}
+  .pf-res-grid .pf-obj b{font-size:16px; color:var(--morado);}
+  .pf-veredicto{margin-top:12px; font-size:12.5px; font-weight:700; padding:9px 12px; border-radius:6px;}
+  .pf-veredicto[data-ok="1"]{background:var(--verde-banner-bg); color:var(--verde-banner-fg);}
+  .pf-veredicto[data-ok="0"]{background:#FDECEA; color:var(--rojo);}
+  .pf-veredicto[data-ok="wait"]{background:var(--fondo); color:var(--texto-medio);}
+  .btn.pf-bloqueado{opacity:.45; pointer-events:none;}
+  .cfg-prog{display:none; align-items:center; gap:8px; margin-top:10px;}
+  .cfg-prog.visible{display:flex;}
+  .cfg-prog input{padding:8px 10px; border:1px solid var(--borde); border-radius:6px; font-family:inherit; font-size:13px;}
+
+  @media (max-width:860px){
+    .sidebar{display:none;}
+    .content{padding:18px;}
+    table{display:block; overflow-x:auto;}
+  }
+  @media (max-width:560px){
+    .modal-fondo{padding:12px;}
+    .modal-body{padding:16px;}
+    .rep-metricas{grid-template-columns:repeat(2,1fr); gap:8px;}
+    .rep-mx{padding:10px;}
+    .rep-cab{flex-direction:column;}
+  }
+  @media (max-width:380px){ .rep-metricas{grid-template-columns:1fr;} }
+
+  .aviso-dev{position:fixed; left:12px; bottom:12px; z-index:500; background:#1D2226; color:#fff;
+    font-size:11.5px; padding:8px 12px; border-radius:8px; opacity:.85; max-width:260px; font-family:'Roboto',sans-serif;}
+
+  /* ---------- galería de plantillas (paso 1 del asistente) ---------- */
+  .plantilla-card{background:var(--tarjeta); border:1px solid var(--borde-suave); border-radius:var(--radio);
+    overflow:hidden; cursor:pointer; transition:box-shadow .15s ease, border-color .15s ease;}
+  .plantilla-card:hover{box-shadow:var(--sombra); border-color:var(--morado);}
+  .plantilla-preview{height:150px; background:var(--fondo); display:flex; align-items:center; justify-content:center; padding:14px;}
+  .plantilla-preview img{max-width:100%; max-height:100%; border-radius:4px;}
+  .plantilla-info{padding:14px 16px;}
+  .plantilla-nombre{font-size:14px; font-weight:500; color:var(--texto-alto); margin:0 0 3px;}
+  .plantilla-desc{font-size:12.5px; color:var(--texto-bajo); margin:0;}
+  .plantilla-cat{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--texto-bajo); margin:22px 0 10px;}
+  .plantilla-cat:first-child{margin-top:0;}
+  .plantilla-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:900px){ .plantilla-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:560px){ .plantilla-grid{grid-template-columns:1fr;} }
+
+  /* ---------- editor de campaña (paso 2) ----------
+     .content trae padding:28px 32px propio (unificación del área interna);
+     el editor lo cancela con margen negativo para verse a pantalla completa
+     como en AgendaPro, en vez de quedar "encajonado" con márgenes alrededor. */
+  #vistaEditorCampana{ margin:-28px -32px; }
+  .em-ed-topbar{ display:flex; align-items:center; gap:14px; height:56px; flex:none;
+    padding:0 20px; background:var(--tarjeta); border-bottom:1px solid var(--borde-suave); }
+  .em-ed-cerrar{ width:32px; height:32px; border:none; background:none; color:var(--texto-medio);
+    border-radius:50%; display:flex; align-items:center; justify-content:center; flex:none; }
+  .em-ed-cerrar:hover{ background:var(--fondo); }
+  .em-ed-nombre{ font-size:15px; font-weight:500; color:var(--texto-alto); border:1px solid transparent;
+    border-radius:6px; padding:7px 10px; font-family:inherit; width:280px; background:none; }
+  .em-ed-nombre:hover{ border-color:var(--borde); }
+  .em-ed-nombre:focus{ outline:none; border-color:var(--morado); background:var(--tarjeta); }
+  .em-ed-dispositivos{ display:flex; align-items:center; gap:2px; background:var(--fondo); border-radius:8px; padding:3px; margin-left:auto; }
+  .em-ed-disp{ width:30px; height:26px; border:none; background:none; color:var(--texto-medio);
+    border-radius:6px; display:flex; align-items:center; justify-content:center; }
+  .em-ed-disp.on{ background:var(--tarjeta); color:var(--morado); box-shadow:0 1px 2px rgba(16,24,32,.1); }
+  .em-ed-historial{ display:flex; align-items:center; gap:2px; }
+  .em-ed-historial button{ width:30px; height:30px; border:none; background:none; color:var(--texto-medio); border-radius:6px; display:flex; align-items:center; justify-content:center; }
+  .em-ed-historial button:hover:not(:disabled){ background:var(--fondo); color:var(--texto-alto); }
+  .em-ed-historial button:disabled{ opacity:.35; cursor:default; }
+  .em-ed-estado{ font-size:12px; color:var(--texto-bajo); white-space:nowrap; }
+
+  /* ---------- re-tema de GrapesJS: mismos tokens visuales que el resto de
+     Email Marketing (Roboto, morado, blancos/grises claros, radios 8/6px)
+     en vez de la piel oscura genérica por defecto. GrapesJS expone su
+     propio sistema de variables CSS (--gjs-*, verificado contra el CSS
+     real de la versión 0.23.6) -- redefinirlas alcanza para la mayor
+     parte del chrome sin pelear contra cada clase .gjs-* una por una. */
+  #emContenedorEditor{
+    --gjs-main-font: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    --gjs-font-size: 13px;
+    --gjs-main-color: var(--tarjeta);
+    --gjs-primary-color: var(--tarjeta);
+    --gjs-secondary-color: var(--borde-suave);
+    --gjs-tertiary-color: var(--morado);
+    --gjs-quaternary-color: var(--morado-hover);
+    --gjs-font-color: var(--texto-medio);
+    --gjs-font-color-active: var(--texto-alto);
+    --gjs-main-dark-color: rgba(20,26,31,.06);
+    --gjs-secondary-dark-color: rgba(20,26,31,.04);
+    --gjs-main-light-color: rgba(20,26,31,.03);
+    --gjs-secondary-light-color: rgba(20,26,31,.5);
+    --gjs-soft-light-color: rgba(20,26,31,.02);
+    --gjs-color-highlight: var(--morado);
+    --gjs-light-border: var(--borde-suave);
+    --gjs-arrow-color: var(--texto-medio);
+    --gjs-dark-text-shadow: transparent;
+    height:100%; width:100%;
+  }
+  #emContenedorEditor .gjs-cv-canvas{ background:var(--fondo); }
+  #emContenedorEditor .gjs-pn-panel{ box-shadow:none; }
+  #emContenedorEditor .gjs-pn-views-container{ border-top:1px solid var(--borde-suave); }
+  #emContenedorEditor .gjs-block{ border-radius:6px; }
+  #emContenedorEditor .gjs-radio-item-label, #emContenedorEditor .gjs-field{ border-radius:6px; }
+  #emContenedorEditor .gjs-am-file-uploader, #emContenedorEditor .gjs-am-assets-header{ background:var(--tarjeta); }
+
+  /* Las variables --gjs-* de arriba NO alcanzan para todo: grapesjs-mjml
+     inyecta en runtime un <style> propio con .gjs-one-bg/.gjs-two-bg/
+     .gjs-four-bg en colores fijos (verificado con document.styleSheets en
+     vivo -- rgb(44,46,53)/rgb(136,134,134)/rgb(244,94,67), sin usar
+     var(--gjs-*)) que es justamente lo que pinta oscuro el chrome del
+     editor. Como se inyecta en runtime, siempre gana por orden de fuente
+     sobre este <style> estático -- necesita !important, no alcanza con
+     especificidad. Se separan bg/color con tokens propios de cada uso en
+     vez de reusar un solo valor, porque el original tampoco los compartía
+     realmente (fondo oscuro != texto secundario, aunque ambos fueran
+     "two"). */
+  #emContenedorEditor .gjs-one-bg{ background-color:var(--tarjeta) !important; }
+  #emContenedorEditor .gjs-one-color, #emContenedorEditor .gjs-one-color-h:hover{ color:var(--texto-alto) !important; }
+  #emContenedorEditor .gjs-two-bg{ background-color:var(--fondo) !important; }
+  #emContenedorEditor .gjs-two-color, #emContenedorEditor .gjs-two-color-h:hover{ color:var(--texto-medio) !important; }
+  #emContenedorEditor .gjs-three-bg{ background-color:var(--morado-suave) !important; }
+  #emContenedorEditor .gjs-three-color, #emContenedorEditor .gjs-three-color-h:hover{ color:var(--morado) !important; }
+  #emContenedorEditor .gjs-four-bg{ background-color:var(--morado) !important; }
+  #emContenedorEditor .gjs-four-color, #emContenedorEditor .gjs-four-color-h:hover{ color:var(--morado) !important; }
+  #emContenedorEditor .gjs-pn-btn.gjs-pn-active{ background-color:var(--morado-suave) !important; color:var(--morado) !important; }
+  #emContenedorEditor .gjs-category-title, #emContenedorEditor .gjs-sm-sector-title{ background-color:var(--fondo) !important; color:var(--texto-medio) !important; }
+  #emContenedorEditor .gjs-layer{ border-color:var(--borde-suave) !important; }
+  #emContenedorEditor input, #emContenedorEditor select, #emContenedorEditor textarea{ font-family:'Roboto',sans-serif !important; }
+
+  /* ---------- acceso: oculto hasta confirmar sesión + rol ADMIN real ---------- */
+  .app.oculto{display:none;}
+  .verificando{min-height:100vh; display:flex; align-items:center; justify-content:center;
+    color:var(--texto-medio); font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="verificando" id="verificandoAcceso">Verificando acceso…</div>
+
+<div class="app oculto">
+<!-- Header compartido (masterlook-nav-comun.js::renderHeader), MISMO
+     componente que usa masterlook-panel-interno.html. Esta página no tiene
+     hamburguesa (no hay drawer acá) ni menú de cuenta todavía (el avatar
+     de acá nunca lo tuvo -- se deja igual, sin agregar algo nuevo). El
+     click del logo sí se conecta acá (onLogo) porque, a diferencia del
+     panel, esta página no tiene código propio más abajo que lo haga. -->
+<div id="mlHeader"></div>
+<script>
+  MLNav.renderHeader({
+    contenedor: document.getElementById('mlHeader'),
+    idAvatar: 'tbAvatar',
+    avatarIniciales: '--',
+    chipTexto: 'Reservas Online',
+    chipIcono: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+    onLogo: function(){ location.href = 'masterlook-panel-interno.html'; },
+  });
+</script>
+
+<!-- Barra de navegación del área administrativa (masterlook-nav-comun.js). -->
+<div id="mlNavBar" style="display:none;"></div>
+
+<div class="shell">
+  <div class="sidebar">
+    <p class="sb-title">Email marketing</p>
+    <div class="sb-item on" data-vista="campanas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+      Campañas
+    </div>
+    <div class="sb-item" data-vista="audiencias">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6"/><circle cx="17" cy="8.5" r="2.6"/><path d="M15.5 13.2c2.7.4 4.9 2.6 4.9 5.3"/></svg>
+      Audiencias
+    </div>
+    <div class="sb-item" data-vista="suprimidos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/><path d="M15 15l4 4M19 15l-4 4"/></svg>
+      Emails Suprimidos
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- ================= VISTA: CAMPAÑAS ================= -->
+    <div class="page" id="vistaCampanas">
+      <div class="page-head">
+        <h1 class="page-title">Campañas</h1>
+        <div class="banner-verde">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+          Emails enviados: 0 de 2.200. El contador se reinicia el primer día de cada mes
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="filtro-wrap">
+          <button class="btn btn-outline" id="btnFiltrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+            Filtrar por
+          </button>
+          <div class="filtro-panel" id="panelFiltrar">
+            <label class="filtro-label">Periodo de tiempo</label>
+            <input class="filtro-campo" type="text" value="04/08/2026 - 04/09/2026" readonly>
+            <label class="filtro-label">Estado de la campaña</label>
+            <select class="filtro-campo"><option>Todos</option><option>Enviado</option><option>Programado</option><option>Borrador</option></select>
+            <label class="filtro-label">Audiencias</label>
+            <select class="filtro-campo"><option>Todos</option><option>Clientes de Master Look</option><option>Recuperar clientes nuevos</option></select>
+            <div class="filtro-acciones">
+              <button class="btn btn-texto" style="padding:0;" id="btnRestablecer">Restablecer</button>
+              <button class="btn btn-solid" id="btnBuscarFiltro">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-solid" id="btnNuevaCampana">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nueva campaña
+        </button>
+      </div>
+
+      <p class="conteo" id="conteoCampanas">Mostrando 5 de 5 campañas</p>
+
+      <div class="tarjeta">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="ord">Campaña <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg></span></th>
+              <th><span class="ord">Audiencia <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg></span></th>
+              <th><span class="ord">Fecha de envío <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg></span></th>
+              <th><span class="ord">Estado <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></svg></span></th>
+              <th>Opciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyCampanas"></tbody>
+        </table>
+        <div class="paginacion">
+          <span>página 1 de 1</span>
+          <div class="pag-links">
+            <button disabled>‹ Anterior</button>
+            <span class="pag-actual">1</span>
+            <button disabled>Siguiente ›</button>
+            <span>5 por página</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VISTA: AUDIENCIAS ================= -->
+    <div class="page" id="vistaAudiencias" style="display:none;">
+      <div class="page-head">
+        <h1 class="page-title">Audiencias</h1>
+        <button class="btn btn-solid" id="btnNuevaAudiencia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nueva audiencia
+        </button>
+      </div>
+      <p class="conteo" id="conteoAudiencias"></p>
+      <div class="tarjeta">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Segmento</th>
+              <th>Personas</th>
+              <th>Creada</th>
+              <th>Opciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAudiencias"></tbody>
+        </table>
+        <div class="aud-vacio" id="audVacio" style="display:none;">
+          Todavía no hay audiencias. Crea una para elegir a quién enviar tus campañas.
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VISTA: EMAILS SUPRIMIDOS ================= -->
+    <div class="page" id="vistaSuprimidos" style="display:none;">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Emails Suprimidos</h1>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);">Correos que NO reciben campañas de marketing: bajas del cliente, rebotes, quejas de spam y supresiones administrativas. Esta lista es nuestra fuente de verdad — no depende del proveedor de envío.</p>
+        </div>
+        <button class="btn btn-solid" id="btnSuprimirEmail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          Suprimir email
+        </button>
+      </div>
+      <div class="toolbar">
+        <input type="text" id="supBuscar" class="filtro-campo" placeholder="Buscar por correo…" style="max-width:280px; margin:0;">
+        <p class="conteo" id="conteoSuprimidos" style="margin:0;"></p>
+      </div>
+      <div class="tarjeta">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Motivo</th>
+              <th>Origen</th>
+              <th>Fecha</th>
+              <th>Detalle</th>
+              <th>Reactivar</th>
+            </tr>
+          </thead>
+          <tbody id="tbodySuprimidos"></tbody>
+        </table>
+        <div class="aud-vacio" id="supVacio" style="display:none;">
+          No hay correos suprimidos. Los que se den de baja o reboten aparecerán aquí.
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= VISTA: GALERÍA DE PLANTILLAS (paso 1) ================= -->
+    <div class="page" id="vistaPlantillas" style="display:none;">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Selecciona una plantilla</h1>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);">Elige un punto de partida para tu campaña. Vas a poder editar todo (textos, imágenes, botones, colores) en el siguiente paso.</p>
+        </div>
+        <button class="btn btn-outline" id="btnVolverDePlantillas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+          Volver a campañas
+        </button>
+      </div>
+      <div id="gridPlantillas"></div>
+    </div>
+
+    <!-- ================= VISTA: EDITOR DE CAMPAÑA (paso 2) ================= -->
+    <div id="vistaEditorCampana" style="display:none;height:calc(100vh - 52px - 48px);flex-direction:column;">
+      <div class="em-ed-topbar">
+        <button class="em-ed-cerrar" id="btnCerrarEditor" title="Cerrar y volver a campañas">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <input type="text" id="emNombreCampana" class="em-ed-nombre" placeholder="Nombre de la campaña" maxlength="120">
+        <div class="em-ed-dispositivos">
+          <button type="button" class="em-ed-disp on" data-disp="desktop" title="Vista escritorio">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>
+          </button>
+          <button type="button" class="em-ed-disp" data-disp="mobilePortrait" title="Vista móvil">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+          </button>
+        </div>
+        <div class="em-ed-historial">
+          <button type="button" id="emBtnDeshacer" title="Deshacer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>
+          </button>
+          <button type="button" id="emBtnRehacer" title="Rehacer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 000 11H13"/></svg>
+          </button>
+        </div>
+        <span class="em-ed-estado" id="emEstadoGuardado"></span>
+        <button class="btn btn-outline" id="btnGuardarBorrador" style="padding:8px 16px;">Guardar borrador</button>
+        <button class="btn btn-solid" id="btnIrAConfig" style="padding:8px 16px;">Siguiente&nbsp;→</button>
+      </div>
+      <div id="emContenedorEditor" style="flex:1;min-height:0;"></div>
+    </div>
+
+    <!-- ================= VISTA: CONFIGURAR CAMPAÑA (paso 3) ================= -->
+    <div class="page" id="vistaConfigCampana" style="display:none;">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Configura el envío</h1>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);">Asunto, remitente y a quién le llega. Todavía no se envía nada — eso es el paso final.</p>
+        </div>
+        <button class="btn btn-outline" id="cfgVolverEditor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+          Volver al editor
+        </button>
+      </div>
+
+      <div class="cfg-grid">
+        <div>
+          <div class="cfg-campo">
+            <label for="cfgNombre">Nombre de la campaña</label>
+            <input type="text" id="cfgNombre" maxlength="120" placeholder="Uso interno — no lo ve el cliente">
+          </div>
+          <div class="cfg-campo">
+            <label for="cfgAsunto">Asunto del email *</label>
+            <input type="text" id="cfgAsunto" maxlength="200" placeholder="Lo que ve el cliente en su bandeja">
+          </div>
+          <div class="cfg-campo">
+            <label>Remitente</label>
+            <input type="text" id="cfgRemitente" class="cfg-fijo" readonly value="—">
+          </div>
+          <div class="cfg-campo">
+            <label for="cfgAudiencia">Audiencia *</label>
+            <select id="cfgAudiencia"><option value="">Cargando…</option></select>
+            <div class="cfg-hint">¿No ves la audiencia que quieres? Créala en la pestaña <b>Audiencias</b>.</div>
+          </div>
+          <div class="cfg-campo">
+            <label for="cfgExtra">Destinatarios adicionales (opcional)</label>
+            <textarea id="cfgExtra" placeholder="Correos sueltos separados por coma o salto de línea"></textarea>
+          </div>
+          <div class="cfg-campo">
+            <label for="cfgPruebaEmail">Enviar una prueba a</label>
+            <div class="cfg-prueba">
+              <input type="email" id="cfgPruebaEmail" placeholder="tu@correo.com" autocomplete="off">
+              <button class="btn btn-outline" id="cfgBtnPrueba">Enviar prueba</button>
+            </div>
+            <div class="cfg-hint">En modo prueba (dryRun) no se envía ningún correo — se muestra aquí cómo quedaría, con el enlace de baja real.</div>
+          </div>
+
+          <div class="cfg-msg" id="cfgMsg"></div>
+
+          <!-- Preflight (bloque 12): comprobación antes de enviar + resumen del envío -->
+          <div class="pf-caja" id="pfCaja">
+            <div class="pf-cab">
+              <strong>Comprobación antes de enviar</strong>
+              <span class="pf-sello" id="pfSello"></span>
+              <button class="btn btn-outline" id="pfComprobar" style="padding:6px 12px; font-size:12.5px;">Comprobar</button>
+            </div>
+            <div class="pf-cuerpo" id="pfCuerpo" style="display:none;">
+              <div id="pfBloqueCriticos">
+                <div class="pf-seccion-tit">Requisitos</div>
+                <div class="pf-lista" id="pfCriticos"></div>
+              </div>
+              <div class="pf-adv" id="pfBloqueAdv" style="display:none;">
+                <div class="pf-seccion-tit">Advertencias (no impiden el envío)</div>
+                <div class="pf-lista" id="pfAdvertencias"></div>
+              </div>
+              <div class="pf-resumen" id="pfResumen">
+                <div class="pf-seccion-tit">Resumen del envío</div>
+                <div class="pf-res-grid" id="pfResGrid"></div>
+              </div>
+              <div class="pf-veredicto" id="pfVeredicto" data-ok="wait"></div>
+            </div>
+            <div class="pf-hint" id="pfHint">Revisa asunto, contenido, enlace de baja, audiencia y cuota antes de programar el envío.</div>
+          </div>
+
+          <div class="cfg-acciones">
+            <button class="btn btn-solid" id="cfgGuardar">Guardar campaña</button>
+            <button class="btn btn-outline" id="cfgProgramar">Programar…</button>
+            <button class="btn btn-outline" id="cfgEnviarAhora">Enviar ahora</button>
+          </div>
+          <div class="cfg-prog" id="cfgProgWrap">
+            <input type="datetime-local" id="cfgProgFecha">
+            <button class="btn btn-solid" id="cfgProgConfirmar" style="padding:8px 14px;">Programar</button>
+            <button class="btn btn-texto" id="cfgProgCancelar" style="padding:8px 4px;">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="cfg-preview">
+          <div class="cfg-preview-head">Vista previa</div>
+          <iframe id="cfgPreviewFrame" title="Vista previa del correo"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Monitor de entregabilidad ================= -->
+<div class="modal-fondo" id="modalReporte">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <h3>Monitor de entregabilidad</h3>
+      <button class="modal-cerrar" id="cerrarReporte">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="rep-cab">
+        <div>
+          <strong id="repTitulo">—</strong>
+          <span id="repFecha">—</span>
+        </div>
+        <span class="rep-salud" id="repSalud" data-salud="sin-datos">—</span>
+      </div>
+      <div class="rep-resumen" id="repResumen">—</div>
+      <div class="rep-vacio" id="repVacio" style="display:none;">Esta campaña todavía no tiene estadísticas de envío.</div>
+      <div id="repCuerpo">
+        <div class="rep-aviso-eventos" id="repAvisoEventos" style="display:none;"></div>
+        <div id="repMetricasWrap"></div>
+        <p class="rep-nota">
+          <b>Sobre las aperturas:</b> son una referencia, no un dato exacto. Apple Mail Privacy
+          Protection y el bloqueo de imágenes de otros clientes inflan o esconden aperturas.
+          Para la salud de la campaña pesan los rebotes, el spam, las bajas y los bloqueos,
+          no la tasa de apertura.
+        </p>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="cerrarReporte2">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Reanudar campaña pausada por reputación ================= -->
+<div class="modal-fondo" id="modalReanudar">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <h3>Reanudar campaña</h3>
+      <button class="modal-cerrar" id="reanCerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <strong id="reanTitulo" style="display:block; font-size:14px; color:var(--texto-alto); margin-bottom:8px;">—</strong>
+      <div class="rep-aviso-eventos" id="reanMotivoPausa" style="display:block; margin-bottom:12px;">—</div>
+      <div class="rep-resumen" id="reanTasas" style="margin-bottom:14px;">—</div>
+      <p style="font-size:12.5px; color:var(--texto-medio); margin:0 0 8px;">
+        La primera tanda al reanudar es reducida (recuperación). Si vuelve a superar un umbral,
+        se vuelve a pausar sola. Escribe por qué es seguro reanudar:
+      </p>
+      <textarea id="reanMotivo" rows="3" placeholder="Ej.: revisé la lista, el pico de rebotes fue por una importación vieja que ya limpié…"
+        style="width:100%; padding:9px 11px; border:1px solid var(--borde); border-radius:6px; font-size:13.5px; font-family:inherit; color:var(--texto-alto); resize:vertical;"></textarea>
+      <div class="cfg-msg" id="reanMsg"></div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="reanCancelar">Cancelar</button>
+      <button class="btn btn-solid" id="reanConfirmar">Reanudar campaña</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Cancelar campaña ================= -->
+<div class="modal-fondo" id="modalCancelar">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3>Cancelar campaña</h3>
+      <button class="modal-cerrar" id="canCerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <strong id="canTitulo" style="display:block; font-size:14px; color:var(--texto-alto); margin-bottom:8px;">—</strong>
+      <p style="font-size:12.5px; color:var(--texto-medio); margin:0 0 10px;">
+        La campaña se detiene de forma <b>definitiva</b>. Los destinatarios que todavía no
+        recibieron el correo no lo recibirán. Esto no se puede deshacer (podrás duplicarla).
+      </p>
+      <textarea id="canMotivo" rows="2" placeholder="Motivo (opcional)"
+        style="width:100%; padding:9px 11px; border:1px solid var(--borde); border-radius:6px; font-size:13.5px; font-family:inherit; color:var(--texto-alto); resize:vertical;"></textarea>
+      <div class="cfg-msg" id="canMsg"></div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="canVolver">No, volver</button>
+      <button class="btn btn-solid" id="canConfirmar" style="background:var(--rojo);">Sí, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Nueva audiencia ================= -->
+<div class="modal-fondo" id="modalAudiencia">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Nueva audiencia</h3>
+      <button class="modal-cerrar" id="audCerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="aud-campo-label" for="audNombre">Nombre de la audiencia</label>
+      <input class="filtro-campo" type="text" id="audNombre" maxlength="80" placeholder="Ej.: Clientes de Master Look" autocomplete="off">
+
+      <label class="aud-campo-label">A quién incluye</label>
+      <div class="aud-seg">
+        <label>
+          <input type="radio" name="audSeg" value="todos" checked>
+          <span>Todos los clientes
+            <span class="aud-seg-sub">Personas con correo en la base de clientes (registrados y de agenda), sin duplicados.</span>
+          </span>
+        </label>
+        <label>
+          <input type="radio" name="audSeg" value="compradores_curso">
+          <span>Compradores de un curso
+            <span class="aud-seg-sub">Quienes tienen acceso a un curso de Academy.</span>
+          </span>
+        </label>
+        <div class="aud-seg-extra" id="audExtraCurso" style="display:none;">
+          <select class="filtro-campo" id="audCurso"><option value="">Cargando cursos…</option></select>
+        </div>
+        <label>
+          <input type="radio" name="audSeg" value="visita_reciente">
+          <span>Visitó recientemente
+            <span class="aud-seg-sub">Clientes con una reserva no rechazada en el período elegido.</span>
+          </span>
+        </label>
+        <div class="aud-dias-inline" id="audExtraDias" style="display:none;">
+          Últimos <input type="number" id="audDias" value="90" min="1" max="730"> días
+        </div>
+      </div>
+
+      <button class="btn btn-outline" id="audCalcular" style="width:100%; justify-content:center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Calcular personas
+      </button>
+
+      <div class="aud-resultado" id="audResultado">
+        <div class="aud-total"><span id="audTotal">0</span> <small>personas recibirán esta campaña</small></div>
+        <div class="aud-desglose" id="audDesglose"></div>
+        <div class="aud-muestra" id="audMuestra"></div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="audCancelar">Cancelar</button>
+      <button class="btn btn-solid" id="audGuardar" disabled>Guardar audiencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Suprimir email ================= -->
+<div class="modal-fondo" id="modalSuprimir">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head">
+      <h3>Suprimir email de marketing</h3>
+      <button class="modal-cerrar" id="supCerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="aud-campo-label" for="supEmail">Correo</label>
+      <input class="filtro-campo" type="email" id="supEmail" placeholder="cliente@correo.com" autocomplete="off">
+      <p style="font-size:12.5px; color:var(--texto-bajo); margin:0;">Este correo dejará de recibir campañas de marketing. Los correos del servicio (reservas, comprobantes) no se ven afectados. Se registra como baja administrativa y podrás reactivarla después.</p>
+      <div class="msg-sup" id="supMsg" style="display:none; margin-top:12px; font-size:13px; padding:10px 12px; border-radius:8px;"></div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="supCancelar">Cancelar</button>
+      <button class="btn btn-solid" id="supConfirmar">Suprimir</button>
+    </div>
+  </div>
+</div>
+</div><!-- /.app -->
+
+<div class="aviso-dev" id="avisoEntorno" style="display:none">estudio90-dev · Email Marketing (Etapa 2). Datos y campañas reales del entorno de pruebas.</div>
+
+<script>
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // Entorno: mismo criterio que la selección de proyecto Firebase de esta
+  // página (ver ES_STAGING más abajo). 'estudio90.github.io' = producción.
+  const EM_ES_PROD = location.hostname === 'estudio90.github.io';
+  // El aviso "entorno de pruebas" SOLO se muestra fuera de producción.
+  if (!EM_ES_PROD) { const _av = document.getElementById('avisoEntorno'); if (_av) _av.style.display = ''; }
+
+  /* =========================================================================
+     MONITOR DE ENTREGABILIDAD (bloque 9 / M4) -- #modalReporte conectado a los
+     `stats` REALES de emailCampaigns/{id} que generan el planificador (b5),
+     las protecciones (b6) y el webhook del proveedor de envío (M2, Resend).
+
+     `emReporte.metricas(stats, settings)` es una función PURA (sin DOM, sin
+     red) -- se expone en window.__emReporteMetricas para poder probarla en
+     Node con `stats` sintéticos (datos normales, sin stats, división por
+     cero, saludable/atención/riesgo).
+     ======================================================================= */
+  const emReporte = (function(){
+    const modal = document.getElementById('modalReporte');
+    const N = (v)=> Number.isFinite(Number(v)) ? Number(v) : 0;
+    const fmt = (n)=> N(n).toLocaleString('es-CL');
+    /** porcentaje n/d -> número o null si el denominador es 0 (división por cero). */
+    const pct = (n, d)=> N(d) > 0 ? (N(n) / N(d)) * 100 : null;
+    const pctTxt = (p)=> p == null ? '—' : (p >= 10 ? p.toFixed(1) : p.toFixed(2)) + '%';
+
+    /** nivel de una tasa (0..1) contra sus umbrales de settings: 'risk' | 'warn' | 'ok'. */
+    function nivel(rate, warn, pause){
+      if(rate == null) return 'ok';
+      if(pause != null && rate >= pause) return 'risk';
+      if(warn != null && rate >= warn) return 'warn';
+      return 'ok';
+    }
+
+    /** NÚCLEO PURO. `stats` = emailCampaigns/{id}.stats ; `st` = settings/emailMarketing (umbrales). */
+    function metricas(stats, st){
+      const s = stats || {}; const cfg = st || {};
+      const enviadosReales = N(s.sentCount);
+      const simulados = N(s.simulatedCount);
+      const base = enviadosReales + simulados;          // "procesados" = denominador de las tasas (igual que evaluarReputacion)
+      const entregados = N(s.deliveredCount);
+      const hard = N(s.hardBounceCount);
+      const soft = N(s.softBounceCount);
+      const blocked = N(s.blockedCount);
+      const invalid = N(s.invalidCount);
+      const spam = N(s.spamCount);
+      const unsub = N(s.unsubscribeCount);
+      const noEntregables = hard + soft + blocked + invalid;
+      const openU = N(s.openUniqueCount), openT = N(s.openTotalCount);
+      const clickU = N(s.clickUniqueCount), clickT = N(s.clickTotalCount);
+      // ¿llegó algún evento del proveedor? (webhook -- M2 / b8)
+      const muestra = entregados + hard + soft + blocked + invalid + spam + unsub;
+      const conEventos = muestra > 0;
+
+      const rHard = pct(hard, base), rSoft = pct(soft, base), rBlocked = pct(blocked, base);
+      const rSpam = pct(spam, base), rUnsub = pct(unsub, base), rNoEnt = pct(noEntregables, base);
+      const rDelivery = pct(entregados, base);
+      // aperturas/clics como % de ENTREGADOS (si no hay entregados aún, cae a `base`)
+      const denomInteraccion = entregados > 0 ? entregados : base;
+      const rOpen = pct(openU, denomInteraccion), rClick = pct(clickU, denomInteraccion);
+      // niveles de color: se calculan sobre la FRACCIÓN cruda count/base (mismo
+      // criterio exacto que evaluarReputacion en el backend), no sobre el % ya
+      // redondeado -- así el color coincide con la pausa automática.
+      const frac = (n)=> base > 0 ? N(n) / base : null;
+      const nNoEnt = nivel(frac(noEntregables), cfg.warnUndeliverableRate, cfg.pauseUndeliverableRate);
+
+      return {
+        base, enviadosReales, simulados, esSimulada: simulados > 0 && enviadosReales === 0,
+        sinDatos: base === 0,
+        conEventos,
+        salud: s.salud || (conEventos ? null : 'sin-datos'),
+        target: N(s.targetCount) || N(s.audienceCount) || base,
+        audienceCount: N(s.audienceCount),
+        suppressedAtBuild: N(s.suppressedAtBuildCount), rejectedAtBuild: N(s.rejectedAtBuildCount),
+        frequencyCapped: N(s.frequencyCappedCount), skippedSuppression: N(s.skippedSuppressionCount),
+        entregados, hard, soft, blocked, invalid, spam, unsub, noEntregables,
+        openU, openT, clickU, clickT,
+        rDelivery, rHard, rSoft, rBlocked, rSpam, rUnsub, rNoEnt, rOpen, rClick,
+        // niveles de color -- sobre la fracción cruda count/base
+        nHard:    nivel(frac(hard),    cfg.warnHardBounceRate,    cfg.pauseHardBounceRate),
+        nSoft:    nivel(frac(soft),    cfg.warnSoftBounceRate,    cfg.pauseSoftBounceRate),
+        nBlocked: nivel(frac(blocked), cfg.warnBlockedRate,       cfg.pauseBlockedRate),
+        nSpam:    nivel(frac(spam),    cfg.warnSpamRate,          cfg.pauseSpamRate),
+        nUnsub:   nivel(frac(unsub),   cfg.warnUnsubRate,         cfg.pauseUnsubRate),
+        nNoEnt,
+        // "Entregados" hereda el color de "no entregables": si las no-entregas
+        // están en zona de riesgo, la entrega también.
+        nDelivery: nNoEnt,
+        _pctTxt: pctTxt,
+      };
+    }
+
+    const SALUD_TXT = { saludable:'Saludable', atencion:'Atención', riesgo:'Riesgo', 'sin-datos':'Sin datos' };
+
+    function tarjeta(num, pctOrSub, label, { nivel, destacado, sub } = {}){
+      return `<div class="rep-mx"${nivel && nivel!=='ok' ? ` data-nivel="${nivel==='risk'?'risk':'warn'}"` : ''}${destacado ? ' data-destacado' : ''}>
+        <div class="rep-mx-num">${esc(num)}${pctOrSub ? ` <span class="rep-mx-pct">${esc(pctOrSub)}</span>` : ''}</div>
+        <div class="rep-mx-label">${esc(label)}</div>
+        ${sub ? `<div class="rep-mx-sub">${esc(sub)}</div>` : ''}
+      </div>`;
+    }
+
+    function pintar(camp, st){
+      const m = metricas(camp.stats, st);
+      // % solo si YA llegaron eventos del proveedor; si no, las tasas son ruido (0.00%)
+      const P = (rate)=> m.conEventos ? m._pctTxt(rate) : null;
+      document.getElementById('repTitulo').textContent = camp.name || 'Campaña';
+      const f = camp.sendStartedAt && camp.sendStartedAt.toDate ? camp.sendStartedAt.toDate() : null;
+      const ff = camp.sendFinishedAt && camp.sendFinishedAt.toDate ? camp.sendFinishedAt.toDate() : null;
+      document.getElementById('repFecha').textContent = f
+        ? (ff ? `Enviada ${f.toLocaleDateString('es-CL')} → ${ff.toLocaleDateString('es-CL')}` : `Envío iniciado ${f.toLocaleString('es-CL')}`)
+        : (PILL_ESTADO[camp.status] ? PILL_ESTADO[camp.status][1] : (camp.status || '—'));
+
+      const salud = m.salud || 'sin-datos';
+      const badge = document.getElementById('repSalud');
+      badge.dataset.salud = salud; badge.textContent = SALUD_TXT[salud] || 'Sin datos';
+
+      const vacio = document.getElementById('repVacio');
+      const cuerpo = document.getElementById('repCuerpo');
+      const resEl = document.getElementById('repResumen');
+
+      // ---- campaña sin estadísticas ----
+      if(m.sinDatos){
+        resEl.style.display = 'none';
+        vacio.style.display = 'block'; cuerpo.style.display = 'none';
+        modal.classList.add('abierto'); return;
+      }
+      vacio.style.display = 'none'; cuerpo.style.display = 'block'; resEl.style.display = 'flex';
+
+      // ---- resumen ----
+      const resumen = [];
+      if(m.audienceCount) resumen.push(`Audiencia <b>${fmt(m.audienceCount)}</b>`);
+      resumen.push(`Objetivo <b>${fmt(m.target)}</b>`);
+      resumen.push(`Procesados <b>${fmt(m.base)}</b>`);
+      if(m.esSimulada) resumen.push(`<b>simulada</b> (dryRun)`);
+      else if(m.simulados) resumen.push(`(${fmt(m.enviadosReales)} reales · ${fmt(m.simulados)} simulados)`);
+      if(m.frequencyCapped) resumen.push(`Omitidos por frecuencia <b>${fmt(m.frequencyCapped)}</b>`);
+      if(m.skippedSuppression) resumen.push(`Omitidos por supresión <b>${fmt(m.skippedSuppression)}</b>`);
+      resEl.innerHTML = resumen.join(' · ');
+
+      // ---- aviso "sin eventos todavía" ----
+      const aviso = document.getElementById('repAvisoEventos');
+      if(!m.conEventos){
+        aviso.style.display = 'block';
+        aviso.textContent = m.esSimulada
+          ? 'Campaña simulada (dryRun): no hay eventos reales del proveedor de envío. Los contadores de entrega, rebotes, aperturas y clics se llenan solo con envío real.'
+          : 'Envío en curso: el proveedor de envío todavía no ha reportado eventos de entrega, rebote ni apertura para esta campaña. Las tasas aparecen a medida que llegan.';
+      }else{
+        aviso.style.display = 'none';
+      }
+
+      // ---- métricas ----
+      const wrap = document.getElementById('repMetricasWrap');
+      const seccion = (t)=> `<div class="rep-seccion">${t}</div>`;
+      let html = seccion('Envío');
+      html += '<div class="rep-metricas">';
+      html += tarjeta(fmt(m.base), null, m.esSimulada ? 'Procesados (simulados)' : 'Enviados', { destacado:true });
+      html += tarjeta(fmt(m.entregados), P(m.rDelivery), 'Entregados', { nivel:m.nDelivery, destacado:true, sub:m.conEventos ? 'delivery rate' : 'sin eventos aún' });
+      html += tarjeta(fmt(m.noEntregables), P(m.rNoEnt), 'No entregables', { nivel:m.nNoEnt, sub:'duro+blando+bloqueo+inválido' });
+      html += '</div>';
+
+      html += seccion('Problemas de reputación');
+      html += '<div class="rep-metricas">';
+      html += tarjeta(fmt(m.hard), P(m.rHard), 'Rebote duro', { nivel:m.nHard });
+      html += tarjeta(fmt(m.soft), P(m.rSoft), 'Rebote blando', { nivel:m.nSoft });
+      html += tarjeta(fmt(m.blocked), P(m.rBlocked), 'Bloqueados', { nivel:m.nBlocked });
+      html += tarjeta(fmt(m.invalid), null, 'Inválidos');
+      html += tarjeta(fmt(m.spam), P(m.rSpam), 'Quejas de spam', { nivel:m.nSpam });
+      html += tarjeta(fmt(m.unsub), P(m.rUnsub), 'Bajas', { nivel:m.nUnsub });
+      html += '</div>';
+
+      html += seccion('Interacción');
+      html += '<div class="rep-metricas">';
+      html += tarjeta(fmt(m.openU), P(m.rOpen), 'Aperturas únicas', { sub:`${fmt(m.openT)} en total` });
+      html += tarjeta(fmt(m.clickU), P(m.rClick), 'Clics únicos', { sub:`${fmt(m.clickT)} en total` });
+      html += '</div>';
+
+      wrap.innerHTML = html;
+      modal.classList.add('abierto');
+    }
+
+    async function abrir(id){
+      document.querySelectorAll('.acciones-menu').forEach(x=> x.classList.remove('abierto'));
+      document.getElementById('repTitulo').textContent = 'Cargando…';
+      document.getElementById('repFecha').textContent = '';
+      document.getElementById('repResumen').style.display = 'none';
+      document.getElementById('repAvisoEventos').style.display = 'none';
+      const b0 = document.getElementById('repSalud'); b0.dataset.salud = 'sin-datos'; b0.textContent = '';
+      document.getElementById('repVacio').style.display = 'none';
+      document.getElementById('repCuerpo').style.display = 'none';
+      modal.classList.add('abierto');
+      try{
+        const fdb = firebase.firestore();
+        const [cs, ss] = await Promise.all([
+          fdb.collection('emailCampaigns').doc(id).get(),
+          fdb.collection('settings').doc('emailMarketing').get(),
+        ]);
+        if(!cs.exists){ document.getElementById('repTitulo').textContent = 'La campaña ya no existe'; return; }
+        pintar(Object.assign({ id: cs.id }, cs.data()), ss.exists ? ss.data() : {});
+      }catch(e){
+        console.warn('emReporte.abrir:', e.message);
+        document.getElementById('repTitulo').textContent = 'No se pudo cargar el reporte';
+        document.getElementById('repResumen').textContent = e.message;
+      }
+    }
+
+    function cerrar(){ modal.classList.remove('abierto'); }
+    document.getElementById('cerrarReporte').addEventListener('click', cerrar);
+    document.getElementById('cerrarReporte2').addEventListener('click', cerrar);
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) cerrar(); });
+
+    return { abrir, metricas };
+  })();
+  window.__emReporteMetricas = emReporte.metricas;
+
+  /* =========================================================================
+     PAUSAR / REANUDAR / CANCELAR campañas (bloque 11).
+     - Pausar (enviando)         -> confirmación en línea (2º clic).
+     - Reanudar (pausada)        -> confirmación en línea (2º clic).
+     - Reanudar (pausada_reputacion) -> #modalReanudar (motivo obligatorio + tasas).
+     - Cancelar (varios estados) -> #modalCancelar (motivo opcional).
+     Cada acción refresca la lista al terminar.
+     ======================================================================= */
+  const emAcciones = (function(){
+    let fnPausar = null, fnReanudar = null, fnCancelar = null;
+    function fns(){
+      const f = firebase.app().functions('us-central1');
+      fnPausar = fnPausar || f.httpsCallable('emailCampanaPausar');
+      fnReanudar = fnReanudar || f.httpsCallable('emailCampanaReanudar');
+      fnCancelar = fnCancelar || f.httpsCallable('emailCampanaCancelar');
+    }
+    const N = (v)=> Number.isFinite(Number(v)) ? Number(v) : 0;
+
+    /** botón que se "arma" al 1er clic y ejecuta al 2º (evita un modal más). */
+    function armar(btn, textoArmado, accion){
+      if(btn.dataset.armado === '1'){ btn.dataset.armado = ''; accion(); return; }
+      const orig = btn.textContent;
+      btn.dataset.armado = '1'; btn.textContent = textoArmado;
+      btn.classList.add('btn-armado');
+      const reset = ()=>{ btn.dataset.armado = ''; btn.textContent = orig; btn.classList.remove('btn-armado'); };
+      btn._resetArmado = reset;
+      setTimeout(()=>{ if(btn.dataset.armado === '1') reset(); }, 4000);
+    }
+
+    async function ejecutar(btn, fn, data, okMsg){
+      const prev = btn.textContent;
+      btn.disabled = true; btn.textContent = '…';
+      try{
+        fns();
+        const r = await fn(data);
+        btn.textContent = okMsg || 'Listo';
+        setTimeout(()=> emCargarBorradores(), 350);
+      }catch(e){
+        btn.disabled = false; btn.textContent = prev;
+        alert((e && e.message) ? e.message : 'No se pudo completar la acción.');
+      }
+    }
+
+    function pausar(btn, id){
+      armar(btn, '¿Pausar? · sí', ()=> ejecutar(btn, fnPausar, { campaignId: id }, 'Pausada'));
+    }
+    function reanudarSimple(btn, id){
+      armar(btn, '¿Reanudar? · sí', ()=> ejecutar(btn, fnReanudar, { campaignId: id }, 'Reanudada'));
+    }
+
+    // ---- modal reanudar (pausada_reputacion) ----
+    const mRean = document.getElementById('modalReanudar');
+    let reanId = null;
+    async function abrirReanudar(id){
+      reanId = id;
+      document.getElementById('reanMsg').className = 'cfg-msg';
+      document.getElementById('reanMotivo').value = '';
+      document.getElementById('reanTitulo').textContent = 'Cargando…';
+      mRean.classList.add('abierto');
+      try{
+        const c = (await firebase.firestore().collection('emailCampaigns').doc(id).get()).data() || {};
+        const s = c.stats || {};
+        document.getElementById('reanTitulo').textContent = c.name || 'Campaña';
+        document.getElementById('reanMotivoPausa').textContent = 'Se pausó sola: ' + (c.pauseReason || 'protección de reputación.');
+        const base = N(s.sentCount) + N(s.simulatedCount);
+        const p = (n)=> base > 0 ? ((N(n)/base)*100).toFixed(2) + '%' : '—';
+        document.getElementById('reanTasas').innerHTML =
+          `Rebote duro <b>${p(s.hardBounceCount)}</b> · Spam <b>${p(s.spamCount)}</b> · Bloqueados <b>${p(s.blockedCount)}</b> · Bajas <b>${p(s.unsubscribeCount)}</b> · Base <b>${base.toLocaleString('es-CL')}</b>`;
+      }catch(e){ document.getElementById('reanTitulo').textContent = 'No se pudo cargar la campaña'; }
+    }
+    function cerrarReanudar(){ mRean.classList.remove('abierto'); reanId = null; }
+    document.getElementById('reanCerrar').addEventListener('click', cerrarReanudar);
+    document.getElementById('reanCancelar').addEventListener('click', cerrarReanudar);
+    mRean.addEventListener('click', (e)=>{ if(e.target === mRean) cerrarReanudar(); });
+    document.getElementById('reanConfirmar').addEventListener('click', async ()=>{
+      const motivo = document.getElementById('reanMotivo').value.trim();
+      const msg = document.getElementById('reanMsg');
+      if(motivo.length < 10){ msg.className = 'cfg-msg err'; msg.textContent = 'Escribe un motivo de al menos 10 caracteres.'; return; }
+      const b = document.getElementById('reanConfirmar');
+      b.disabled = true; b.textContent = 'Reanudando…';
+      try{
+        fns();
+        await fnReanudar({ campaignId: reanId, motivo });
+        cerrarReanudar();
+        emCargarBorradores();
+      }catch(e){
+        b.disabled = false; b.textContent = 'Reanudar campaña';
+        msg.className = 'cfg-msg err'; msg.textContent = (e && e.message) || 'No se pudo reanudar.';
+      }
+    });
+
+    // ---- modal cancelar ----
+    const mCan = document.getElementById('modalCancelar');
+    let canId = null;
+    function abrirCancelar(id, nombre){
+      canId = id;
+      document.getElementById('canMsg').className = 'cfg-msg';
+      document.getElementById('canMotivo').value = '';
+      document.getElementById('canTitulo').textContent = nombre || 'Campaña';
+      const b = document.getElementById('canConfirmar');
+      b.disabled = false; b.textContent = 'Sí, cancelar';
+      mCan.classList.add('abierto');
+    }
+    function cerrarCancelar(){ mCan.classList.remove('abierto'); canId = null; }
+    document.getElementById('canCerrar').addEventListener('click', cerrarCancelar);
+    document.getElementById('canVolver').addEventListener('click', cerrarCancelar);
+    mCan.addEventListener('click', (e)=>{ if(e.target === mCan) cerrarCancelar(); });
+    document.getElementById('canConfirmar').addEventListener('click', async ()=>{
+      const b = document.getElementById('canConfirmar');
+      b.disabled = true; b.textContent = 'Cancelando…';
+      try{
+        fns();
+        await fnCancelar({ campaignId: canId, motivo: document.getElementById('canMotivo').value.trim() });
+        cerrarCancelar();
+        emCargarBorradores();
+      }catch(e){
+        b.disabled = false; b.textContent = 'Sí, cancelar';
+        const msg = document.getElementById('canMsg');
+        msg.className = 'cfg-msg err'; msg.textContent = (e && e.message) || 'No se pudo cancelar.';
+      }
+    });
+
+    return { pausar, reanudarSimple, abrirReanudar, abrirCancelar };
+  })();
+
+  document.getElementById('btnFiltrar').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('panelFiltrar').classList.toggle('abierto');
+  });
+  document.getElementById('btnRestablecer').addEventListener('click', ()=> document.getElementById('panelFiltrar').classList.remove('abierto'));
+  document.getElementById('btnBuscarFiltro').addEventListener('click', ()=> document.getElementById('panelFiltrar').classList.remove('abierto'));
+
+  /* =========================================================================
+     EDITOR DE CAMPAÑAS -- Etapa 1 (SOLO el editor: abrir plantilla, editar,
+     guardar borrador, reabrir, generar htmlFinal). Envío real y escritura en
+     `mail` quedan para una etapa posterior -- no se tocan acá.
+
+     Arquitectura pedida explícitamente: nada fuera de `emEditor` conoce
+     grapesjs-mjml. El resto del wizard (guardar en Firestore, refrescar la
+     lista, etc.) solo llama a las 5 funciones de abajo -- si mañana cambia
+     el motor de renderizado, se reescribe adentro de emEditor y nada más.
+     ========================================================================= */
+
+  // Placeholder de imagen propio (SVG en data: URI) -- sin depender de un
+  // servicio externo (via.placeholder.com y similares pueden caer o
+  // desaparecer; esto es 100% local y siempre renderiza).
+  const EM_PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='220'%3E%3Crect width='400' height='220' fill='%23F3EEFC'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%238046CE' text-anchor='middle' dy='.3em'%3EImagen%3C/text%3E%3C/svg%3E";
+
+  // Cabecera y pie MJML compartidos por TODAS las plantillas -- mismos
+  // mj-attributes (tipografía/colores base) y mismo footer con redes
+  // sociales, para no repetirlo N veces y para que "redes sociales" esté
+  // presente en todas.
+  //
+  // SISTEMA TIPOGRÁFICO (aprobado, medido del HTML real de AgendaPro que
+  // usa el default de Unlayer): `arial, helvetica, sans-serif` en TODO,
+  // una sola familia, sin segunda tipografía, sin letter-spacing, sin
+  // estilos editoriales. Título 22px/700, cuerpo 14px/400, botón 14px/400,
+  // line-height 1.4 (140%) en ambos. La identidad de Master Look viene del
+  // color (morado #8046CE), imágenes, composición, botones y espaciado --
+  // NO de la fuente.
+  function emPlantillaBase(cuerpo){
+    return `<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="arial, helvetica, sans-serif" />
+      <mj-text color="#2C3941" font-size="14px" line-height="1.4" />
+      <mj-button font-size="14px" font-weight="400" line-height="1.4" background-color="#8046CE" color="#ffffff" border-radius="6px" inner-padding="12px 28px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#F0F3F4" width="600px">
+    <mj-section background-color="#ffffff" padding="28px 24px 12px">
+      <mj-column>
+        <mj-text align="center" font-size="18px" font-weight="700" line-height="1.4" color="#8046CE">MASTER LOOK</mj-text>
+      </mj-column>
+    </mj-section>
+${cuerpo}
+    <mj-section background-color="#ffffff" padding="8px 24px 0">
+      <mj-column><mj-divider border-color="#E0E4E4" border-width="1px"></mj-divider></mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="16px 24px 28px">
+      <mj-column>
+        <mj-social font-size="13px" icon-size="22px" mode="horizontal" align="center" color="#8A9296">
+          <mj-social-element name="instagram" href="https://instagram.com/" background-color="#8046CE" />
+          <mj-social-element name="facebook" href="https://facebook.com/" background-color="#8046CE" />
+          <mj-social-element name="whatsapp" href="https://wa.me/" background-color="#8046CE" />
+        </mj-social>
+        <mj-spacer height="10px"></mj-spacer>
+        <mj-text align="center" font-size="11px" color="#8A9296">Master Look · Barbería${' '}·${' '}Si no quieres seguir recibiendo estos correos, puedes darte de baja.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>`;
+  }
+
+  // Bloques MJML reutilizables entre plantillas -- para no repetir markup y
+  // que todas compartan el mismo ritmo de composición.
+  const emSec = (padding, contenido) => `    <mj-section background-color="#ffffff" padding="${padding}">\n      <mj-column>\n${contenido}\n      </mj-column>\n    </mj-section>`;
+  // line-height explícito a propósito: MJML no cascadea de forma confiable el
+  // line-height del <mj-text> de mj-attributes a los mj-text que además traen
+  // font-size/font-weight (verificado en el HTML compilado -- los títulos
+  // salían en line-height:1). Se fija 1.4 (140%) en cada uno.
+  const emTitulo = (t) => `        <mj-text align="center" font-size="22px" font-weight="700" line-height="1.4">${t}</mj-text>`;
+  const emParrafo = (t, align='center') => `        <mj-text align="${align}" font-size="14px" line-height="1.4">${t}</mj-text>`;
+  // grapesjs-mjml NO aplica el <mj-button> de mj-attributes a los <mj-button>
+  // reales (verificado: salían con el default de MJML -- fondo #414141, 13px,
+  // line-height 120%). Todo el estilo del botón va inline acá.
+  const emBoton = (t, pad='16px 0 4px') => `        <mj-button href="${EM_ES_PROD ? 'https://estudio90.github.io/Estudio90/' : 'https://estudio90-dev.web.app'}" background-color="#8046CE" color="#ffffff" font-size="14px" font-weight="400" line-height="1.4" border-radius="6px" inner-padding="12px 28px" padding="${pad}">${t}</mj-button>`;
+  const emImagen = (alt) => `        <mj-image src="${EM_PLACEHOLDER_IMG}" alt="${alt}"></mj-image>`;
+  // etiqueta/subtítulo en negrita (tarjetas, paneles) -- line-height explícito
+  // por el mismo motivo que emTitulo.
+  const emBold = (t, extra='') => `        <mj-text align="center" font-weight="700" line-height="1.4"${extra ? ' ' + extra : ''}>${t}</mj-text>`;
+  const emDivisor = () => `        <mj-divider border-color="#E0E4E4" border-width="1px"></mj-divider>`;
+  const emEspacio = (h='12px') => `        <mj-spacer height="${h}"></mj-spacer>`;
+  // panel destacado (fondo morado suave) para regalos / hitos / ofertas
+  const emPanel = (contenido) => `    <mj-section background-color="#ffffff" padding="8px 24px">
+      <mj-column background-color="#F3EEFC" border-radius="8px" padding="18px 20px">
+${contenido}
+      </mj-column>
+    </mj-section>`;
+
+  const EM_PLANTILLAS = [
+    // ---------- Captación ----------
+    { id:'bienvenida', cat:'Captación', nombre:'Bienvenida', desc:'Recibe a un cliente nuevo.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('¡Bienvenido a Master Look!'), emParrafo('Gracias por confiar en nosotros. Queremos que tu primera visita sea inolvidable, desde el corte hasta el último detalle.'), emBoton('Agenda tu primera cita')].join('\n')) + '\n' +
+      `    <mj-section background-color="#ffffff" padding="12px 24px 20px">
+      <mj-column>${emImagen('Corte')}<mj-text align="center" font-size="13px" font-weight="700" line-height="1.4">Corte clásico</mj-text></mj-column>
+      <mj-column>${emImagen('Barba')}<mj-text align="center" font-size="13px" font-weight="700" line-height="1.4">Arreglo de barba</mj-text></mj-column>
+    </mj-section>`) },
+
+    { id:'nuevo-servicio', cat:'Captación', nombre:'Nuevo servicio', desc:'Presenta un servicio que sumaste.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Se viene un servicio nuevo'), emParrafo('Cuenta en qué consiste, para quién es y qué lo hace especial.')].join('\n')) + '\n' +
+      emSec('0 24px 12px', emImagen('Nuevo servicio')) + '\n' +
+      emSec('4px 24px 20px', emBoton('Reservar este servicio', '4px 0'))) },
+
+    // ---------- Promociones ----------
+    { id:'paquetes', cat:'Promociones', nombre:'Promoción de combo o paquete', desc:'Combos de servicios con ahorro.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Combos pensados para ti'), emParrafo('Combina servicios y ahorra en cada visita. Estos son los más elegidos este mes.')].join('\n')) + '\n' +
+      `    <mj-section background-color="#ffffff" padding="8px 24px">
+      <mj-column border="1px solid #E0E4E4" border-radius="8px" padding="16px">
+        <mj-text align="center" font-weight="700" line-height="1.4">Corte + Barba</mj-text>
+        <mj-text align="center" color="#4C5559">Ahorra 15% al combinar ambos servicios.</mj-text>
+      </mj-column>
+      <mj-column border="1px solid #E0E4E4" border-radius="8px" padding="16px">
+        <mj-text align="center" font-weight="700" line-height="1.4">Plan mensual</mj-text>
+        <mj-text align="center" color="#4C5559">4 cortes al mes a precio preferencial.</mj-text>
+      </mj-column>
+    </mj-section>` + '\n' +
+      emSec('16px 24px 4px', emBoton('Ver todos los combos', '4px 0'))) },
+
+    { id:'fecha-especial', cat:'Promociones', nombre:'Fecha especial', desc:'Aniversario, feriado, día del padre, etc.', mjml: emPlantillaBase(
+      emSec('0 24px 12px', emImagen('Fecha especial')) + '\n' +
+      emSec('4px 24px 20px', [emTitulo('Este mes, celébralo con un corte nuevo'), emParrafo('Escribe acá el mensaje para la fecha que quieras destacar: aniversario, feriado o promoción puntual.'), emBoton('Agenda tu hora')].join('\n'))) },
+
+    { id:'estacional', cat:'Promociones', nombre:'Campaña de temporada', desc:'Verano, fiestas, 18 de septiembre, vuelta a clases.', mjml: emPlantillaBase(
+      emSec('0 24px 12px', emImagen('Temporada')) + '\n' +
+      emSec('4px 24px 20px', [emTitulo('La temporada llega a Master Look'), emParrafo('Reemplaza este texto por el mensaje de la temporada que quieras aprovechar. Deja lista tu cita antes de que se llenen las agendas.'), emBoton('Agenda tu hora')].join('\n'))) },
+
+    { id:'ultimos-cupos', cat:'Promociones', nombre:'Últimos cupos', desc:'Escasez / urgencia por disponibilidad.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Quedan pocos lugares'), emParrafo('Las horas de este fin de semana se están llenando. Si querías pasar, este es el momento de reservar.')].join('\n')) + '\n' +
+      emPanel(`        <mj-text align="center" font-weight="700" line-height="1.4" color="#8046CE">Agenda casi completa</mj-text>\n        <mj-text align="center" color="#4C5559">Ajusta el detalle según los cupos reales que te queden.</mj-text>`) + '\n' +
+      emSec('16px 24px 20px', emBoton('Reservar mi lugar', '4px 0'))) },
+
+    // ---------- Retención ----------
+    { id:'reconquistar', cat:'Retención', nombre:'Reconquista: reagenda tu cita', desc:'Cliente que se enfrió hace poco.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Te extrañamos por acá'), emParrafo('Ha pasado un tiempo desde tu última visita. Vuelve y aprovecha un descuento especial solo por esta vez.')].join('\n')) + '\n' +
+      emPanel(`        <mj-text align="center" font-size="22px" font-weight="700" line-height="1.4" color="#8046CE">20% OFF</mj-text>\n        <mj-text align="center" color="#4C5559">en tu próxima visita</mj-text>`) + '\n' +
+      emSec('16px 24px 20px', emBoton('Quiero volver', '4px 0'))) },
+
+    { id:'reactivacion', cat:'Retención', nombre:'Reactivación de inactivos', desc:'Cliente perdido hace varios meses; oferta fuerte.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Hace tiempo que no nos vemos'), emParrafo('Han pasado varios meses desde tu última visita a Master Look. Nos encantaría volver a atenderte, y para animarte queremos hacerte una oferta que no repetimos seguido.')].join('\n')) + '\n' +
+      emPanel(`        <mj-text align="center" font-size="22px" font-weight="700" line-height="1.4" color="#8046CE">25% en tu primer servicio de vuelta</mj-text>\n        <mj-text align="center" color="#4C5559">Válido por tiempo limitado. Ajusta las condiciones a tu campaña.</mj-text>`) + '\n' +
+      emSec('16px 24px 20px', emBoton('Volver ahora', '4px 0'))) },
+
+    { id:'cumpleanos', cat:'Retención', nombre:'Cumpleaños', desc:'Saludo + regalo por el mes del cliente.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('¡Feliz cumpleaños de parte de Master Look!'), emParrafo('Queremos celebrarlo contigo. Este mes tienes un regalo esperándote en el salón.')].join('\n')) + '\n' +
+      emPanel(`        <mj-text align="center" font-weight="700" line-height="1.4" color="#8046CE">Tu regalo</mj-text>\n        <mj-text align="center" color="#4C5559">Describe acá el regalo: un servicio extra, un producto o un porcentaje de descuento.</mj-text>`) + '\n' +
+      emSec('16px 24px 6px', emBoton('Reservar mi regalo', '4px 0')) + '\n' +
+      emSec('0 24px 20px', emParrafo('Válido durante el mes de tu cumpleaños, presentando este correo.'))) },
+
+    { id:'fidelizacion', cat:'Retención', nombre:'Cliente frecuente', desc:'Reconoce un hito del cliente habitual.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Gracias por tu preferencia'), emParrafo('Eres de los clientes que hacen que Master Look sea lo que es. Queremos reconocerlo.')].join('\n')) + '\n' +
+      emPanel(`        <mj-text align="center" font-weight="700" line-height="1.4" color="#8046CE">Vas por tu corte N.º 6</mj-text>\n        <mj-text align="center" color="#4C5559">Este va por la casa. Ajusta el hito y el beneficio a tu programa.</mj-text>`) + '\n' +
+      emSec('16px 24px 20px', emBoton('Reservar mi corte', '4px 0'))) },
+
+    { id:'recordatorio-corte', cat:'Retención', nombre:'Ya toca tu corte', desc:'Recordatorio corto por tiempo transcurrido.', mjml: emPlantillaBase(
+      emSec('16px 24px 20px', [emTitulo('¿Hace cuánto fue tu último corte?'), emParrafo('Ya pasaron un par de semanas. Reserva tu hora ahora y mantén tu estilo al día sin apuros de último minuto.'), emBoton('Agenda ahora')].join('\n'))) },
+
+    // ---------- Anuncios ----------
+    { id:'novedades', cat:'Anuncios', nombre:'Novedades del salón', desc:'Cuenta una novedad del negocio.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Novedades en Master Look'), emParrafo('Escribe un título que resuma qué hay de nuevo: un servicio, un producto o un cambio que quieras contarle a tus clientes.')].join('\n')) + '\n' +
+      emSec('8px 24px', emDivisor()) + '\n' +
+      emSec('8px 24px 20px', [emParrafo('Desarrolla acá el detalle, con el mismo tono cercano con el que le hablarías a un cliente en el salón.', 'left'), emBoton('Saber más', '12px 0 4px')].join('\n'))) },
+
+    { id:'equipo-nuevo', cat:'Anuncios', nombre:'Nuevo integrante del equipo', desc:'Presenta a un barbero que se suma.', mjml: emPlantillaBase(
+      emSec('12px 24px 4px', emTitulo('Damos la bienvenida a un nuevo barbero')) + '\n' +
+      emSec('4px 24px 12px', emImagen('Retrato del nuevo barbero')) + '\n' +
+      emSec('0 24px 20px', [emParrafo('Cuenta quién es, su estilo y su experiencia. Un par de líneas cercanas alcanzan.'), emBoton('Agenda con el equipo')].join('\n'))) },
+
+    { id:'aviso-operativo', cat:'Anuncios', nombre:'Aviso operativo', desc:'Cambio de precios, horarios o sede. Tono sobrio.', mjml: emPlantillaBase(
+      emSec('16px 24px 8px', [emTitulo('Información importante'), emParrafo('Usa esta plantilla para comunicar un cambio operativo: precios, horarios de atención, una nueva sede o una fecha en que no habrá atención.', 'left')].join('\n')) + '\n' +
+      emSec('8px 24px', emDivisor()) + '\n' +
+      emSec('8px 24px 20px', [emParrafo('Detalla acá el cambio con claridad y desde cuándo aplica. Si son varios puntos, enuméralos.', 'left'), emBoton('Ver más detalles', '12px 0 4px')].join('\n'))) },
+
+    // ---------- Catálogo ----------
+    { id:'productos', cat:'Catálogo', nombre:'Productos de la tienda', desc:'Promociona productos para llevar a casa.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Lo mejor para cuidar tu estilo en casa'), emParrafo('Los mismos productos que usamos en el salón, disponibles para ti.')].join('\n')) + '\n' +
+      `    <mj-section background-color="#ffffff" padding="8px 24px 4px">
+      <mj-column>${emImagen('Producto 1')}<mj-text align="center" font-weight="700" line-height="1.4">Cera de peinado</mj-text><mj-text align="center" color="#4C5559">$9.990</mj-text>${emBoton('Comprar', '8px 0 0')}</mj-column>
+      <mj-column>${emImagen('Producto 2')}<mj-text align="center" font-weight="700" line-height="1.4">Aceite para barba</mj-text><mj-text align="center" color="#4C5559">$12.990</mj-text>${emBoton('Comprar', '8px 0 0')}</mj-column>
+    </mj-section>`) },
+
+    { id:'cursos', cat:'Catálogo', nombre:'Cursos de Academy', desc:'Promociona un curso de Master Look Academy.', mjml: emPlantillaBase(
+      emSec('12px 24px', [emTitulo('Aprende con Master Look Academy'), emParrafo('Lleva tu técnica al siguiente nivel con nuestros cursos, dictados por el mismo equipo del salón.')].join('\n')) + '\n' +
+      `    <mj-section background-color="#ffffff" padding="8px 24px">
+      <mj-column border="1px solid #E0E4E4" border-radius="8px" padding="0">
+        ${emImagen('Portada del curso')}
+        <mj-text padding="14px 16px 2px" font-weight="700" line-height="1.4">Nombre del curso</mj-text>
+        <mj-text padding="0 16px" color="#4C5559">Una línea que explique para quién es y qué se lleva el alumno.</mj-text>
+        ${emBoton('Ver el curso', '12px 16px 16px')}
+      </mj-column>
+    </mj-section>`) },
+
+    // ---------- Desde cero ----------
+    { id:'scaffold-texto', cat:'Desde cero', nombre:'Empezar: solo texto', desc:'Lienzo mínimo, sin imágenes.', mjml: emPlantillaBase(
+      emSec('16px 24px 20px', [emTitulo('Tu título aquí'), emParrafo('Tu mensaje aquí. Reemplaza este texto por lo que quieras contarle a tus clientes.', 'left'), emBoton('Tu botón')].join('\n'))) },
+
+    { id:'scaffold-imagen-texto', cat:'Desde cero', nombre:'Empezar: imagen + texto', desc:'Lienzo mínimo con una imagen arriba.', mjml: emPlantillaBase(
+      emSec('0 24px 12px', emImagen('Tu imagen')) + '\n' +
+      emSec('4px 24px 20px', [emTitulo('Tu título aquí'), emParrafo('Tu mensaje aquí.', 'left'), emBoton('Tu botón')].join('\n'))) },
+  ];
+
+  function emPintarGaleria(){
+    const cats = [...new Set(EM_PLANTILLAS.map(p=> p.cat))];
+    document.getElementById('gridPlantillas').innerHTML = cats.map(cat=>`
+      <div class="plantilla-cat">${esc(cat)}</div>
+      <div class="plantilla-grid">${EM_PLANTILLAS.filter(p=> p.cat === cat).map(p=>`
+        <div class="plantilla-card" data-plantilla="${p.id}">
+          <div class="plantilla-preview"><img src="${EM_PLACEHOLDER_IMG}" alt=""></div>
+          <div class="plantilla-info">
+            <p class="plantilla-nombre">${esc(p.nombre)}</p>
+            <p class="plantilla-desc">${esc(p.desc)}</p>
+          </div>
+        </div>`).join('')}</div>`).join('');
+    document.querySelectorAll('[data-plantilla]').forEach(card=>{
+      card.addEventListener('click', ()=> emAbrirEditor({ plantillaId: card.dataset.plantilla }));
+    });
+  }
+
+  function emAbrirGaleria(){
+    document.getElementById('vistaCampanas').style.display = 'none';
+    document.getElementById('vistaPlantillas').style.display = '';
+    emPintarGaleria();
+  }
+  document.getElementById('btnVolverDePlantillas').addEventListener('click', ()=>{
+    document.getElementById('vistaPlantillas').style.display = 'none';
+    document.getElementById('vistaCampanas').style.display = '';
+  });
+
+  /* ---------- emEditor: única frontera con grapesjs-mjml ---------- */
+  const emEditor = (function(){
+    let libsListas = null; // Promise, para no cargar dos veces si se abre/cierra rápido
+    let instancia = null;
+
+    function inyectar(tag, attrs){
+      return new Promise((resolve, reject)=>{
+        const el = document.createElement(tag);
+        Object.entries(attrs).forEach(([k,v])=> el[k] = v);
+        el.onload = resolve;
+        el.onerror = ()=> reject(new Error('No se pudo cargar ' + (attrs.src || attrs.href)));
+        document.head.appendChild(el);
+      });
+    }
+
+    function cargarLibrerias(){
+      // Carga diferida a propósito: GrapesJS + grapesjs-mjml (~640 KB gzip
+      // entre los dos) NUNCA se piden salvo que el usuario entre a este
+      // paso -- Campañas/Audiencias/Suprimidos y el resto del panel no
+      // cargan ni un byte de esto.
+      if(!libsListas){
+        libsListas = inyectar('link', { rel:'stylesheet', href:'https://unpkg.com/grapesjs/dist/css/grapes.min.css' })
+          .then(()=> inyectar('script', { src:'https://unpkg.com/grapesjs' }))
+          .then(()=> inyectar('script', { src:'https://unpkg.com/grapesjs-mjml' }));
+      }
+      return libsListas;
+    }
+
+    async function montar(contenedor){
+      await cargarLibrerias();
+      if(instancia){ instancia.destroy(); instancia = null; } // nunca 2 instancias vivas a la vez
+      contenedor.innerHTML = '';
+      instancia = grapesjs.init({
+        container: contenedor,
+        height: '100%',
+        fromElement: false,
+        storageManager: false, // el guardado real es Firestore (ver emGuardarBorrador), no localStorage
+        plugins: ['grapesjs-mjml'],
+        pluginsOpts: { 'grapesjs-mjml': {} },
+      });
+      return instancia;
+    }
+
+    function cargarPlantilla(mjmlSrc){ if(instancia) instancia.setComponents(mjmlSrc); }
+    function cargarBorrador(editorData){ if(instancia && editorData) instancia.loadProjectData(editorData); }
+    function obtenerBorrador(){ return instancia ? instancia.getProjectData() : null; }
+    function obtenerHtmlFinal(){
+      if(!instancia) return '';
+      const r = instancia.runCommand('mjml-code-to-html');
+      return (r && r.html) || '';
+    }
+    function deshacer(){ if(instancia) instancia.runCommand('core:undo'); }
+    function rehacer(){ if(instancia) instancia.runCommand('core:redo'); }
+    function cambiarDispositivo(id){ if(instancia) instancia.setDevice(id); } // ids reales verificados: 'desktop' | 'mobilePortrait'
+    function onCambio(cb){ if(instancia) instancia.on('update', cb); }
+    function destruir(){ if(instancia){ instancia.destroy(); instancia = null; } }
+
+    return { montar, cargarPlantilla, cargarBorrador, obtenerBorrador, obtenerHtmlFinal, deshacer, rehacer, cambiarDispositivo, onCambio, destruir };
+  })();
+
+  let emBorradorActualId = null; // null = campaña nueva sin guardar todavía
+
+  async function emAbrirEditor(opts){
+    document.getElementById('vistaPlantillas').style.display = 'none';
+    document.getElementById('vistaCampanas').style.display = 'none';
+    document.getElementById('vistaEditorCampana').style.display = 'flex';
+    document.getElementById('emEstadoGuardado').textContent = 'Cargando editor…';
+
+    emBorradorActualId = opts.borradorId || null;
+    const nombreInput = document.getElementById('emNombreCampana');
+
+    await emEditor.montar(document.getElementById('emContenedorEditor'));
+
+    if(opts.borradorId){
+      nombreInput.value = opts.nombre || '';
+      emEditor.cargarBorrador(JSON.parse(opts.editorData));
+    }else{
+      const plantilla = EM_PLANTILLAS.find(p=> p.id === opts.plantillaId) || EM_PLANTILLAS[0];
+      nombreInput.value = plantilla.nombre;
+      emEditor.cargarPlantilla(plantilla.mjml);
+    }
+
+    document.getElementById('emEstadoGuardado').textContent = '';
+    emActualizarBotonesHistorial();
+    emEditor.onCambio(emActualizarBotonesHistorial);
+  }
+
+  function emActualizarBotonesHistorial(){
+    // GrapesJS no expone "hay algo para deshacer" de forma directa y
+    // estable entre versiones -- lo simple y confiable es dejar ambos
+    // botones siempre activos (deshacer/rehacer no hacen nada si no hay
+    // nada que deshacer/rehacer, no truena).
+  }
+  document.getElementById('emBtnDeshacer').addEventListener('click', ()=> emEditor.deshacer());
+  document.getElementById('emBtnRehacer').addEventListener('click', ()=> emEditor.rehacer());
+
+  document.querySelectorAll('.em-ed-disp').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.em-ed-disp').forEach(b=> b.classList.remove('on'));
+      btn.classList.add('on');
+      emEditor.cambiarDispositivo(btn.dataset.disp);
+    });
+  });
+
+  async function emGuardarBorrador(){
+    const btn = document.getElementById('btnGuardarBorrador');
+    const estado = document.getElementById('emEstadoGuardado');
+    const nombre = document.getElementById('emNombreCampana').value.trim() || 'Sin título';
+    btn.disabled = true; estado.textContent = 'Guardando…';
+    try{
+      // Firestore no acepta arrays anidados (array dentro de array sin un
+      // objeto de por medio) y getProjectData() de GrapesJS sí los trae en
+      // varias partes (styles/pages) -- guardarlo como texto JSON evita el
+      // límite por completo (confirmado en vivo: guardar el objeto tal cual
+      // fallaba con "Property editorData contains an invalid nested entity").
+      // emEditor sigue sin saber nada de esto -- el string/parse es cosa de
+      // quien persiste, no del editor.
+      const editorData = JSON.stringify(emEditor.obtenerBorrador());
+      const htmlFinal = emEditor.obtenerHtmlFinal();
+      const ahora = firebase.firestore.FieldValue.serverTimestamp();
+      const db = firebase.firestore();
+      if(emBorradorActualId){
+        await db.collection('emailCampaigns').doc(emBorradorActualId).set(
+          { name: nombre, editorData, htmlFinal, status:'borrador', updatedAt: ahora }, { merge: true });
+      }else{
+        const ref = await db.collection('emailCampaigns').add(
+          { name: nombre, editorData, htmlFinal, status:'borrador', createdAt: ahora, updatedAt: ahora });
+        emBorradorActualId = ref.id;
+      }
+      estado.textContent = 'Borrador guardado ✓';
+    }catch(e){
+      estado.textContent = 'No se pudo guardar: ' + e.message;
+    }finally{
+      btn.disabled = false;
+    }
+  }
+  document.getElementById('btnGuardarBorrador').addEventListener('click', emGuardarBorrador);
+
+  // "Siguiente →": guarda el borrador (para tener un id) y abre el paso 3.
+  document.getElementById('btnIrAConfig').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnIrAConfig');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    try{
+      await emGuardarBorrador();
+      if(!emBorradorActualId) throw new Error('no se pudo guardar el borrador');
+      const id = emBorradorActualId;
+      emEditor.destruir();
+      document.getElementById('vistaEditorCampana').style.display = 'none';
+      await emConfig.abrir(id, { volverAlEditor: true });
+    }catch(e){
+      document.getElementById('emEstadoGuardado').textContent = 'No se pudo continuar: ' + e.message;
+    }finally{
+      btn.disabled = false; btn.innerHTML = 'Siguiente&nbsp;→';
+    }
+  });
+
+  document.getElementById('btnCerrarEditor').addEventListener('click', ()=>{
+    emEditor.destruir();
+    emBorradorActualId = null;
+    document.getElementById('vistaEditorCampana').style.display = 'none';
+    document.getElementById('vistaCampanas').style.display = '';
+    emCargarBorradores();
+  });
+
+  /* ---------- lista de campañas (Firestore, 100% real -- bloque 9 quitó las
+     filas de ejemplo). Una lectura por entrada a la vista, sin onSnapshot. ---------- */
+  const PILL_ESTADO = {
+    borrador:  ['pill-borrador','Borrador'],
+    lista:     ['pill-programado','Lista para enviar'],
+    programada:['pill-programado','Programada'],
+    enviando:  ['pill-enviado','Enviando'],
+    enviada:   ['pill-enviado','Enviada'],
+    pausada:   ['pill-borrador','Pausada'],
+    pausada_reputacion:['pill-borrador','Pausada (reputación)'],
+    fallida:   ['pill-borrador','Con error'],
+    cancelada: ['pill-borrador','Cancelada'],
+  };
+  function emFechaCampana(d){
+    const ts = d.scheduledAt;
+    const f = ts && ts.toDate ? ts.toDate() : null;
+    if(!f) return '—';
+    return f.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' })
+      + ' a las ' + f.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
+  }
+  // estados de campaña que ya tienen (o pueden tener) estadísticas de envío
+  const CON_REPORTE = ['enviando','enviada','pausada','pausada_reputacion','fallida'];
+  async function emCargarBorradores(){
+    const tbody = document.getElementById('tbodyCampanas');
+    try{
+      const fdb = firebase.firestore();
+      const [snap, audSnap] = await Promise.all([
+        fdb.collection('emailCampaigns').orderBy('updatedAt','desc').limit(30).get(),
+        fdb.collection('emailAudiences').get(),
+      ]);
+      const audNombre = {};
+      audSnap.forEach(a=> audNombre[a.id] = a.data().name || '(audiencia)');
+
+      tbody.innerHTML = '';
+      if(snap.empty){
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:36px 20px; text-align:center; color:var(--texto-bajo); font-size:13.5px;">Todavía no hay campañas. Usa <b>“Nueva campaña”</b> para crear la primera.</td></tr>`;
+        document.getElementById('conteoCampanas').textContent = 'Sin campañas';
+        return;
+      }
+      snap.forEach(doc=>{
+        const d = doc.data();
+        const [cls, txt] = PILL_ESTADO[d.status] || PILL_ESTADO.borrador;
+        const aud = d.audienceName || (d.audienceId && audNombre[d.audienceId]) || null;
+        const extra = Array.isArray(d.extraRecipients) ? d.extraRecipients.length : 0;
+        const editable = d.status === 'borrador' || d.status === 'lista';
+        const configurable = ['borrador','lista','programada','fallida'].indexOf(d.status) !== -1;
+        const conReporte = CON_REPORTE.indexOf(d.status) !== -1;
+        const nom = esc(d.name || 'Sin título');
+        const puedePausar = d.status === 'enviando';
+        const puedeReanudar = d.status === 'pausada';
+        const puedeReanudarRep = d.status === 'pausada_reputacion';
+        const puedeCancelar = ['lista','programada','pausada','pausada_reputacion','enviando','fallida'].indexOf(d.status) !== -1;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="campana-nombre">${nom}</td>
+          <td>${aud ? `<span class="audiencia-tag">${esc(aud)}</span>` : '<span class="audiencia-extra">—</span>'}${extra ? `<span class="audiencia-extra">+${extra}</span>` : ''}</td>
+          <td>${emFechaCampana(d)}</td>
+          <td><span class="pill ${cls}">${txt}</span></td>
+          <td><div class="acciones">
+            ${conReporte ? `<button class="btn-texto" data-reporte="${doc.id}" style="padding:4px 6px;">Ver reporte</button>` : ''}
+            ${editable ? `<button class="btn-texto" data-editar-borrador="${doc.id}" style="padding:4px 6px;">Editar</button>` : ''}
+            ${configurable ? `<button class="btn-texto" data-config-camp="${doc.id}" style="padding:4px 6px;">Configurar</button>` : ''}
+            ${puedePausar ? `<button class="btn-texto" data-pausar="${doc.id}" style="padding:4px 6px;">Pausar</button>` : ''}
+            ${puedeReanudar ? `<button class="btn-texto" data-reanudar="${doc.id}" style="padding:4px 6px;">Reanudar</button>` : ''}
+            ${puedeReanudarRep ? `<button class="btn-texto" data-reanudar-rep="${doc.id}" style="padding:4px 6px;">Reanudar…</button>` : ''}
+            ${puedeCancelar ? `<button class="btn-texto" data-cancelar="${doc.id}" data-nombre="${nom}" style="padding:4px 6px; color:var(--rojo);">Cancelar</button>` : ''}
+          </div></td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll('[data-reporte]').forEach(btn=>{
+        btn.addEventListener('click', ()=> emReporte.abrir(btn.dataset.reporte));
+      });
+      tbody.querySelectorAll('[data-editar-borrador]').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const doc = await firebase.firestore().collection('emailCampaigns').doc(btn.dataset.editarBorrador).get();
+          const d = doc.data();
+          emAbrirEditor({ borradorId: doc.id, nombre: d.name, editorData: d.editorData });
+        });
+      });
+      tbody.querySelectorAll('[data-config-camp]').forEach(btn=>{
+        btn.addEventListener('click', ()=> emConfig.abrir(btn.dataset.configCamp));
+      });
+      tbody.querySelectorAll('[data-pausar]').forEach(btn=>{
+        btn.addEventListener('click', ()=> emAcciones.pausar(btn, btn.dataset.pausar));
+      });
+      tbody.querySelectorAll('[data-reanudar]').forEach(btn=>{
+        btn.addEventListener('click', ()=> emAcciones.reanudarSimple(btn, btn.dataset.reanudar));
+      });
+      tbody.querySelectorAll('[data-reanudar-rep]').forEach(btn=>{
+        btn.addEventListener('click', ()=> emAcciones.abrirReanudar(btn.dataset.reanudarRep));
+      });
+      tbody.querySelectorAll('[data-cancelar]').forEach(btn=>{
+        btn.addEventListener('click', ()=> emAcciones.abrirCancelar(btn.dataset.cancelar, btn.dataset.nombre));
+      });
+      document.getElementById('conteoCampanas').textContent = `Mostrando ${snap.size} de ${snap.size} campañas`;
+    }catch(e){ console.warn('emCargarBorradores:', e.message); }
+  }
+  // Expuesta en window a propósito: el gate de sesión (otro <script> más
+  // abajo, otro closure) es quien sabe CUÁNDO ya hay Firebase inicializado +
+  // sesión real + rol confirmado -- llamarla antes de eso rompería (Firestore
+  // sin firebase.initializeApp() todavía). Es la única función de este
+  // archivo que se expone así; todo lo demás de acá sigue privado al IIFE.
+  window.emCargarBorradores = emCargarBorradores;
+
+  document.getElementById('btnNuevaCampana').addEventListener('click', emAbrirGaleria);
+
+  document.addEventListener('click', ()=>{
+    document.querySelectorAll('.acciones-menu').forEach(m=>m.classList.remove('abierto'));
+    document.getElementById('panelFiltrar').classList.remove('abierto');
+  });
+
+  /* ================= navegación entre vistas del sidebar ================= */
+  function mostrarVista(nombre){
+    ['vistaCampanas','vistaAudiencias','vistaSuprimidos','vistaPlantillas','vistaEditorCampana','vistaConfigCampana'].forEach(id=>{
+      document.getElementById(id).style.display = 'none';
+    });
+    document.querySelectorAll('.sb-item').forEach(it=> it.classList.toggle('on', it.dataset.vista === nombre));
+    if(nombre === 'audiencias'){
+      document.getElementById('vistaAudiencias').style.display = '';
+      emAudiencias.abrirVista();
+    }else if(nombre === 'suprimidos'){
+      document.getElementById('vistaSuprimidos').style.display = '';
+      emSuprimidos.abrirVista();
+    }else{
+      document.getElementById('vistaCampanas').style.display = '';
+    }
+  }
+  document.querySelectorAll('.sb-item').forEach(item=>{
+    item.addEventListener('click', ()=> mostrarVista(item.dataset.vista));
+  });
+
+  /* ===================================================================
+     emAudiencias -- página "Audiencias".
+     Toda lectura pesada (customers/clientes/reservas/cursos) vive en la
+     Cloud Function `emailAudienciaPreview` (solo lectura). El navegador
+     solo: lee la lista de `emailAudiences` (una colección chica) UNA vez
+     por entrada a la vista, y llama a la CF al pulsar "Calcular". Sin
+     onSnapshot, sin lecturas masivas repetidas.
+     =================================================================== */
+  const emAudiencias = (function(){
+    let fnPreview = null;      // httpsCallable, se crea a demanda (post-auth)
+    let cursosCache = null;    // [{id,name}], se carga 1 vez al abrir el modal
+    let listaCargada = false;  // la lista se lee 1 vez por entrada a la vista
+    let ultimoCalculo = null;  // { filtros, total } del último "Calcular" válido
+
+    function callable(){
+      if(!fnPreview) fnPreview = firebase.app().functions('us-central1').httpsCallable('emailAudienciaPreview');
+      return fnPreview;
+    }
+    const $ = (id)=> document.getElementById(id);
+    function fechaCorta(ts){
+      const d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+      if(!d || isNaN(d)) return '—';
+      return d.toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' });
+    }
+    function etiquetaSegmento(f){
+      if(!f) return '—';
+      if(f.segmento === 'todos') return 'Todos los clientes';
+      if(f.segmento === 'compradores_curso') return 'Compradores: ' + (f.cursoNombre || f.courseId || 'curso');
+      if(f.segmento === 'visita_reciente') return 'Visitó (últimos ' + (f.visitaDesdeDias || 90) + ' días)';
+      return f.segmento || '—';
+    }
+
+    // ---------- lista ----------
+    async function abrirVista(){
+      if(listaCargada) return;
+      await cargarLista();
+    }
+    async function cargarLista(){
+      listaCargada = true;
+      const tbody = $('tbodyAudiencias'), vacio = $('audVacio');
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--texto-bajo);">Cargando…</td></tr>';
+      try{
+        const snap = await firebase.firestore().collection('emailAudiences').orderBy('createdAt','desc').get();
+        const docs = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+        $('conteoAudiencias').textContent = docs.length
+          ? ('Mostrando ' + docs.length + (docs.length === 1 ? ' audiencia' : ' audiencias'))
+          : '';
+        vacio.style.display = docs.length ? 'none' : '';
+        tbody.innerHTML = docs.map(a=> `
+          <tr>
+            <td class="campana-nombre">${esc(a.name || '(sin nombre)')}</td>
+            <td>${esc(etiquetaSegmento(a.filtros))}</td>
+            <td>${a.ultimoConteo != null ? a.ultimoConteo : '—'}</td>
+            <td>${fechaCorta(a.createdAt)}</td>
+            <td><button class="btn-texto" data-del="${esc(a.id)}" style="color:var(--rojo);padding:4px 0;">Eliminar</button></td>
+          </tr>`).join('');
+        tbody.querySelectorAll('[data-del]').forEach(btn=>{
+          btn.addEventListener('click', ()=> confirmarEliminar(btn));
+        });
+      }catch(e){
+        tbody.innerHTML = '<tr><td colspan="5" style="color:var(--rojo);">No se pudo cargar: ' + esc(e.message) + '</td></tr>';
+      }
+    }
+
+    // borrado en dos pasos (sin confirm() nativo, que Chrome bloquea en el panel)
+    function confirmarEliminar(btn){
+      if(btn.dataset.armado === '1'){
+        eliminar(btn.dataset.del);
+        return;
+      }
+      btn.dataset.armado = '1';
+      btn.textContent = '¿Seguro? Eliminar';
+      btn.style.fontWeight = '700';
+      setTimeout(()=>{ if(btn.isConnected){ btn.dataset.armado=''; btn.textContent='Eliminar'; btn.style.fontWeight=''; } }, 4000);
+    }
+    async function eliminar(id){
+      try{
+        await firebase.firestore().collection('emailAudiences').doc(id).delete();
+        listaCargada = false;
+        await cargarLista();
+      }catch(e){ alert('No se pudo eliminar: ' + e.message); }
+    }
+
+    // ---------- modal "Nueva audiencia" ----------
+    async function abrirModal(){
+      $('audNombre').value = '';
+      document.querySelector('input[name="audSeg"][value="todos"]').checked = true;
+      $('audDias').value = '90';
+      sincronizarExtras();
+      resetResultado();
+      $('modalAudiencia').classList.add('abierto');
+      await cargarCursos();
+    }
+    function cerrarModal(){ $('modalAudiencia').classList.remove('abierto'); }
+
+    function segmentoElegido(){
+      return (document.querySelector('input[name="audSeg"]:checked') || {}).value || 'todos';
+    }
+    function sincronizarExtras(){
+      const seg = segmentoElegido();
+      $('audExtraCurso').style.display = seg === 'compradores_curso' ? '' : 'none';
+      $('audExtraDias').style.display = seg === 'visita_reciente' ? '' : 'none';
+      resetResultado();
+    }
+    function resetResultado(){
+      ultimoCalculo = null;
+      $('audResultado').classList.remove('visible');
+      $('audGuardar').disabled = true;
+    }
+
+    async function cargarCursos(){
+      if(cursosCache){ pintarCursos(); return; }
+      try{
+        const snap = await firebase.firestore().collection('courses').get();
+        cursosCache = snap.docs.map(d=> ({ id:d.id, name:(d.data().name || d.id) }))
+          .sort((a,b)=> a.name.localeCompare(b.name));
+      }catch(e){ cursosCache = []; }
+      pintarCursos();
+    }
+    function pintarCursos(){
+      $('audCurso').innerHTML = cursosCache.length
+        ? cursosCache.map(c=> `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')
+        : '<option value="">(no hay cursos)</option>';
+    }
+
+    function filtrosDeUI(){
+      const seg = segmentoElegido();
+      const f = { segmento: seg };
+      if(seg === 'compradores_curso'){
+        f.courseId = $('audCurso').value;
+        const c = (cursosCache || []).find(x=> x.id === f.courseId);
+        if(c) f.cursoNombre = c.name;
+      }
+      if(seg === 'visita_reciente'){
+        let n = parseInt($('audDias').value, 10);
+        if(!(n > 0)) n = 90;
+        f.visitaDesdeDias = Math.min(n, 730);
+      }
+      return f;
+    }
+
+    async function calcular(){
+      const f = filtrosDeUI();
+      if(f.segmento === 'compradores_curso' && !f.courseId){ alert('Elige un curso.'); return; }
+      const btn = $('audCalcular');
+      btn.disabled = true; btn.textContent = 'Calculando…';
+      resetResultado();
+      try{
+        const r = (await callable()({ filtros: f })).data;
+        const d = r.desglose || {};
+        $('audTotal').textContent = r.total;
+        const partes = [];
+        if(d.brutoPorFuente) partes.push('<b>' + Object.entries(d.brutoPorFuente).map(([k,v])=> v + ' ' + k).join(' + ') + '</b> en bruto');
+        if(d.duplicados) partes.push(d.duplicados + ' duplicado' + (d.duplicados===1?'':'s'));
+        if(d.invalidos) partes.push(d.invalidos + ' inválido' + (d.invalidos===1?'':'s'));
+        if(d.rechazados) partes.push(d.rechazados + ' dado' + (d.rechazados===1?'':'s') + ' de baja');
+        if(d.ventana) partes.push('reservas del ' + d.ventana.desde + ' al ' + d.ventana.hasta);
+        $('audDesglose').innerHTML = partes.join(' · ');
+        $('audMuestra').textContent = (r.muestra && r.muestra.length)
+          ? ('Ejemplos: ' + r.muestra.join(', ') + (r.total > r.muestra.length ? ' …' : ''))
+          : 'Ningún correo cumple los criterios.';
+        $('audResultado').classList.add('visible');
+        ultimoCalculo = { filtros: f, total: r.total };
+        $('audGuardar').disabled = r.total === 0;
+      }catch(e){
+        $('audDesglose').innerHTML = '';
+        $('audMuestra').textContent = 'No se pudo calcular: ' + (e.message || e);
+        $('audTotal').textContent = '0';
+        $('audResultado').classList.add('visible');
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Calcular personas';
+      }
+    }
+
+    async function guardar(){
+      const nombre = $('audNombre').value.trim();
+      if(!nombre){ alert('Ponle un nombre a la audiencia.'); return; }
+      if(!ultimoCalculo){ alert('Primero pulsa "Calcular personas".'); return; }
+      // los filtros guardados deben ser exactamente los que se calcularon
+      if(JSON.stringify(filtrosDeUI()) !== JSON.stringify(ultimoCalculo.filtros)){
+        alert('Cambiaste los criterios después de calcular. Vuelve a pulsar "Calcular".');
+        resetResultado();
+        return;
+      }
+      const btn = $('audGuardar');
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try{
+        const ts = firebase.firestore.FieldValue.serverTimestamp();
+        await firebase.firestore().collection('emailAudiences').add({
+          name: nombre,
+          type: 'dinamica',
+          filtros: ultimoCalculo.filtros,
+          ultimoConteo: ultimoCalculo.total,
+          ultimoConteoAt: ts,
+          createdAt: ts,
+          updatedAt: ts,
+          createdBy: (firebase.auth().currentUser || {}).uid || null,
+        });
+        cerrarModal();
+        listaCargada = false;
+        await cargarLista();
+      }catch(e){
+        alert('No se pudo guardar: ' + e.message);
+      }finally{
+        btn.disabled = false; btn.textContent = 'Guardar audiencia';
+      }
+    }
+
+    // ---------- wiring ----------
+    $('btnNuevaAudiencia').addEventListener('click', abrirModal);
+    $('audCerrar').addEventListener('click', cerrarModal);
+    $('audCancelar').addEventListener('click', cerrarModal);
+    $('audCalcular').addEventListener('click', calcular);
+    $('audGuardar').addEventListener('click', guardar);
+    document.querySelectorAll('input[name="audSeg"]').forEach(r=> r.addEventListener('change', sincronizarExtras));
+    $('audCurso').addEventListener('change', resetResultado);
+    $('audDias').addEventListener('input', resetResultado);
+    $('audNombre').addEventListener('input', ()=>{ /* el nombre no invalida el cálculo */ });
+
+    return { abrirVista };
+  })();
+
+  /* ===================================================================
+     emSuprimidos -- página "Emails Suprimidos" (lista interna de bajas).
+     Lee `emailSuppressions` UNA vez por entrada a la vista (sin onSnapshot).
+     "Suprimir" y "Reactivar" pasan por Cloud Functions (Admin SDK) --
+     el navegador nunca escribe estas colecciones directo.
+     =================================================================== */
+  const emSuprimidos = (function(){
+    let fnSuprimir = null, fnReactivar = null;
+    let listaCargada = false;
+    let todos = [];   // cache de la última carga, para filtrar en cliente
+
+    const $ = (id)=> document.getElementById(id);
+    function fns(){
+      const f = firebase.app().functions('us-central1');
+      fnSuprimir = fnSuprimir || f.httpsCallable('emailSuprimirManual');
+      fnReactivar = fnReactivar || f.httpsCallable('emailReactivarConsentimiento');
+    }
+    function fechaCorta(ts){
+      const d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+      if(!d || isNaN(d)) return '—';
+      return d.toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' });
+    }
+    const MOTIVO = {
+      baja:         'Desafiliado por el cliente',
+      manual:       'Baja administrativa',
+      rebote_duro:  'Rebote (correo inexistente)',
+      rebote_blando:'Rebotes temporales repetidos',
+      queja_spam:   'Marcó el correo como spam',
+      bloqueado:    'Bloqueado por el proveedor',
+      invalido:     'Correo con formato inválido',
+    };
+    const ORIGEN = {
+      link:'Enlace de baja', admin:'Administración', planificador:'Sistema',
+      webhook_proveedor:'Proveedor de envío', brevo_webhook:'Proveedor de envío',
+    };
+
+    async function abrirVista(){
+      if(listaCargada) return;
+      await cargarLista();
+    }
+    async function cargarLista(){
+      listaCargada = true;
+      const tbody = $('tbodySuprimidos');
+      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--texto-bajo);">Cargando…</td></tr>';
+      try{
+        const snap = await firebase.firestore().collection('emailSuppressions').orderBy('createdAt','desc').get();
+        todos = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+        pintar();
+      }catch(e){
+        tbody.innerHTML = '<tr><td colspan="6" style="color:var(--rojo);">No se pudo cargar: ' + esc(e.message) + '</td></tr>';
+      }
+    }
+    function pintar(){
+      const q = ($('supBuscar').value || '').trim().toLowerCase();
+      const filas = q ? todos.filter(s=> (s.email||'').toLowerCase().includes(q)) : todos;
+      const tbody = $('tbodySuprimidos');
+      $('conteoSuprimidos').textContent = todos.length
+        ? ('Mostrando ' + filas.length + ' de ' + todos.length)
+        : '';
+      $('supVacio').style.display = todos.length ? 'none' : '';
+      tbody.innerHTML = filas.map(s=>{
+        const reactivable = s.reason === 'manual';
+        const accion = reactivable
+          ? `<button class="btn-texto" data-react="${esc(s.email)}" style="padding:4px 0;">Reactivar</button>`
+          : (s.reason === 'baja'
+              ? '<span style="font-size:12px;color:var(--texto-bajo);">Solo el cliente</span>'
+              : '<span style="font-size:12px;color:var(--texto-bajo);">—</span>');
+        return `
+          <tr>
+            <td class="campana-nombre" style="word-break:break-all;">${esc(s.email || s.id)}</td>
+            <td>${esc(MOTIVO[s.reason] || s.reason || '—')}</td>
+            <td>${esc(ORIGEN[s.source] || s.source || '—')}</td>
+            <td>${fechaCorta(s.createdAt)}</td>
+            <td style="color:var(--texto-bajo); font-size:12.5px;">${esc(s.detail || '')}</td>
+            <td>${accion}</td>
+          </tr>`;
+      }).join('') || '<tr><td colspan="6" style="color:var(--texto-bajo);">Sin coincidencias.</td></tr>';
+      tbody.querySelectorAll('[data-react]').forEach(btn=>{
+        btn.addEventListener('click', ()=> confirmarReactivar(btn));
+      });
+    }
+    $('supBuscar').addEventListener('input', ()=>{ if(todos.length || $('supBuscar').value) pintar(); });
+
+    // reactivar en 2 pasos (sin confirm() nativo)
+    function confirmarReactivar(btn){
+      if(btn.dataset.armado === '1'){ reactivar(btn.dataset.react, btn); return; }
+      btn.dataset.armado = '1';
+      btn.textContent = '¿Seguro? Reactivar';
+      btn.style.fontWeight = '700';
+      setTimeout(()=>{ if(btn.isConnected){ btn.dataset.armado=''; btn.textContent='Reactivar'; btn.style.fontWeight=''; } }, 4000);
+    }
+    async function reactivar(email, btn){
+      fns();
+      btn.disabled = true; btn.textContent = 'Reactivando…';
+      try{
+        await fnReactivar({ email });
+        listaCargada = false;
+        await cargarLista();
+      }catch(e){
+        btn.disabled = false; btn.textContent = 'Reactivar'; btn.dataset.armado = '';
+        alert(e.message || 'No se pudo reactivar.');
+      }
+    }
+
+    // modal "Suprimir email"
+    function abrirModal(){
+      $('supEmail').value = '';
+      $('supMsg').style.display = 'none';
+      $('supConfirmar').disabled = false;
+      $('supConfirmar').textContent = 'Suprimir';
+      $('modalSuprimir').classList.add('abierto');
+    }
+    function cerrarModal(){ $('modalSuprimir').classList.remove('abierto'); }
+    async function confirmarSuprimir(){
+      fns();
+      const email = ($('supEmail').value || '').trim().toLowerCase();
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        $('supMsg').style.display = 'block';
+        $('supMsg').style.background = '#FDECEA'; $('supMsg').style.color = 'var(--rojo)';
+        $('supMsg').textContent = 'Escribe un correo válido.';
+        return;
+      }
+      const btn = $('supConfirmar');
+      btn.disabled = true; btn.textContent = 'Suprimiendo…';
+      try{
+        const r = (await fnSuprimir({ email })).data;
+        cerrarModal();
+        listaCargada = false;
+        await cargarLista();
+      }catch(e){
+        btn.disabled = false; btn.textContent = 'Suprimir';
+        $('supMsg').style.display = 'block';
+        $('supMsg').style.background = '#FDECEA'; $('supMsg').style.color = 'var(--rojo)';
+        $('supMsg').textContent = e.message || 'No se pudo suprimir.';
+      }
+    }
+
+    $('btnSuprimirEmail').addEventListener('click', abrirModal);
+    $('supCerrar').addEventListener('click', cerrarModal);
+    $('supCancelar').addEventListener('click', cerrarModal);
+    $('supConfirmar').addEventListener('click', confirmarSuprimir);
+
+    return { abrirVista };
+  })();
+
+  /* ===================================================================
+     emConfig -- paso 3 del asistente: configurar y programar el envío.
+     NO envía nada (el planificador es el bloque 5). "Enviar prueba" en
+     dryRun tampoco envía: renderiza y muestra. Toda escritura de estado
+     pasa por la Cloud Function `emailCampanaProgramar` (validación).
+     =================================================================== */
+  const emConfig = (function(){
+    let fnProgramar = null, fnPrueba = null, fnValidar = null;
+    let campId = null;
+    let volverAlEditor = false;
+    let settingsCache = null;
+
+    const $ = (id)=> document.getElementById(id);
+    function fns(){
+      const f = firebase.app().functions('us-central1');
+      fnProgramar = fnProgramar || f.httpsCallable('emailCampanaProgramar');
+      fnPrueba = fnPrueba || f.httpsCallable('emailPrueba');
+      fnValidar = fnValidar || f.httpsCallable('emailCampanaValidar');
+    }
+    function msg(texto, tipo){
+      const el = $('cfgMsg');
+      el.textContent = texto;
+      el.className = 'cfg-msg ' + (tipo || 'info');
+    }
+    function limpiarMsg(){ $('cfgMsg').className = 'cfg-msg'; }
+
+    async function abrir(id, opts){
+      campId = id;
+      volverAlEditor = !!(opts && opts.volverAlEditor);
+      limpiarMsg();
+      $('cfgProgWrap').classList.remove('visible');
+      document.querySelectorAll('.sb-item').forEach(it=> it.classList.remove('on'));
+      ['vistaCampanas','vistaAudiencias','vistaSuprimidos','vistaPlantillas','vistaEditorCampana','vistaConfigCampana'].forEach(v=> $(v).style.display='none');
+      $('vistaConfigCampana').style.display = '';
+      $('cfgVolverEditor').style.display = volverAlEditor ? '' : 'none';
+
+      const fdb = firebase.firestore();
+      const [campDoc, audSnap, setDoc] = await Promise.all([
+        fdb.collection('emailCampaigns').doc(id).get(),
+        fdb.collection('emailAudiences').orderBy('createdAt','desc').get(),
+        settingsCache ? Promise.resolve(null) : fdb.collection('settings').doc('emailMarketing').get(),
+      ]);
+      if(setDoc) settingsCache = setDoc.exists ? setDoc.data() : {};
+      if(!campDoc.exists){ msg('La campaña ya no existe.', 'err'); return; }
+      const c = campDoc.data();
+
+      $('cfgNombre').value = c.name || '';
+      $('cfgAsunto').value = c.subject || '';
+      $('cfgRemitente').value = (settingsCache.senderName || 'MASTER LOOK') + ' <' + (settingsCache.senderEmail || '—') + '>';
+      $('cfgExtra').value = Array.isArray(c.extraRecipients) ? c.extraRecipients.join(', ') : '';
+      $('cfgPruebaEmail').value = '';
+
+      const opciones = ['<option value="">— Elige una audiencia —</option>'].concat(
+        audSnap.docs.map(a=>{
+          const ad = a.data();
+          const n = ad.ultimoConteo != null ? ` (${ad.ultimoConteo} personas)` : '';
+          return `<option value="${esc(a.id)}"${a.id === c.audienceId ? ' selected' : ''}>${esc(ad.name || 'audiencia')}${n}</option>`;
+        })
+      );
+      $('cfgAudiencia').innerHTML = opciones.join('');
+
+      // vista previa del htmlFinal
+      pintarPreview(c.htmlFinal || '<p style="font-family:sans-serif;color:#888;padding:20px;">Esta campaña todavía no tiene contenido. Vuelve al editor.</p>');
+
+      // preflight + "Resumen del envío": se muestra siempre al abrir el paso 3,
+      // en segundo plano (resolver la audiencia puede tardar). No bloquea la vista.
+      preflight.reset();
+      preflight.correr({ silencioso:true });
+    }
+
+    function pintarPreview(html){
+      const f = $('cfgPreviewFrame');
+      f.srcdoc = html;
+    }
+
+    /* -----------------------------------------------------------------
+       preflight -- "Comprobación antes de enviar" + "Resumen del envío"
+       (bloque 12). Llama a `emailCampanaValidar` (solo lectura, no cambia
+       el estado). El resultado bloquea "Programar" / "Enviar ahora"
+       cuando `puedeEnviar` es false; "Guardar campaña" nunca se bloquea.
+       ----------------------------------------------------------------- */
+    const preflight = (function(){
+      let ultimo = null;       // última respuesta de emailCampanaValidar
+      let stale = true;        // hay cambios sin re-comprobar
+      let corriendo = false;
+      let paraCamp = null;     // campId de `ultimo`
+      let revEdit = 0;         // sube con cada edición: detecta cambios durante una corrida
+
+      const LABELS = {
+        asunto:'Asunto', remitente:'Remitente configurado',
+        html_presente:'Contenido del correo', html_tamano:'Tamaño del HTML',
+        enlace_baja:'Enlace de baja', footer:'Footer de marca',
+        cta_https:'Enlaces HTTPS', cta_acortadores:'Sin acortadores dudosos',
+        audiencia:'Audiencia con destinatarios', cuota_primer_dia:'Cuota disponible hoy',
+        tope_warmup:'Tope de warm-up',
+        produccion_habilitada:'Producción habilitada', one_click_baja:'Baja one-click (List-Unsubscribe)',
+        dominio_verificado:'Dominio verificado en el proveedor', dominio_autenticado:'Dominio autenticado (SPF/DKIM/DMARC)',
+        spf:'SPF', dkim:'DKIM', dmarc:'DMARC',
+        webhook_activo:'Webhook del proveedor activo', transporte_produccion:'Transporte de producción',
+        remitente_verificado_brevo:'Remitente verificado en el proveedor',
+        // advertencias
+        asunto_largo:'Asunto largo', asunto_mayusculas:'Exceso de mayúsculas en el asunto',
+        asunto_signos:'Signos repetidos en el asunto', asunto_reenvio:'Asunto tipo "RE:/FWD:"',
+        remitente_gratuito:'Remitente de dominio gratuito', cta_externos:'Enlaces a dominios no listados',
+        img_sin_alt:'Imágenes sin texto alternativo', ratio_texto_imagen:'Poco texto para tantas imágenes',
+        preheader_vacio:'Sin texto de preencabezado',
+      };
+      const ICO = {
+        ok:'<svg class="pf-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 10l4 4 8-9"/></svg>',
+        fail:'<svg class="pf-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l10 10M15 5L5 15"/></svg>',
+        warn:'<svg class="pf-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 3l8 14H2z"/><path d="M10 8v4M10 15v.5"/></svg>',
+      };
+      const label = (id)=> LABELS[id] || id.replace(/_/g,' ');
+      const item = (nivel, txt, detalle)=>
+        `<div class="pf-item" data-nivel="${nivel}">${ICO[nivel]}<span><b>${esc(txt)}</b>${detalle ? ' <small>— '+esc(detalle)+'</small>' : ''}</span></div>`;
+
+      function reset(){ ultimo = null; stale = true; paraCamp = campId; revEdit++; pintar(); }
+      function marcarStale(){ stale = true; revEdit++; sello(); gate(); }
+
+      function sello(){
+        const s = $('pfSello');
+        if(corriendo){ s.textContent = 'comprobando…'; return; }
+        if(!ultimo){ s.textContent = ''; return; }
+        s.textContent = stale ? 'hay cambios sin comprobar' : 'comprobado';
+      }
+
+      function gate(){
+        // Bloquea Programar / Enviar ahora si el último preflight dice que no se puede.
+        const bloquear = !!ultimo && !stale && ultimo.puedeEnviar === false;
+        ['cfgProgramar','cfgEnviarAhora'].forEach(id=>{
+          $(id).classList.toggle('pf-bloqueado', bloquear);
+        });
+      }
+
+      async function correr(opts){
+        opts = opts || {};
+        if(corriendo) return ultimo;
+        fns();
+        const idAlIniciar = campId;
+        const revAlIniciar = revEdit;
+        corriendo = true; sello();
+        $('pfComprobar').disabled = true;
+        $('pfComprobar').textContent = 'Comprobando…';
+        try{
+          // persiste asunto/audiencia/extra para que el backend valide lo que se ve
+          // (solo cuando el admin comprueba o va a enviar; el auto-run al abrir ya
+          // tiene los valores recién leídos de la campaña).
+          if(opts.persistir){
+            try{
+              await firebase.firestore().collection('emailCampaigns').doc(campId).set({
+                subject: $('cfgAsunto').value.trim(),
+                audienceId: $('cfgAudiencia').value || null,
+                extraRecipients: extraDeUI(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              }, { merge:true });
+            }catch(_){}
+          }
+          const r = (await fnValidar({ campaignId: campId })).data;
+          if(idAlIniciar !== campId) return null;   // el admin cambió de campaña
+          ultimo = r; paraCamp = campId;
+          stale = (revEdit !== revAlIniciar);        // hubo ediciones mientras corría
+          pintar();
+          return stale ? null : r;                   // si quedó stale, obliga a re-comprobar
+        }catch(e){
+          if(idAlIniciar === campId){
+            ultimo = null;
+            $('pfCuerpo').style.display = 'none';
+            if(!opts.silencioso) msg((e && e.message) || 'No se pudo comprobar la campaña.', 'err');
+          }
+          return null;
+        }finally{
+          corriendo = false;
+          $('pfComprobar').disabled = false;
+          $('pfComprobar').textContent = ultimo ? 'Volver a comprobar' : 'Comprobar';
+          sello(); gate();
+        }
+      }
+
+      function pintar(){
+        const cuerpo = $('pfCuerpo');
+        if(!ultimo){ cuerpo.style.display = 'none'; return; }
+        cuerpo.style.display = '';
+        const r = ultimo, s = r.resumen || {};
+
+        // -- requisitos (críticos) --
+        $('pfCriticos').innerHTML = (r.criticos || [])
+          .map(c=> item(c.ok ? 'ok' : 'fail', label(c.id), c.detalle))
+          .join('') || '<div class="pf-item" data-nivel="ok">'+ICO.ok+'<span>sin observaciones</span></div>';
+
+        // -- advertencias --
+        const adv = r.advertencias || [];
+        $('pfBloqueAdv').style.display = adv.length ? '' : 'none';
+        $('pfAdvertencias').innerHTML = adv.map(a=> item('warn', label(a.id), a.detalle)).join('');
+
+        // -- nota del preflight (p. ej. método de verificación del proveedor) --
+        let notaEl = document.getElementById('pfNota');
+        if(r.preflightNota){
+          if(!notaEl){
+            notaEl = document.createElement('p');
+            notaEl.id = 'pfNota';
+            notaEl.style.cssText = 'margin:10px 0 0;font-size:12px;color:var(--texto-medio);line-height:1.5;';
+            $('pfCriticos').parentNode.insertBefore(notaEl, $('pfCriticos').nextSibling);
+          }
+          notaEl.textContent = r.preflightNota;
+          notaEl.style.display = '';
+        } else if(notaEl){ notaEl.style.display = 'none'; }
+
+        // -- resumen del envío --
+        const cel = (et, val, obj)=> `<div class="${obj ? 'pf-obj' : ''}"><span>${esc(et)}</span><b>${esc(String(val))}</b></div>`;
+        const modo = s.dryRun ? 'Simulación (dryRun) — no se envían correos reales'
+          : (s.transport === 'api' ? 'Envío real por el proveedor de envío' : (s.transport || '—'));
+        $('pfResGrid').innerHTML = [
+          cel('Audiencia bruta', s.audienciaBruta ?? 0),
+          cel('− Duplicados', s.duplicados ?? 0),
+          cel('− Inválidos', s.invalidos ?? 0),
+          cel('− Suprimidos', s.suprimidos ?? 0),
+          cel('− Rechazaron marketing', s.rechazados ?? 0),
+          cel('− Omitidos por frecuencia', s.omitidosPorFrecuencia ?? 0),
+          cel('Se intentará enviar a', s.objetivo ?? 0, true),
+          cel('Cuota disponible hoy', s.cupoHoy ?? 0),
+          cel('Tope de hoy', (s.topeHoy ?? 0) + (s.topeWarmup != null ? ' (warm-up)' : '')),
+          cel('Ya procesado hoy', s.procesadoHoy ?? 0),
+          cel('Duración estimada', (s.diasEstimados ?? 0) <= 1 ? 'aprox. 1 día' : ('aprox. ' + s.diasEstimados + ' días')),
+          cel('Modo', modo),
+        ].join('');
+
+        // -- veredicto --
+        const v = $('pfVeredicto');
+        if(r.puedeEnviar){
+          v.dataset.ok = '1';
+          v.textContent = r.preflightObligatorio
+            ? 'Comprobación superada. La campaña puede enviarse.'
+            : 'Sin bloqueos. La campaña puede enviarse (comprobación informativa: audiencia ≤ ' + r.umbral + ').';
+        }else{
+          v.dataset.ok = '0';
+          const fallidos = (r.criticos || []).filter(c=> !c.ok).map(c=> label(c.id));
+          v.textContent = 'No se puede enviar todavía: ' + (fallidos.join(' · ') || 'requisitos sin cumplir') + '.';
+        }
+      }
+
+      // ¿el preflight vigente corresponde a esta campaña y autoriza el envío?
+      async function exigirOK(){
+        if(paraCamp !== campId || !ultimo || stale){
+          msg('Comprobando la campaña antes de enviar…', 'info');
+          const r = await correr({ persistir:true });
+          if(!r) return false;
+        }
+        if(ultimo && ultimo.puedeEnviar === false){
+          const fallidos = (ultimo.criticos || []).filter(c=> !c.ok).map(c=> label(c.id));
+          msg('No se puede enviar: ' + (fallidos.join(' · ') || 'la comprobación previa no pasó') + '. Revisa la comprobación antes de enviar.', 'err');
+          $('pfCaja').scrollIntoView({ behavior:'smooth', block:'nearest' });
+          return false;
+        }
+        return true;
+      }
+
+      return { reset, marcarStale, correr, exigirOK, pintar };
+    })();
+
+    function extraDeUI(){
+      return $('cfgExtra').value.split(/[,\n;]+/).map(s=> s.trim().toLowerCase()).filter(Boolean);
+    }
+    function datosComunes(){
+      return {
+        campaignId: campId,
+        subject: $('cfgAsunto').value.trim(),
+        audienceId: $('cfgAudiencia').value || null,
+        extraRecipients: extraDeUI(),
+        nombre: $('cfgNombre').value.trim(),
+      };
+    }
+
+    async function guardarNombreSiCambio(){
+      const nombre = $('cfgNombre').value.trim();
+      if(nombre){
+        try{ await firebase.firestore().collection('emailCampaigns').doc(campId).set({ name: nombre, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); }catch(e){}
+      }
+    }
+
+    async function accionar(accion, scheduledAt){
+      fns();
+      limpiarMsg();
+      const btns = ['cfgGuardar','cfgProgramar','cfgEnviarAhora','cfgProgConfirmar'];
+      btns.forEach(b=> $(b).disabled = true);
+      try{
+        await guardarNombreSiCambio();
+        const d = datosComunes();
+        const r = (await fnProgramar({ accion, scheduledAt, campaignId:d.campaignId, subject:d.subject, audienceId:d.audienceId, extraRecipients:d.extraRecipients })).data;
+        const txt = accion === 'guardar' ? 'Campaña guardada como lista para enviar.'
+          : accion === 'ahora' ? 'Campaña marcada para enviar. ' + (r.aviso || '')
+          : 'Campaña programada para ' + new Date(r.scheduledAt).toLocaleString('es-CL') + '. ' + (r.aviso || '');
+        msg(txt, 'ok');
+        $('cfgProgWrap').classList.remove('visible');
+      }catch(e){
+        msg(e.message || 'No se pudo guardar.', 'err');
+      }finally{
+        btns.forEach(b=> $(b).disabled = false);
+      }
+    }
+
+    async function enviarPrueba(){
+      fns();
+      const email = $('cfgPruebaEmail').value.trim().toLowerCase();
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg('Escribe un correo válido para la prueba.', 'err'); return; }
+      const btn = $('cfgBtnPrueba');
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try{
+        // guardar el asunto actual primero, para que la prueba lo use
+        const asunto = $('cfgAsunto').value.trim();
+        if(asunto){ try{ await firebase.firestore().collection('emailCampaigns').doc(campId).set({ subject:asunto, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, {merge:true}); }catch(e){} }
+        const r = (await fnPrueba({ campaignId: campId, email })).data;
+        if(r.dryRun){
+          pintarPreview(r.html);
+          msg('Modo prueba (dryRun): NO se envió ningún correo. Arriba se ve cómo quedaría el correo para ' + email + ', con el enlace de baja real. Asunto: "' + r.asunto + '".', 'info');
+        }else if(r.enviado === false){
+          msg('El envío real todavía no está disponible (llega en un paso posterior). No se envió nada.', 'info');
+        }else{
+          msg('Prueba enviada a ' + email + '.', 'ok');
+        }
+      }catch(e){
+        msg(e.message || 'No se pudo generar la prueba.', 'err');
+      }finally{
+        btn.disabled = false; btn.textContent = 'Enviar prueba';
+      }
+    }
+
+    // wiring
+    $('cfgVolverEditor').addEventListener('click', async ()=>{
+      const doc = await firebase.firestore().collection('emailCampaigns').doc(campId).get();
+      const d = doc.data();
+      $('vistaConfigCampana').style.display = 'none';
+      emAbrirEditor({ borradorId: campId, nombre: d.name, editorData: d.editorData });
+    });
+    $('cfgGuardar').addEventListener('click', ()=> accionar('guardar'));
+    $('cfgEnviarAhora').addEventListener('click', async ()=>{
+      const b = $('cfgEnviarAhora');
+      if(b.dataset.armado === '1'){ b.dataset.armado=''; b.textContent='Enviar ahora'; accionar('ahora'); return; }
+      if(!(await preflight.exigirOK())) return;   // no arma si la comprobación no pasa
+      b.dataset.armado = '1';
+      b.textContent = '¿Seguro? Enviar ahora';
+      setTimeout(()=>{ const x=$('cfgEnviarAhora'); if(x){ x.dataset.armado=''; x.textContent='Enviar ahora'; } }, 4000);
+    });
+    $('cfgProgramar').addEventListener('click', ()=> $('cfgProgWrap').classList.toggle('visible'));
+    $('cfgProgCancelar').addEventListener('click', ()=> $('cfgProgWrap').classList.remove('visible'));
+    $('cfgProgConfirmar').addEventListener('click', async ()=>{
+      const v = $('cfgProgFecha').value;
+      if(!v){ msg('Elige fecha y hora.', 'err'); return; }
+      if(!(await preflight.exigirOK())) return;
+      accionar('programar', new Date(v).toISOString());
+    });
+    $('cfgBtnPrueba').addEventListener('click', enviarPrueba);
+    $('pfComprobar').addEventListener('click', ()=> preflight.correr({ persistir:true }));
+    ['cfgAsunto','cfgExtra'].forEach(id=> $(id).addEventListener('input', ()=> preflight.marcarStale()));
+    $('cfgAudiencia').addEventListener('change', ()=> preflight.marcarStale());
+
+    return { abrir };
+  })();
+
+  // La lista de campañas la pinta emCargarBorradores() -- el gate de sesión
+  // (otro <script>) la llama recién cuando hay Firebase + sesión + rol ADMIN.
+})();
+</script>
+
+<!-- ===========================================================
+     ACCESO: página administrativa interna -- NO es una página pública.
+     Nada de arriba se muestra hasta confirmar sesión real + rol ADMIN
+     (mismo criterio que masterlook-panel-interno.html: Email Marketing
+     reemplaza a Campañas, que era ADMIN-únicamente -- no se amplía a
+     RECEPTION acá). Si no hay sesión, o la sesión no es de un ADMIN
+     autorizado, se bloquea/redirige antes de pintar nada. ============ -->
+<script>
+(function(){
+  'use strict';
+  const ES_STAGING = location.hostname !== 'estudio90.github.io';
+  const FIREBASE_CONFIG_PROD = {
+    apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
+    authDomain: "estudio90.firebaseapp.com",
+    projectId: "estudio90",
+    storageBucket: "estudio90.firebasestorage.app",
+    messagingSenderId: "420826163402",
+    appId: "1:420826163402:web:d5020ca2069637e193ec33",
+  };
+  const FIREBASE_CONFIG_STAGING = {
+    apiKey: "AIzaSyDUPboJlJIUdR36JNN3CkPeiZ0WYsvXeiI",
+    authDomain: "estudio90-dev.firebaseapp.com",
+    projectId: "estudio90-dev",
+    storageBucket: "estudio90-dev.firebasestorage.app",
+    messagingSenderId: "892931716452",
+    appId: "1:892931716452:web:97b93c65e782e1521ab671",
+  };
+  firebase.initializeApp(ES_STAGING ? FIREBASE_CONFIG_STAGING : FIREBASE_CONFIG_PROD);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  function bloquear(destino){
+    document.getElementById('verificandoAcceso').textContent = 'Redirigiendo…';
+    location.href = destino;
+  }
+
+  // Misma lectura tolerante a carrera de token que usa el panel
+  // (leerFichaStaffPanel): reintenta antes de decidir "no es staff".
+  async function leerFichaStaff(user){
+    for(let intento = 0; intento < 3; intento++){
+      try{ await user.getIdToken(intento > 0); }catch(e){}
+      let tokenListo = false;
+      try{ await db.collection('customers').doc(user.uid).get(); tokenListo = true; }catch(e){}
+      try{ return await db.collection('staff').doc(user.uid).get(); }
+      catch(e){
+        if(tokenListo) return null;
+        if(intento < 2) await new Promise(r=> setTimeout(r, 150));
+      }
+    }
+    return null;
+  }
+
+  let resuelto = false;
+  auth.onAuthStateChanged(async (user)=>{
+    if(resuelto) return;
+    resuelto = true;
+
+    if(!user){ bloquear('index.html?volverAPanel=1'); return; }
+
+    const esDueña = user.uid === OWNER_UID_FALLBACK;
+    let rol = null, nombre = '';
+    if(esDueña){
+      rol = 'ADMIN';
+    }else{
+      const doc = await leerFichaStaff(user);
+      if(doc && doc.exists && doc.data().active !== false){
+        rol = doc.data().role || null;
+        nombre = doc.data().barber?.name || '';
+      }
+    }
+
+    if(rol !== 'ADMIN'){
+      // BARBER, RECEPTION, staff inactivo, o no-staff: Email Marketing
+      // reemplaza a Campañas (ADMIN-únicamente) -- no se abre a nadie más.
+      bloquear('masterlook-panel-interno.html');
+      return;
+    }
+
+    document.getElementById('verificandoAcceso').style.display = 'none';
+    document.querySelector('.app').classList.remove('oculto');
+    const inicial = (nombre || user.email || '?').trim().slice(0,2).toUpperCase();
+    document.getElementById('tbAvatar').textContent = inicial;
+
+    MLNav.render({
+      contenedor: document.getElementById('mlNavBar'),
+      activo: 'email-marketing',
+      rol: rol,
+      enPanel: false,
+    });
+
+    // Recién ACÁ hay sesión real + Firebase inicializado + rol confirmado --
+    // seguro para leer emailCampaigns (antes de esto firebase.initializeApp
+    // ni siquiera había corrido, ver comentario en emCargarBorradores).
+    window.emCargarBorradores();
+  });
+})();
+</script>
+</body>
+</html>

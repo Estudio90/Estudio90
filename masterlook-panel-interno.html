@@ -10607,7 +10607,7 @@
       }).catch(()=>{});
     }
   }
-  document.getElementById('btnCampanas').addEventListener('click', mostrarCampanas);
+  document.getElementById('btnCampanas').addEventListener('click', ()=>{ location.href = 'masterlook-email-marketing.html'; });
   document.getElementById('cpVolver').addEventListener('click', irAlInicio);
   document.getElementById('cpAudiencia').addEventListener('change', ()=>{
     document.getElementById('cpCurso').style.display = document.getElementById('cpAudiencia').value === 'curso' ? '' : 'none';

@@ -1,0 +1,269 @@
+/* ===========================================================
+   MASTERLOOK · Estilos comunes del área administrativa interna.
+   Fuente visual: masterlook-email-marketing.html (paleta/tipografía
+   extraídas con getComputedStyle() de la referencia real, no a ojo).
+
+   Cargar SIEMPRE al final del <head>, después de cualquier <style>
+   propio de la página -- este archivo gana por orden de cascada
+   (mismos nombres de variable/clase, sin necesitar más especificidad).
+   Usado por: masterlook-panel-interno.html, masterlook-email-marketing.html.
+   NUNCA por masterlook-sitio.html / index.html (sitio público).
+
+   Alcance: SOLO identidad visual (tipografía, color de marca/acento,
+   fondo, tarjetas, bordes, botones de acción, tablas, inputs, modales,
+   estado activo de navegación). Los colores SEMÁNTICOS existentes
+   (estado de cita ok/pendiente/no-show, tipos de servicio corte/cejas/
+   onda/combo/peinado, tags de pago/neto) NO se tocan -- tienen
+   significado propio, no son "otra marca", así que se quedan como
+   están a propósito.
+   =========================================================== */
+
+:root{
+  /* Tipografía única del área interna. */
+  --font-primary:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-body:'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* Fondo/neutrales -- valores reales de Email Marketing. */
+  --bg:#F0F3F4;
+  --panel:#FFFFFF;
+  --panel-2:#F6F6F8;
+  --border:#E0E4E4;
+  --border-strong:#CBD1D2;
+  --text-hi:#2C3941;
+  --text-mid:#4C5559;
+  --text-low:#8A9296;
+
+  /* Acento de marca -- SOLO acciones/estado activo/navegación (nunca
+     colores semánticos de estado de cita o tipo de servicio). */
+  --accent:#8046CE;
+  --accent-hover:#6E3AB5;
+  --accent-tint:#F3EEFC;
+
+  /* Rojo de peligro/error -- no existía como token, estaba hardcodeado
+     en ~19 lugares con 2 valores distintos (#c0392b/#b03a2e). */
+  --danger:#C0392B;
+
+  /* Corregido a los valores reales de Email Marketing (--radio/--radio-chico
+     ahí, medidos: 8px/6px) -- antes decía 16px/9px, una copia vieja que
+     nunca se había corregido contra la referencia real. */
+  --radius:8px; --radius-sm:6px;
+  --shadow-card:0 1px 2px rgba(16,24,32,.06), 0 1px 3px rgba(16,24,32,.08);
+
+  /* Resumen de Ventas: por decisión explícita (2026-09-04) se revierte
+     el alejamiento previo del morado -- la estructura (tinta/fondo/
+     línea) pasa a los neutros compartidos. Las categorías de color de
+     los KPI (terracota/musgo/taupe/rosa) NO se tocan: cumplen el mismo
+     rol que cx-kpi.pay/.net en el resto del panel (distinguir tipos de
+     métrica), no son "identidad de marca" -- cambiarlas sin iterar
+     visualmente podría verse peor, no mejor. */
+  --rv-ink:var(--text-hi); --rv-ink-soft:var(--text-mid);
+  --rv-cream:var(--panel); --rv-cream-deep:var(--panel-2);
+  --rv-line:var(--border);
+}
+
+body, .app{background:var(--bg); font-family:var(--font-primary); font-size:14px;}
+h1,h2,h3{font-family:var(--font-primary);}
+
+/* ---------- topbar: logo idéntico en posición/tamaño/color en toda
+   el área interna (panel + Email Marketing) ---------- */
+.topbar .wordmark, .tb-logo{
+  font-family:var(--font-primary); font-weight:800; font-size:20px;
+  letter-spacing:.05em; color:var(--text-hi); display:flex; align-items:center; gap:8px;
+}
+.topbar{background:var(--panel); border-bottom:1px solid var(--border);}
+
+/* ---------- título de página / subtítulo -- un solo tamaño en toda
+   el área interna, sea cx-*, rv-* o cldb-* ---------- */
+.cx-title, .rv-title, .cldb-title{
+  font-family:var(--font-primary); font-size:22px; font-weight:700; color:var(--text-hi);
+}
+.cx-sub, .rv-sub, .cldb-sub{
+  font-family:var(--font-body); color:var(--text-mid); font-size:13px; margin-top:3px; font-weight:400;
+}
+
+/* ---------- botones de acción / estado activo -- moradas, tal como
+   se pidió: "el morado solo donde corresponda a acciones, estado
+   activo o elementos de navegación". Nunca en colores semánticos
+   (cx-b.edit/.def, cx-kpi.pay/.net, estados de cita, etc. -- esos NO
+   se tocan). ---------- */
+.mg-btn.solid, .rv-btn-primary, .pc-add-btn, .btn-primary, .cldb-add{
+  background:var(--accent) !important; color:#fff !important; border-color:var(--accent) !important;
+}
+.mg-btn.solid:hover, .rv-btn-primary:hover, .pc-add-btn:hover, .btn-primary:hover, .cldb-add:hover{
+  background:var(--accent-hover) !important; border-color:var(--accent-hover) !important;
+}
+.mg-tab.active,
+.cx-navbtn.on, .cx-navbtn2.on, .cx-chip.on,
+.col-preview-tema.on{
+  background:var(--accent) !important; color:#fff !important; border-color:var(--accent) !important;
+}
+.mg-slot.sel{background:var(--accent) !important; border-color:var(--accent) !important;}
+.mg-slot:hover{border-color:var(--accent) !important;}
+.mg-input:focus{outline-color:var(--accent) !important;}
+.dia-toggle.on{background:var(--accent); border-color:var(--accent);}
+
+/* ---------- tarjetas/paneles/tablas/modales -- mismos blancos y
+   grises en toda el área interna ---------- */
+.cx-panel, .rv-filtros-card, .rv-bottom-card, .cx-tablebox, .rv-tablebox-wrap,
+.mg-modal, .mg-close, .cx-search, .cldb-search, .cldb-table-wrap{
+  border-color:var(--border) !important;
+}
+/* Tarjetas KPI del dashboard principal (Agenda): tenían borde/sombra con
+   tinte azul (#bfdbfe / rgba(30,64,175,...)) propio, independiente de
+   --accent -- se lleva al mismo gris neutro que el resto de tarjetas. Se
+   conserva el efecto "vidrio" (brillo diagonal + sombra), solo cambia el
+   tinte de color. */
+.kpi-card{
+  border-color:var(--border) !important;
+  box-shadow:inset 0 1px 0 #fff, 0 4px 16px rgba(15,15,20,.08) !important;
+}
+.kpi-card:hover{ box-shadow:inset 0 1px 0 #fff, 0 8px 24px rgba(15,15,20,.14) !important; }
+
+/* Mismo "vidrio" en el día seleccionado del mini-calendario y de la tira
+   semanal -- eran azules (#bfdbfe), pasan a ser el estado activo morado
+   ("elementos de navegación... estado activo" = morado). */
+.mini-grid .day.sel, .wk-day.active{
+  border-color:var(--accent) !important;
+  box-shadow:inset 0 1px 0 #fff, 0 2px 8px rgba(128,70,206,.18) !important;
+}
+.mini-grid .day.today:not(.sel){ color:var(--accent) !important; }
+.ctrl-btn.primary{ border-color:var(--accent) !important; box-shadow:inset 0 1px 0 #fff, 0 2px 8px rgba(128,70,206,.18) !important; }
+.mg-modal{background:var(--panel) !important;}
+.cx-table th, .pc-table th, .cldb-table th, .sus-hist-table th{
+  background:var(--panel-2) !important; color:var(--text-mid) !important;
+}
+.cx-table td, .pc-table td, .cldb-table td, .sus-hist-table td{
+  border-color:var(--border) !important;
+}
+
+/* ---------- inputs/labels -- borde y foco consistentes ---------- */
+.mg-input, .mg-row input, .mg-row textarea, .cldb-search input, .pc-field input, .pc-field textarea{
+  border-color:var(--border-strong) !important; font-family:var(--font-body) !important;
+}
+.mg-label{color:var(--text-low) !important;}
+
+/* ---------- Clientes (cldb-*): resto de los "casi negro"/"casi gris"
+   propios de la réplica externa que reemplazó -- ver comentario en
+   #vistaClientes. Mismo criterio: texto alto -> --text-hi, texto
+   secundario -> --text-mid, bordes -> --border. ---------- */
+.cldb-back, .cldb-search::placeholder, .cldb-cell-sub, .cldb-sub,
+.cldb-import p, .cldb-table th{ color:var(--text-mid) !important; }
+.cldb-back:hover, .cldb-title, .cldb-import h3, .cldb-table td{ color:var(--text-hi) !important; }
+.cldb-import, .cldb-import-btn, .cldb-search, .cldb-table-wrap{ border-color:var(--border) !important; }
+.cldb-search:focus{ border-color:var(--accent) !important; }
+.cldb-table thead{ background:var(--panel-2) !important; }
+
+/* ---------- avatar del topbar: mismo tratamiento que Email Marketing
+   (tinte de acento, no negro sólido) ---------- */
+.avatar-round, .tb-avatar{
+  background:var(--accent-tint) !important; color:var(--accent) !important;
+}
+
+/* ---------- ancho del contenido del panel ----------
+   Corregido (2026-09-04): la primera versión de esta unificación le
+   copiaba a .content el max-width:1180px de la página .page de Email
+   Marketing, igual que "ancho de página" -- pero el panel no tiene una
+   sola columna de contenido angosta como Email Marketing, tiene grillas
+   densas (KPI de Ventas, calendario+barberos de Agenda) que SÍ necesitan
+   el ancho real disponible. Resultado: con .app ya limitando a 1560px
+   (regla nativa del panel, arriba en el archivo, sin tocar), un tope
+   ADICIONAL de 1180px en .content dejaba hasta 190px vacíos de cada lado
+   en pantallas anchas -- columnas de barberos y tarjetas de KPI
+   comprimidas sin necesidad. La unificación real (mismo header/nav/
+   tipografía/radios/sombras) no depende de que el ancho de columna sea
+   idéntico -- eso se revierte acá.
+   Ahora .content simplemente ocupa el ancho que .app ya le da (hasta
+   1560px) -- sin max-width ni margin:auto propios. El padding lateral
+   (32px) sigue siendo el margen elegante y consistente; lo que cambia es
+   que ya no hay un segundo techo más angosto por debajo del de .app.
+   Los grids que se benefician ya son flexibles (kpi-row: repeat(6,1fr);
+   layout de Agenda: 240px sidebar + 1fr calendario; columnas de barbero
+   del día: minmax(0,1fr) por barbero, generadas en JS) -- con más ancho
+   disponible se reparten solas, no hace falta tocarlas.
+   OJO -- selector ".app > .content" a propósito, NO ".content" a secas:
+   Email Marketing usa la MISMA clase "content" para su columna junto al
+   sidebar (.app > .shell > .content, con su PROPIO .page{max-width:1180px}
+   anidado adentro, que esta regla nunca tocó ni toca) -- un ".content"
+   genérico también la habría afectado. El del panel es hijo DIRECTO de
+   .app (.app > .content, sin .shell en medio), así que el combinador ">"
+   alcanza para no tocar la de Email Marketing. */
+.app > .content{ padding:28px 32px !important; }
+
+/* ---------- Tarjetas: mismo radio (8px) y misma sombra que Email Marketing
+   en toda el área interna. --radius ya vale 8px (arriba) y cubre los 14
+   lugares que usan var(--radius)/var(--radius-sm) (kpi-card, sidebar de
+   Agenda, botones de modal, etc. -- sin tocar cada uno). Estos de acá
+   tenían el radio Y la sombra escritos a mano (14px/11px/16px/12px, casi
+   siempre sin sombra) en vez de usar el token, así que necesitan selector
+   explícito. OJO: .kpi-card NO entra acá a propósito -- conserva su efecto
+   "vidrio" (brillo diagonal) de la unificación de colores anterior, que ya
+   tiene su propia sombra especial; achicarle el radio alcanza (ya lo hace
+   var(--radius) de arriba), cambiarle la sombra lo rompería. */
+.cx-panel, .cx-tablebox, .rv-filtros-card, .rv-chart-card, .rv-tablebox-wrap,
+.rv-bottom-card, .cldb-import, .cldb-table-wrap{
+  border-radius:8px !important;
+  box-shadow:var(--shadow-card) !important;
+}
+
+/* ---------- Botones: mismo padding/radio que Email Marketing (9px 16px /
+   6px). Mismo grupo que ya comparte el morado de acción (unificación
+   anterior) -- se le agregan acá las medidas que le faltaban. */
+.mg-btn.solid, .rv-btn-primary, .pc-add-btn, .btn-primary, .cldb-add, .mg-btn{
+  padding:9px 16px !important; border-radius:6px !important;
+}
+
+/* ---------- Tablas: misma densidad que Email Marketing (14px 20px en el
+   encabezado, 16px 20px en las filas; 13px/14px de letra). Mismo grupo que
+   ya comparte bordes/colores (unificación anterior). */
+.cx-table th, .pc-table th, .cldb-table th, .sus-hist-table th{
+  padding:14px 20px !important; font-size:13px !important;
+}
+.cx-table td, .pc-table td, .cldb-table td, .sus-hist-table td{
+  padding:16px 20px !important; font-size:14px !important;
+}
+
+/* ===========================================================
+   Header compartido (masterlook-nav-comun.js::renderHeader) --
+   fila de 52px con logo + buscador/chip/ajustes/avatar. Medido con
+   getComputedStyle() sobre masterlook-email-marketing.html el 2026-09-04
+   (fuente visual). La barra Agenda/Ventas/.../Email Marketing de abajo
+   sigue siendo .mlnav (inyectada por masterlook-nav-comun.js, ya
+   compartida desde la unificación de la barra de navegación).
+   =========================================================== */
+.mlhdr{
+  height:52px; padding:0 20px; display:flex; align-items:center; gap:28px;
+  background:var(--panel); box-shadow:0 1px 0 var(--border);
+  position:sticky; top:0; z-index:100;
+}
+.mlhdr-logo{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-primary); font-weight:700; font-size:15px; letter-spacing:0.75px;
+  color:var(--text-hi); white-space:nowrap;
+}
+.mlhdr-mark{
+  width:22px; height:22px; border-radius:6px; background:var(--accent);
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:12px; font-weight:700; flex:none;
+}
+.mlhdr-right{display:flex; align-items:center; gap:16px; margin-left:auto;}
+.mlhdr-pill{
+  display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-mid);
+  border-radius:999px; padding:5px 12px; white-space:nowrap;
+}
+.mlhdr-icon{
+  width:32px; height:32px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; color:var(--text-mid); flex:none;
+}
+.mlhdr-icon:hover{background:var(--bg);}
+/* Hamburguesa (solo panel, abre el menú lateral) -- vive DENTRO de
+   mlhdr-right, no antes del logo (ver comentario en renderHeader() sobre
+   por qué: así el logo queda en la misma coordenada x en las dos páginas). */
+.mlhdr-burger{border:none;background:none;padding:0;font:inherit;flex-direction:column;gap:3px;}
+.mlhdr-burger span{width:15px;height:1.5px;border-radius:1px;background:var(--text-mid);}
+.mlhdr-avatar-wrap{position:relative;}
+.mlhdr-avatar{
+  width:30px; height:30px; border-radius:50%; background:var(--accent-tint);
+  color:var(--accent); font-size:12px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; user-select:none; cursor:default;
+}
+.mlhdr-avatar.clickable{cursor:pointer;}
