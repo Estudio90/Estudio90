@@ -271,6 +271,22 @@
   .pf-veredicto[data-ok="0"]{background:#FDECEA; color:var(--rojo);}
   .pf-veredicto[data-ok="wait"]{background:var(--fondo); color:var(--texto-medio);}
   .btn.pf-bloqueado{opacity:.45; pointer-events:none;}
+  /* Modal de confirmación final de envío (FASE FINAL, Bloque C) */
+  .ef-modo{font-size:12.5px; font-weight:600; padding:9px 12px; border-radius:6px; margin-bottom:14px; line-height:1.45;}
+  .ef-modo[data-dry="1"]{background:var(--fondo); color:var(--texto-medio); border:1px dashed var(--borde);}
+  .ef-modo[data-dry="0"]{background:#FDECEA; color:var(--rojo);}
+  #efDatos{display:flex; flex-direction:column; gap:6px; font-size:12.5px;}
+  #efDatos .ef-dato{display:flex; gap:10px;}
+  #efDatos .ef-dato > span{flex:none; width:92px; color:var(--texto-bajo);}
+  #efDatos .ef-dato > b{color:var(--texto-alto); font-weight:600; word-break:break-word;}
+  .ef-embudo{display:flex; flex-direction:column; gap:3px; margin-top:8px; font-size:12.5px; font-variant-numeric:tabular-nums;}
+  .ef-embudo .ef-fila{display:flex; justify-content:space-between; gap:12px; color:var(--texto-medio);}
+  .ef-embudo .ef-fila b{color:var(--texto-alto); font-weight:600;}
+  .ef-embudo .ef-total{margin-top:6px; padding-top:8px; border-top:1px solid var(--borde); font-size:14px; color:var(--texto-alto);}
+  .ef-embudo .ef-total b{font-size:19px; color:var(--morado); font-weight:700;}
+  .ef-prog-barra{height:8px; background:var(--fondo); border-radius:99px; overflow:hidden; margin:8px 0 6px;}
+  .ef-prog-fill{height:100%; width:0; background:var(--morado); transition:width .3s ease;}
+  .ef-prog-txt{font-size:12px; color:var(--texto-medio);}
   .cfg-prog{display:none; align-items:center; gap:8px; margin-top:10px;}
   .cfg-prog.visible{display:flex;}
   .cfg-prog input{padding:8px 10px; border:1px solid var(--borde); border-radius:6px; font-family:inherit; font-size:13px;}
@@ -737,6 +753,45 @@
     </div>
     <div class="modal-pie">
       <button class="btn btn-outline" id="cerrarReporte2">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: Confirmación final de envío (FASE FINAL, Bloque C) ================= -->
+<div class="modal-fondo" id="modalEnvioFinal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-head">
+      <h3 id="efTitulo">Confirmar envío de la campaña</h3>
+      <button class="modal-cerrar" id="efCerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="ef-modo" id="efModo" data-dry="1">—</div>
+
+      <div id="efDatos"></div>
+
+      <div class="pf-resumen" style="margin-top:14px;">
+        <div class="pf-seccion-tit">Destinatarios (calculado por el sistema, no en esta pantalla)</div>
+        <div class="ef-embudo" id="efEmbudo"></div>
+      </div>
+
+      <div id="efBloqueAdv" style="display:none; margin-top:14px;">
+        <div class="pf-seccion-tit">Advertencias (no impiden el envío)</div>
+        <div class="pf-lista" id="efAdvertencias"></div>
+      </div>
+
+      <div class="pf-veredicto" id="efVeredicto" data-ok="wait">—</div>
+
+      <div id="efProgreso" style="display:none; margin-top:14px;">
+        <div class="pf-seccion-tit">Procesando</div>
+        <div class="ef-prog-barra"><div class="ef-prog-fill" id="efProgFill"></div></div>
+        <div class="ef-prog-txt" id="efProgTxt">—</div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="efCancelar">Cancelar</button>
+      <button class="btn btn-solid" id="efConfirmar" disabled>Confirmar envío</button>
     </div>
   </div>
 </div>
@@ -2273,7 +2328,7 @@ ${contenido}
      pasa por la Cloud Function `emailCampanaProgramar` (validación).
      =================================================================== */
   const emConfig = (function(){
-    let fnProgramar = null, fnPrueba = null, fnValidar = null;
+    let fnProgramar = null, fnPrueba = null, fnValidar = null, fnEnviarAhora = null, fnPlanificar = null;
     let campId = null;
     let volverAlEditor = false;
     let settingsCache = null;
@@ -2284,6 +2339,8 @@ ${contenido}
       fnProgramar = fnProgramar || f.httpsCallable('emailCampanaProgramar');
       fnPrueba = fnPrueba || f.httpsCallable('emailPrueba');
       fnValidar = fnValidar || f.httpsCallable('emailCampanaValidar');
+      fnEnviarAhora = fnEnviarAhora || f.httpsCallable('emailCampanaEnviarAhora');
+      fnPlanificar = fnPlanificar || f.httpsCallable('emailPlanificadorAhora');
     }
     function msg(texto, tipo){
       const el = $('cfgMsg');
@@ -2395,11 +2452,11 @@ ${contenido}
       }
 
       function gate(){
-        // Bloquea Programar / Enviar ahora si el último preflight dice que no se puede.
+        // Señaliza en "Programar" si el último preflight dice que no se puede.
+        // "Enviar ahora" NO se bloquea aquí: abre el modal de confirmación, que
+        // muestra el motivo y deja "Confirmar envío" deshabilitado (Bloque C).
         const bloquear = !!ultimo && !stale && ultimo.puedeEnviar === false;
-        ['cfgProgramar','cfgEnviarAhora'].forEach(id=>{
-          $(id).classList.toggle('pf-bloqueado', bloquear);
-        });
+        $('cfgProgramar').classList.toggle('pf-bloqueado', bloquear);
       }
 
       async function correr(opts){
@@ -2524,7 +2581,19 @@ ${contenido}
         return true;
       }
 
-      return { reset, marcarStale, correr, exigirOK, pintar };
+      // Para el modal de confirmación (Bloque C): asegura un preflight FRESCO de
+      // esta campaña (persiste asunto/audiencia/extra y re-resuelve la audiencia)
+      // y devuelve la respuesta COMPLETA de emailCampanaValidar, o null si no se
+      // pudo comprobar. El modal solo renderiza esa respuesta -- no recalcula.
+      async function paraModal(){
+        if(paraCamp !== campId || !ultimo || stale){
+          const r = await correr({ persistir:true });
+          if(!r) return null;
+        }
+        return (paraCamp === campId && ultimo) ? ultimo : null;
+      }
+
+      return { reset, marcarStale, correr, exigirOK, pintar, paraModal, etiqueta: label, iconos: ICO };
     })();
 
     function extraDeUI(){
@@ -2594,6 +2663,185 @@ ${contenido}
       }
     }
 
+    /* ===================================================================
+       emEnvioFinal -- #modalEnvioFinal (FASE FINAL, Bloque C).
+       Último paso antes de emailCampanaEnviarAhora: re-comprueba, muestra
+       el embudo COMPLETO de destinatarios (todo viene de emailCampanaValidar,
+       nada se recalcula aquí) y exige una confirmación explícita.
+       =================================================================== */
+    const emEnvioFinal = (function(){
+      let resp = null;         // última respuesta de emailCampanaValidar
+      let campDelModal = null; // campId para el que se abrió
+      let enviando = false;    // corriendo emailCampanaEnviarAhora -> no re-ejecutar, no cerrar
+      let completado = false;  // ya terminó -> el botón cierra
+
+      const MOTIVO = {
+        baja:'Bajas voluntarias', rebote_duro:'Rebotes duros', rebote_blando:'Rebotes blandos',
+        queja_spam:'Quejas de spam', bloqueado:'Bloqueados por el proveedor',
+        invalido:'Inválidas (marcadas por el proveedor)', manual:'Supresiones manuales',
+        sin_consentimiento:'Sin consentimiento', otro:'Otras supresiones',
+      };
+
+      function setProg(pct, txt){ $('efProgFill').style.width = Math.max(0, Math.min(100, pct)) + '%'; $('efProgTxt').textContent = txt; }
+      function procesadosDe(plan){
+        if(!plan || !Array.isArray(plan.ticks)) return 0;
+        return plan.ticks.reduce((a,t)=> a + ((t.tanda && ((t.tanda.simulados||0) + (t.tanda.enviadosReales||0))) || 0), 0);
+      }
+      function pendientesDe(plan){
+        if(!plan || !Array.isArray(plan.ticks) || !plan.ticks.length) return 0;
+        const last = plan.ticks[plan.ticks.length - 1];
+        return (last && typeof last.pendientesRestantes === 'number') ? last.pendientesRestantes : 0;
+      }
+      function huboAlgo(plan){ return !!(plan && Array.isArray(plan.ticks) && plan.ticks.some(t=> t.hizoAlgo)); }
+
+      function abrir(r){
+        resp = r; campDelModal = campId; enviando = false; completado = false;
+        const s = r.resumen || {};
+        const dry = !!s.dryRun;
+
+        const modoEl = $('efModo');
+        modoEl.dataset.dry = dry ? '1' : '0';
+        modoEl.textContent = dry
+          ? 'Simulación (dryRun): NO se enviará ningún correo real. El flujo llega hasta el planificador y marca los destinatarios como «simulado».'
+          : 'ENVÍO REAL: se enviarán correos a los destinatarios que figuran abajo.';
+
+        const audTxt = s.audiencia
+          ? esc(s.audiencia.name || '(sin nombre)') + ' — ' + (s.audiencia.type === 'fija' ? 'lista fija' : 'dinámica')
+          : 'Solo destinatarios sueltos';
+        $('efDatos').innerHTML = [
+          ['Campaña', esc(s.campana || '(sin nombre)')],
+          ['Asunto', esc(s.asunto || '—')],
+          ['Remitente', esc((s.senderName || 'MASTER LOOK') + ' <' + (s.senderEmail || '—') + '>')],
+          ['Audiencia', audTxt],
+        ].map(([k,v])=> '<div class="ef-dato"><span>'+k+'</span><b>'+v+'</b></div>').join('');
+
+        // -- embudo: sale del preflight, NO se recalcula en esta pantalla --
+        const spm = s.suprimidosPorMotivo || {};
+        const sumMotivos = Object.values(spm).reduce((a,b)=> a + b, 0);
+        const filas = [
+          ['Cantidad bruta encontrada', s.audienciaBruta ?? 0],
+          ['− Duplicados eliminados', s.duplicados ?? 0],
+          ['− Con formato inválido', s.invalidos ?? 0],
+        ];
+        if(sumMotivos > 0){
+          // desglose real de la lista de no-envío por motivo
+          Object.keys(spm).sort().forEach(m=> { if(spm[m] > 0) filas.push(['− ' + (MOTIVO[m] || m), spm[m]]); });
+        }else{
+          filas.push(['− En la lista de no-envío (bajas, rebotes, quejas)', s.suprimidos ?? 0]);
+        }
+        filas.push(['− Rechazaron marketing (preferencias)', s.rechazados ?? 0]);
+        filas.push(['− Omitidos por frecuencia (ya recibieron otra campaña)', s.omitidosPorFrecuencia ?? 0]);
+        $('efEmbudo').innerHTML = filas
+          .map(([k,v])=> '<div class="ef-fila"><span>'+esc(k)+'</span><b>'+v+'</b></div>').join('')
+          + '<div class="ef-fila ef-total"><span>Recibirían la campaña</span><b>'+(s.objetivo ?? 0)+'</b></div>';
+
+        // -- advertencias no críticas --
+        const adv = r.advertencias || [];
+        $('efBloqueAdv').style.display = adv.length ? '' : 'none';
+        $('efAdvertencias').innerHTML = adv.map(a=>
+          '<div class="pf-item" data-nivel="warn">' + preflight.iconos.warn +
+          '<span><b>' + esc(preflight.etiqueta(a.id)) + '</b>' + (a.detalle ? ' <small>— ' + esc(a.detalle) + '</small>' : '') + '</span></div>'
+        ).join('');
+
+        // -- veredicto + botón confirmar --
+        const v = $('efVeredicto');
+        const btn = $('efConfirmar');
+        const ok = r.puedeEnviar && (s.objetivo ?? 0) > 0;
+        if(ok){
+          v.dataset.ok = '1';
+          v.textContent = dry
+            ? 'Comprobación superada. Puedes confirmar la simulación.'
+            : 'Comprobación superada. Puedes confirmar el envío.';
+          btn.disabled = false;
+          btn.textContent = (dry ? 'Confirmar simulación a ' : 'Confirmar envío a ') + (s.objetivo ?? 0) + ' destinatario' + ((s.objetivo ?? 0) === 1 ? '' : 's');
+        }else{
+          v.dataset.ok = '0';
+          const fallidos = (r.criticos || []).filter(c=> !c.ok);
+          const nombres = fallidos.map(c=> preflight.etiqueta(c.id));
+          // detalle del crítico "audiencia" (suele traer "queda en 0 tras los filtros")
+          const detAud = (fallidos.find(c=> c.id === 'audiencia') || {}).detalle;
+          v.textContent = nombres.length
+            ? ('No se puede enviar: ' + nombres.join(' · ') + '.' + (detAud ? ' ' + detAud + '.' : '') + ' Corrige la campaña y vuelve a comprobar.')
+            : ((s.objetivo ?? 0) === 0
+                ? 'No hay destinatarios tras aplicar todas las exclusiones. No se puede enviar.'
+                : 'No se puede enviar todavía: requisitos sin cumplir.');
+          btn.disabled = true;
+          btn.textContent = dry ? 'Confirmar simulación' : 'Confirmar envío';
+        }
+
+        $('efProgreso').style.display = 'none';
+        $('efProgFill').style.width = '0';
+        $('efProgTxt').textContent = '—';
+        $('efCancelar').disabled = false;
+        $('efCerrar').disabled = false;
+        $('modalEnvioFinal').classList.add('abierto');
+      }
+
+      function cerrarForzado(){ $('modalEnvioFinal').classList.remove('abierto'); }
+      function cerrar(){ if(enviando) return; cerrarForzado(); }
+
+      async function confirmar(){
+        if(completado){ cerrarForzado(); return; }
+        if(enviando) return;                       // anti doble ejecución
+        const btn = $('efConfirmar');
+        if(btn.disabled) return;
+        if(!resp || campDelModal !== campId){ msg('La campaña cambió. Vuelve a pulsar «Enviar ahora».', 'err'); cerrarForzado(); return; }
+
+        enviando = true;
+        btn.disabled = true;                       // bloqueo inmediato
+        $('efCancelar').disabled = true;
+        $('efCerrar').disabled = true;
+        const s = (resp && resp.resumen) || {};
+        const objetivo = s.objetivo ?? 0;
+        btn.textContent = s.dryRun ? 'Simulando…' : 'Enviando…';
+        $('efProgreso').style.display = '';
+        setProg(4, 'Comprobando de nuevo y programando…');
+        fns();
+        try{
+          // 1 acción: preflight (otra vez, server-side) -> programar -> planificador (Bloque A)
+          const r1 = (await fnEnviarAhora({ campaignId: campId, vueltas: 20 })).data;
+          let procesados = procesadosDe(r1.planificador);
+          let plan = r1.planificador;
+          setProg(objetivo ? 8 + Math.round(88 * procesados / objetivo) : 96, procesados + (objetivo ? (' / ' + objetivo) : '') + ' procesados');
+
+          // resto de lotes con el MISMO núcleo (emailPlanificadorAhora)
+          let guard = 0;
+          while(pendientesDe(plan) > 0 && huboAlgo(plan) && guard < 25){
+            guard += 1;
+            plan = (await fnPlanificar({ vueltas: 20 })).data;
+            procesados += procesadosDe(plan);
+            setProg(objetivo ? 8 + Math.round(88 * procesados / objetivo) : 96, procesados + (objetivo ? (' / ' + objetivo) : '') + ' procesados');
+          }
+
+          setProg(100, s.dryRun
+            ? ('Simulación completada. ' + procesados + ' destinatario(s) marcados como «simulado». 0 correos reales.')
+            : ('Envío completado. ' + procesados + ' destinatario(s) procesados.'));
+          msg(s.dryRun
+            ? ('Simulación completada: ' + procesados + ' destinatario(s) procesados por el planificador y marcados como «simulado». No salió ningún correo real.')
+            : ('Campaña enviada. ' + procesados + ' destinatario(s) procesados.'), 'ok');
+          completado = true;
+          try{ if(typeof emCargarBorradores === 'function') await emCargarBorradores(); }catch(_){}
+          preflight.marcarStale();
+        }catch(e){
+          setProg(100, 'No se pudo completar: ' + (e.message || e));
+          msg('No se pudo completar el envío: ' + (e.message || e), 'err');
+          completado = true;
+        }finally{
+          enviando = false;
+          $('efCancelar').disabled = false;
+          $('efCerrar').disabled = false;
+          btn.disabled = false;
+          btn.textContent = 'Cerrar';
+        }
+      }
+
+      $('efCerrar').addEventListener('click', cerrar);
+      $('efCancelar').addEventListener('click', cerrar);
+      $('efConfirmar').addEventListener('click', confirmar);
+
+      return { abrir };
+    })();
+
     // wiring
     $('cfgVolverEditor').addEventListener('click', async ()=>{
       const doc = await firebase.firestore().collection('emailCampaigns').doc(campId).get();
@@ -2602,13 +2850,29 @@ ${contenido}
       emAbrirEditor({ borradorId: campId, nombre: d.name, editorData: d.editorData });
     });
     $('cfgGuardar').addEventListener('click', ()=> accionar('guardar'));
+    // "Enviar ahora" NO envía: re-comprueba y abre el modal de confirmación final.
+    // El envío solo ocurre si ADMIN confirma explícitamente en #modalEnvioFinal.
     $('cfgEnviarAhora').addEventListener('click', async ()=>{
       const b = $('cfgEnviarAhora');
-      if(b.dataset.armado === '1'){ b.dataset.armado=''; b.textContent='Enviar ahora'; accionar('ahora'); return; }
-      if(!(await preflight.exigirOK())) return;   // no arma si la comprobación no pasa
-      b.dataset.armado = '1';
-      b.textContent = '¿Seguro? Enviar ahora';
-      setTimeout(()=>{ const x=$('cfgEnviarAhora'); if(x){ x.dataset.armado=''; x.textContent='Enviar ahora'; } }, 4000);
+      if(b.disabled) return;
+      b.disabled = true;
+      const orig = b.textContent;
+      b.textContent = 'Comprobando…';
+      limpiarMsg();
+      try{
+        const resp = await preflight.paraModal();
+        if(!resp){
+          msg('No se pudo comprobar la campaña antes de enviar. Revisa la comprobación de arriba.', 'err');
+          $('pfCaja').scrollIntoView({ behavior:'smooth', block:'nearest' });
+          return;
+        }
+        emEnvioFinal.abrir(resp);
+      }catch(e){
+        msg('No se pudo abrir la confirmación: ' + (e.message || e), 'err');
+      }finally{
+        b.disabled = false;
+        b.textContent = orig;
+      }
     });
     $('cfgProgramar').addEventListener('click', ()=> $('cfgProgWrap').classList.toggle('visible'));
     $('cfgProgCancelar').addEventListener('click', ()=> $('cfgProgWrap').classList.remove('visible'));
