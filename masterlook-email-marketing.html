@@ -808,32 +808,56 @@
       <label class="aud-campo-label" for="audNombre">Nombre de la audiencia</label>
       <input class="filtro-campo" type="text" id="audNombre" maxlength="80" placeholder="Ej.: Clientes de Master Look" autocomplete="off">
 
-      <label class="aud-campo-label">A quién incluye</label>
-      <div class="aud-seg">
+      <label class="aud-campo-label">Tipo de audiencia</label>
+      <div class="aud-seg" id="audTipoSeg">
         <label>
-          <input type="radio" name="audSeg" value="todos" checked>
-          <span>Todos los clientes
-            <span class="aud-seg-sub">Personas con correo en la base de clientes (registrados y de agenda), sin duplicados.</span>
+          <input type="radio" name="audTipo" value="dinamica" checked>
+          <span>Por criterios (dinámica)
+            <span class="aud-seg-sub">Se resuelve el día del envío: incluye a quien cumpla el criterio en ese momento.</span>
           </span>
         </label>
         <label>
-          <input type="radio" name="audSeg" value="compradores_curso">
-          <span>Compradores de un curso
-            <span class="aud-seg-sub">Quienes tienen acceso a un curso de Academy.</span>
+          <input type="radio" name="audTipo" value="fija">
+          <span>Lista fija de correos
+            <span class="aud-seg-sub">Una lista concreta que pegas tú. No cambia salvo que la edites.</span>
           </span>
         </label>
-        <div class="aud-seg-extra" id="audExtraCurso" style="display:none;">
-          <select class="filtro-campo" id="audCurso"><option value="">Cargando cursos…</option></select>
+      </div>
+
+      <div id="audBloqueDinamica">
+        <label class="aud-campo-label">A quién incluye</label>
+        <div class="aud-seg">
+          <label>
+            <input type="radio" name="audSeg" value="todos" checked>
+            <span>Todos los clientes
+              <span class="aud-seg-sub">Personas con correo en la base de clientes (registrados y de agenda), sin duplicados.</span>
+            </span>
+          </label>
+          <label>
+            <input type="radio" name="audSeg" value="compradores_curso">
+            <span>Compradores de un curso
+              <span class="aud-seg-sub">Quienes tienen acceso a un curso de Academy.</span>
+            </span>
+          </label>
+          <div class="aud-seg-extra" id="audExtraCurso" style="display:none;">
+            <select class="filtro-campo" id="audCurso"><option value="">Cargando cursos…</option></select>
+          </div>
+          <label>
+            <input type="radio" name="audSeg" value="visita_reciente">
+            <span>Visitó recientemente
+              <span class="aud-seg-sub">Clientes con una reserva no rechazada en el período elegido. El resultado depende de cuántas reservas históricas se conserven.</span>
+            </span>
+          </label>
+          <div class="aud-dias-inline" id="audExtraDias" style="display:none;">
+            Últimos <input type="number" id="audDias" value="90" min="1" max="730"> días
+          </div>
         </div>
-        <label>
-          <input type="radio" name="audSeg" value="visita_reciente">
-          <span>Visitó recientemente
-            <span class="aud-seg-sub">Clientes con una reserva no rechazada en el período elegido.</span>
-          </span>
-        </label>
-        <div class="aud-dias-inline" id="audExtraDias" style="display:none;">
-          Últimos <input type="number" id="audDias" value="90" min="1" max="730"> días
-        </div>
+      </div>
+
+      <div id="audBloqueFija" style="display:none;">
+        <label class="aud-campo-label" for="audEmails">Correos (uno por línea, o separados por coma / punto y coma)</label>
+        <textarea class="filtro-campo" id="audEmails" rows="7" placeholder="ana@ejemplo.com&#10;juan@ejemplo.com" style="resize:vertical; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.5;"></textarea>
+        <div class="aud-desglose" id="audFijaConteo" style="margin-top:2px;"></div>
       </div>
 
       <button class="btn btn-outline" id="audCalcular" style="width:100%; justify-content:center;">
@@ -1758,10 +1782,12 @@ ${contenido}
      onSnapshot, sin lecturas masivas repetidas.
      =================================================================== */
   const emAudiencias = (function(){
+    const MAX_FIJA = 10000;   // == MAX_EMAILS_AUDIENCIA_FIJA del backend
+    const RE_EMAIL_UI = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     let fnPreview = null;      // httpsCallable, se crea a demanda (post-auth)
     let cursosCache = null;    // [{id,name}], se carga 1 vez al abrir el modal
     let listaCargada = false;  // la lista se lee 1 vez por entrada a la vista
-    let ultimoCalculo = null;  // { filtros, total } del último "Calcular" válido
+    let ultimoCalculo = null;  // { tipo, filtros?|emails?, total } del último "Calcular" válido
 
     function callable(){
       if(!fnPreview) fnPreview = firebase.app().functions('us-central1').httpsCallable('emailAudienciaPreview');
@@ -1779,6 +1805,13 @@ ${contenido}
       if(f.segmento === 'compradores_curso') return 'Compradores: ' + (f.cursoNombre || f.courseId || 'curso');
       if(f.segmento === 'visita_reciente') return 'Visitó (últimos ' + (f.visitaDesdeDias || 90) + ' días)';
       return f.segmento || '—';
+    }
+    function etiquetaAudiencia(a){
+      if(a && a.type === 'fija'){
+        const n = (a.emails || []).length;
+        return 'Lista fija · ' + n + ' correo' + (n === 1 ? '' : 's');
+      }
+      return etiquetaSegmento(a && a.filtros);
     }
 
     // ---------- lista ----------
@@ -1800,13 +1833,22 @@ ${contenido}
         tbody.innerHTML = docs.map(a=> `
           <tr>
             <td class="campana-nombre">${esc(a.name || '(sin nombre)')}</td>
-            <td>${esc(etiquetaSegmento(a.filtros))}</td>
+            <td>${esc(etiquetaAudiencia(a))}</td>
             <td>${a.ultimoConteo != null ? a.ultimoConteo : '—'}</td>
             <td>${fechaCorta(a.createdAt)}</td>
-            <td><button class="btn-texto" data-del="${esc(a.id)}" style="color:var(--rojo);padding:4px 0;">Eliminar</button></td>
+            <td style="white-space:nowrap;">
+              <button class="btn-texto" data-check="${esc(a.id)}" style="padding:4px 0;">Comprobar</button>
+              <button class="btn-texto" data-del="${esc(a.id)}" style="color:var(--rojo);padding:4px 0 4px 14px;">Eliminar</button>
+            </td>
+          </tr>
+          <tr class="aud-check-fila" id="audCheck-${esc(a.id)}" style="display:none;">
+            <td colspan="5" style="background:var(--fondo); font-size:12.5px; color:var(--texto-medio); padding:10px 14px;"></td>
           </tr>`).join('');
         tbody.querySelectorAll('[data-del]').forEach(btn=>{
           btn.addEventListener('click', ()=> confirmarEliminar(btn));
+        });
+        tbody.querySelectorAll('[data-check]').forEach(btn=>{
+          btn.addEventListener('click', ()=> comprobar(btn.dataset.check));
         });
       }catch(e){
         tbody.innerHTML = '<tr><td colspan="5" style="color:var(--rojo);">No se pudo cargar: ' + esc(e.message) + '</td></tr>';
@@ -1832,17 +1874,87 @@ ${contenido}
       }catch(e){ alert('No se pudo eliminar: ' + e.message); }
     }
 
+    // "Comprobar" -- resuelve la audiencia guardada AHORA (solo lectura, vía
+    // emailAudienciaPreview) y muestra el conteo real tras excluir supresiones,
+    // bajas, duplicados e inválidos. No modifica nada.
+    async function comprobar(id){
+      const fila = document.getElementById('audCheck-' + id);
+      if(!fila) return;
+      const celda = fila.querySelector('td');
+      const btn = document.querySelector('[data-check="' + id + '"]');
+      fila.style.display = '';
+      celda.textContent = 'Comprobando contra clientes, supresiones y preferencias…';
+      if(btn) btn.disabled = true;
+      try{
+        const r = (await callable()({ audienceId: id })).data;
+        const d = r.desglose || {};
+        const partes = [];
+        if(d.totalBruto != null) partes.push('<b>' + d.totalBruto + '</b> en bruto');
+        if(d.duplicados) partes.push('− ' + d.duplicados + ' duplicado' + (d.duplicados===1?'':'s'));
+        if(d.invalidos) partes.push('− ' + d.invalidos + ' con formato inválido');
+        if(d.suprimidos) partes.push('− ' + d.suprimidos + ' en la lista de no-envío');
+        if(d.rechazados) partes.push('− ' + d.rechazados + ' dado' + (d.rechazados===1?'':'s') + ' de baja');
+        celda.innerHTML = partes.join(' &nbsp; ')
+          + ' &nbsp;→&nbsp; <b style="color:var(--texto-alto);">' + r.total + '</b> recibiría' + (r.total===1?'':'n') + ' la campaña hoy.'
+          + (r.muestra && r.muestra.length
+              ? '<br><span style="color:var(--texto-bajo);">Ejemplos: ' + esc(r.muestra.join(', ')) + (r.total > r.muestra.length ? ' …' : '') + '</span>'
+              : '');
+      }catch(e){
+        celda.textContent = 'No se pudo comprobar: ' + (e.message || e);
+      }finally{
+        if(btn) btn.disabled = false;
+      }
+    }
+
     // ---------- modal "Nueva audiencia" ----------
     async function abrirModal(){
       $('audNombre').value = '';
+      document.querySelector('input[name="audTipo"][value="dinamica"]').checked = true;
       document.querySelector('input[name="audSeg"][value="todos"]').checked = true;
       $('audDias').value = '90';
+      $('audEmails').value = '';
+      $('audFijaConteo').innerHTML = '';
+      sincronizarTipo();
       sincronizarExtras();
       resetResultado();
       $('modalAudiencia').classList.add('abierto');
       await cargarCursos();
     }
     function cerrarModal(){ $('modalAudiencia').classList.remove('abierto'); }
+
+    function tipoElegido(){
+      return (document.querySelector('input[name="audTipo"]:checked') || {}).value || 'dinamica';
+    }
+    function sincronizarTipo(){
+      const fija = tipoElegido() === 'fija';
+      $('audBloqueDinamica').style.display = fija ? 'none' : '';
+      $('audBloqueFija').style.display = fija ? '' : 'none';
+      resetResultado();
+    }
+    // Divide el textarea, normaliza (trim + lowercase), deduplica y valida
+    // formato -- mismo criterio que normalizarEmail/RE_EMAIL del backend.
+    function parsearFija(){
+      const crudos = ($('audEmails').value || '').split(/[\s,;]+/).map(s=> s.trim().toLowerCase()).filter(Boolean);
+      const vistos = new Set();
+      const validos = [];
+      let duplicados = 0, invalidos = 0;
+      for(const e of crudos){
+        if(vistos.has(e)){ duplicados++; continue; }
+        vistos.add(e);
+        if(e.length <= 254 && RE_EMAIL_UI.test(e)) validos.push(e);
+        else invalidos++;
+      }
+      return { validos, duplicados, invalidos };
+    }
+    function pintarConteoFija(){
+      const p = parsearFija();
+      const partes = ['<b>' + p.validos.length + '</b> correo' + (p.validos.length===1?'':'s') + ' válido' + (p.validos.length===1?'':'s')];
+      if(p.duplicados) partes.push(p.duplicados + ' duplicado' + (p.duplicados===1?'':'s') + ' (se ignora' + (p.duplicados===1?'':'n') + ')');
+      if(p.invalidos) partes.push(p.invalidos + ' con formato inválido');
+      if(p.validos.length > MAX_FIJA) partes.push('<b style="color:var(--rojo);">supera el máximo de ' + MAX_FIJA.toLocaleString('es-CL') + '</b>');
+      $('audFijaConteo').innerHTML = partes.join(' · ');
+      resetResultado();
+    }
 
     function segmentoElegido(){
       return (document.querySelector('input[name="audSeg"]:checked') || {}).value || 'todos';
@@ -1891,27 +2003,43 @@ ${contenido}
     }
 
     async function calcular(){
-      const f = filtrosDeUI();
-      if(f.segmento === 'compradores_curso' && !f.courseId){ alert('Elige un curso.'); return; }
+      const tipo = tipoElegido();
       const btn = $('audCalcular');
       btn.disabled = true; btn.textContent = 'Calculando…';
       resetResultado();
       try{
-        const r = (await callable()({ filtros: f })).data;
+        let payload, ctx;
+        if(tipo === 'fija'){
+          const p = parsearFija();
+          if(!p.validos.length) throw new Error('Pega al menos un correo válido.');
+          if(p.validos.length > MAX_FIJA) throw new Error('La lista supera el máximo de ' + MAX_FIJA.toLocaleString('es-CL') + ' correos.');
+          payload = { emails: p.validos };
+          ctx = { tipo:'fija', emails: p.validos.slice(), total: 0 };
+        } else {
+          const f = filtrosDeUI();
+          if(f.segmento === 'compradores_curso' && !f.courseId) throw new Error('Elige un curso.');
+          payload = { filtros: f };
+          ctx = { tipo:'dinamica', filtros: f, total: 0 };
+        }
+        const r = (await callable()(payload)).data;
         const d = r.desglose || {};
         $('audTotal').textContent = r.total;
         const partes = [];
         if(d.brutoPorFuente) partes.push('<b>' + Object.entries(d.brutoPorFuente).map(([k,v])=> v + ' ' + k).join(' + ') + '</b> en bruto');
+        else if(d.totalBruto != null) partes.push('<b>' + d.totalBruto + '</b> en bruto');
         if(d.duplicados) partes.push(d.duplicados + ' duplicado' + (d.duplicados===1?'':'s'));
         if(d.invalidos) partes.push(d.invalidos + ' inválido' + (d.invalidos===1?'':'s'));
+        if(d.suprimidos) partes.push(d.suprimidos + ' en la lista de no-envío (bajas, rebotes, quejas)');
         if(d.rechazados) partes.push(d.rechazados + ' dado' + (d.rechazados===1?'':'s') + ' de baja');
         if(d.ventana) partes.push('reservas del ' + d.ventana.desde + ' al ' + d.ventana.hasta);
+        if(d.truncadaA) partes.push('lista recortada a ' + d.truncadaA.toLocaleString('es-CL'));
         $('audDesglose').innerHTML = partes.join(' · ');
         $('audMuestra').textContent = (r.muestra && r.muestra.length)
           ? ('Ejemplos: ' + r.muestra.join(', ') + (r.total > r.muestra.length ? ' …' : ''))
           : 'Ningún correo cumple los criterios.';
         $('audResultado').classList.add('visible');
-        ultimoCalculo = { filtros: f, total: r.total };
+        ctx.total = r.total;
+        ultimoCalculo = ctx;
         $('audGuardar').disabled = r.total === 0;
       }catch(e){
         $('audDesglose').innerHTML = '';
@@ -1928,20 +2056,39 @@ ${contenido}
       const nombre = $('audNombre').value.trim();
       if(!nombre){ alert('Ponle un nombre a la audiencia.'); return; }
       if(!ultimoCalculo){ alert('Primero pulsa "Calcular personas".'); return; }
-      // los filtros guardados deben ser exactamente los que se calcularon
-      if(JSON.stringify(filtrosDeUI()) !== JSON.stringify(ultimoCalculo.filtros)){
-        alert('Cambiaste los criterios después de calcular. Vuelve a pulsar "Calcular".');
-        resetResultado();
-        return;
+      const tipo = tipoElegido();
+      if(tipo !== ultimoCalculo.tipo){
+        alert('Cambiaste el tipo de audiencia después de calcular. Vuelve a pulsar "Calcular".');
+        resetResultado(); return;
       }
+
+      let campos;
+      if(tipo === 'fija'){
+        const p = parsearFija();
+        // la lista guardada debe ser EXACTAMENTE la que se calculó
+        if(JSON.stringify(p.validos) !== JSON.stringify(ultimoCalculo.emails)){
+          alert('Cambiaste la lista de correos después de calcular. Vuelve a pulsar "Calcular".');
+          resetResultado(); return;
+        }
+        if(!p.validos.length){ alert('La lista no tiene correos válidos.'); return; }
+        if(p.validos.length > MAX_FIJA){ alert('La lista supera el máximo de ' + MAX_FIJA.toLocaleString('es-CL') + ' correos.'); return; }
+        campos = { type: 'fija', emails: p.validos };
+      } else {
+        // los filtros guardados deben ser exactamente los que se calcularon
+        if(JSON.stringify(filtrosDeUI()) !== JSON.stringify(ultimoCalculo.filtros)){
+          alert('Cambiaste los criterios después de calcular. Vuelve a pulsar "Calcular".');
+          resetResultado(); return;
+        }
+        campos = { type: 'dinamica', filtros: ultimoCalculo.filtros };
+      }
+
       const btn = $('audGuardar');
       btn.disabled = true; btn.textContent = 'Guardando…';
       try{
         const ts = firebase.firestore.FieldValue.serverTimestamp();
         await firebase.firestore().collection('emailAudiences').add({
           name: nombre,
-          type: 'dinamica',
-          filtros: ultimoCalculo.filtros,
+          ...campos,
           ultimoConteo: ultimoCalculo.total,
           ultimoConteoAt: ts,
           createdAt: ts,
@@ -1964,7 +2111,9 @@ ${contenido}
     $('audCancelar').addEventListener('click', cerrarModal);
     $('audCalcular').addEventListener('click', calcular);
     $('audGuardar').addEventListener('click', guardar);
+    document.querySelectorAll('input[name="audTipo"]').forEach(r=> r.addEventListener('change', sincronizarTipo));
     document.querySelectorAll('input[name="audSeg"]').forEach(r=> r.addEventListener('change', sincronizarExtras));
+    $('audEmails').addEventListener('input', pintarConteoFija);
     $('audCurso').addEventListener('change', resetResultado);
     $('audDias').addEventListener('input', resetResultado);
     $('audNombre').addEventListener('input', ()=>{ /* el nombre no invalida el cálculo */ });
@@ -2172,7 +2321,9 @@ ${contenido}
       const opciones = ['<option value="">— Elige una audiencia —</option>'].concat(
         audSnap.docs.map(a=>{
           const ad = a.data();
-          const n = ad.ultimoConteo != null ? ` (${ad.ultimoConteo} personas)` : '';
+          const n = ad.type === 'fija'
+            ? ` (lista fija · ${(ad.emails || []).length})`
+            : (ad.ultimoConteo != null ? ` (${ad.ultimoConteo} personas)` : '');
           return `<option value="${esc(a.id)}"${a.id === c.audienceId ? ' selected' : ''}>${esc(ad.name || 'audiencia')}${n}</option>`;
         })
       );
