@@ -22,6 +22,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <script src="config-comun.js"></script>
+<script src="masterlook-nav-comun.js"></script>
 <!-- Generador de PDF para la cartola de comisiones (Comisiones > Comisiones barberos) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
@@ -1812,14 +1813,18 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      Vista Clientes — base de datos con carga paginada server-side.
-     Réplica visual de dev.masterlook.cl/admin/database/clients: por
-     decisión de la dueña esta vista usa la MISMA tipografía system-ui
-     que la referencia (no Bricolage/Poppins del resto del panel).
-     Todo va namespaced bajo #vistaClientes para no afectar nada más.
+     Hasta la unificación visual del área interna (2026-09-04) esta vista
+     replicaba pixel a pixel dev.masterlook.cl/admin/database/clients con
+     su propia tipografía system-ui, por decisión explícita de la dueña.
+     Esa decisión se revirtió a propósito al pedir la unificación: ahora
+     usa la tipografía/color del sistema común igual que el resto del
+     panel (masterlook-estilos-comunes.css). El namespacing bajo
+     #vistaClientes se conserva -- sigue siendo útil para no afectar nada
+     fuera de esta vista, solo que ahora HEREDA en vez de reemplazar.
      ═══════════════════════════════════════════════════════════════════ */
   #vistaClientes{
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color:#161513;
+    font-family: var(--font-primary);
+    color: var(--text-hi);
     -webkit-font-smoothing:antialiased;
   }
   #vistaClientes *{font-family:inherit;}
@@ -1924,6 +1929,14 @@
     .cldb-pag-select{flex:1;}
   }
 </style>
+<!-- Unificación visual del área administrativa interna -- ver
+     masterlook-estilos-comunes.css. Roboto (antes no se cargaba en el
+     panel). Cargado AL FINAL a propósito: gana por cascada sobre el
+     <style> propio de arriba sin necesitar más especificidad. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="masterlook-estilos-comunes.css">
 </head>
 <body>
 
@@ -1934,28 +1947,40 @@
      index.html antes de mostrar nada de este shell. ===== -->
 <div class="app oculto">
 
-  <div class="topbar">
-    <button class="burger" id="btnMenuLateral" aria-label="Abrir menú" title="Menú">
-      <span></span><span></span><span></span>
-    </button>
-    <div class="wordmark" id="wordmarkHome" title="Ir al inicio" style="cursor:pointer;"><span class="dot"></span>Master Look</div>
-    <div class="topbar-right">
-      <div class="period-pill">Ago 2026</div>
-      <div class="user-menu-wrap">
-        <div class="avatar-round" id="who" title="Mi cuenta">AD</div>
-        <div class="user-menu" id="userMenu">
-          <button class="user-menu-item" id="btnEquipoVer">Ver equipo</button>
-          <button class="user-menu-item" id="btnEquipoNuevo">Registrar nuevo</button>
-          <div class="user-menu-sep" id="userMenuSepEquipo"></div>
-          <button class="user-menu-item" id="btnMiPerfil">Mi perfil</button>
-          <button class="user-menu-item" id="btnConfig">Configurar</button>
-          <button class="user-menu-item" id="btnHorarios">Horarios</button>
-          <div class="user-menu-sep"></div>
-          <button class="user-menu-item danger" id="btnSalir">Cerrar sesión</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Header compartido (masterlook-nav-comun.js::renderHeader), MISMO
+       componente que usa masterlook-email-marketing.html -- reemplaza el
+       header visual viejo (.topbar/.wordmark#wordmarkHome/.period-pill/
+       .avatar-round#who/.user-menu-wrap de acá arriba, ver git history).
+       No se borran controles: el menú de cuenta (#userMenu) es EXACTAMENTE
+       el mismo HTML de antes, pasado como dropdownHtml -- el código de más
+       abajo que hace getElementById('btnMenuLateral'/'wordmarkHome'/'who')
+       sigue funcionando igual porque estos IDs se preservan. Va en un
+       <script> propio, pegado al contenedor, para que el HTML ya exista
+       cuando ese código (mucho más abajo en el documento) lo busque. -->
+  <div id="mlHeader"></div>
+  <script>
+    MLNav.renderHeader({
+      contenedor: document.getElementById('mlHeader'),
+      mostrarHamburguesa: true,
+      chipTexto: 'Ago 2026',
+      avatarIniciales: 'AD',
+      dropdownHtml: '<div class="user-menu" id="userMenu">'
+        + '<button class="user-menu-item" id="btnEquipoVer">Ver equipo</button>'
+        + '<button class="user-menu-item" id="btnEquipoNuevo">Registrar nuevo</button>'
+        + '<div class="user-menu-sep" id="userMenuSepEquipo"></div>'
+        + '<button class="user-menu-item" id="btnMiPerfil">Mi perfil</button>'
+        + '<button class="user-menu-item" id="btnConfig">Configurar</button>'
+        + '<button class="user-menu-item" id="btnHorarios">Horarios</button>'
+        + '<div class="user-menu-sep"></div>'
+        + '<button class="user-menu-item danger" id="btnSalir">Cerrar sesión</button>'
+        + '</div>',
+    });
+  </script>
+
+  <!-- Barra de navegación del área administrativa (masterlook-nav-comun.js).
+       Contenedor vacío hasta que se resuelve el rol tras el login; ver
+       MLNav.render() más abajo, justo después de mostrarControlesAdmin(). -->
+  <div id="mlNavBar" style="display:none;"></div>
 
   <div class="menu-overlay" id="menuLateralOverlay"></div>
   <aside class="menu-panel" id="menuLateralPanel">
@@ -5093,6 +5118,11 @@
   // (captura "Medios de pago"): naranja/durazno, gris, rojo coral, morado.
   const RV_COLORES_TIPO = { servicio:'#FFC98C', producto:'#F2685C', curso:'#A47FC4' };
   const RV_PALETA_METODO = ['#FFC98C','#D6D6D6','#F2685C','#A47FC4','#8a8272','#5c6b3f','#5b564a','#c48a6f'];
+  // Lee el valor real de un --rv-* (o cualquier token) tal como quedó
+  // definido hoy en masterlook-estilos-comunes.css, en vez de tener el
+  // mismo hex copiado dos veces (CSS + JS) que se puede desincronizar --
+  // los gráficos SVG no pueden usar var() directamente en sus atributos.
+  const rvToken = (nombre)=> getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || '#1A1815';
 
   function mostrarResumenVentas(){
     if(barberoBloqueado()) return;
@@ -5239,18 +5269,19 @@
       acumulado += frac;
       return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${e.color}" stroke-width="${grosor}" stroke-dasharray="${largo} ${circunferencia-largo}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
     }).join('');
+    const cInk = rvToken('--rv-ink'), cInkSoft = rvToken('--rv-ink-soft'), cCreamDeep = rvToken('--rv-cream-deep');
     const svg = `<svg viewBox="0 0 180 180" width="180" height="180">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#ece0c3" stroke-width="${grosor}"></circle>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cCreamDeep}" stroke-width="${grosor}"></circle>
       ${arcos}
-      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="-.01em" style="font-variant-numeric:tabular-nums;" fill="#1A1815">${totalTexto}</text>
-      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9.5" letter-spacing=".04em" fill="#8a8272">TOTAL</text>
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="-.01em" style="font-variant-numeric:tabular-nums;" fill="${cInk}">${totalTexto}</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9.5" letter-spacing=".04em" fill="${cInkSoft}">TOTAL</text>
     </svg>`;
     const leyenda = entries.map(e=>{
       const pct = total > 0 ? Math.round(e.value/total*100) : 0;
-      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;color:#1A1815;">
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;color:${cInk};">
         <span style="width:10px;height:10px;border-radius:50%;background:${e.color};display:inline-block;flex-shrink:0;"></span>
         <span style="flex:1;">${e.label}</span><span style="font-weight:600;">${money(e.value)}</span>
-        <span style="color:#5b564a;width:40px;text-align:right;">${pct}%</span>
+        <span style="color:${cInkSoft};width:40px;text-align:right;">${pct}%</span>
       </div>`;
     }).join('');
     return `<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
@@ -5288,21 +5319,22 @@
     });
     const path = puntos.map((p,i)=> (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
     const area = path + ` L${puntos[puntos.length-1].x.toFixed(1)},${h-padB} L${puntos[0].x.toFixed(1)},${h-padB} Z`;
-    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="#1A1815"><title>${p.d.fecha}: ${money(p.d.monto)}</title></circle>`).join('');
+    const lInk = rvToken('--rv-ink'), lInkSoft = rvToken('--rv-ink-soft'), lLine = rvToken('--rv-line');
+    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${lInk}"><title>${p.d.fecha}: ${money(p.d.monto)}</title></circle>`).join('');
     const saltoEje = Math.max(1, Math.ceil(puntos.length/8));
     const ejeX = puntos.filter((_,i)=> i % saltoEje === 0).map(p=>
-      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" style="font-variant-numeric:tabular-nums;" fill="#5b564a">${p.d.fecha.slice(5)}</text>`).join('');
+      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" style="font-variant-numeric:tabular-nums;" fill="${lInkSoft}">${p.d.fecha.slice(5)}</text>`).join('');
     const pasosY = 4;
     const ejeY = Array.from({length:pasosY+1}, (_, i)=>{
       const valor = Math.round(max*i/pasosY);
       const y = h-padB - (i/pasosY)*(h-padT-padB);
-      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" style="font-variant-numeric:tabular-nums;" fill="#5b564a">${money(valor)}</text>
-              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#f1e9d6" stroke-width="1"></line>`;
+      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" style="font-variant-numeric:tabular-nums;" fill="${lInkSoft}">${money(valor)}</text>
+              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="${lLine}" stroke-width="1"></line>`;
     }).join('');
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="max-width:100%;">
       ${ejeY}
-      <path d="${area}" fill="#1A18151a"></path>
-      <path d="${path}" fill="none" stroke="#1A1815" stroke-width="2.5"></path>
+      <path d="${area}" fill="${lInk}1a"></path>
+      <path d="${path}" fill="none" stroke="${lInk}" stroke-width="2.5"></path>
       ${puntosSvg}${ejeX}
     </svg>`;
   }
@@ -5340,7 +5372,7 @@
         <td>MASTERLOOK</td>
         <td class="mono">${f.comprobante}</td>
         <td>${escapeHTML(f.cliente || '—')}</td>
-        <td>${escapeHTML(f.detalle || conceptosVenta.map(c=>RV_LABEL_TIPO[c]||c).join(' + ')).toUpperCase()}${f.cantidadMovimientos>1?` <span style="color:#9a9aa2;">(${f.cantidadMovimientos} pagos)</span>`:''}</td>
+        <td>${escapeHTML(f.detalle || conceptosVenta.map(c=>RV_LABEL_TIPO[c]||c).join(' + ')).toUpperCase()}${f.cantidadMovimientos>1?` <span style="color:var(--text-low);">(${f.cantidadMovimientos} pagos)</span>`:''}</td>
         <td>${tiposHtml}</td>
         <td>${metodosHtml}</td>
         <td class="r">${money(f.total)}</td>
@@ -5511,9 +5543,33 @@
     mostrarControlesAdmin();
     cargarYAplicarOrdenMenu();
     if(userRole !== 'BARBER') restaurarSeccionActiva();
+    if(sessionStorage.getItem('mlAbrirMenu')){ sessionStorage.removeItem('mlAbrirMenu'); abrirMenuLateral(); }
+    pintarBarraNav();
     entrarAlPanel(user.email);
     if(userRole === 'BARBER') mostrarVistaBarbero();
   });
+
+  /** Barra de navegación del área administrativa (masterlook-nav-comun.js).
+   *  No reemplaza el menú lateral existente, se agrega debajo de la topbar.
+   *  NOTA: el resaltado de "activo" se mantiene correcto mientras se navegue
+   *  con ESTA barra; si se llega a una sección por el menú lateral viejo en
+   *  vez de por acá, el resaltado no se actualiza solo (evita tocar la
+   *  lógica de las 19 vistas existentes -- ver instrucción de no tocarlas). */
+  function pintarBarraNav(){
+    const guardado = sessionStorage.getItem('mlUltimaSeccion');
+    const porBoton = MLNav.ITEMS.find(it=> it.boton === guardado);
+    const activo = porBoton ? porBoton.key : 'agenda';
+    const conActivo = (key, fn)=> ()=>{ fn(); MLNav.render({ contenedor:document.getElementById('mlNavBar'), activo:key, rol:userRole, enPanel:true, callbacks:mlNavCallbacks }); };
+    var mlNavCallbacks = {
+      agenda: conActivo('agenda', irAlInicio),
+      ventas: conActivo('ventas', mostrarResumenVentas),
+      productos: conActivo('productos', mostrarProductos),
+      reportes: conActivo('reportes', mostrarIntelligence),
+      administracion: conActivo('administracion', abrirMenuLateral),
+      'email-marketing': ()=>{ location.href = 'masterlook-email-marketing.html'; },
+    };
+    MLNav.render({ contenedor:document.getElementById('mlNavBar'), activo, rol:userRole, enPanel:true, callbacks:mlNavCallbacks });
+  }
 
   async function salirDelPanel(){
     sessionStorage.removeItem('mlUltimaSeccion');
