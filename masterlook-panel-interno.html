@@ -10578,7 +10578,7 @@
 
   /* ===== Ventas facturadas (Servicios / Academy / Tienda) ===== */
   const VENTAS_CONFIG = {
-    academy:   { titulo:'Ventas facturadas · Academy', sub:'Cursos comprados por Webpay, por rango de fechas.' },
+    academy:   { titulo:'Ventas facturadas · Academy', sub:'Cursos comprados por Webpay y Mercado Pago, por rango de fechas.' },
     tienda:    { titulo:'Ventas facturadas · Tienda', sub:'Ventas de productos, por rango de fechas.' },
   };
   let ventasTipoActual = 'academy';
@@ -10618,10 +10618,35 @@
       let filas = [];
       const fechaDeTimestamp = (ts)=> ts?.toDate ? ts.toDate().toISOString().slice(0,10) : '';
       if(ventasTipoActual === 'academy'){
-        const snap = await db.collection('pagosWebpay')
-          .where('tipo', '==', 'COURSE_PURCHASE').where('estado', '==', 'confirmado').get();
-        filas = snap.docs.map(d=> d.data())
-          .map(p=> ({ fecha: fechaDeTimestamp(p.confirmedAt), detalle: (p.buyerName || p.buyerEmail || '') + ' · ' + (p.detalle?.courseName || p.detalle?.courseId || ''), monto: p.amount || 0 }))
+        // Ventas de curso reales: Webpay (histórico, colección pagosWebpay) +
+        // Mercado Pago (colección pagosCursoMP, SOLO estado 'confirmado'). Son
+        // colecciones disjuntas -- un pago está en una o en la otra, nunca en
+        // ambas. Dedup defensivo por identificador real de la pasarela antes
+        // de sumar, por si una operación futura quedara en ambas fuentes.
+        const [wpSnap, mpSnap] = await Promise.all([
+          db.collection('pagosWebpay').where('tipo', '==', 'COURSE_PURCHASE').where('estado', '==', 'confirmado').get(),
+          db.collection('pagosCursoMP').where('estado', '==', 'confirmado').get(),
+        ]);
+        // Clave estable: mpPaymentId (id del pago en Mercado Pago) si existe;
+        // si no, el id del documento (buyOrder de Webpay / ref de MP). Dos
+        // compras legítimas distintas -- mismo cliente, curso y monto
+        // incluidos -- tienen ids distintos y NUNCA se deduplican entre sí.
+        const filaVentaCurso = (d, fuente)=>{
+          const p = d.data();
+          const cursoTxt = fuente === 'MP'
+            ? (p.detalle?.cursos || []).map(c=> c.courseName || c.courseId).join(', ')
+            : (p.detalle?.courseName || p.detalle?.courseId || '');
+          return {
+            __k: p.mpPaymentId ? 'pay:' + String(p.mpPaymentId) : 'doc:' + d.id,
+            fecha: fechaDeTimestamp(p.confirmedAt),
+            detalle: (p.buyerName || p.buyerEmail || '') + ' · ' + cursoTxt + ' · ' + (fuente === 'MP' ? 'Mercado Pago' : 'Webpay'),
+            monto: fuente === 'MP' ? (p.amountConfirmado ?? p.amount ?? 0) : (p.amount || 0),
+          };
+        };
+        const porClave = new Map();
+        for(const d of wpSnap.docs){ const f = filaVentaCurso(d, 'WP'); porClave.set(f.__k, f); }
+        for(const d of mpSnap.docs){ const f = filaVentaCurso(d, 'MP'); porClave.set(f.__k, f); } // MP tras Webpay: gana en colisión (trae amountConfirmado)
+        filas = Array.from(porClave.values())
           .filter(f=> f.fecha >= desde && f.fecha <= hasta);
       } else {
         const snap = await db.collection('productSales').get();
