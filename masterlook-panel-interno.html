@@ -10623,10 +10623,16 @@
         // colecciones disjuntas -- un pago está en una o en la otra, nunca en
         // ambas. Dedup defensivo por identificador real de la pasarela antes
         // de sumar, por si una operación futura quedara en ambas fuentes.
+        // SÓLO EN PRODUCCIÓN se excluyen las operaciones de PRUEBA
+        // (paymentEnvironment:'integration' -- Webpay Integración / MP sandbox);
+        // "sin campo" = real, igual que Resumen de Ventas. En dev
+        // (estudio90-dev.web.app) Webpay Integración simula la venta real y
+        // debe reflejarse aquí para poder probar la sección de punta a punta.
         const [wpSnap, mpSnap] = await Promise.all([
           db.collection('pagosWebpay').where('tipo', '==', 'COURSE_PURCHASE').where('estado', '==', 'confirmado').get(),
           db.collection('pagosCursoMP').where('estado', '==', 'confirmado').get(),
         ]);
+        const esReal = (p)=> ES_STAGING || p.paymentEnvironment !== 'integration';
         // Clave estable: mpPaymentId (id del pago en Mercado Pago) si existe;
         // si no, el id del documento (buyOrder de Webpay / ref de MP). Dos
         // compras legítimas distintas -- mismo cliente, curso y monto
@@ -10644,8 +10650,8 @@
           };
         };
         const porClave = new Map();
-        for(const d of wpSnap.docs){ const f = filaVentaCurso(d, 'WP'); porClave.set(f.__k, f); }
-        for(const d of mpSnap.docs){ const f = filaVentaCurso(d, 'MP'); porClave.set(f.__k, f); } // MP tras Webpay: gana en colisión (trae amountConfirmado)
+        for(const d of wpSnap.docs){ if(!esReal(d.data())) continue; const f = filaVentaCurso(d, 'WP'); porClave.set(f.__k, f); }
+        for(const d of mpSnap.docs){ if(!esReal(d.data())) continue; const f = filaVentaCurso(d, 'MP'); porClave.set(f.__k, f); } // MP tras Webpay: gana en colisión (trae amountConfirmado)
         filas = Array.from(porClave.values())
           .filter(f=> f.fecha >= desde && f.fecha <= hasta);
       } else {
