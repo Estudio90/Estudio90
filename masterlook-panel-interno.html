@@ -678,6 +678,7 @@
   .cu-box.permitir{background:#eafaf3;border-style:dashed;border-color:#189d79;}
   .cu-recurso-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8f8fa;border-radius:8px;margin-bottom:6px;font-size:12.5px;}
   .cu-fila{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .pcm-ref{font-size:11.5px;color:#87868f;white-space:nowrap;}
   .cu-archivo-nombre{font-size:11.5px;color:#57565f;}
   .cl-upload-estado{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:#fafafb;}
   .cl-upload-info{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--text-hi);margin-bottom:7px;}
@@ -847,6 +848,7 @@
   .cx-periodo-info .cx-flabel{color:#57565f;font-weight:700;}
   #cxPeriodoTxt,#tpPeriodoTxt{font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
   .cx-tbl-title{font-size:15px;font-weight:600;margin:4px 0 12px;}
+  .cx-badge-hoy{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#8a6d1a;background:#fdf1d0;border:1px solid #eddca0;border-radius:99px;padding:2px 9px;margin-left:8px;vertical-align:middle;}
   select.mg-input#cxFiltroPro,select.mg-input#tpFiltroPro{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:#fff;}
 
   /* botón "Descargar cartola" con menú desplegable PDF/Excel */
@@ -900,11 +902,22 @@
     /* la tabla de Comisiones barberos/Propinas tiene más columnas que las
        demás .cx-table (Hora/Cliente/Servicio de "Mis comisiones", Fecha/
        Producto/... de Productos) -- en vez de ocultar una columna más,
-       queda con scroll horizontal propio para no perder datos financieros. */
-    #cxReporte .cx-tablebox,#vistaPropinas .cx-tablebox{overflow-x:auto;}
+       queda con scroll horizontal propio para no perder datos financieros.
+       Mismo trato para "Profesionales y códigos" (3ª columna = Estado del
+       código) y para las tablas de "Mis comisiones" del BARBER (3ª columna
+       = Canal de venta / Servicio) -- ningún dato de estas se puede perder
+       en mobile, encontrado en revisión visual y corregido acá. */
+    #cxReporte .cx-tablebox,#vistaPropinas .cx-tablebox,
+    #pvComisionesPanel .cx-tablebox,#cbmDetalleBox,#cbpDetalleBox{overflow-x:auto;}
     #cxReporte .cx-table,#vistaPropinas .cx-table{min-width:680px;}
+    #pvComisionesPanel .cx-table{min-width:900px;}
+    #cbmDetalleBox .cx-table{min-width:640px;}
+    #cbpDetalleBox .cx-table{min-width:420px;}
     #cxReporte .cx-table td:nth-child(3),#cxReporte .cx-table th:nth-child(3),
-    #vistaPropinas .cx-table td:nth-child(3),#vistaPropinas .cx-table th:nth-child(3){display:table-cell;}
+    #vistaPropinas .cx-table td:nth-child(3),#vistaPropinas .cx-table th:nth-child(3),
+    #pvComisionesPanel .cx-table td:nth-child(3),#pvComisionesPanel .cx-table th:nth-child(3),
+    #cbmDetalleBox .cx-table td:nth-child(3),#cbmDetalleBox .cx-table th:nth-child(3),
+    #cbpDetalleBox .cx-table td:nth-child(3),#cbpDetalleBox .cx-table th:nth-child(3){display:table-cell;}
   }
 
   .rc-summary{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;}
@@ -1630,15 +1643,12 @@
     display:flex;align-items:center;justify-content:center;overflow:hidden;}
   .pc-thumb img{width:100%;height:100%;object-fit:contain;}
   .pc-thumb .ph{font-size:22px;color:var(--text-low);}
-  .pc-name-wrap input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13.5px;font-weight:600;}
   .pc-name{font-size:14px;font-weight:600;color:var(--text-hi);}
-  .pc-price-cell input{width:100px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13px;}
   .pc-price{font-family:var(--font-primary);font-size:13.5px;font-weight:600;color:var(--text-hi);}
   .pc-stock-pill{display:inline-flex;min-width:34px;justify-content:center;padding:4px 10px;border-radius:99px;font-size:12.5px;font-weight:600;}
   .pc-stock-pill.ok{background:#e7f6f1;color:#189d79;}
   .pc-stock-pill.low{background:#fff4e0;color:#b8790a;}
   .pc-desc{font-size:12.5px;color:var(--text-mid);max-width:280px;}
-  .pc-desc-cell textarea{width:100%;min-width:220px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;resize:vertical;min-height:40px;}
   .pc-actions{display:flex;gap:8px;justify-content:flex-end;}
   .pc-ib{width:34px;height:34px;border:1px solid var(--border);background:#fff;border-radius:9px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;color:var(--text-hi);flex:0 0 auto;}
@@ -2353,23 +2363,94 @@
         <p class="mg-note" style="margin-top:14px;">Las comisiones se calculan sobre el total de servicios realizados en el período seleccionado.</p>
       </div>
 
-      <!-- Resumen personal para cuentas de barbero: solo ven lo suyo -->
+      <!-- Resumen personal para cuentas de barbero: SOLO lectura, SOLO lo
+           suyo, 100% calculado en el servidor (obtenerMisComisiones +
+           obtenerMisPropinas) -- ni un porcentaje ni un total se calcula
+           acá, y ningún número histórico se recalcula con el % de hoy (son
+           las comisiones que quedaron guardadas en cada venta). 4 áreas:
+           Servicios (hoy, sin cambios) / Propinas (rango propio) /
+           Productos + Código promocional (mes compartido). Sin botones para
+           modificar nada: los porcentajes y el código los cambia únicamente
+           un ADMIN, desde Productos → Comisiones y códigos. -->
       <div class="cx-panel" id="cxBarbero" style="display:none;">
-        <div class="cx-regla">
-          Resumen de <b>hoy</b>. Solo cuentan los servicios que ya marcaste como realizados.
+        <div class="cx-regla" id="cbSinVincular" style="display:none;">
+          Tu cuenta todavía no está vinculada a un profesional. Pídele a un administrador que la vincule para poder ver tus comisiones.
         </div>
-        <div class="cx-kpis">
-          <div class="cx-kpi"><div class="k">Servicios realizados</div><div class="v" id="cbServicios">0</div></div>
-          <div class="cx-kpi pay"><div class="k">Tu comisión</div><div class="v" id="cbComision">$0</div></div>
-          <div class="cx-kpi"><div class="k">Propinas recibidas</div><div class="v" id="cbPropinas">$0</div></div>
-          <div class="cx-kpi"><div class="k">Comisión por productos</div><div class="v" id="cbComisionProductos">$0</div></div>
-          <div class="cx-kpi net"><div class="k">Total para ti hoy</div><div class="v" id="cbTotal">$0</div></div>
-        </div>
-        <div class="cx-tablebox">
-          <table class="cx-table">
-            <thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th class="r">Tu comisión</th></tr></thead>
-            <tbody id="cbTabla"></tbody>
-          </table>
+        <div id="cbContenido">
+
+          <!-- ===== Servicios -- SIN CAMBIOS de datos/lógica, siempre HOY ===== -->
+          <h3 class="cx-tbl-title" style="margin-top:0;">Servicios <span class="cx-badge-hoy">Hoy</span></h3>
+          <div class="cx-kpis">
+            <div class="cx-kpi"><div class="k">Servicios realizados hoy</div><div class="v" id="cbServicios">0</div></div>
+            <div class="cx-kpi pay"><div class="k">Tu comisión hoy</div><div class="v" id="cbComision">$0</div></div>
+          </div>
+
+          <!-- ===== Propinas -- área propia, separada de Servicios, con su
+               propio rango de fechas flexible (obtenerMisPropinas) ===== -->
+          <h3 class="cx-tbl-title">Propinas</h3>
+          <div class="cx-chips">
+            <button class="cx-chip on" data-cbp="hoy">Hoy</button>
+            <button class="cx-chip" data-cbp="7d">Últimos 7 días</button>
+            <button class="cx-chip" data-cbp="semana">Esta semana</button>
+            <button class="cx-chip" data-cbp="semanaant">Semana anterior</button>
+            <button class="cx-chip" data-cbp="custom">📅 Rango personalizado</button>
+          </div>
+          <div class="cx-f" id="cbpCustomBox" style="display:none;gap:10px;align-items:end;margin-bottom:10px;">
+            <div class="cx-f"><label>Desde</label><input type="date" id="cbpDesde" class="mg-input"></div>
+            <div class="cx-f"><label>Hasta</label><input type="date" id="cbpHasta" class="mg-input"></div>
+            <button class="ctrl-btn" id="cbpBuscar">Buscar</button>
+          </div>
+          <p class="mg-note" id="cbpPeriodoTxt" style="margin-bottom:10px;">Propinas · —</p>
+          <div class="cx-kpis">
+            <div class="cx-kpi"><div class="k">Cantidad de propinas</div><div class="v" id="cbpCantidad">0</div></div>
+            <div class="cx-kpi pay"><div class="k">Monto total recibido</div><div class="v" id="cbpMonto">$0</div></div>
+          </div>
+          <button class="ctrl-btn" id="cbpVerDetalle" style="margin-top:10px;">Ver detalle</button>
+          <div class="cx-tablebox" id="cbpDetalleBox" style="display:none;margin-top:10px;">
+            <table class="cx-table">
+              <thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th class="r">Propina</th></tr></thead>
+              <tbody id="cbpDetalleTabla"></tbody>
+            </table>
+          </div>
+
+          <!-- ===== Productos + Código promocional -- mes COMPARTIDO, SOLO
+               lectura, snapshot congelado de cada venta (nunca recalculado
+               con el % vigente hoy) ===== -->
+          <h3 class="cx-tbl-title">Productos y código promocional</h3>
+          <div style="display:flex;gap:10px;align-items:end;margin-bottom:10px;flex-wrap:wrap;">
+            <div>
+              <label class="mg-label">Mes</label>
+              <input type="month" id="cbmMes" class="mg-input">
+            </div>
+            <button class="ctrl-btn" id="cbmBuscar">Buscar</button>
+          </div>
+          <div class="cx-regla" id="cbmSinCodigo" style="display:none;">
+            Todavía no tienes un código promocional asignado. Pídele a un administrador que te asigne uno.
+            Igual puedes ganar comisión por venta presencial de productos.
+          </div>
+          <div class="cx-regla" id="cbmCodigoResumen" style="display:none;"></div>
+          <div class="cx-kpis">
+            <div class="cx-kpi"><div class="k">Productos vendidos</div><div class="v" id="cbmProductos">0</div></div>
+            <div class="cx-kpi"><div class="k">Monto vendido</div><div class="v" id="cbmMonto">$0</div></div>
+            <div class="cx-kpi pay"><div class="k">Ganancia por venta presencial</div><div class="v" id="cbmComisionPresencial">$0</div></div>
+            <div class="cx-kpi pay"><div class="k">Ganancia por venta online con código</div><div class="v" id="cbmComisionOnline">$0</div></div>
+            <div class="cx-kpi net"><div class="k">Total ganado en productos del mes</div><div class="v" id="cbmTotal">$0</div></div>
+          </div>
+          <button class="ctrl-btn" id="cbmVerDetalle" style="margin-top:10px;">Ver detalle</button>
+          <div class="cx-tablebox" id="cbmDetalleBox" style="display:none;margin-top:10px;overflow-x:auto;">
+            <table class="cx-table">
+              <thead><tr>
+                <th>Fecha</th><th>Producto</th><th>Canal de venta</th><th class="r">Monto vendido</th>
+                <th class="r">Descuento al cliente</th><th class="r">% comisión</th><th class="r">Comisión ganada</th>
+              </tr></thead>
+              <tbody id="cbmDetalleTabla"></tbody>
+              <tfoot><tr id="cbmDetalleTotales"></tr></tfoot>
+            </table>
+          </div>
+          <p class="mg-note" style="margin-top:14px;">
+            Cada número de este mes es el que quedó guardado en la venta cuando ocurrió — si un porcentaje
+            cambia hoy, los meses anteriores no se recalculan.
+          </p>
         </div>
       </div>
     </div>
@@ -3304,6 +3385,7 @@
         <div class="cx-nav">
           <button class="ctrl-btn cx-navbtn2 on" data-pvv="ventas">Ventas</button>
           <button class="ctrl-btn cx-navbtn2" data-pvv="catalogo">Catálogo</button>
+          <button class="ctrl-btn cx-navbtn2" id="pvTabComisiones" data-pvv="comisiones" style="display:none;">Comisiones y códigos</button>
           <button class="ctrl-btn" id="pvVolver">← Volver a la agenda</button>
         </div>
       </div>
@@ -3321,16 +3403,6 @@
           <p class="mg-note" style="margin-bottom:12px;">
             Para ventas de mostrador que no están ligadas a la cita de un barbero.
           </p>
-          <div class="mg-two">
-            <div>
-              <label class="mg-label">Producto</label>
-              <select id="pvProducto" class="mg-input"></select>
-            </div>
-            <div>
-              <label class="mg-label">Cantidad</label>
-              <input type="number" id="pvCantidadInput" class="mg-input" min="1" value="1">
-            </div>
-          </div>
           <button class="mg-btn solid" id="pvAgregar" style="margin-top:12px;">+ Agregar venta</button>
 
           <h3 style="font-size:14px;font-weight:600;margin:22px 0 12px;">Historial de ventas</h3>
@@ -3456,6 +3528,179 @@
           <p class="mg-note" id="pcEliminarTexto" style="margin-bottom:16px;"></p>
           <button class="mg-btn solid full" id="pcEliminarConfirmar" style="background:#c0392b;">Desactivar</button>
         </div>
+
+        <!-- Editar producto -- modal único y reutilizable: se llena al vuelo
+             desde productsCache (0 lecturas a Firestore al abrir) y se cierra
+             sin dejar copias; nunca hay uno por fila. Mismo patrón visual que
+             "Editar clase" (Academy): mg-modal + cu-campo/cu-campos + cu-box +
+             cu-tgl/mg-sw + footer Cancelar/Guardar. -->
+        <div class="mg-modal wide" id="modalPcEditarProducto">
+          <div class="mg-head">
+            <h3>Editar producto</h3>
+            <button class="mg-close" data-close>✕</button>
+          </div>
+
+          <div class="cu-campo full"><label>Nombre</label><input type="text" id="pcmNombre" placeholder="Nombre del producto"></div>
+          <div class="cu-campos" style="margin-top:10px;">
+            <div class="cu-campo"><label>Precio</label><input type="number" id="pcmPrecio" min="0" step="500" class="mono-in"></div>
+            <div class="cu-campo"><label>Categoría</label><select id="pcmCategoria"></select></div>
+          </div>
+          <div class="cu-campo full" style="margin-top:10px;margin-bottom:8px;"><label>Descripción (sitio web)</label><textarea id="pcmDescripcion" rows="2" placeholder="Se muestra en la tienda pública"></textarea></div>
+
+          <div class="cu-box" style="margin-top:8px;">
+            <div class="cu-box-title">Comisiones, descuentos y código promocional</div>
+
+            <label class="cu-tgl" style="margin-bottom:14px;">
+              <span class="mg-sw"><input type="checkbox" id="pcmAceptaCodigo"><span class="mg-sw-track"></span></span>
+              Acepta código promocional
+            </label>
+
+            <div class="cu-campo full" style="margin-bottom:12px;">
+              <div class="cu-fila" style="justify-content:space-between;">
+                <label class="cu-tgl"><span class="mg-sw"><input type="checkbox" id="pcmDescuentoModo"><span class="mg-sw-track"></span></span> Personalizar descuento al cliente</label>
+                <span class="pcm-ref" id="pcmDescuentoRef"></span>
+              </div>
+              <input type="number" id="pcmDescuentoPct" min="0" max="100" step="0.1" placeholder="%" disabled style="margin-top:8px;max-width:130px;">
+            </div>
+
+            <div class="cu-campo full" style="margin-bottom:12px;">
+              <div class="cu-fila" style="justify-content:space-between;">
+                <label class="cu-tgl"><span class="mg-sw"><input type="checkbox" id="pcmComisionPresencialModo"><span class="mg-sw-track"></span></span> Personalizar comisión presencial</label>
+                <span class="pcm-ref" id="pcmComisionPresencialRef"></span>
+              </div>
+              <input type="number" id="pcmComisionPresencialPct" min="0" max="100" step="0.1" placeholder="%" disabled style="margin-top:8px;max-width:130px;">
+            </div>
+
+            <div class="cu-campo full" style="margin-bottom:4px;">
+              <div class="cu-fila" style="justify-content:space-between;">
+                <label class="cu-tgl"><span class="mg-sw"><input type="checkbox" id="pcmComisionOnlineModo"><span class="mg-sw-track"></span></span> Personalizar comisión online con código</label>
+                <span class="pcm-ref" id="pcmComisionOnlineRef"></span>
+              </div>
+              <input type="number" id="pcmComisionOnlinePct" min="0" max="100" step="0.1" placeholder="%" disabled style="margin-top:8px;max-width:130px;">
+            </div>
+
+            <div class="cu-campo" style="margin-top:10px;">
+              <label>Tope de descuento para este producto (%) — opcional</label>
+              <input type="number" id="pcmDescuentoTope" min="0" max="100" step="0.1" placeholder="Usa el tope general" style="max-width:160px;">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+            <button class="mg-btn ghost" data-close>Cancelar</button>
+            <button class="mg-btn solid" id="pcmGuardar">Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Comisiones y códigos -->
+      <div id="pvComisionesPanel" style="display:none;">
+        <div class="cx-panel">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;">Configuración general</h3>
+          <p class="mg-note" style="margin-bottom:14px;">
+            Se aplica a cualquier profesional o producto sin valor propio. Prioridad siempre igual:
+            configuración del producto → excepción del profesional → esta configuración general.
+          </p>
+          <div class="mg-two" style="grid-template-columns:repeat(4,1fr);">
+            <div>
+              <label class="mg-label">Comisión venta presencial (%)</label>
+              <input type="number" id="pcgPresencial" class="mg-input" min="0" max="100" step="0.1">
+            </div>
+            <div>
+              <label class="mg-label">Comisión venta online con código (%)</label>
+              <input type="number" id="pcgOnlineCodigo" class="mg-input" min="0" max="100" step="0.1">
+            </div>
+            <div>
+              <label class="mg-label">Descuento del código al cliente (%)</label>
+              <input type="number" id="pcgDescuento" class="mg-input" min="0" max="100" step="0.1">
+            </div>
+            <div>
+              <label class="mg-label">Descuento máximo permitido (%)</label>
+              <input type="number" id="pcgDescuentoMax" class="mg-input" min="0" max="100" step="0.1">
+            </div>
+          </div>
+          <button class="mg-btn solid" id="pcgGuardar" style="margin-top:14px;">Guardar configuración general</button>
+        </div>
+
+        <div class="cx-panel" style="margin-top:14px;">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;">Profesionales y códigos</h3>
+          <p class="mg-note" style="margin-bottom:12px;">
+            Un solo código activo por profesional. Al cambiar o desactivar un código, las ventas
+            anteriores conservan el código y el porcentaje con que se hicieron — nunca se recalculan.
+            Las columnas de comisión de más abajo muestran lo que quedó guardado en cada venta del
+            mes elegido, nunca un recálculo con el porcentaje vigente hoy.
+          </p>
+          <div style="display:flex;gap:10px;align-items:end;margin-bottom:12px;flex-wrap:wrap;">
+            <div>
+              <label class="mg-label">Mes</label>
+              <input type="month" id="pgMes" class="mg-input">
+            </div>
+            <button class="ctrl-btn" id="pgBuscarRango">Buscar</button>
+          </div>
+          <div class="cx-tablebox" style="overflow-x:auto;">
+            <table class="cx-table">
+              <thead><tr>
+                <th>Profesional</th><th>Código</th><th>Estado</th>
+                <th class="r">Desc. cliente</th><th class="r">% presencial</th><th class="r">% online c/código</th>
+                <th class="r">Productos vendidos</th><th class="r">Monto vendido</th>
+                <th class="r">Comisión presencial</th><th class="r">Comisión online c/código</th>
+                <th class="r">Total comisión del mes</th>
+                <th class="r">Editar</th>
+              </tr></thead>
+              <tbody id="pgProfTabla"><tr><td colspan="12" class="cx-empty">Cargando...</td></tr></tbody>
+              <tfoot><tr id="pgTotalesFila"></tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- La configuración por producto (acepta código, descuento, comisión
+           presencial/online) ya NO vive acá -- se edita desde Productos →
+           Catálogo → lápiz de cada producto (modalPcEditarProducto), para no
+           duplicar la config del producto en dos pantallas distintas. -->
+
+      <div class="mg-modal" id="modalCodigoBarbero">
+        <div class="mg-head">
+          <h3>Código promocional</h3>
+          <button class="mg-close" data-close>✕</button>
+        </div>
+        <p class="mg-note" id="pgModalProfNombre" style="margin-bottom:14px;font-weight:600;color:var(--text,#1A1815);"></p>
+        <div>
+          <label class="mg-label">Código</label>
+          <input type="text" id="pgCodigo" class="mg-input" placeholder="Ej: DIEGO10" maxlength="20" style="text-transform:uppercase;">
+          <div class="mg-note" style="margin:4px 0 0;">3 a 20 letras/números, sin espacios ni símbolos.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;">
+          <input type="checkbox" id="pgActivo" style="width:auto;"> Código activo
+        </label>
+
+        <!-- Separación visual pedida por el usuario: el descuento que recibe
+             EL CLIENTE y la comisión que gana EL PROFESIONAL son datos
+             independientes (no se mezclan) -- acá solo se agrupan en dos
+             bloques para que no puedan confundirse; los ids y el guardado
+             siguen siendo exactamente los mismos de siempre. -->
+        <div class="cu-box">
+          <div class="cu-box-title">Cliente</div>
+          <div class="cu-box-note">Lo que recibe la persona que usa el código.</div>
+          <label class="mg-label">Descuento al cliente (%)</label>
+          <input type="number" id="pgDescuentoCliente" class="mg-input" min="0" max="100" step="0.1">
+        </div>
+
+        <div class="cu-box">
+          <div class="cu-box-title">Profesional</div>
+          <div class="cu-box-note">Lo que gana el profesional — independiente del descuento del cliente.</div>
+          <div>
+            <label class="mg-label">Comisión por venta presencial (%) — opcional</label>
+            <input type="number" id="pgPresencialPersonalizado" class="mg-input" min="0" max="100" step="0.1" placeholder="Vacío = usar la general">
+            <div class="mg-note" style="margin:4px 0 0;">Reemplaza, solo para este profesional, la comisión presencial general.</div>
+          </div>
+          <div style="margin-top:12px;">
+            <label class="mg-label">Comisión por venta online con este código (%)</label>
+            <input type="number" id="pgComisionOnline" class="mg-input" min="0" max="100" step="0.1">
+          </div>
+        </div>
+
+        <button class="mg-btn solid full" id="pgGuardarModal" style="margin-top:18px;">Guardar</button>
       </div>
     </div>
 
@@ -6167,6 +6412,10 @@
   let accessToken = null;
   let userPermissions = []; // permisos extra del staff logueado (además de los del rol)
   let userRole = null;      // 'ADMIN' | 'BARBER' — define qué puede ver
+  // Comisiones y códigos de productos (pestaña de Productos) -- calculados en
+  // mostrarControlesAdmin(), mismo criterio que exige el backend.
+  let puedeVerComisionesProductos = false;
+  let puedeEditarComisionesProductos = false;
 
   async function api(path, options = {}){
     const res = await fetch(API_BASE + path, {
@@ -6278,6 +6527,17 @@
     // real, solo evita mostrar una sección que igual sería rechazada.
     const testiOn = (userRole === 'ADMIN' || userPermissions.includes('TESTIMONIOS_GESTIONAR')) ? '' : 'none';
     document.getElementById('btnTestimonios').style.display = testiOn;
+
+    // Comisiones y códigos (pestaña de Productos): ADMIN siempre, o staff con
+    // COMISIONES_VER/COMISIONES_EDITAR -- el mismo criterio que exige el
+    // backend (verificarComisionesVer/Editar en comisionesProductos.js).
+    // TIENDA_EDITAR por sí solo NO alcanza (decisión E). RECEPTION no lo
+    // recibe por rol (decisión H); puede asignarse el permiso individualmente.
+    puedeVerComisionesProductos = userRole === 'ADMIN'
+      || userPermissions.includes('COMISIONES_VER') || userPermissions.includes('COMISIONES_EDITAR');
+    puedeEditarComisionesProductos = userRole === 'ADMIN' || userPermissions.includes('COMISIONES_EDITAR');
+    const tabComEl = document.getElementById('pvTabComisiones');
+    if(tabComEl) tabComEl.style.display = puedeVerComisionesProductos ? '' : 'none';
 
     // Campañas: por ahora solo administrador (envío masivo de correo).
     const campanasEl = document.getElementById('btnCampanas');
@@ -6991,7 +7251,7 @@
   // Modales que son pantallas administrativas: un BARBER no los abre por
   // ninguna vía (los legítimos para él -- Mi perfil, Recordatorios, fotos de
   // cliente, WhatsApp por cliente -- no están en la lista).
-  const MODALES_ADMIN = ['modalArco', 'modalPromos', 'modalMensajeriaWhatsapp'];
+  const MODALES_ADMIN = ['modalArco', 'modalPromos', 'modalMensajeriaWhatsapp', 'modalCodigoBarbero'];
   function abrirModal(id){
     if(userRole === 'BARBER' && MODALES_ADMIN.indexOf(id) > -1){
       if(typeof showToast === 'function') showToast('Esta sección no está disponible para tu cuenta');
@@ -7866,6 +8126,10 @@
     cerrarModales();
     showToast(`Venta registrada · $${total.toLocaleString('es-CL')}`);
     vpCarrito = {};
+    // Si la pestaña "Ventas" de Productos está a la vista, refresca su
+    // historial e indicadores -- esta venta puede haber llegado desde ahí
+    // (botón "+ Agregar venta") o desde el "+ Nuevo" general.
+    if(document.getElementById('vistaProductos').style.display !== 'none') pvCargar();
   });
 
   async function editarBloqueo(id){
@@ -9137,37 +9401,206 @@
     }
   }
 
-  /** Resumen de ganancias de hoy, solo para la cuenta del propio barbero. */
-  async function pintarResumenBarbero(){
-    await cargarCatalogo();
-    await cxCargarTarifas();
+  /* ---------------------------------------------------------------------
+     "Mis comisiones" del barbero -- 100% servidor (obtenerMisComisiones +
+     obtenerMisPropinas): el professionalId SIEMPRE sale de
+     staff/{uid}.barberId del lado del servidor, nunca de nada que mande
+     este código. Read-only puro: nada de esto escribe, y no hay ningún
+     botón para cambiar porcentajes, código ni estado -- eso es exclusivo
+     de un ADMIN (Productos → Comisiones y códigos). Cada número histórico
+     es el que quedó guardado en la venta -- nunca se recalcula con el %
+     vigente hoy.
+     --------------------------------------------------------------------- */
+  let cbUltimoReporte = null;   // última respuesta de obtenerMisComisiones (Servicios/Productos/Código)
+  let cbUltimoPropinas = null;  // última respuesta de obtenerMisPropinas
+  let cbpTipoActual = 'hoy';    // chip de período activo en Propinas
 
-    const yo = cfgBarberos.find(b=> b.name === userBarberName);
-    // 'asistio' es el estado vigente; 'done' se mantiene para no perder la
-    // comisión ya calculada de reservas históricas marcadas antes del cambio.
-    const items = appointments.filter(a=> (a.status === 'asistio' || a.status === 'done') && a.barber === userBarberName);
-
-    let comisionServicios = 0, propinas = 0, comisionProductos = 0;
-    const filas = items.map(a=>{
-      const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
-      const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
-      comisionServicios += c.amount;
-      propinas += Number(a.propina) || 0;
-      const subProductos = (a.productosVendidos || []).reduce((s,p)=> s + (p.subtotal||0), 0);
-      comisionProductos += Math.round(subProductos * 0.10);
-      const hora = String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
-      return `<tr><td>${hora}</td><td>${escapeHTML(a.client)}</td><td>${escapeHTML(a.service)}</td><td class="r">${cxClp(c.amount)}</td></tr>`;
-    });
-
-    document.getElementById('cbServicios').textContent = items.length;
-    document.getElementById('cbComision').textContent = cxClp(comisionServicios);
-    document.getElementById('cbPropinas').textContent = cxClp(propinas);
-    document.getElementById('cbComisionProductos').textContent = cxClp(comisionProductos);
-    document.getElementById('cbTotal').textContent = cxClp(comisionServicios + propinas + comisionProductos);
-    document.getElementById('cbTabla').innerHTML = filas.length
-      ? filas.join('')
-      : '<tr><td colspan="4" class="cx-empty">Todavía no hay servicios marcados como realizados hoy.</td></tr>';
+  const CB_MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  /** "7–13 sep 2026" (mismo mes) / "28 ago – 3 sep 2026" (cruza mes) / una
+   *  sola fecha si desde===hasta -- mismo formato corto que cxFmtFechaCorta. */
+  function cbFmtPeriodo(desde, hasta){
+    if(!desde || !hasta) return '—';
+    if(desde === hasta) return cxFmtFechaCorta(desde);
+    const [yD,mD,dD] = desde.split('-').map(Number);
+    const [yH,mH,dH] = hasta.split('-').map(Number);
+    if(yD === yH && mD === mH) return `${dD}–${dH} ${CB_MESES[mH-1]} ${yH}`;
+    if(yD === yH) return `${dD} ${CB_MESES[mD-1]} – ${dH} ${CB_MESES[mH-1]} ${yH}`;
+    return `${cxFmtFechaCorta(desde)} – ${cxFmtFechaCorta(hasta)}`;
   }
+  /** Rango de cada chip de Propinas. 'semana'/'semanaant' son la semana
+   *  calendario completa (lunes-domingo), reusando lunesISO/domingoISO --
+   *  el mismo criterio de semana que ya usa el resto del panel. */
+  function cbRangoPropinas(tipo){
+    const hoy = new Date().toISOString().slice(0,10);
+    if(tipo === '7d'){
+      const i = new Date(hoy + 'T12:00:00'); i.setDate(i.getDate() - 6);
+      return [i.toISOString().slice(0,10), hoy];
+    }
+    if(tipo === 'semana'){
+      const lunes = lunesISO(hoy);
+      return [lunes, domingoISO(lunes)];
+    }
+    if(tipo === 'semanaant'){
+      const d = new Date(lunesISO(hoy) + 'T12:00:00'); d.setDate(d.getDate() - 7);
+      const lunesAnt = d.toISOString().slice(0,10);
+      return [lunesAnt, domingoISO(lunesAnt)];
+    }
+    return [hoy, hoy]; // 'hoy' (y cualquier valor no reconocido)
+  }
+  function cbCanalTxt(saleChannel){
+    if(saleChannel === 'online_con_codigo') return 'Online con código';
+    if(saleChannel === 'presencial_con_profesional') return 'Presencial';
+    return saleChannel || '—';
+  }
+
+  async function pintarResumenBarbero(){
+    const sinVincular = document.getElementById('cbSinVincular');
+    const contenido = document.getElementById('cbContenido');
+    const mesInput = document.getElementById('cbmMes');
+    if(!mesInput.value) mesInput.value = new Date().toISOString().slice(0,7); // default: mes actual
+    try{
+      const r = await functions.httpsCallable('obtenerMisComisiones')({ mes: mesInput.value });
+      const d = r.data;
+      cbUltimoReporte = d;
+
+      if(d.sinVincular){
+        sinVincular.style.display = '';
+        contenido.style.display = 'none';
+        return;
+      }
+      sinVincular.style.display = 'none';
+      contenido.style.display = '';
+
+      // ---- Servicios (HOY, sin cambios) ----
+      document.getElementById('cbServicios').textContent = d.servicios.cantidad;
+      document.getElementById('cbComision').textContent = cxClp(d.servicios.comision);
+
+      // ---- Productos + Código promocional (mes elegido, combinados) ----
+      const productosVendidos = d.productosPresencial.cantidad + (d.codigoPromocional ? d.codigoPromocional.ventas : 0);
+      const montoVendido = d.productosPresencial.monto + (d.codigoPromocional ? d.codigoPromocional.montoVendido : 0);
+      document.getElementById('cbmProductos').textContent = productosVendidos;
+      document.getElementById('cbmMonto').textContent = cxClp(montoVendido);
+      document.getElementById('cbmComisionPresencial').textContent = cxClp(d.productosPresencial.comision);
+      document.getElementById('cbmComisionOnline').textContent = cxClp(d.codigoPromocional ? d.codigoPromocional.comisionAcumulada : 0);
+      document.getElementById('cbmTotal').textContent = cxClp(d.totalProductosMes);
+
+      const sinCodigo = document.getElementById('cbmSinCodigo');
+      const resumenCodigo = document.getElementById('cbmCodigoResumen');
+      if(!d.codigoPromocional){
+        sinCodigo.style.display = '';
+        resumenCodigo.style.display = 'none';
+      } else {
+        sinCodigo.style.display = 'none';
+        resumenCodigo.style.display = '';
+        const c = d.codigoPromocional;
+        const estadoTxt = c.activo
+          ? '<span style="color:#2e7d32;font-weight:600;">Activo</span>'
+          : '<span style="color:#c0392b;font-weight:600;">Inactivo</span>';
+        resumenCodigo.innerHTML =
+          `Tu código: <b>${escapeHTML(c.codigo)}</b> — ${estadoTxt} · ${c.descuentoClientePct}% de descuento para el cliente · ${c.comisionOnlinePct}% tu comisión en ventas online con este código`;
+      }
+
+      pintarDetalleProductosBarbero(); // re-pinta el detalle si ya estaba abierto (usa d.detalle en memoria, sin nueva lectura)
+    }catch(e){
+      contenido.style.display = 'none';
+      sinVincular.style.display = '';
+      sinVincular.innerHTML = 'No se pudo cargar tu resumen: ' + escapeHTML(e.message || String(e));
+      return;
+    }
+    pintarPropinasBarbero(); // mantiene el chip/rango de Propinas que ya estuviera elegido
+  }
+
+  /** Detalle de ventas de productos del mes (Productos + Código combinados)
+   *  -- viene completo en la misma respuesta de obtenerMisComisiones, así
+   *  que abrir/cerrar "Ver detalle" no dispara ninguna lectura nueva. */
+  function pintarDetalleProductosBarbero(){
+    const tb = document.getElementById('cbmDetalleTabla');
+    const totales = document.getElementById('cbmDetalleTotales');
+    const detalle = (cbUltimoReporte && cbUltimoReporte.detalle) || [];
+    if(!detalle.length){
+      tb.innerHTML = '<tr><td colspan="7" class="cx-empty">Sin ventas de productos en este mes.</td></tr>';
+      totales.innerHTML = '';
+      return;
+    }
+    let totMonto = 0, totComision = 0;
+    tb.innerHTML = detalle.map(v=>{
+      totMonto += v.subtotal;
+      totComision += v.professionalCommissionAmount;
+      const fechaTxt = cxFmtFechaCorta(v.soldAt ? String(v.soldAt).slice(0,10) : (v.fecha || ''));
+      const descTxt = v.customerDiscountPctApplied > 0
+        ? `${v.customerDiscountPctApplied}% (${cxClp(v.customerDiscountAmount)})`
+        : '—';
+      return `<tr>
+        <td>${fechaTxt}</td>
+        <td>${escapeHTML(v.productName || '')}</td>
+        <td>${cbCanalTxt(v.saleChannel)}</td>
+        <td class="r">${cxClp(v.subtotal)}</td>
+        <td class="r">${descTxt}</td>
+        <td class="r">${v.professionalCommissionPctApplied}%</td>
+        <td class="r">${cxClp(v.professionalCommissionAmount)}</td>
+      </tr>`;
+    }).join('');
+    totales.innerHTML = `<td colspan="3"><b>Total vendido / comisión del mes</b></td>
+      <td class="r"><b>${cxClp(totMonto)}</b></td>
+      <td></td><td></td>
+      <td class="r"><b>${cxClp(totComision)}</b></td>`;
+  }
+  document.getElementById('cbmBuscar').addEventListener('click', pintarResumenBarbero);
+  document.getElementById('cbmVerDetalle').addEventListener('click', ()=>{
+    const box = document.getElementById('cbmDetalleBox');
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    document.getElementById('cbmVerDetalle').textContent = abrir ? 'Ocultar detalle' : 'Ver detalle';
+    if(abrir) pintarDetalleProductosBarbero();
+  });
+
+  /** Propinas -- rango independiente del mes de Productos/Código. Consulta
+   *  directo por rango de fechas (obtenerMisPropinas), nunca carga el
+   *  histórico completo para filtrar acá. */
+  async function pintarPropinasBarbero(tipo){
+    cbpTipoActual = tipo || cbpTipoActual;
+    let desde, hasta;
+    if(cbpTipoActual === 'custom'){
+      desde = document.getElementById('cbpDesde').value;
+      hasta = document.getElementById('cbpHasta').value;
+      if(!desde || !hasta) return; // espera a que se elijan las dos fechas
+    } else {
+      [desde, hasta] = cbRangoPropinas(cbpTipoActual);
+    }
+    try{
+      const r = await functions.httpsCallable('obtenerMisPropinas')({ desde, hasta });
+      const d = r.data;
+      cbUltimoPropinas = d;
+      document.getElementById('cbpCantidad').textContent = d.cantidad;
+      document.getElementById('cbpMonto').textContent = cxClp(d.monto);
+      document.getElementById('cbpPeriodoTxt').textContent = 'Propinas · ' + cbFmtPeriodo(d.desde, d.hasta);
+      pintarDetallePropinasBarbero();
+    }catch(e){
+      document.getElementById('cbpPeriodoTxt').textContent = 'No se pudo cargar: ' + (e.message || String(e));
+    }
+  }
+  function pintarDetallePropinasBarbero(){
+    const tb = document.getElementById('cbpDetalleTabla');
+    const detalle = (cbUltimoPropinas && cbUltimoPropinas.detalle) || [];
+    tb.innerHTML = detalle.length
+      ? detalle.map(p=> `<tr><td>${cxFmtFechaCorta(p.fecha)}</td><td>${escapeHTML(p.cliente || '')}</td><td>${escapeHTML(p.servicio || '')}</td><td class="r">${cxClp(p.propina)}</td></tr>`).join('')
+      : '<tr><td colspan="4" class="cx-empty">Sin propinas en este período.</td></tr>';
+  }
+  document.querySelectorAll('#cxBarbero [data-cbp]').forEach(c=>
+    c.addEventListener('click', ()=>{
+      document.querySelectorAll('#cxBarbero [data-cbp]').forEach(x=> x.classList.toggle('on', x===c));
+      document.getElementById('cbpCustomBox').style.display = c.dataset.cbp === 'custom' ? 'flex' : 'none';
+      if(c.dataset.cbp === 'custom') return; // espera Desde/Hasta + "Buscar"
+      pintarPropinasBarbero(c.dataset.cbp);
+    }));
+  document.getElementById('cbpBuscar').addEventListener('click', ()=> pintarPropinasBarbero('custom'));
+  document.getElementById('cbpVerDetalle').addEventListener('click', ()=>{
+    const box = document.getElementById('cbpDetalleBox');
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    document.getElementById('cbpVerDetalle').textContent = abrir ? 'Ocultar detalle' : 'Ver detalle';
+    if(abrir) pintarDetallePropinasBarbero();
+  });
 
   /**
    * Página propia y simple para las cuentas de barbero: reemplaza por completo
@@ -13202,10 +13635,6 @@
     const tbody = document.getElementById('pvTabla');
     tbody.innerHTML = '<tr><td colspan="6" class="cx-empty">Cargando...</td></tr>';
 
-    const sel = document.getElementById('pvProducto');
-    sel.innerHTML = productsCache.filter(p=> p.active !== false).map(p=>
-      `<option value="${p.id}">${escapeHTML(p.name)} — ${cxClp(p.price)}</option>`).join('');
-
     let ventas = [];
     try{
       const snap = await db.collection('productSales').orderBy('createdAt','desc').limit(100).get();
@@ -13239,27 +13668,13 @@
     }).join('') : '<tr><td colspan="6" class="cx-empty">Todavía no hay ventas registradas.</td></tr>';
   }
 
-  document.getElementById('pvAgregar').addEventListener('click', async ()=>{
-    const btn = document.getElementById('pvAgregar');
-    const id = document.getElementById('pvProducto').value;
-    const qty = parseInt(document.getElementById('pvCantidadInput').value, 10);
-    const p = productsCache.find(x=> x.id === id);
-    if(!p) return showToast('Elige un producto');
-    if(!qty || qty < 1) return showToast('Ingresa una cantidad válida');
-
-    btn.disabled = true; btn.textContent = 'Agregando...';
-    try{
-      await db.collection('productSales').add({
-        productId: p.id, productName: p.name, qty, price: p.price, subtotal: p.price * qty,
-        origen: 'local', fecha: new Date().toISOString().slice(0,10), createdAt: new Date().toISOString(),
-      });
-      const nuevoStock = Math.max(0, (p.stock ?? 0) - qty);
-      await db.collection('products').doc(p.id).update({ stock: nuevoStock });
-      showToast('Venta agregada');
-      document.getElementById('pvCantidadInput').value = 1;
-      await pvCargar();
-    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
-    btn.disabled = false; btn.textContent = '+ Agregar venta';
+  /* "+ Agregar venta" (pestaña Ventas) ya no escribe directo a Firestore --
+     productSales es solo-servidor desde el Bloque 1 de comisiones (idempotencia
+     + snapshot de comisión). Reusa el mismo modal "Nueva venta de producto"
+     (btnNuevaVentaProducto -> registrarVentaProducto), que ya cubre exactamente
+     este caso: "Sin asignar" = venta de mostrador, origen 'local', 0 comisión. */
+  document.getElementById('pvAgregar').addEventListener('click', ()=>{
+    document.getElementById('btnNuevaVentaProducto').click();
   });
 
   /* ---------- Catálogo de productos: alta, edición y baja ---------- */
@@ -13269,18 +13684,19 @@
       const v = b.dataset.pvv;
       document.getElementById('pvVentas').style.display = v === 'ventas' ? '' : 'none';
       document.getElementById('pvCatalogo').style.display = v === 'catalogo' ? '' : 'none';
+      document.getElementById('pvComisionesPanel').style.display = v === 'comisiones' ? '' : 'none';
       if(v === 'catalogo') pintarCatalogoProductos();
+      if(v === 'comisiones') pgCargar();
     }));
 
   /** Mismas categorías que el selector "Categoría" del formulario y que las
    *  secciones de la tienda pública (ST_CATEGORIAS en masterlook-sitio.html)
    *  -- se usan para dividir el catálogo en secciones, en este mismo orden. */
   const PC_CATEGORIAS = ['Barbería profesional','Cuidado de la piel','Fragancias','Herramientas y accesorios','Ropa running','Accesorios'];
-  let pcEditando = null; // id del producto cuya fila está en modo edición
   let pcAEliminar = null;
+  let pcEditorProductoId = null; // id del producto cargado ahora mismo en modalPcEditarProducto
 
   const PC_ICONO_LAPIZ = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
-  const PC_ICONO_CHECK = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
   const PC_ICONO_PAPELERA = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`;
   const PC_ICONO_REACTIVAR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`;
   const PC_UMBRAL_STOCK_BAJO = 5;
@@ -13367,25 +13783,13 @@
     });
   }
 
+  /** Fila SIEMPRE de solo lectura -- editar ya no es un estado por fila (no
+   *  hay inputs, selects ni textareas ocultos acá). Un producto con muchos
+   *  ítems en el catálogo no debe pesar más por esto: la edición completa
+   *  (incl. comisiones/código) vive en el único modalPcEditarProducto,
+   *  que se llena al vuelo cuando se presiona el lápiz. */
   function pcFilaProducto(p){
-    const editando = pcEditando === p.id;
     const stockBajo = (p.stock ?? 0) <= PC_UMBRAL_STOCK_BAJO;
-    const nombreCelda = editando
-      ? `<div class="pc-name-wrap"><input type="text" value="${escapeHTML(p.name)}" data-f="name" placeholder="Nombre"></div>`
-      : `<div class="pc-name">${escapeHTML(p.name)}</div>`;
-    const precioCelda = editando
-      ? `<div class="pc-price-cell"><input type="number" value="${p.price}" data-f="price" min="0" step="500"></div>`
-      : `<div class="pc-price">${cxClp(p.price)}</div>`;
-    const descCelda = editando
-      ? `<div class="pc-desc-cell"><textarea data-f="description" placeholder="Descripción (sitio web)">${escapeHTML(p.description || '')}</textarea>
-          <select data-f="category" style="margin-top:6px;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;">
-            <option value="" ${!p.category ? 'selected':''}>Sin categoría</option>
-            ${PC_CATEGORIAS.map(c=> `<option value="${c}" ${p.category===c?'selected':''}>${c}</option>`).join('')}
-          </select></div>`
-      : `<div class="pc-desc">${escapeHTML(p.description || '')}</div>`;
-    const accionEditar = editando
-      ? `<button class="pc-ib save" data-pc-guardar title="Guardar">${PC_ICONO_CHECK}</button>`
-      : `<button class="pc-ib" data-pc-editar title="Editar">${PC_ICONO_LAPIZ}</button>`;
     const accionEliminar = p.active === false
       ? `<button class="pc-ib" data-pc-reactivar title="Reactivar">${PC_ICONO_REACTIVAR}</button>`
       : `<button class="pc-ib del" data-pc-eliminar title="Eliminar">${PC_ICONO_PAPELERA}</button>`;
@@ -13397,13 +13801,13 @@
           <div class="pc-thumb" data-fotoprod="${p.id}" title="Subir foto del producto">
             ${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : `<span class="ph">📷</span>`}
           </div>
-          ${nombreCelda}
+          <div class="pc-name">${escapeHTML(p.name)}</div>
         </div>
       </td>
-      <td data-label="Precio: ">${precioCelda}</td>
+      <td data-label="Precio: "><div class="pc-price">${cxClp(p.price)}</div></td>
       <td data-label="Stock: "><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
-      <td>${descCelda}</td>
-      <td><div class="pc-actions">${accionEditar}${accionEliminar}</div></td>
+      <td><div class="pc-desc">${escapeHTML(p.description || '')}</div></td>
+      <td><div class="pc-actions"><button class="pc-ib" data-pc-editar="${p.id}" title="Editar">${PC_ICONO_LAPIZ}</button>${accionEliminar}</div></td>
     </tr>`;
   }
 
@@ -13437,12 +13841,11 @@
 
     document.getElementById('pcConteo').textContent = `${lista.length} producto${lista.length === 1 ? '' : 's'} en total`;
 
+    // "Editar" NO se conecta acá -- va por delegación (ver más abajo), un
+    // solo listener para todo el catálogo en vez de uno por fila. El resto
+    // (foto/eliminar/reactivar) sigue exactamente como estaba.
     cont.querySelectorAll('.pc-row').forEach(row=>{
       row.querySelector('.pc-thumb').addEventListener('click', ()=> subirFotoProducto(row.dataset.id));
-      const btnEditar = row.querySelector('[data-pc-editar]');
-      if(btnEditar) btnEditar.addEventListener('click', ()=>{ pcEditando = row.dataset.id; pintarCatalogoProductos(); });
-      const btnGuardar = row.querySelector('[data-pc-guardar]');
-      if(btnGuardar) btnGuardar.addEventListener('click', async ()=>{ await guardarProductoCatalogo(row); pcEditando = null; pintarCatalogoProductos(); });
       const btnEliminar = row.querySelector('[data-pc-eliminar]');
       if(btnEliminar) btnEliminar.addEventListener('click', ()=> pedirEliminarProducto(row.dataset.id));
       const btnReactivar = row.querySelector('[data-pc-reactivar]');
@@ -13452,6 +13855,14 @@
 
   document.getElementById('pcBuscar').addEventListener('input', pintarCatalogoProductos);
   document.getElementById('pcFiltro').addEventListener('change', pintarCatalogoProductos);
+
+  // Delegación de eventos: UN solo listener sobre el <tbody>, registrado una
+  // sola vez (el nodo #pcLista nunca se reemplaza, solo su innerHTML en cada
+  // repintado) -- en vez de un listener de "Editar" por cada fila/producto.
+  document.getElementById('pcLista').addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-pc-editar]');
+    if(btn) pcAbrirEditor(btn.dataset.pcEditar);
+  });
 
   /** Sube (o reemplaza) la foto de un producto y la deja lista para la tienda del sitio. */
   function subirFotoProducto(productoId){
@@ -13472,7 +13883,9 @@
         const p = productsCache.find(x=> x.id === productoId);
         if(p){
           p.photoUrl = url;
-          await db.collection('products').doc(productoId).set(p);
+          // merge:true -- nunca pisar campos que esta sesión no tocó (p.ej.
+          // la configuración de comisión/código de este producto).
+          await db.collection('products').doc(productoId).set(p, { merge:true });
         }
         showToast('Foto del producto actualizada');
         pintarCatalogoProductos();
@@ -13484,18 +13897,124 @@
     input.click();
   }
 
-  async function guardarProductoCatalogo(row){
-    const id = row.dataset.id;
+  /* ---------- Editar producto: modal único (ver también Bloque 2 de
+     comisiones -- estos 8 campos son los mismos de siempre, solo cambia
+     desde qué formulario se editan). ---------- */
+
+  /** settings/comisionesProductos, cacheada UNA sola vez para toda la sesión
+   *  del panel (no en cada apertura del modal) -- solo se usa para mostrar
+   *  el "Usando la general: X%" de referencia; no hace falta más fresca que
+   *  eso, y así abrir el editor de un producto sigue sin generar lecturas
+   *  nuevas a Firestore. */
+  let pcConfigGeneralCache = null;
+  async function pcConfigGeneral(){
+    if(pcConfigGeneralCache) return pcConfigGeneralCache;
+    try{
+      const snap = await db.collection('settings').doc('comisionesProductos').get();
+      const d = snap.exists ? snap.data() : {};
+      pcConfigGeneralCache = {
+        comisionPresencialGeneral: d.comisionPresencialGeneral ?? 10,
+        comisionOnlineCodigoGeneral: d.comisionOnlineCodigoGeneral ?? 5,
+        descuentoCodigoGeneral: d.descuentoCodigoGeneral ?? 10,
+        descuentoMaximoGlobal: d.descuentoMaximoGlobal ?? 20,
+      };
+    }catch(e){ pcConfigGeneralCache = { comisionPresencialGeneral:10, comisionOnlineCodigoGeneral:5, descuentoCodigoGeneral:10, descuentoMaximoGlobal:20 }; }
+    return pcConfigGeneralCache;
+  }
+
+  /** El checkbox "Personalizar..." habilita/deshabilita su número asociado. */
+  function pcmWireModo(idModo, idPct){
+    const chk = document.getElementById(idModo);
+    const num = document.getElementById(idPct);
+    chk.onchange = ()=>{ num.disabled = !chk.checked; };
+  }
+  pcmWireModo('pcmDescuentoModo','pcmDescuentoPct');
+  pcmWireModo('pcmComisionPresencialModo','pcmComisionPresencialPct');
+  pcmWireModo('pcmComisionOnlineModo','pcmComisionOnlinePct');
+
+  /** Abre el editor para UN producto -- se llena leyendo productsCache (el
+   *  mismo arreglo que ya pinta el catálogo, sin volver a preguntarle nada a
+   *  Firestore) y, la primera vez en la sesión, la config general cacheada
+   *  (para mostrar la referencia "Usando la general: X%"). */
+  async function pcAbrirEditor(id){
     const p = productsCache.find(x=> x.id === id);
     if(!p) return;
-    row.querySelectorAll('[data-f]').forEach(inp=>{
-      p[inp.dataset.f] = inp.type === 'number' ? Number(inp.value) : inp.value.trim();
-    });
-    try{
-      await db.collection('products').doc(id).set(p);
-      showToast('Producto actualizado — ya se ve así en todo el sistema');
-    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    pcEditorProductoId = id;
+
+    document.getElementById('pcmNombre').value = p.name || '';
+    document.getElementById('pcmPrecio').value = p.price ?? 0;
+    document.getElementById('pcmDescripcion').value = p.description || '';
+    const selCat = document.getElementById('pcmCategoria');
+    selCat.innerHTML = `<option value="">Sin categoría</option>` +
+      PC_CATEGORIAS.map(c=> `<option value="${c}" ${p.category===c?'selected':''}>${c}</option>`).join('');
+    if(!p.category) selCat.value = '';
+
+    const cfg = await pcConfigGeneral();
+    document.getElementById('pcmAceptaCodigo').checked = p.aceptaCodigoPromo === true;
+
+    const personalizar = (idModo, idPct, idRef, valorModo, valorPct, general, sufijo)=>{
+      const esPersonalizado = valorModo === 'personalizado';
+      document.getElementById(idModo).checked = esPersonalizado;
+      const num = document.getElementById(idPct);
+      num.value = valorPct ?? '';
+      num.disabled = !esPersonalizado;
+      document.getElementById(idRef).textContent = esPersonalizado ? '' : `Usando la general: ${general}%${sufijo || ''}`;
+    };
+    personalizar('pcmDescuentoModo','pcmDescuentoPct','pcmDescuentoRef', p.descuentoModo, p.descuentoPersonalizadoPct, cfg.descuentoCodigoGeneral);
+    personalizar('pcmComisionPresencialModo','pcmComisionPresencialPct','pcmComisionPresencialRef', p.comisionPresencialModo, p.comisionPresencialPct, cfg.comisionPresencialGeneral);
+    personalizar('pcmComisionOnlineModo','pcmComisionOnlinePct','pcmComisionOnlineRef', p.comisionOnlineCodigoModo, p.comisionOnlineCodigoPct, cfg.comisionOnlineCodigoGeneral);
+    document.getElementById('pcmDescuentoTope').value = p.descuentoMaximoPct ?? '';
+
+    abrirModal('modalPcEditarProducto');
   }
+
+  document.getElementById('pcmGuardar').addEventListener('click', async ()=>{
+    const id = pcEditorProductoId;
+    const p = productsCache.find(x=> x.id === id);
+    if(!id || !p) return;
+
+    const nombre = document.getElementById('pcmNombre').value.trim();
+    if(!nombre) return showToast('Escribe el nombre del producto');
+
+    const pctOVacio = (idPct)=>{
+      const txt = document.getElementById(idPct).value.trim();
+      if(txt === '') return null;
+      const n = Number(txt);
+      return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null;
+    };
+    const modoDe = (idModo)=> document.getElementById(idModo).checked ? 'personalizado' : 'general';
+
+    const payload = {
+      // los mismos 4 campos que editaba el formulario inline de siempre:
+      name: nombre,
+      price: Number(document.getElementById('pcmPrecio').value) || 0,
+      description: document.getElementById('pcmDescripcion').value.trim(),
+      category: document.getElementById('pcmCategoria').value,
+      // comisiones, descuento y código -- mismos 8 campos que ya usaban el
+      // backend/reglas/resolvers desde el Bloque 1; nunca cambiaron.
+      aceptaCodigoPromo: document.getElementById('pcmAceptaCodigo').checked,
+      descuentoModo: modoDe('pcmDescuentoModo'),
+      descuentoPersonalizadoPct: modoDe('pcmDescuentoModo') === 'personalizado' ? pctOVacio('pcmDescuentoPct') : null,
+      descuentoMaximoPct: pctOVacio('pcmDescuentoTope'),
+      comisionPresencialModo: modoDe('pcmComisionPresencialModo'),
+      comisionPresencialPct: modoDe('pcmComisionPresencialModo') === 'personalizado' ? pctOVacio('pcmComisionPresencialPct') : null,
+      comisionOnlineCodigoModo: modoDe('pcmComisionOnlineModo'),
+      comisionOnlineCodigoPct: modoDe('pcmComisionOnlineModo') === 'personalizado' ? pctOVacio('pcmComisionOnlinePct') : null,
+    };
+
+    const btn = document.getElementById('pcmGuardar');
+    btn.disabled = true; const textoOriginal = btn.textContent; btn.textContent = 'Guardando...';
+    try{
+      // merge:true -- una sola escritura puntual sobre este producto.
+      await db.collection('products').doc(id).set(payload, { merge:true });
+      Object.assign(p, payload); // la caché queda igual de al tiro que Firestore
+      cerrarModales();
+      pcEditorProductoId = null;
+      pintarCatalogoProductos(); // repinta desde la caché ya actualizada -- 0 lecturas nuevas
+      showToast('Producto actualizado — ya se ve así en todo el sistema');
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || e)); }
+    btn.disabled = false; btn.textContent = textoOriginal;
+  });
 
   /** El botón de eliminar en realidad desactiva (mismo comportamiento de
    *  siempre: deja de ofrecerse pero conserva el historial de ventas) --
@@ -13520,7 +14039,7 @@
     if(!p) return;
     p.active = p.active === false ? true : false;
     try{
-      await db.collection('products').doc(id).set(p);
+      await db.collection('products').doc(id).set(p, { merge:true });
       showToast(p.active ? 'Producto reactivado' : 'Producto desactivado');
       pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
@@ -13551,6 +14070,210 @@
       pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
     btn.disabled = false; btn.textContent = '+ Agregar producto';
+  });
+
+  /* =====================================================================
+     Comisiones y códigos (3ª pestaña de Productos)
+     -- Configuración general (settings/comisionesProductos, escritura
+        directa: las reglas ya exigen isAdmin()||COMISIONES_EDITAR).
+     -- Profesionales y códigos (obtenerComisionesProductos + modal ->
+        guardarCodigoPromocional, ambos callables server-side).
+     -- Productos (los 8 campos de comisión/descuento, update() acotado a
+        esas llaves -- nunca toca nombre/precio/stock/foto/etc).
+     Prioridad SIEMPRE: producto específico > excepción del profesional >
+     configuración general -- igual que en el backend (comisionesProductos.js).
+     ===================================================================== */
+  let pgUltimoReporte = null; // última respuesta de obtenerComisionesProductos {rows, config}
+  let pgModalProfId = null;
+
+  async function pgCargar(){
+    await cargarCatalogo();
+    await pgCargarConfigGeneral();
+    await pgCargarProfesionales();
+  }
+
+  /* ---------- Configuración general ---------- */
+  async function pgCargarConfigGeneral(){
+    const soloLectura = !puedeEditarComisionesProductos;
+    try{
+      const snap = await db.collection('settings').doc('comisionesProductos').get();
+      const d = snap.exists ? snap.data() : {};
+      document.getElementById('pcgPresencial').value = d.comisionPresencialGeneral ?? 10;
+      document.getElementById('pcgOnlineCodigo').value = d.comisionOnlineCodigoGeneral ?? 5;
+      document.getElementById('pcgDescuento').value = d.descuentoCodigoGeneral ?? 10;
+      document.getElementById('pcgDescuentoMax').value = d.descuentoMaximoGlobal ?? 20;
+    }catch(e){ showToast('No se pudo cargar la configuración general: ' + (e.message || e)); }
+    ['pcgPresencial','pcgOnlineCodigo','pcgDescuento','pcgDescuentoMax'].forEach(id=>
+      document.getElementById(id).disabled = soloLectura);
+    const btnCfg = document.getElementById('pcgGuardar');
+    btnCfg.style.display = soloLectura ? 'none' : '';
+  }
+  document.getElementById('pcgGuardar').addEventListener('click', async ()=>{
+    if(!puedeEditarComisionesProductos) return showToast('No tienes permiso para cambiar esta configuración');
+    const btn = document.getElementById('pcgGuardar');
+    const val = (id)=>{ const n = Number(document.getElementById(id).value); return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0; };
+    const payload = {
+      comisionPresencialGeneral: val('pcgPresencial'),
+      comisionOnlineCodigoGeneral: val('pcgOnlineCodigo'),
+      descuentoCodigoGeneral: val('pcgDescuento'),
+      descuentoMaximoGlobal: val('pcgDescuentoMax'),
+    };
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try{
+      // merge:true -- nunca pisar porProfesional (excepciones por barbero)
+      // ni ningún otro campo que este formulario no gestiona.
+      await db.collection('settings').doc('comisionesProductos').set(payload, { merge:true });
+      showToast('Configuración general guardada');
+      await pgCargarProfesionales(); // los "% general" que se muestran en la tabla cambiaron
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || e)); }
+    btn.disabled = false; btn.textContent = 'Guardar configuración general';
+  });
+
+  /* ---------- Profesionales y códigos ---------- */
+  document.getElementById('pgBuscarRango').addEventListener('click', pgCargarProfesionales);
+
+  /** 'YYYY-MM' -> {desde,hasta} ('YYYY-MM-DD' del primer/último día) -- mismo
+   *  cálculo que rangoMes() del backend, en el cliente, solo para no depender
+   *  de una llamada extra antes de tener el mes por defecto. */
+  function pgRangoDeMes(mes){
+    const [y, m] = mes.split('-').map(Number);
+    const ultimoDia = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    return { desde: `${mes}-01`, hasta: `${mes}-${String(ultimoDia).padStart(2,'0')}` };
+  }
+
+  async function pgCargarProfesionales(){
+    const tb = document.getElementById('pgProfTabla');
+    tb.innerHTML = '<tr><td colspan="12" class="cx-empty">Calculando...</td></tr>';
+    const mesInput = document.getElementById('pgMes');
+    if(!mesInput.value) mesInput.value = new Date().toISOString().slice(0,7); // default: mes actual
+    const { desde, hasta } = pgRangoDeMes(mesInput.value);
+    try{
+      const r = await functions.httpsCallable('obtenerComisionesProductos')({ desde, hasta });
+      pgUltimoReporte = r.data;
+      pgPintarProfesionales();
+    }catch(e){
+      tb.innerHTML = `<tr><td colspan="12" class="cx-empty">${escapeHTML(e.message || String(e))}</td></tr>`;
+    }
+  }
+
+  /** % de comisión presencial que hoy le corresponde a este profesional --
+   *  misma prioridad que resolverComisionPresencial() del backend (acá sin
+   *  el producto: solo para mostrar el valor "por defecto" del profesional
+   *  en esta tabla; el % real de cada venta puede variar por producto). */
+  function pgComisionPresencialEfectiva(professionalId){
+    const cfg = pgUltimoReporte && pgUltimoReporte.config;
+    if(!cfg) return null;
+    const override = cfg.porProfesional && cfg.porProfesional[professionalId];
+    if(override && override.comisionPresencial != null) return { pct:Number(override.comisionPresencial), personalizada:true };
+    return { pct:Number(cfg.comisionPresencialGeneral), personalizada:false };
+  }
+
+  /** Tabla mensual por profesional -- SIEMPRE con las comisiones que quedaron
+   *  guardadas en cada venta del mes elegido (obtenerComisionesProductos lee
+   *  productSales, nunca recalcula con el % vigente hoy). Las columnas de
+   *  código/% son configuración VIGENTE (para editar); las de $ son del mes. */
+  function pgPintarProfesionales(){
+    const tb = document.getElementById('pgProfTabla');
+    const totalesFila = document.getElementById('pgTotalesFila');
+    const rows = ((pgUltimoReporte && pgUltimoReporte.rows) || []).slice().sort((a,b)=> a.nombre.localeCompare(b.nombre));
+    if(!rows.length){
+      tb.innerHTML = '<tr><td colspan="12" class="cx-empty">Todavía no hay profesionales.</td></tr>';
+      totalesFila.innerHTML = '';
+      return;
+    }
+    let totProductos = 0, totMonto = 0, totComPresencial = 0, totComOnline = 0, totComTotal = 0;
+    tb.innerHTML = rows.map(row=>{
+      const pres = pgComisionPresencialEfectiva(row.professionalId);
+      const presTxt = pres ? `${pres.pct}%${pres.personalizada ? ' · personalizada' : ' · general'}` : '—';
+      const codTxt = row.codigo ? escapeHTML(row.codigo) : '<span style="color:var(--text-low,#8a8a8a);">Sin código</span>';
+      const estadoTxt = !row.codigo ? '—'
+        : (row.codigoActivo ? '<span style="color:#2e7d32;font-weight:600;">Activo</span>' : '<span style="color:#c0392b;font-weight:600;">Inactivo</span>');
+      const accionEditar = puedeEditarComisionesProductos
+        ? `<button class="pc-ib" data-pg-editar="${row.professionalId}" title="Editar código">${PC_ICONO_LAPIZ}</button>`
+        : '—';
+      // Productos vendidos/Monto vendido del mes = presencial + online con
+      // código combinados (misma idea que "Total comisión del mes").
+      const productosVendidos = row.ventasConCodigo + row.ventasPresencial;
+      const montoVendido = row.montoConCodigo + row.montoPresencial;
+      totProductos += productosVendidos;
+      totMonto += montoVendido;
+      totComPresencial += row.comisionPresencial;
+      totComOnline += row.comisionCodigo;
+      totComTotal += row.comisionTotalProductos;
+      return `<tr data-pid="${row.professionalId}">
+        <td>${escapeHTML(row.nombre)}${row.activo === false ? ' <span class="mg-note" style="margin:0;display:inline;">(inactivo)</span>' : ''}</td>
+        <td>${codTxt}</td>
+        <td>${estadoTxt}</td>
+        <td class="r">${row.descuentoClientePct != null ? row.descuentoClientePct + '%' : '—'}</td>
+        <td class="r">${presTxt}</td>
+        <td class="r">${row.comisionOnlinePct != null ? row.comisionOnlinePct + '%' : '—'}</td>
+        <td class="r">${productosVendidos}</td>
+        <td class="r">${cxClp(montoVendido)}</td>
+        <td class="r">${cxClp(row.comisionPresencial)}</td>
+        <td class="r">${cxClp(row.comisionCodigo)}</td>
+        <td class="r"><b>${cxClp(row.comisionTotalProductos)}</b></td>
+        <td class="r">${accionEditar}</td>
+      </tr>`;
+    }).join('');
+    totalesFila.innerHTML = `<td colspan="6"><b>Totales del mes</b></td>
+      <td class="r"><b>${totProductos}</b></td>
+      <td class="r"><b>${cxClp(totMonto)}</b></td>
+      <td class="r"><b>${cxClp(totComPresencial)}</b></td>
+      <td class="r"><b>${cxClp(totComOnline)}</b></td>
+      <td class="r"><b>${cxClp(totComTotal)}</b></td>
+      <td></td>`;
+    tb.querySelectorAll('[data-pg-editar]').forEach(btn=>
+      btn.addEventListener('click', ()=> pgAbrirModalCodigo(btn.dataset.pgEditar)));
+  }
+
+  function pgAbrirModalCodigo(professionalId){
+    if(!puedeEditarComisionesProductos) return showToast('No tienes permiso para editar esto');
+    const row = ((pgUltimoReporte && pgUltimoReporte.rows) || []).find(r=> r.professionalId === professionalId);
+    if(!row) return;
+    const cfg = pgUltimoReporte.config || {};
+    pgModalProfId = professionalId;
+    document.getElementById('pgModalProfNombre').textContent = row.nombre;
+    document.getElementById('pgCodigo').value = row.codigo || '';
+    document.getElementById('pgDescuentoCliente').value = row.descuentoClientePct ?? cfg.descuentoCodigoGeneral ?? 10;
+    document.getElementById('pgComisionOnline').value = row.comisionOnlinePct ?? cfg.comisionOnlineCodigoGeneral ?? 5;
+    document.getElementById('pgActivo').checked = row.codigo ? !!row.codigoActivo : true;
+    const override = cfg.porProfesional && cfg.porProfesional[professionalId];
+    document.getElementById('pgPresencialPersonalizado').value = (override && override.comisionPresencial != null) ? override.comisionPresencial : '';
+    abrirModal('modalCodigoBarbero');
+  }
+
+  document.getElementById('pgGuardarModal').addEventListener('click', async ()=>{
+    if(!pgModalProfId) return;
+    const btn = document.getElementById('pgGuardarModal');
+    const codigo = document.getElementById('pgCodigo').value.trim();
+    if(!codigo) return showToast('Escribe un código');
+    const descuentoClientePct = Number(document.getElementById('pgDescuentoCliente').value) || 0;
+    const comisionOnlinePct = Number(document.getElementById('pgComisionOnline').value) || 0;
+    const active = document.getElementById('pgActivo').checked;
+    const presTxt = document.getElementById('pgPresencialPersonalizado').value.trim();
+    const presPersonalizada = presTxt === '' ? null : Math.max(0, Math.min(100, Number(presTxt)));
+
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try{
+      await functions.httpsCallable('guardarCodigoPromocional')({
+        professionalId: pgModalProfId, codigo, active, descuentoClientePct, comisionOnlinePct,
+      });
+      // La comisión presencial personalizada NO la gestiona el código -- es
+      // un campo aparte en settings/comisionesProductos.porProfesional.
+      // set({...}, {merge:true}) con FieldValue.delete() anidado borra solo
+      // esa llave (vuelve a "usar la general") sin tocar otros profesionales
+      // ni el resto de la configuración.
+      await db.collection('settings').doc('comisionesProductos').set({
+        porProfesional: { [pgModalProfId]: {
+          comisionPresencial: presPersonalizada == null ? firebase.firestore.FieldValue.delete() : presPersonalizada,
+        } },
+      }, { merge:true });
+      showToast('Código guardado');
+      cerrarModales();
+      pgModalProfId = null;
+      await pgCargarProfesionales();
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || e)); }
+    btn.disabled = false; btn.textContent = 'Guardar';
   });
 
   async function usCargar(){

@@ -1735,6 +1735,25 @@
   .cart-checkout-body{padding:16px 20px 22px;}
   .cart-total-row{display:flex; justify-content:space-between; align-items:baseline; font-size:.92rem; padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--border);}
   .cart-total-row b{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.05rem;}
+  .cart-discount-row{display:flex; justify-content:space-between; font-size:.8rem; color:#1f8a4c; margin:-8px 0 12px;}
+
+  .cart-code-box{margin-bottom:16px;}
+  .cart-code-row{display:flex; gap:8px;}
+  .cart-code-row .cart-input{flex:1;}
+  .cart-code-btn{
+    flex:0 0 auto; padding:0 18px; border-radius:10px; border:1px solid var(--border-strong);
+    background:var(--panel); color:var(--text-hi); font-family:inherit; font-size:.85rem; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+  }
+  .cart-code-btn:hover{background:var(--panel-2);}
+  .cart-code-btn:disabled{opacity:.5; cursor:not-allowed;}
+  .cart-code-msg{font-size:.78rem; margin-top:8px; line-height:1.4;}
+  .cart-code-msg.error{color:#c0392b;}
+  .cart-code-aplicado{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--panel-2); border-radius:10px; padding:11px 14px; font-size:.83rem; color:var(--text-hi); line-height:1.4;
+  }
+  .cart-code-quitar{background:none; border:none; color:var(--text-low); text-decoration:underline; cursor:pointer; font-size:.76rem; font-family:inherit; flex:0 0 auto; padding:0;}
 
   .cart-banner{
     background:var(--panel-2); border:1px solid var(--border); border-radius:12px;
@@ -3795,6 +3814,26 @@
 
     <div class="cart-checkout-body" id="cartCheckoutBody" style="display:none;">
       <div class="cart-total-row"><span>Total estimado:</span><b id="cartTotal">$0</b></div>
+      <div class="cart-discount-row" id="cartDescuentoRow" style="display:none;">
+        <span id="cartDescuentoTexto"></span><span id="cartDescuentoMonto"></span>
+      </div>
+
+      <!-- Código de descuento: solo aplica a productos, nunca a cursos (el
+           servidor vuelve a validar todo esto antes de cobrar -- ver
+           intentarPagarCheckout más abajo). -->
+      <div class="cart-code-box" id="cartCodeBox" style="display:none;">
+        <div id="cartCodeInputRow">
+          <div class="cart-code-row">
+            <input type="text" class="cart-input" id="cartCodigoInput" placeholder="Código de descuento" maxlength="20" style="text-transform:uppercase;" autocomplete="off">
+            <button type="button" class="cart-code-btn" id="cartCodigoAplicar">Aplicar</button>
+          </div>
+          <div class="cart-code-msg" id="cartCodigoMsg"></div>
+        </div>
+        <div class="cart-code-aplicado" id="cartCodeAplicadoRow" style="display:none;">
+          <span id="cartCodeAplicadoTexto"></span>
+          <button type="button" class="cart-code-quitar" id="cartCodeQuitar">Quitar</button>
+        </div>
+      </div>
 
       <div class="cart-banner" id="cartBannerMixto" style="display:none;">
         Tu carrito tiene cursos y productos juntos. Por ahora se compran por separado: deja <b>solo cursos</b> o <b>solo productos</b> para poder continuar con el pago.
@@ -6282,11 +6321,150 @@
     document.getElementById('cartAccountSection').style.display = auth.currentUser ? 'none' : '';
   }
 
+  /* ---------- Código de descuento (solo productos, nunca cursos) ----------
+     El navegador manda SOLO texto del código + ids/cantidades de productos.
+     El servidor decide todo lo demás (validarCodigoCheckout, modo:'preview',
+     nunca lanza) -- este preview es exclusivamente para mostrar el total
+     actualizado ANTES de pagar; nunca es lo que finalmente se cobra. Sin
+     código válido: precio completo, 0 comisión, sin atribución -- igual que
+     si este bloque no existiera. */
+  let cdCodigoAplicado = null;  // texto normalizado del código vigente, o null
+  let cdUltimoPreview = null;   // última respuesta {valido, lineas[], descuentoTotal, ...}
+
+  const CD_MENSAJES = {
+    no_existe: 'Ese código no existe.',
+    inactivo: 'Ese código ya no está activo.',
+    profesional_inactivo: 'Ese código ya no está disponible.',
+    producto_no_admite_codigo: 'Ninguno de los productos de tu carrito admite este código.',
+  };
+
+  function cdProductosDelCarrito(){
+    return carrito.filter(i=> i.kind !== 'COURSE').map(i=> ({ id:i.id, qty:i.qty }));
+  }
+
+  /** ¿El preview guardado sigue describiendo EXACTAMENTE el carrito actual
+   *  (mismos productos, mismas cantidades)? Si no, es información vieja y no
+   *  se usa para mostrar nada -- se limpia en pintarCarrito(). */
+  function cdCarritoCoincideConPreview(){
+    if(!cdUltimoPreview || !Array.isArray(cdUltimoPreview.lineas)) return false;
+    const productos = cdProductosDelCarrito();
+    if(productos.length !== cdUltimoPreview.lineas.length) return false;
+    const porId = new Map(cdUltimoPreview.lineas.map(l=> [l.productId, l]));
+    return productos.every(p=>{ const l = porId.get(p.id); return l && Number(l.qty) === Number(p.qty); });
+  }
+
+  /** Total mostrado en el carrito: cursos siempre a precio de lista (los
+   *  códigos nunca los tocan); productos con el precio con descuento del
+   *  preview vigente si hay uno que coincide con el carrito actual. */
+  function cdTotalConDescuento(){
+    const cursos = carrito.filter(i=> i.kind === 'COURSE');
+    const productos = carrito.filter(i=> i.kind !== 'COURSE');
+    const totalCursos = cursos.reduce((s,i)=> s + i.price * i.qty, 0);
+    if(!cdCodigoAplicado || !cdUltimoPreview || !cdUltimoPreview.valido || !cdCarritoCoincideConPreview()){
+      return totalCursos + productos.reduce((s,i)=> s + i.price * i.qty, 0);
+    }
+    const porId = new Map(cdUltimoPreview.lineas.map(l=> [l.productId, l]));
+    const totalProductos = productos.reduce((s,i)=>{
+      const l = porId.get(i.id);
+      return s + (l ? l.precioConDescuento : i.price) * i.qty;
+    }, 0);
+    return totalCursos + totalProductos;
+  }
+
+  function cdPintarCaja(){
+    const box = document.getElementById('cartCodeBox');
+    if(!box) return;
+    const hayProductos = carrito.some(i=> i.kind !== 'COURSE');
+    // El código solo tiene sentido si hay al menos un producto -- un carrito
+    // de solo cursos ni siquiera llega a Webpay (va por Mercado Pago).
+    box.style.display = hayProductos ? '' : 'none';
+    if(!hayProductos) return;
+
+    const inputRow = document.getElementById('cartCodeInputRow');
+    const aplicadoRow = document.getElementById('cartCodeAplicadoRow');
+    const aplicadoOk = cdCodigoAplicado && cdUltimoPreview && cdUltimoPreview.valido && cdCarritoCoincideConPreview();
+    inputRow.style.display = aplicadoOk ? 'none' : '';
+    aplicadoRow.style.display = aplicadoOk ? '' : 'none';
+    if(aplicadoOk){
+      const pct = cdUltimoPreview.lineas.find(l=> l.aceptaCodigo)?.descuentoPct ?? 0;
+      document.getElementById('cartCodeAplicadoTexto').textContent =
+        `Código "${cdCodigoAplicado}" aplicado — ${pct}% de descuento`;
+    }
+  }
+
+  async function cdAplicarCodigo(){
+    const input = document.getElementById('cartCodigoInput');
+    const btn = document.getElementById('cartCodigoAplicar');
+    const msg = document.getElementById('cartCodigoMsg');
+    const texto = input.value.trim();
+    if(!texto) return;
+    const productos = cdProductosDelCarrito();
+    if(!productos.length) return;
+
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Aplicando...';
+    msg.className = 'cart-code-msg'; msg.textContent = '';
+    try{
+      const resp = await fetch(FUNCTIONS_BASE + '/validarCodigoCheckout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: productos, codigo: texto }),
+      });
+      const data = await resp.json();
+      if(!resp.ok) throw new Error(data.error || 'No se pudo validar el código');
+      if(!data.valido){
+        cdCodigoAplicado = null; cdUltimoPreview = null;
+        msg.textContent = CD_MENSAJES[data.motivo] || 'Ese código no es válido.';
+        msg.classList.add('error');
+      } else {
+        cdCodigoAplicado = data.codigoUsado;
+        cdUltimoPreview = data;
+        input.value = '';
+      }
+    }catch(e){
+      cdCodigoAplicado = null; cdUltimoPreview = null;
+      msg.textContent = 'No se pudo validar el código. Intenta de nuevo.';
+      msg.classList.add('error');
+    }
+    btn.disabled = false; btn.textContent = original;
+    pintarCarrito(); // repinta caja + total con lo que haya quedado
+  }
+
+  function cdQuitarCodigo(){
+    cdCodigoAplicado = null; cdUltimoPreview = null;
+    const msg = document.getElementById('cartCodigoMsg');
+    if(msg){ msg.textContent = ''; msg.className = 'cart-code-msg'; }
+    pintarCarrito();
+  }
+
+  document.getElementById('cartCodigoAplicar')?.addEventListener('click', cdAplicarCodigo);
+  document.getElementById('cartCodigoInput')?.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); cdAplicarCodigo(); }
+  });
+  document.getElementById('cartCodeQuitar')?.addEventListener('click', cdQuitarCodigo);
+
   function pintarCarrito(){
     const cont = document.getElementById('cartItems');
     if(!cont) return;
-    const total = carrito.reduce((s,i)=> s + i.price * i.qty, 0);
+    // Si el carrito cambió desde que se aplicó un código (qty, ítem
+    // agregado/quitado), el preview guardado ya no es de fiar -- se limpia y
+    // se pide reaplicar, en vez de arriesgar mostrar un total desactualizado
+    // (decisión C: nunca un total distinto al que el cliente confirmó).
+    if(cdCodigoAplicado && !cdCarritoCoincideConPreview()){
+      cdCodigoAplicado = null; cdUltimoPreview = null;
+      const m = document.getElementById('cartCodigoMsg');
+      if(m){ m.textContent = 'Tu carrito cambió — vuelve a aplicar el código.'; m.className = 'cart-code-msg'; }
+    }
+    const total = cdTotalConDescuento();
     document.getElementById('cartTotal').textContent = money(total);
+    const descRow = document.getElementById('cartDescuentoRow');
+    if(descRow){
+      const conDescuento = cdCodigoAplicado && cdUltimoPreview && cdUltimoPreview.valido && cdUltimoPreview.descuentoTotal > 0;
+      descRow.style.display = conDescuento ? 'flex' : 'none';
+      if(conDescuento){
+        document.getElementById('cartDescuentoTexto').textContent = `Descuento (${cdCodigoAplicado})`;
+        document.getElementById('cartDescuentoMonto').textContent = '-' + money(cdUltimoPreview.descuentoTotal);
+      }
+    }
+    cdPintarCaja();
 
     const unidades = carrito.reduce((s,i)=> s + i.qty, 0);
     ['cartBadge','cartBadge2','cartBadge3','cartBadge4'].forEach(id=>{
@@ -6528,11 +6706,17 @@
 
     const tipo = (cursos.length && productos.length) ? 'CART_ORDER'
       : cursos.length ? 'COURSE_PURCHASE' : 'PRODUCT_ORDER';
+    // El código de descuento SOLO viaja como texto (nunca % ni monto ni
+    // professionalId) -- el servidor lo vuelve a resolver de cero con
+    // modo:'cobro', que revalida todo (código activo, profesional activo,
+    // producto acepta código) y LANZA si algo cambió desde el último
+    // preview (decisión C: nunca cobrar un monto distinto al confirmado).
+    const codigoParaCobro = (cdCodigoAplicado && cdCarritoCoincideConPreview()) ? cdCodigoAplicado : undefined;
     const datos = tipo === 'PRODUCT_ORDER'
-      ? { items: productos.map(i=> ({ id:i.id, qty:i.qty })) }
+      ? { items: productos.map(i=> ({ id:i.id, qty:i.qty })), ...(codigoParaCobro ? { codigo: codigoParaCobro } : {}) }
       : tipo === 'COURSE_PURCHASE'
       ? { courseId: cursos[0].id }
-      : { courseId: cursos[0].id, items: productos.map(i=> ({ id:i.id, qty:i.qty })) };
+      : { courseId: cursos[0].id, items: productos.map(i=> ({ id:i.id, qty:i.qty })), ...(codigoParaCobro ? { codigo: codigoParaCobro } : {}) };
 
     btn.disabled = true;
     if(btnMp) btnMp.disabled = true;
@@ -6581,6 +6765,20 @@
           restaurarBtnCheckout();
           toast(pago.message || 'Ya existe una cuenta con este correo. Inicia sesión para continuar.');
           abrirAuthParaCarrito(correo);
+          return;
+        }
+        if(pago.codigoRechazado){
+          // El código dejó de ser válido justo antes de cobrar (lo desactivaron,
+          // el profesional quedó inactivo, etc.) -- el servidor abortó ANTES de
+          // crear cualquier transacción con Transbank. Nunca se reintenta solo:
+          // se limpia el código, se refresca el total real y se obliga a que el
+          // cliente vea el monto corregido antes de volver a intentar (decisión C).
+          restaurarBtnCheckout();
+          cdCodigoAplicado = null; cdUltimoPreview = null;
+          pintarCarrito();
+          const msg = document.getElementById('cartCodigoMsg');
+          if(msg){ msg.textContent = 'Ese código dejó de estar disponible. Revisa el total actualizado y vuelve a intentar el pago.'; msg.classList.add('error'); }
+          toast('Ese código ya no está disponible. Revisa el total actualizado antes de volver a pagar.');
           return;
         }
         throw new Error(pago.error || 'No se pudo iniciar el pago');
