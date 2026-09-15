@@ -103,6 +103,54 @@
     --shadow-hover:0 18px 46px rgba(20,20,25,.14);
   }
 
+  /* La reserva completa (servicio, profesional, fecha/hora, datos, pago,
+     confirmación) se mantiene SIEMPRE en modo claro, sin importar el tema
+     activo del resto del sitio (:root[data-theme="dark"], o el sistema).
+     Reasigna tanto las variables "base" como sus alias semánticos
+     (--bg/--panel/--text-hi/etc.) a los mismos valores del tema claro de
+     arriba -- los alias van directo con el valor final (no var(--negro))
+     porque un var() dentro de un custom property NO se vuelve a resolver
+     al heredarse a este contenedor hijo, solo el valor directo. Un
+     selector por id siempre gana contra :root[data-theme=...] sin
+     necesitar !important. Con ambos niveles cubiertos, todo lo de adentro
+     (tarjetas, calendario, modales, desplegables, botones, estados de
+     carga) que ya usa var(--bg)/var(--panel)/etc. lo hereda sin tocar
+     cada componente. */
+  #vistaReservas{
+    --negro:#fcfcfc;
+    --carbon:#FFFFFF;
+    --grafito:#F5F5F7;
+    --humo:#EBEBEE;
+    --linea:rgba(20,20,25,.14);
+    --linea-fuerte:rgba(20,20,25,.22);
+
+    --hueso:#1c1c1c;
+    --gris:#5B5A62;
+    --gris-tenue:#8B8A91;
+
+    --oro:#adadad;
+    --oro-tenue:rgba(173,173,173,.13);
+
+    --glass:rgba(255,255,255,.86);
+    --glass-nav:rgba(255,255,255,.7);
+    --shadow-sm:0 1px 2px rgba(20,20,25,.06);
+    --shadow-md:0 14px 40px rgba(20,20,25,.10);
+    --shadow-hover:0 18px 46px rgba(20,20,25,.14);
+
+    --bg:#fcfcfc;
+    --panel:#FFFFFF;
+    --panel-2:#F5F5F7;
+    --border:rgba(20,20,25,.14);
+    --border-strong:rgba(20,20,25,.22);
+    --text-hi:#1c1c1c;
+    --text-mid:#5B5A62;
+    --text-low:#8B8A91;
+    --accent:#adadad;
+    --accent-tint:rgba(173,173,173,.13);
+
+    color:#1c1c1c;
+  }
+
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{background:var(--negro); color:var(--hueso);
@@ -423,7 +471,7 @@
   .step.done .n{background:var(--ok); color:#fff;}
   .step.done{color:var(--text-hi);}
 
-  .booking-panel{display:grid; grid-template-columns:minmax(0,1.6fr) minmax(230px,.9fr); gap:18px; align-items:start;}
+  .booking-panel{display:grid; grid-template-columns:1fr; gap:18px; align-items:start;}
   .panel-card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
     padding:26px; box-shadow:var(--shadow-sm); min-width:0;}
   .bstep{display:none;}
@@ -511,18 +559,24 @@
   .dp-back{display:block; width:100%; text-align:center; margin-top:12px; background:none; border:none;
     color:var(--text-mid); font-size:.82rem; cursor:pointer; padding:8px;}
   .dp-back:hover{color:var(--text-hi);}
-  @media (max-width:860px){ .dp-bar, .dp-back{display:none;} }
+  /* .dp-bar (Pagar y agendar) y .dp-back (← Volver) quedan reemplazados
+     por la barra flotante universal (#rvBarra/.rv-organic, ver
+     actualizarBarra()) y por "‹ Anterior" arriba -- se ocultan en
+     cualquier tamaño de pantalla para no duplicar ambos controles.
+     #confirmBtn (el botón real, dentro de .dp-bar) sigue en el DOM y
+     funcional: la barra flotante solo le hace click por código. */
+  .dp-bar, .dp-back{display:none;}
 
-  .dp-recap-row{display:flex; align-items:center; gap:12px; padding:6px 0;}
-  .dp-recap-row + .dp-recap-row{border-top:1px solid var(--border); margin-top:6px; padding-top:12px;}
+  .dp-recap-row{display:flex; align-items:center; gap:12px; padding:8px 0;}
+  .dp-recap-row + .dp-recap-row{border-top:1px solid var(--border); margin-top:10px; padding-top:16px;}
   .dp-recap-ic{flex:0 0 auto; width:42px; height:42px; border-radius:50%; background:var(--panel-2);
     display:flex; align-items:center; justify-content:center; color:var(--text-mid);}
   .dp-recap-info{flex:1; min-width:0;}
   .dp-recap-info b{display:block; font-size:.92rem; font-weight:600;}
-  .dp-recap-info span{display:block; color:var(--text-mid); font-size:.78rem; margin-top:2px;}
+  .dp-recap-info span{display:block; color:var(--text-mid); font-size:.8125rem; margin-top:3px;}
   .dp-recap-price{flex:0 0 auto; font-size:.92rem; font-weight:600;}
-  .dp-recap-meta{display:flex; justify-content:space-between; gap:12px; font-size:.82rem;
-    color:var(--text-mid); margin:12px 15px 0;}
+  .dp-recap-meta{display:flex; justify-content:space-between; gap:12px; font-size:.875rem;
+    color:var(--text-mid); margin:16px 15px 0;}
   .dp-recap-meta b{color:var(--text-hi); font-weight:600;}
 
   .dp-upsell-note{color:var(--text-mid); font-size:.8rem; margin:2px 0 12px;}
@@ -561,7 +615,11 @@
   .pay-opt:hover{border-color:var(--accent);}
   .pay-opt.selected{border-color:var(--border-strong); background:var(--panel-2); color:var(--text-hi);}
 
-  .step-actions{display:flex; justify-content:space-between; margin-top:24px;}
+  /* Los botones "← Volver"/"Continuar →" de cada paso quedan reemplazados
+     por "‹ Anterior" arriba y la barra flotante universal (#rvBarra) --
+     se ocultan para no duplicar ambos controles en la misma pantalla
+     (ver actualizarBarra() y el handler de #rvVolver). */
+  .step-actions{display:none;}
   .btn-dark{background:var(--text-hi); color:var(--bg); border:1px solid var(--text-hi); padding:12px 22px; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:600; cursor:pointer;}
   .btn-dark:hover{background:var(--accent); border-color:var(--accent);}
   .btn-dark:disabled{opacity:0.3; cursor:not-allowed;}
@@ -1433,7 +1491,7 @@
      ya usan .svc-nombre/.svc-desc/.svc-pie/.svc-precio con otro estilo
      (mayúsculas, alto fijo, precio en globo) -- nombres separados para
      que no se mezclen los dos componentes por compartir clase. */
-  .svcr-nombre{font-size:.86rem; font-weight:600; line-height:1.3; text-transform:none;}
+  .svcr-nombre{font-size:.875rem; font-weight:600; line-height:1.3; text-transform:none;}
   .svc-chips{display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;}
   .svc-chip{font-size:.74rem; color:var(--text-mid); background:none; padding:0; border:none; border-radius:0;
     display:inline-flex; align-items:center; gap:3px;}
@@ -1493,6 +1551,16 @@
     cursor:pointer; font-family:inherit; white-space:nowrap;}
   .svc-sumar:hover{border-color:var(--text-hi);}
   .svc-opt.selected .svc-sumar{background:var(--text-hi); color:var(--bg); border-color:var(--text-hi);}
+
+  /* Stepper −/cantidad/+ de una tarjeta ya elegida -- reemplaza a
+     "Seleccionar"/"Sumar" en cuanto tiene al menos 1 unidad. */
+  .svc-stepper{display:flex; align-items:center; justify-content:center; gap:2px;
+    border:1px solid var(--border-strong); border-radius:8px; overflow:hidden;}
+  .svc-qty-btn{background:var(--panel); color:var(--text-hi); border:none;
+    width:28px; height:28px; font-size:.9rem; line-height:1; cursor:pointer; font-family:inherit;}
+  .svc-qty-btn:hover{background:var(--panel-2);}
+  .svc-qty-num{min-width:1.4em; text-align:center; font-size:.78rem; font-weight:600; color:var(--text-hi);
+    font-variant-numeric:tabular-nums;}
 
   #sumSvc div{margin-bottom:4px;}
   #sumSvc div .mono{color:var(--text-mid); font-size:.8rem;}
@@ -1587,14 +1655,14 @@
     display:flex; align-items:baseline; gap:7px; padding-bottom:6px; border-bottom:1px solid var(--border);}
   .rv-franja-tit .cnt{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.68rem; font-weight:400; color:var(--text-low);}
   .slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:8px;}
-  .slot{border:1px solid var(--border); border-radius:8px; padding:10px 6px; text-align:center;
-    font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.82rem; cursor:pointer; color:var(--text-mid);
+  .slot{border:1px solid var(--border-strong); border-radius:8px; padding:10px 6px; text-align:center;
+    font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.82rem; font-weight:600; cursor:pointer; color:var(--text-mid);
     background:var(--panel);}
   .slot:hover{border-color:var(--text-hi); color:var(--text-hi);}
   .slot.selected{background:var(--panel-2); color:var(--text-hi); border-color:var(--border-strong);}
   .slot.parcial{border-style:dashed;}
   .slot-aviso{display:block; font-size:.6rem; color:#8a6d1f; margin-top:2px; font-family:var(--font-primary);}
-  .slot.selected .slot-aviso{color:rgba(255,255,255,.7);}
+  .slot.selected .slot-aviso{color:var(--text-mid);}
   .slots-msg{font-size:.86rem; color:var(--text-mid); padding:22px 0; text-align:center;}
 
   /* recap del paso 3 */
@@ -1603,31 +1671,60 @@
   .rv-recap-linea span:first-child{color:var(--text-mid);}
   .rv-recap-linea b{text-align:right;}
 
-  /* resumen lateral */
-  .rv-resumen{position:sticky; top:96px;}
+  /* resumen lateral -- reemplazado por la tarjeta flotante (#rvBarra) en
+     todos los tamaños de pantalla, para no duplicar el resumen. */
+  .rv-resumen{position:sticky; top:96px; display:none;}
   .rv-garantia{margin-top:18px; padding-top:16px; border-top:1px solid var(--border);
     display:flex; flex-direction:column; gap:7px;}
   .rv-g-item{font-size:.76rem; color:var(--text-mid); line-height:1.45;}
 
-  /* barra fija en móvil -- va apilada arriba de la barra flotante global
-     (.bottom-nav, que ahora queda siempre visible por encima de esta vista)
-     para que no se encimen. */
-  .rv-barra{display:none; position:fixed; left:0; right:0;
+  /* tarjeta flotante -- copia directa de la referencia real de AgendaPro,
+     medida en vivo en su propio sitio a varios anchos de pantalla (375,
+     412, 480px): su tarjeta usa un ANCHO FIJO de 350px -- no proporcional
+     al viewport -- así que en teléfonos grandes se ve angosta/compacta,
+     nunca estirada. width+max-width acá replica eso mismo, con un margen
+     de seguridad de 12px por lado en pantallas muy chicas (<374px) donde
+     350px fijo no entraría. Es el ÚNICO resumen de servicios elegidos, en
+     cualquier tamaño de pantalla (reemplaza al sidebar .rv-resumen) -- ver
+     actualizarBarra(): en el paso 1 se oculta solo si todavía no hay nada
+     elegido. Va apilada arriba de la barra flotante global (.bottom-nav,
+     solo en pantallas chicas) para que no se encimen. */
+  .rv-barra{display:flex; position:fixed; left:0; right:0; margin:0 auto;
+    width:350px; max-width:calc(100% - 24px);
     bottom:calc(78px + env(safe-area-inset-bottom)); z-index:8;
-    background:var(--panel); border-top:1px solid var(--border);
-    padding:12px 18px; align-items:center; gap:14px; box-shadow:0 -6px 22px rgba(20,19,17,.09);}
+    background:var(--panel); border:none; border-radius:16px;
+    padding:14px 16px; align-items:center; gap:14px;
+    box-shadow:5px 0 34px rgba(20,19,17,.16);}
+  /* Animación de entrada -- copiada de la referencia (@keyframes
+     slide-top de AgendaPro): sube 100px con fundido de posición, en
+     .3s. Se reinicia a mano en actualizarBarra() (clase quitada/puesta)
+     cada vez que la tarjeta cambia de contenido, igual que en la
+     referencia -- no solo la primera vez que aparece. */
+  @keyframes rvBarraSlideTop{ 0%{transform:translateY(100px);} 100%{transform:translateY(0);} }
+  .rv-barra.rv-barra-anim{ animation:.3s cubic-bezier(.25,.46,.45,.94) both rvBarraSlideTop; }
   .rv-barra-info{flex:1; display:flex; flex-direction:column; min-width:0;}
-  .rv-barra-info span{font-size:.76rem; color:var(--text-mid); white-space:nowrap;
+  .rv-barra-info span{font-size:.8125rem; color:var(--text-mid); white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis;}
   .rv-barra-info b{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.05rem;}
   .rv-barra .btn-dark{padding:12px 24px;}
+  /* Pulso constante en el botón "Continuar" -- no basta con el deslizado
+     de la tarjeta al cambiar de contenido (eso solo se ve si el cliente
+     ya tocó algo); esto llama la atención hacia el botón todo el tiempo
+     que esté habilitado, para que quede claro que hay que tocarlo para
+     avanzar. Se apaga solo (:not(:disabled)) mientras falte elegir algo. */
+  @keyframes rvBtnPulse{
+    0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(0,0,0,.28); }
+    70%{ transform:scale(1.045); box-shadow:0 0 0 9px rgba(0,0,0,0); }
+    100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(0,0,0,0); }
+  }
+  .rv-barra .btn-dark:not(:disabled){ animation:rvBtnPulse 2s ease-in-out infinite; }
 
   /* Solo en el paso 4 ("Total a pagar ahora"): forma orgánica tipo gota de
      agua, activada por JS agregando esta clase -- en los otros 3 pasos la
      misma barra (#rvBarra) sigue exactamente igual que siempre. */
   .rv-barra.rv-organic{
     background:#17171B; border-top:none; margin:0 30px 6px;
-    left:0; right:0; border-radius:22px 17px 20px 15px / 15px 20px 17px 22px;
+    left:0; right:0; width:auto; max-width:none; border-radius:22px 17px 20px 15px / 15px 20px 17px 22px;
     padding:7px 9px 7px 13px; gap:9px;
     position:fixed; overflow:hidden;
     box-shadow:0 10px 26px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.07);
@@ -1638,7 +1735,7 @@
     background:radial-gradient(ellipse at center, rgba(255,255,255,.16), transparent 72%);
     filter:blur(16px); transform:rotate(-14deg);}
   .rv-barra.rv-organic .rv-barra-info{position:relative; z-index:1;}
-  .rv-barra.rv-organic .rv-barra-info span{color:#fff; opacity:.6; font-size:.62rem;}
+  .rv-barra.rv-organic .rv-barra-info span{color:#fff; opacity:.6; font-size:.75rem;}
   .rv-barra.rv-organic .rv-barra-info b{color:#fff; display:block; margin-top:0; font-size:1rem;}
   #rvBarraPct{color:#fff; opacity:.5; font-size:.62rem; display:block; margin-top:0;}
   #rvBarraSub{color:var(--oro-claro); font-size:.62rem; display:block; margin-top:0;}
@@ -1646,11 +1743,26 @@
     padding:7px 14px; font-size:.74rem;}
   .rv-barra.rv-organic .btn-dark:hover{background:var(--oro-claro); border-color:var(--oro-claro);}
 
+  /* Desde acá .bottom-nav ya no queda visible (se oculta a partir de este
+     ancho, ver línea ~735), así que la tarjeta flotante se acerca al
+     borde inferior, igual que en la referencia de AgendaPro (~20px, sin
+     barra de navegación propia con la que competir). */
+  @media (min-width:900px){
+    .rv-barra{bottom:28px;}
+    /* Sin esto el contenido usaría el padding-bottom genérico de .tv-body
+       (90px, pensado para tienda/academia, que no tienen tarjeta
+       flotante) y la última fila quedaría tapada igual. */
+    .tv-body.reservas-vista{padding-bottom:110px;}
+  }
+
   @media (max-width:860px){
-    .rv-resumen{display:none;}
-    .booking-panel{grid-template-columns:1fr;}
-    .rv-barra{display:flex;}
-    .reservas-vista{padding-bottom:calc(160px + env(safe-area-inset-bottom));}
+    /* .tv-body (línea ~992) ya trae su propio padding-bottom (90px, para
+       tienda/academia, que no tienen tarjeta flotante) con la MISMA
+       especificidad que ".reservas-vista" sola -- por orden en la hoja
+       le puede ganar a esta regla, dejando muy poco espacio y tapando la
+       última fila de contenido detrás de la tarjeta flotante (#rvBarra).
+       Con las dos clases juntas esta gana siempre, sin importar el orden. */
+    .tv-body.reservas-vista{padding-bottom:calc(160px + env(safe-area-inset-bottom));}
     .rv-title h2{font-size:1.3rem;}
       .rv-main{padding:18px 16px; min-width:0;}
     .booking-panel{min-width:0;}
@@ -2062,7 +2174,6 @@
     .svc-opt{padding:11px 12px; border-radius:10px; gap:10px;}
     .svc-foto-mini{width:56px; height:56px; border-radius:8px;}
     .svc-foto-mini svg{width:20px; height:20px;}
-    .svcr-nombre{font-size:.82rem;}
     .svc-chips{gap:5px; margin-top:4px;}
     .svc-chip{font-size:.68rem;}
     .svcr-precio{font-size:.82rem;}
@@ -2121,16 +2232,16 @@
     .rv-franjas{gap:11px;}
     .rv-franja-tit{font-size:.7rem; margin-bottom:7px;}
     .slots{gap:6px;}
-    .slot{padding:9px 4px; font-size:.74rem; border-radius:8px;}
+    .slot{padding:9px 4px; font-size:.8125rem; border-radius:8px;}
     .slot-aviso{font-size:.55rem;}
 
     .rv-recap{padding:11px; border-radius:12px; margin-bottom:14px;}
     .rv-recap-linea{font-size:.76rem; padding:3px 0;}
 
-    .rv-barra{padding:9px 13px calc(9px + env(safe-area-inset-bottom)); gap:9px;}
-    .rv-barra-info span{font-size:.68rem;}
+    .rv-barra{padding:12px 14px; gap:9px;}
+    .rv-barra-info span{font-size:.8125rem;}
     .rv-barra-info b{font-size:.9rem;}
-    .rv-barra .btn-dark{padding:9px 16px; font-size:.74rem;}
+    .rv-barra .btn-dark{padding:9px 16px; font-size:.8125rem;}
 
     input[type=text], input[type=tel], input[type=email], input[type=password]{
       padding:9px 11px; font-size:.82rem; margin-bottom:11px;
@@ -2321,7 +2432,8 @@
     top: 50%; transform: translateY(-50%); z-index: 2;
   }
   .tv-head-in > .cart-wrap,
-  .tv-head-in > .icon-btn{
+  .tv-head-in > .icon-btn,
+  .tv-head-in > .rv-paso{
     position: absolute; right: clamp(12px, 3vw, 20px);
     top: 50%; transform: translateY(-50%); z-index: 2;
   }
@@ -2336,6 +2448,11 @@
     /* el botón "Volver" se reduce a la flecha para no chocar con el logo centrado */
     .tv-back{ font-size: 0; padding: 6px 8px; }
     .tv-back::before{ content: "\2190"; font-size: 1.1rem; }
+    /* En los pasos intermedios de la reserva (2-4) sí queremos leer
+       "‹ Anterior" -- el paso 1 sigue igual que siempre (solo la flecha,
+       para no chocar con el logo centrado). */
+    #vistaReservas .tv-back.rv-anterior{ font-size:.78rem; padding:6px 10px 6px 6px; }
+    #vistaReservas .tv-back.rv-anterior::before{ content:none; }
   }
   @media (max-width:520px){
     /* en móvil el header de Inicio tiene 3 iconos a la derecha: el wordmark
@@ -4170,7 +4287,7 @@
     (root || document).querySelectorAll('video[data-src]').forEach(v=> ioVideo.observe(v));
   }
 
-  const state = { svc:null, price:0, barber:null, slot:null };
+  const state = { svc:null, price:0, barber:null, slot:null, barberElegidoPrevio:false };
   function money(n){ return '$' + n.toLocaleString('es-CL'); }
 
   function updateSummary(){
@@ -4200,8 +4317,19 @@
     document.querySelectorAll('.bstep').forEach(b=>{
       b.classList.toggle('active', parseInt(b.dataset.bstep)===n);
     });
+    actualizarBotonVolver(n);
     if(n===2) actualizarTituloPaso2();
     if(typeof actualizarPaso === 'function') actualizarPaso();
+  }
+
+  /** Un solo botón arriba de la reserva: "← Volver al inicio" en el paso 1,
+   *  "‹ Anterior" (un paso atrás, sin perder nada seleccionado) del 2 al 4 --
+   *  para no tener dos botones arriba haciendo cosas distintas. */
+  function actualizarBotonVolver(n){
+    const btn = document.getElementById('rvVolver');
+    if(!btn) return;
+    btn.textContent = n > 1 ? '‹ Anterior' : '← Volver al inicio';
+    btn.classList.toggle('rv-anterior', n > 1);
   }
 
   function actualizarTituloPaso2(){
@@ -4287,47 +4415,22 @@
   }
 
   function marcarTarjetas(){
-    const ids = (state.servicios || []).map(x=> x.id);
     document.querySelectorAll('.svc-opt').forEach(o=>{
-      const dentro = ids.includes(o.dataset.id);
-      o.classList.toggle('selected', dentro);
-      const btn = o.querySelector('[data-sumar]');
-      if(btn){
-        const item = (state.servicios || []).find(x=> x.id === o.dataset.id);
-        btn.textContent = item ? `✓ ${item.qty || 1} · sumar otro` : '＋ Sumar';
-      }
+      const item = (state.servicios || []).find(x=> x.id === o.dataset.id);
+      o.classList.toggle('selected', !!item);
+      const botones = o.querySelector('.svc-botones');
+      if(botones) botones.innerHTML = botonesServicioHTML(item?.qty || 0);
     });
   }
 
+  /** La tarjeta grande de "N servicios elegidos" (chips + botón propio) se
+   *  eliminó -- el resumen de servicios ahora vive únicamente en la barra
+   *  flotante (#rvBarra, ver actualizarBarra()), igual que en AgendaPro.
+   *  Esta función queda como no-op (mantiene #rvElegidos siempre oculto)
+   *  para no tener que tocar cada lugar que todavía la llama. */
   function pintarElegidos(){
     const cont = document.getElementById('rvElegidos');
-    if(!cont) return;
-    const l = state.servicios || [];
-
-    if(!l.length){ cont.style.display = 'none'; return; }
-    cont.style.display = '';
-    cont.innerHTML = `
-      <div class="rv-el-head">
-        <b>${l.reduce((s,x)=> s + (x.qty||1), 0)} ${l.reduce((s,x)=> s + (x.qty||1), 0) === 1 ? 'servicio elegido' : 'servicios elegidos'}</b>
-        <span>${dur(state.duracion)} · ${money(state.price)}</span>
-      </div>
-      <div class="rv-el-chips">
-        ${l.map(x=> `<span class="rv-chip">
-          ${x.qty > 1 ? `<b class="rv-chip-qty">${x.qty}×</b>` : ''}${x.name}
-          <button data-menos="${x.id}" aria-label="Quitar uno">−</button>
-          <button data-mas-q="${x.id}" aria-label="Agregar otro">+</button>
-        </span>`).join('')}
-      </div>
-      <button class="rv-el-go" id="rvElegidosGo">Continuar con ${l.length === 1 ? 'este servicio' : 'estos servicios'} →</button>`;
-
-    cont.querySelectorAll('[data-menos]').forEach(b=>
-      b.addEventListener('click', ()=> quitarServicio(b.dataset.menos)));
-    cont.querySelectorAll('[data-mas-q]').forEach(b=>
-      b.addEventListener('click', ()=>{
-        const x = state.servicios.find(y=> y.id === b.dataset.masQ);
-        if(x){ x.qty = (x.qty || 1) + 1; recalcularServicios(); pintarElegidos(); marcarTarjetas(); updateSummary(); actualizarBarra(); }
-      }));
-    cont.querySelector('#rvElegidosGo').addEventListener('click', avanzarAFechaHora);
+    if(cont) cont.style.display = 'none';
   }
 
   /* duraciones para el modo demo, en minutos */
@@ -4362,21 +4465,23 @@
   }
 
   document.querySelectorAll('[data-back]').forEach(btn=> btn.addEventListener('click', ()=> goToStep(parseInt(btn.dataset.back))));
-  /** Entra al paso 3, salvo que el cliente ya haya elegido su profesional
-   *  antes (modo "por barbero" del paso 1, o lo sugirió el chat de IA) --
-   *  en ese caso arma el plan con ese profesional y, si sigue realmente
-   *  disponible a la hora elegida (y no le tocó otro barbero porque el
-   *  suyo ya no tenía cupo), salta directo al paso 4 sin preguntar de
-   *  nuevo. Si algo cambió, muestra el paso 3 como siempre. */
+  /** Entra al paso 3, salvo que el cliente ya haya elegido un profesional
+   *  ESPECÍFICO antes de llegar a fecha/hora (modo "por barbero" del paso 1,
+   *  o lo sugirió el chat de IA) -- en ese caso arma el plan con ese
+   *  profesional y, si sigue realmente disponible a la hora elegida (y no le
+   *  tocó otro barbero porque el suyo ya no tenía cupo), salta directo al
+   *  paso 4 sin preguntar de nuevo. "Cualquiera" NUNCA cuenta como elección
+   *  previa -- ya sea el default automático al entrar al paso 3, o elegido
+   *  a mano ahí mismo -- así que ir y volver entre fecha/hora y profesional
+   *  siempre vuelve a mostrar el paso 3 (state.barberElegidoPrevio solo se
+   *  marca true para un profesional puntual, ver pintarBarberosArriba() y
+   *  chatIniciarReservaDesdeIA()). Si algo cambió, muestra el paso 3. */
   function irAProfesionalOSaltar(){
-    if(state.barberId){
+    if(state.barberId && state.barberId !== 'any' && state.barberElegidoPrevio){
       const plan = planificarCitas(state.fecha, state.startMin);
-      const respetaEleccion = state.barberId === 'any'
-        ? plan.every(x=> !x.sinCupo)
-        : plan.every(x=> !x.sinCupo && x.barberoId === state.barberId);
+      const respetaEleccion = plan.every(x=> !x.sinCupo && x.barberoId === state.barberId);
       if(respetaEleccion){
         state.plan = plan;
-        if(state.barberId === 'any') state.barber = 'Cualquiera';
         updateSummary();
         goToStep(4);
         prefillBooking();
@@ -5137,7 +5242,9 @@
     state.svc=null; state.price=0; state.barber=null; state.slot=null; state.slotLabel=null;
     state.anticipoReal=null; state.anticipoPct=null; state.montoConProducto=null;
     state.servicios=[]; state.barberId=null; state.duracion=null; state.plan=[];
+    state.barberElegidoPrevio=false;
     state.fecha=null; state.startMin=null;
+    rvOcultarHoyDeLista=false;
     state.upsellCatalogo=[]; state.upsellSeleccion=[];
     if(typeof cambiarModo === 'function') cambiarModo('servicio');
     pintarElegidos(); marcarTarjetas();
@@ -5710,12 +5817,15 @@
 
     state.svc = null; state.price = 0; state.barber = null; state.slot = null;
     state.servicios = []; state.barberId = null; state.duracion = null;
+    state.barberElegidoPrevio = false;
     selectService(svc.name, Number(svc.priceClp).toLocaleString('es-CL'), svc.id, svc.minutes, false);
 
     if(propuesta.barberoNombre){
       const barberos = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
       const b = barberos.find(x=> x.name === propuesta.barberoNombre);
-      if(b){ state.barber = b.name; state.barberId = b.id; }
+      // la IA solo sugiere un profesional puntual, nunca "cualquiera" --
+      // por eso esta sí cuenta como elección previa real.
+      if(b){ state.barber = b.name; state.barberId = b.id; state.barberElegidoPrevio = true; }
     }
 
     chatToggle();
@@ -7456,10 +7566,28 @@
     return h ? (r ? `${h} h ${r} min` : `${h} h`) : `${m} min`;
   }
 
+  /** Botones de una tarjeta de servicio: "Seleccionar" cuando no tiene
+   *  unidades elegidas, o un stepper −/cantidad/+ cuando ya tiene -- este
+   *  stepper es hoy la ÚNICA forma de bajar o quitar un servicio (antes
+   *  vivía en la tarjeta grande de "servicios elegidos", ya eliminada --
+   *  el resumen ahora vive solo en la barra flotante). */
+  function botonesServicioHTML(qty){
+    if(qty > 0){
+      return `
+        <div class="svc-stepper">
+          <button class="svc-qty-btn" data-menos-svc aria-label="Quitar uno">−</button>
+          <span class="svc-qty-num">${qty}</span>
+          <button class="svc-qty-btn" data-mas-svc aria-label="Agregar otro">+</button>
+        </div>`;
+    }
+    return `<button class="svc-agendar" data-agendar>Seleccionar</button>`;
+  }
+
   function tarjetaServicio(s){
     const fotoEstilo = s.photoUrl ? `background-image:url('${s.photoUrl}');` : '';
+    const item = (state.servicios || []).find(x=> x.id === s.id);
     return `
-      <div class="svc-opt ${state.serviceId === s.id ? 'selected' : ''}"
+      <div class="svc-opt ${item ? 'selected' : ''}"
            data-id="${s.id}" data-svc="${s.name}" data-price="${s.priceClp}" data-min="${s.minutes}">
         <div class="svc-foto-mini" style="${fotoEstilo}">${s.photoUrl ? '' : iconoDeServicio(s)}</div>
         <div class="svc-info">
@@ -7473,10 +7601,7 @@
           ${s.description ? `<div class="svcr-desc">${s.description}</div>` : ''}
           ${s.description ? '<button class="svc-mas" data-mas>Más información ›</button>' : ''}
         </div>
-        <div class="svc-botones">
-          <button class="svc-agendar" data-agendar>Seleccionar</button>
-          <button class="svc-sumar" data-sumar>＋ Sumar</button>
-        </div>
+        <div class="svc-botones">${botonesServicioHTML(item?.qty || 0)}</div>
       </div>`;
   }
 
@@ -7525,33 +7650,58 @@
         pintarListaServicios(lista);
       }));
 
-    cont.querySelectorAll('.svc-opt').forEach(card=>{
-      card.addEventListener('click', ()=>
-        selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min), true));
-
-      card.querySelector('[data-mas]')?.addEventListener('click', e=>{
-        e.stopPropagation();
-        const abierto = card.classList.toggle('abierto');
-        e.target.textContent = abierto ? 'Ver menos' : 'Más información';
+    // Delegación de eventos sobre el contenedor (no por tarjeta): el
+    // stepper −/+ hace que marcarTarjetas() reemplace el HTML interno de
+    // .svc-botones sin repintar toda la lista, así que listeners atados
+    // directamente a esos botones se perderían en cada actualización --
+    // atados acá arriba, en un contenedor que nunca se reemplaza a sí
+    // mismo, sobreviven a esos cambios.
+    if(!cont.dataset.wired){
+      cont.dataset.wired = '1';
+      cont.addEventListener('click', e=>{
+        const masInfo = e.target.closest('[data-mas]');
+        if(masInfo){
+          e.stopPropagation();
+          const card = masInfo.closest('.svc-opt');
+          const abierto = card.classList.toggle('abierto');
+          masInfo.textContent = abierto ? 'Ver menos' : 'Más información';
+          return;
+        }
+        // "Seleccionar" agrega el servicio y se queda en la lista -- igual
+        // que "Agendar servicio" en AgendaPro, NUNCA avanza de paso solo. El
+        // único botón que avanza es "Continuar" en la barra flotante.
+        const agendar = e.target.closest('[data-agendar]');
+        if(agendar){
+          e.stopPropagation();
+          const card = agendar.closest('.svc-opt');
+          selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min), true);
+          const item = (state.servicios || []).find(x=> x.id === card.dataset.id);
+          toast(item?.qty > 1
+            ? `${item.qty} × ${card.dataset.svc}`
+            : 'Servicio agregado · puedes sumar más');
+          return;
+        }
+        // Stepper (−/cantidad/+) de una tarjeta ya elegida -- reemplaza a
+        // "Seleccionar"/"Sumar" en cuanto tiene al menos 1 unidad. Es hoy
+        // la única forma de bajar o quitar un servicio.
+        const masSvc = e.target.closest('[data-mas-svc]');
+        if(masSvc){
+          e.stopPropagation();
+          const card = masSvc.closest('.svc-opt');
+          selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min), true);
+          return;
+        }
+        const menosSvc = e.target.closest('[data-menos-svc]');
+        if(menosSvc){
+          e.stopPropagation();
+          const card = menosSvc.closest('.svc-opt');
+          quitarServicio(card.dataset.id);
+          return;
+        }
+        const card = e.target.closest('.svc-opt');
+        if(card) selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min), true);
       });
-
-      // "Agendar" selecciona y avanza de inmediato al paso siguiente
-      card.querySelector('[data-agendar]').addEventListener('click', e=>{
-        e.stopPropagation();
-        selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min));
-        avanzarAFechaHora();
-      });
-
-      // "Sumar" agrega el servicio y deja al cliente seguir eligiendo
-      card.querySelector('[data-sumar]').addEventListener('click', e=>{
-        e.stopPropagation();
-        selectService(card.dataset.svc, card.dataset.price, card.dataset.id, Number(card.dataset.min), true);
-        const item = (state.servicios || []).find(x=> x.id === card.dataset.id);
-        toast(item?.qty > 1
-          ? `${item.qty} × ${card.dataset.svc}`
-          : 'Servicio agregado · puedes sumar más');
-      });
-    });
+    }
   }
 
   document.getElementById('svcBuscar')?.addEventListener('input', ()=>
@@ -7627,6 +7777,12 @@
   // cuántos días hacia adelante ya se avanzó con "›" -- siempre múltiplo de 7,
   // para que cada página sea una semana completa, como en un calendario real.
   let rvDiasOffset = 0;
+  // true cuando "hoy" ya no tiene ningún horario disponible -- lo decide
+  // avanzarAFechaHora() (que sí puede consultar disponibilidad real, de
+  // forma async) y pintarDias() lo usa para OMITIR hoy de la fila, igual
+  // que AgendaPro: si hoy ya no sirve, ni siquiera aparece en la lista,
+  // en vez de mostrarse sin horarios y dejar que el cliente lo toque.
+  let rvOcultarHoyDeLista = false;
 
   function pintarDias(){
     const cont = document.getElementById('rvDias');
@@ -7636,14 +7792,16 @@
     const sel = document.getElementById('bookDate').value || hoy.toISOString().slice(0,10);
     let html = '';
     let primerDia = null;
+    const saltar = (rvDiasOffset === 0 && rvOcultarHoyDeLista) ? 1 : 0;
 
     for(let i = 0; i < 14; i++){
+      const n = rvDiasOffset + saltar + i;
       const d = new Date(hoy);
-      d.setDate(hoy.getDate() + rvDiasOffset + i);
+      d.setDate(hoy.getDate() + n);
       if(i === 0) primerDia = d;
       const iso = d.toISOString().slice(0,10);
       const cerrado = !horarioDelDia(iso);
-      const etiqueta = rvDiasOffset === 0 && i === 0 ? 'hoy' : rvDiasOffset === 0 && i === 1 ? 'mañana' : DIAS_CORTO[d.getDay()];
+      const etiqueta = n === 0 ? 'hoy' : n === 1 ? 'mañana' : DIAS_CORTO[d.getDay()];
 
       html += `<div class="rv-dia ${iso===sel?'on':''} ${cerrado?'cerrado':''}" data-d="${iso}">
         <div class="rv-dia-nom">${etiqueta}</div>
@@ -7720,7 +7878,7 @@
   }
 
   /* ---------- primer horario disponible ---------- */
-  async function buscarPrimerHorario(aplicar){
+  async function buscarPrimerHorario(aplicar, elegirSlot = true){
     const detalle = document.getElementById('rvProntoDetalle');
     const hoy = new Date();
 
@@ -7761,9 +7919,11 @@
             document.getElementById('bookDate').value = iso;
             pintarDias();
             await loadSlots();
-            const btn = document.querySelector(`#slotPick .slot[data-min="${s.min}"]`);
-            if(btn) btn.click();
-            document.getElementById('slotPick').scrollIntoView({behavior:'smooth', block:'center'});
+            if(elegirSlot){
+              const btn = document.querySelector(`#slotPick .slot[data-min="${s.min}"]`);
+              if(btn) btn.click();
+              document.getElementById('slotPick').scrollIntoView({behavior:'smooth', block:'center'});
+            }
           }
 
           // Precarga en background la ocupación de los días que siguen -- así
@@ -8038,9 +8198,23 @@
     const svcTxt = document.getElementById('rvBarraSvc');
     const total = document.getElementById('rvBarraTotal');
     const btn = document.getElementById('rvBarraBtn');
+    const barra = document.getElementById('rvBarra');
     if(!btn) return;
 
-    document.getElementById('rvBarra')?.classList.toggle('rv-organic', paso === 4);
+    // En el paso 1 (único paso donde puede no haber nada elegido todavía)
+    // la barra flotante solo aparece una vez que hay al menos un servicio
+    // -- igual que AgendaPro, que tampoco la muestra en blanco.
+    const oculta = paso === 1 && !state.svc;
+    if(barra) barra.style.display = oculta ? 'none' : '';
+
+    // Huella del contenido visible ANTES de tocar nada -- checkConfirmar()
+    // llama a esta función en cada tecla que se escribe en los campos de
+    // contacto (paso 4), y ahí el texto/precio/botón de la barra casi
+    // nunca cambian: sin esto, la animación de entrada (más abajo) se
+    // reiniciaba en cada letra y la tarjeta se veía "temblar" al escribir.
+    const huellaAntes = barra ? `${svcTxt.textContent}|${total.textContent}|${btn.disabled}|${btn.textContent}` : null;
+
+    barra?.classList.toggle('rv-organic', paso === 4);
     total.textContent = money(paso === 4 && state.montoConProducto != null ? state.montoConProducto : (state.price || 0));
     const pctEl = document.getElementById('rvBarraPct');
     const subEl = document.getElementById('rvBarraSub');
@@ -8054,10 +8228,11 @@
     }
 
     if(paso === 1){
-      svcTxt.textContent = state.svc || 'Elige un servicio';
+      const nSvc = (state.servicios || []).reduce((s,x)=> s + (x.qty || 1), 0);
+      svcTxt.textContent = nSvc > 1 ? `${nSvc} servicios seleccionados` : (state.svc || 'Elige un servicio');
       btn.textContent = 'Continuar';
       btn.disabled = !state.svc;
-      btn.onclick = ()=> goToStep(2);
+      btn.onclick = avanzarAFechaHora;
     } else if(paso === 2){
       svcTxt.textContent = state.slot || 'Elige fecha y hora';
       btn.textContent = 'Continuar';
@@ -8073,6 +8248,19 @@
       btn.textContent = 'Pagar y agendar';
       btn.disabled = false;
       btn.onclick = ()=> document.getElementById('confirmBtn').click();
+    }
+
+    // Reinicia la animación de entrada (slide-top, copiada de AgendaPro)
+    // solo si el contenido visible realmente cambió -- así saltar de paso,
+    // agregar/quitar un servicio o elegir hora sigue animando, pero escribir
+    // en los campos de contacto (que no cambia nada de esto) no la retoca.
+    if(barra && !oculta){
+      const huellaAhora = `${svcTxt.textContent}|${total.textContent}|${btn.disabled}|${btn.textContent}`;
+      if(huellaAhora !== huellaAntes){
+        barra.classList.remove('rv-barra-anim');
+        void barra.offsetWidth;
+        barra.classList.add('rv-barra-anim');
+      }
     }
   }
 
@@ -8141,6 +8329,10 @@
       o.addEventListener('click', ()=>{
         state.barber = o.dataset.b;
         state.barberId = o.dataset.id;
+        // "Cualquiera" acá tampoco cuenta como elección previa -- solo un
+        // profesional puntual, elegido ANTES de fecha/hora, habilita saltar
+        // el paso 3 más adelante (ver irAProfesionalOSaltar()).
+        state.barberElegidoPrevio = (o.dataset.id !== 'any');
         row.querySelectorAll('.barber-opt').forEach(x=> x.classList.toggle('selected', x===o));
 
         // confirmamos la elección y mostramos los servicios
@@ -8149,7 +8341,7 @@
         aviso.innerHTML = `<b>${state.barber}</b> · ahora elige el servicio
           <button class="rv-cambiar" data-cambiar>Cambiar</button>`;
         aviso.querySelector('[data-cambiar]').addEventListener('click', ()=>{
-          state.barber = null; state.barberId = null;
+          state.barber = null; state.barberId = null; state.barberElegidoPrevio = false;
           aviso.style.display = 'none';
           document.getElementById('rvZonaServicios').style.display = 'none';
           row.querySelectorAll('.barber-opt').forEach(x=> x.classList.remove('selected'));
@@ -8167,12 +8359,26 @@
    * volvemos a preguntar: cargamos directamente los horarios disponibles.
    */
   /** Entra al paso 2 (fecha y hora) -- el barbero se elige después, en el paso 3. */
-  function avanzarAFechaHora(){
+  async function avanzarAFechaHora(){
     goToStep(2);
-    pintarDias();
-    loadSlots();
-    buscarPrimerHorario(false);
     document.getElementById('vistaReservas').scrollTop = 0;
+
+    // Si hoy ya no quedan horarios, no tiene sentido abrir el paso mostrando
+    // "hoy" vacío -- salta directo al primer día (de los próximos 14) que sí
+    // tenga hueco, dejando que el cliente elija la hora dentro de ese día, y
+    // "hoy" ni siquiera aparece en la fila de fechas (igual que AgendaPro).
+    // Si hoy sí tiene, se queda en hoy como siempre.
+    const hoyIso = new Date().toISOString().slice(0,10);
+    document.getElementById('bookDate').value = hoyIso;
+    const slotsHoy = await calcularSlots(hoyIso);
+    rvOcultarHoyDeLista = !slotsHoy.length;
+    pintarDias();
+    if(slotsHoy.length){
+      pintarFranjas(slotsHoy, hoyIso);
+      buscarPrimerHorario(false);
+    } else {
+      buscarPrimerHorario(true, false);
+    }
   }
 
   /* ==========================================================
@@ -8533,8 +8739,14 @@
   }
 
   document.getElementById('rvVolver').addEventListener('click', ()=>{
-    irAInicio();   // "Volver al inicio" -> portada, no history.back()
-    if(typeof reiniciarModoReserva === 'function') reiniciarModoReserva();
+    const pasoActivo = document.querySelector('#vistaReservas .step.active');
+    const n = pasoActivo ? parseInt(pasoActivo.dataset.step) : 1;
+    if(n > 1){
+      goToStep(n - 1);   // "‹ Anterior" -> mismo paso que ya usan los data-back, conserva todo lo seleccionado
+    } else {
+      irAInicio();   // "Volver al inicio" -> portada, no history.back()
+      if(typeof reiniciarModoReserva === 'function') reiniciarModoReserva();
+    }
   });
 
 
