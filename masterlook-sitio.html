@@ -5173,47 +5173,42 @@
           // correo de contacto de esta reserva (ver reservas.js). Sin
           // sesión, no se manda nada -- la reserva de invitado sigue
           // igual que siempre.
-          // text/plain (no application/json) para que la reserva de invitado
-          // sea "simple request" y NO dispare el preflight CORS -- una vuelta
-          // OPTIONS que en frío cuesta ~2-3 s. El cuerpo sigue siendo JSON;
-          // la Function lo parsea. Si hay sesión, el header Authorization
-          // reintroduce el preflight (no es evitable), pero la mayoría de las
-          // reservas son de invitado.
-          const holdHeaders = { 'Content-Type': 'text/plain' };
+          // Una sola llamada a webpayCrearTransaccion -- el hold (antes
+          // creado aparte en crearHoldReserva, un viaje de red completo a
+          // una función que nunca tiene minInstances) ahora se crea DENTRO
+          // de la misma petición que ya paga el rate limit y llama a
+          // Transbank (ver "flujo nuevo" en webpay.js/webpayCrearTransaccion,
+          // 2026-09-15). text/plain (no application/json) para que la
+          // reserva de invitado siga siendo "simple request" y NO dispare
+          // el preflight CORS -- el cuerpo sigue siendo JSON, la Function
+          // lo parsea igual. Si hay sesión, el header Authorization
+          // reintroduce el preflight (no es evitable, pero la mayoría de
+          // las reservas son de invitado) -- se manda igual que antes,
+          // ahora en esta única llamada, para que "vincular de inmediato a
+          // Mi cuenta" siga funcionando para el cliente con sesión.
+          const pagoHeaders = { 'Content-Type': 'text/plain' };
           if(auth.currentUser){
-            try{ holdHeaders['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken(); }catch(e){}
+            try{ pagoHeaders['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken(); }catch(e){}
           }
-          const holdResp = await fetch(FUNCTIONS_BASE + '/crearHoldReserva', {
+          const pagoResp = await fetch(FUNCTIONS_BASE + '/webpayCrearTransaccion', {
             method: 'POST',
-            headers: holdHeaders,
+            headers: pagoHeaders,
             body: JSON.stringify({
+              tipo: 'RESERVATION_DEPOSIT',
               fecha: state.fecha,
               client: datos.name, phone: datos.phone, email: datos.email,
               citas: citas.map(c=> ({
                 serviceId: c.servicioId, servicio: c.servicio, price: c.precio,
                 barberName: c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
               })),
-            }),
-          });
-          const hold = await holdResp.json();
-          if(!holdResp.ok) throw new Error(hold.error || 'No se pudo reservar la hora');
-
-          const pagoResp = await fetch(FUNCTIONS_BASE + '/webpayCrearTransaccion', {
-            method: 'POST',
-            // text/plain: sin Authorization acá, así que esto SÍ elimina el
-            // preflight CORS por completo (~2-3 s en frío). Cuerpo JSON igual.
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-              tipo: 'RESERVATION_DEPOSIT',
               datos: {
-                grupo: hold.grupo,
                 productos: (state.upsellSeleccion || []).map(s=> ({ id: s.id, qty: 1 })),
               },
               buyerName: datos.name, buyerEmail: datos.email, buyerPhone: datos.phone,
             }),
           });
           const pago = await pagoResp.json();
-          if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo iniciar el pago del anticipo');
+          if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo reservar ni iniciar el pago. Intenta de nuevo.');
           redirectToWebpay(pago.url, pago.token);
         }catch(e){
           pagoEnCurso = false;
