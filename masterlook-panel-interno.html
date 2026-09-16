@@ -14208,7 +14208,12 @@
       document.getElementById('pcStock').value = '0';
       document.getElementById('pcDescripcion').value = '';
       document.getElementById('pcCategoria').value = '';
-      productsCache.push(nuevo);
+      // No se agrega a mano acá -- el listener onSnapshot (más arriba) ya
+      // reacciona a esta misma escritura local (Firestore lo dispara antes
+      // de que este await termine) y reemplaza productsCache completo con
+      // el producto ya incluido. Agregarlo también acá lo duplicaba en el
+      // catálogo (documento único en Firestore, pero dos entradas en
+      // memoria).
       pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
     btn.disabled = false; btn.textContent = '+ Agregar producto';
