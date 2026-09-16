@@ -2033,7 +2033,6 @@
         <button class="nav-group-head" type="button">Tienda</button>
         <div class="nav-group-items">
           <button class="menu-panel-item" id="btnProductos">Panel · inventario</button>
-          <button class="menu-panel-item" id="btnTiendaVer">Ver productos</button>
           <button class="menu-panel-item" id="btnVentasTienda">Ventas facturadas</button>
         </div>
       </div>
@@ -3386,6 +3385,7 @@
           <button class="ctrl-btn cx-navbtn2 on" data-pvv="ventas">Ventas</button>
           <button class="ctrl-btn cx-navbtn2" data-pvv="catalogo">Catálogo</button>
           <button class="ctrl-btn cx-navbtn2" id="pvTabComisiones" data-pvv="comisiones" style="display:none;">Comisiones y códigos</button>
+          <button class="ctrl-btn cx-navbtn2" id="pvTabReferidos" data-pvv="referidos" style="display:none;">Referidos</button>
           <button class="ctrl-btn" id="pvVolver">← Volver a la agenda</button>
         </div>
       </div>
@@ -3658,6 +3658,101 @@
            presencial/online) ya NO vive acá -- se edita desde Productos →
            Catálogo → lápiz de cada producto (modalPcEditarProducto), para no
            duplicar la config del producto en dos pantallas distintas. -->
+
+      <!-- Panel: Referidos -- profesionales y personas externas con código
+           propio (crearReferido/actualizarReferido/listarReferidos,
+           referidos.js). Sistema INDEPENDIENTE de Comisiones y códigos de
+           arriba (promoCodes) -- comparten pestañero solo porque ambos
+           viven bajo Productos. Con un referido activo el cliente paga el
+           precio normal (sin descuento) -- la comisión y los puntos van
+           para el referido/cliente, nunca un descuento propio. -->
+      <div id="pvReferidosPanel" style="display:none;">
+        <div class="cx-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <p class="mg-note" style="margin:0;">Personas (profesionales de Masterlook o externos) que traen ventas por su propio código o link. El cliente siempre paga el precio normal -- si además trae un código promocional, se omite automáticamente a favor del referido.</p>
+            <button class="ctrl-btn primary" id="rfNuevo" style="display:none;">+ Nuevo referido</button>
+          </div>
+          <div class="cx-kpis">
+            <div class="cx-kpi"><div class="k">Total referidos</div><div class="v" id="rfKpiTotal">0</div></div>
+            <div class="cx-kpi"><div class="k">Activos</div><div class="v" id="rfKpiActivos">0</div></div>
+            <div class="cx-kpi"><div class="k">Profesionales</div><div class="v" id="rfKpiProfesionales">0</div></div>
+            <div class="cx-kpi"><div class="k">Externos</div><div class="v" id="rfKpiExternos">0</div></div>
+          </div>
+          <div class="cx-tablebox" style="overflow-x:auto;">
+            <table class="cx-table" style="min-width:900px;">
+              <thead><tr>
+                <th>Nombre</th><th>Tipo</th><th>Código</th><th class="r">Comisión</th><th class="r">Puntos / $1.000</th>
+                <th>Estado</th><th class="r">Ventas</th><th class="r">Monto generado</th><th class="r">Comisión generada</th><th class="r">Puntos entregados</th><th class="r">Editar</th>
+              </tr></thead>
+              <tbody id="rfTabla"><tr><td colspan="11" class="cx-empty">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="mg-modal" id="modalReferido">
+        <div class="mg-head">
+          <h3 id="rfmTitulo">Nuevo referido</h3>
+          <button class="mg-close" data-close>✕</button>
+        </div>
+        <div>
+          <label class="mg-label">Nombre</label>
+          <input type="text" id="rfNombre" class="mg-input" placeholder="Ej: Diego Muñoz">
+        </div>
+        <div style="margin-top:12px;">
+          <label class="mg-label">Tipo</label>
+          <select id="rfTipo" class="mg-input">
+            <option value="PROFESIONAL">Profesional de Masterlook</option>
+            <option value="EXTERNO">Persona externa</option>
+          </select>
+        </div>
+        <div id="rfZonaProfesional" style="margin-top:12px;">
+          <label class="mg-label">Profesional</label>
+          <select id="rfProfesional" class="mg-input"></select>
+        </div>
+        <div id="rfZonaExterno" style="display:none;">
+          <div style="margin-top:12px;">
+            <label class="mg-label">Correo de contacto</label>
+            <input type="email" id="rfExtEmail" class="mg-input" placeholder="nombre@correo.cl">
+          </div>
+          <div style="margin-top:12px;">
+            <label class="mg-label">Teléfono de contacto</label>
+            <input type="tel" id="rfExtTelefono" class="mg-input" placeholder="+56 9 1234 5678">
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="mg-label">Código</label>
+          <input type="text" id="rfCodigo" class="mg-input" placeholder="Ej: DIEGOREF" maxlength="20" style="text-transform:uppercase;">
+          <div class="mg-note" style="margin:4px 0 0;">3 a 20 letras/números, sin espacios ni símbolos.</div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="mg-label">Link de referido</label>
+          <input type="text" id="rfLink" class="mg-input" readonly style="background:#f5f5f7;">
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="mg-btn ghost" id="rfCopiarLinkModal" type="button" style="flex:1;">Copiar link</button>
+            <button class="mg-btn ghost" id="rfAbrirLinkModal" type="button" style="flex:1;">Abrir link</button>
+          </div>
+          <div class="mg-note" style="margin:8px 0 0;">Lleva directo a la tienda con el código ya aplicado. Se actualiza solo si cambias el código.</div>
+        </div>
+        <div class="cu-box" style="margin-top:12px;">
+          <div class="cu-box-title">Referido</div>
+          <div class="cu-box-note">Comisión y puntos son independientes -- ninguno es un descuento para el cliente.</div>
+          <label class="mg-label">Comisión del referido (%)</label>
+          <input type="number" id="rfComisionPct" class="mg-input" min="0" max="100" step="0.5">
+          <div style="margin-top:10px;">
+            <label class="mg-label">Puntos por cada $1.000 (cliente)</label>
+            <input type="number" id="rfPuntosPorMil" class="mg-input" min="0" max="50" step="1">
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="mg-label">Estado</label>
+          <select id="rfEstado" class="mg-input">
+            <option value="activo">Activo</option>
+            <option value="pausado">Pausado</option>
+          </select>
+        </div>
+        <button class="mg-btn solid full" id="rfGuardar" style="margin-top:18px;">Guardar</button>
+      </div>
 
       <div class="mg-modal" id="modalCodigoBarbero">
         <div class="mg-head">
@@ -5204,10 +5299,6 @@
 
   // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
   document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
-  document.getElementById('btnTiendaVer').addEventListener('click', ()=>{
-    if(barberoBloqueado()) return;
-    window.open('masterlook-sitio.html#tienda', '_blank');
-  });
   document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarHorariosPage);
   document.getElementById('btnEquipoServicios').addEventListener('click', mostrarHorariosPage);
   document.getElementById('btnComProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
@@ -5712,25 +5803,29 @@
   let sesionResuelta = false;
 
   /* Lee staff/{uid} resistente a la carrera del token: justo al restaurar
-     sesión (F5 en el panel, o llegada directa por URL) el token puede no
-     haber llegado aún al SDK de Firestore y devolver permission-denied por
-     carrera -- no porque no sea staff. Misma técnica que destinoDeLogin() en
-     el sitio: una lectura de control (su propio customers/{uid}, que cualquier
-     sesión válida puede hacer) distingue la carrera de un permission-denied
-     real. Si la de control pasa y staff sigue denegando -> no es staff, se
-     devuelve null sin esperar. Si la de control falla -> carrera: hasta 3
-     intentos refrescando el token (getIdToken(true)) desde el 2º, con esperas
-     cortas. NO relaja nada: agotados los intentos, o ficha inexistente,
-     devuelve null y la sesión se expulsa igual que antes. */
+     sesión (F5 en el panel, llegada directa por URL, o un redirect completo
+     desde masterlook-sitio.html) el token puede no haber llegado aún al SDK
+     de Firestore y devolver permission-denied por carrera -- no porque no
+     sea staff. Hasta 3 intentos, refrescando el token (getIdToken(true))
+     desde el 2º, con esperas cortas entre cada uno.
+     Antes había un atajo: una lectura de control (customers/{uid}) que, si
+     pasaba, se asumía "el token ya llegó" y un permission-denied de staff
+     inmediatamente después se trataba como denegación real (sin agotar los
+     3 intentos). Pero la regla de customers/{uid} es un chequeo directo
+     (request.auth.uid == uid, sin get() anidado) y la de staff/{uid} pasa
+     por isStaff() -> isAdmin()/hasStaffDoc(), que SÍ hacen su propio
+     get()/exists() interno sobre el mismo doc -- más lenta. Esa diferencia
+     hacía que la de control pasara un instante ANTES de que la de staff
+     estuviera lista, y el atajo expulsaba (signOut) a staff real que SÍ
+     tenía sesión válida -- se vio con darlingquevedo02@gmail.com al llegar
+     por redirect desde el sitio (bucle sitio<->panel, terminaba desconectada).
+     Ahora los 3 intentos siempre se agotan antes de decidir "no es staff". */
   async function leerFichaStaffPanel(user){
     for(let intento = 0; intento < 3; intento++){
       try{ await user.getIdToken(intento > 0); }catch(e){}
-      let tokenListo = false;
-      try{ await db.collection('customers').doc(user.uid).get(); tokenListo = true; }catch(e){}
       try{
         return await db.collection('staff').doc(user.uid).get();
       }catch(e){
-        if(tokenListo) return null;   // token confirmado -> no es staff
         if(intento < 2) await new Promise(r=> setTimeout(r, 150));
       }
     }
@@ -5739,8 +5834,36 @@
 
   auth.onAuthStateChanged(async user=>{
     if(redirigiendoDesdePanel) return; // ya decidimos a dónde vamos; ignorar este re-disparo
+    await procesarEstadoAuthPanel(user);
+  });
+
+  /** Separado de onAuthStateChanged para poder auto-invocarse con el user
+   *  real sin depender de que el SDK dispare un segundo callback (ver
+   *  comentario de la carrera un poco más abajo). */
+  async function procesarEstadoAuthPanel(user){
+    if(redirigiendoDesdePanel) return;
 
     if(!user){
+      // MISMA carrera que ya se documentó en leerFichaStaffPanel, pero un
+      // nivel más arriba: el SDK puede disparar onAuthStateChanged con
+      // null en el PRIMER llamado incluso con una sesión LOCAL persistida
+      // real, sobre todo justo después de llegar acá por un location.href
+      // desde masterlook-sitio.html (el SDK recién está releyendo
+      // IndexedDB en esta página nueva). Expulsar de inmediato con ese
+      // primer null (como hacía antes) es lo que causaba el bucle
+      // sitio<->panel y terminaba cerrando la sesión de staff real (se vio
+      // con darlingquevedo02@gmail.com). Acá NO se espera un segundo
+      // callback del propio observer (no siempre llega) -- se reconsulta
+      // auth.currentUser directo hasta 3 veces con respiro corto, y si
+      // aparece, se seudo-repite este mismo procesamiento con el user real
+      // en vez de expulsar. Si de verdad no hay sesión, se sigue viendo
+      // null y expulsa igual que siempre.
+      let real = auth.currentUser;
+      for(let intento = 0; !real && intento < 3; intento++){
+        await new Promise(r=> setTimeout(r, 150));
+        real = auth.currentUser;
+      }
+      if(real){ await procesarEstadoAuthPanel(real); return; }
       redirigiendoDesdePanel = true;
       location.href = 'index.html?volverAPanel=1';
       return;
@@ -5792,7 +5915,7 @@
     pintarBarraNav();
     entrarAlPanel(user.email);
     if(userRole === 'BARBER') mostrarVistaBarbero();
-  });
+  }
 
   /** Barra de navegación del área administrativa (masterlook-nav-comun.js).
    *  No reemplaza el menú lateral existente, se agrega debajo de la topbar.
@@ -6416,6 +6539,8 @@
   // mostrarControlesAdmin(), mismo criterio que exige el backend.
   let puedeVerComisionesProductos = false;
   let puedeEditarComisionesProductos = false;
+  let puedeVerReferidos = false;
+  let puedeEditarReferidos = false;
 
   async function api(path, options = {}){
     const res = await fetch(API_BASE + path, {
@@ -6505,13 +6630,13 @@
     // solo evita mostrar el botón a quien de todas formas no podría usarlo.
     document.getElementById('btnResumenVentas').style.display = soloAdmin;
 
-    // Clientes/Horarios/Reseñas/ARCO, Mensajería WhatsApp y "Ver productos"
-    // de Tienda: administrador y recepción sí, barbero no. El barbero tiene
-    // su propia vista (su día + sus comisiones); no gestiona clientes,
-    // catálogo, tienda ni la comunicación con clientes.
+    // Clientes/Horarios/Reseñas/ARCO y Mensajería WhatsApp: administrador y
+    // recepción sí, barbero no. El barbero tiene su propia vista (su día +
+    // sus comisiones); no gestiona clientes, catálogo, tienda ni la
+    // comunicación con clientes.
     const cliOn = (userRole === 'ADMIN' || userRole === 'RECEPTION') ? '' : 'none';
     ['btnClientes','btnHorarios','btnServiciosCatalogo','btnResenas','btnArco',
-     'btnArchivosMultimedia','btnMensajeriaWhatsapp','btnTiendaVer'].forEach(id=>{
+     'btnArchivosMultimedia','btnMensajeriaWhatsapp'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = cliOn;
     });
 
@@ -6538,6 +6663,17 @@
     puedeEditarComisionesProductos = userRole === 'ADMIN' || userPermissions.includes('COMISIONES_EDITAR');
     const tabComEl = document.getElementById('pvTabComisiones');
     if(tabComEl) tabComEl.style.display = puedeVerComisionesProductos ? '' : 'none';
+
+    // Referidos (4ª pestaña de Productos): mismo criterio que exige el
+    // backend (verificarReferidosVer/Editar en referidos.js) -- ADMIN
+    // siempre, o staff con REFERIDOS_VER/REFERIDOS_EDITAR.
+    puedeVerReferidos = userRole === 'ADMIN'
+      || userPermissions.includes('REFERIDOS_VER') || userPermissions.includes('REFERIDOS_EDITAR');
+    puedeEditarReferidos = userRole === 'ADMIN' || userPermissions.includes('REFERIDOS_EDITAR');
+    const tabRefEl = document.getElementById('pvTabReferidos');
+    if(tabRefEl) tabRefEl.style.display = puedeVerReferidos ? '' : 'none';
+    const rfNuevoEl = document.getElementById('rfNuevo');
+    if(rfNuevoEl) rfNuevoEl.style.display = puedeEditarReferidos ? '' : 'none';
 
     // Campañas: por ahora solo administrador (envío masivo de correo).
     const campanasEl = document.getElementById('btnCampanas');
@@ -13560,6 +13696,8 @@
     { id:'TIENDA_EDITAR',     nombre:'Administrar productos',      grupo:'Configuración' },
     { id:'COMISIONES_VER',    nombre:'Ver comisiones',             grupo:'Dinero', sensible:true },
     { id:'COMISIONES_EDITAR', nombre:'Cambiar porcentajes',        grupo:'Dinero', sensible:true },
+    { id:'REFERIDOS_VER',     nombre:'Ver referidos',              grupo:'Dinero', sensible:true },
+    { id:'REFERIDOS_EDITAR',  nombre:'Crear y editar referidos',   grupo:'Dinero', sensible:true },
     { id:'USUARIOS_EDITAR',   nombre:'Dar acceso a otros',         grupo:'Dinero', sensible:true },
     { id:'CURSOS_ACCESOS',    nombre:'Otorgar, extender o revocar acceso a cursos', grupo:'Dinero', sensible:true },
   ];
@@ -13685,8 +13823,10 @@
       document.getElementById('pvVentas').style.display = v === 'ventas' ? '' : 'none';
       document.getElementById('pvCatalogo').style.display = v === 'catalogo' ? '' : 'none';
       document.getElementById('pvComisionesPanel').style.display = v === 'comisiones' ? '' : 'none';
+      document.getElementById('pvReferidosPanel').style.display = v === 'referidos' ? '' : 'none';
       if(v === 'catalogo') pintarCatalogoProductos();
       if(v === 'comisiones') pgCargar();
+      if(v === 'referidos') rfCargar();
     }));
 
   /** Mismas categorías que el selector "Categoría" del formulario y que las
@@ -13697,6 +13837,8 @@
   let pcEditorProductoId = null; // id del producto cargado ahora mismo en modalPcEditarProducto
 
   const PC_ICONO_LAPIZ = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+  // Mismo ícono de "link" que ya usa "Asociar transacción" (cobro en local) -- se reutiliza tal cual.
+  const PC_ICONO_LINK = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1.5-1.5"/></svg>`;
   const PC_ICONO_PAPELERA = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`;
   const PC_ICONO_REACTIVAR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`;
   const PC_UMBRAL_STOCK_BAJO = 5;
@@ -14272,6 +14414,182 @@
       cerrarModales();
       pgModalProfId = null;
       await pgCargarProfesionales();
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || e)); }
+    btn.disabled = false; btn.textContent = 'Guardar';
+  });
+
+  /* =====================================================================
+     Referidos (4ª pestaña de Productos) -- referidos.js. Sistema
+     INDEPENDIENTE de Comisiones y códigos de arriba (promoCodes):
+     colección propia (`referidos`), sin descuento al cliente, comisión +
+     puntos para el referido/cliente. crearReferido/actualizarReferido/
+     listarReferidos, todos callables server-side (verificarReferidosVer/
+     Editar ya protegen del lado del servidor).
+     ===================================================================== */
+  let rfUltimaLista = [];
+  let rfEditandoId = null; // null = creando uno nuevo
+
+  /** Link de referido -- ?rf=CODIGO (no ?ref=, ese ya lo usa el retorno de
+   *  Mercado Pago) hacia la tienda del sitio público. El sitio
+   *  (masterlook-sitio.html/capturarReferidoDeLink) lo guarda en
+   *  localStorage al llegar y lo manda como referidoCodigo/referidoFuente:
+   *  'link' al pagar -- mismo campo que ya usa webpay.js/calcularMonto
+   *  para PRODUCT_ORDER, no se inventa nada nuevo del lado del servidor. */
+  function rfConstruirLink(codigo){
+    return `${SITE_BASE}/masterlook-sitio.html?rf=${encodeURIComponent(codigo)}#tienda`;
+  }
+  async function rfCopiarLink(codigo){
+    if(!codigo) return;
+    try{
+      await navigator.clipboard.writeText(rfConstruirLink(codigo));
+      showToast('Link copiado');
+    }catch(e){ showToast('No se pudo copiar: ' + (e.message || e)); }
+  }
+
+  async function rfCargar(){
+    const tb = document.getElementById('rfTabla');
+    tb.innerHTML = '<tr><td colspan="11" class="cx-empty">Cargando...</td></tr>';
+    try{
+      const r = await functions.httpsCallable('listarReferidos')();
+      rfUltimaLista = (r.data && r.data.items) || [];
+      const k = (r.data && r.data.kpis) || {};
+      document.getElementById('rfKpiTotal').textContent = k.total ?? 0;
+      document.getElementById('rfKpiActivos').textContent = k.activos ?? 0;
+      document.getElementById('rfKpiProfesionales').textContent = k.profesionales ?? 0;
+      document.getElementById('rfKpiExternos').textContent = k.externos ?? 0;
+      rfPintar();
+    }catch(e){
+      tb.innerHTML = `<tr><td colspan="11" class="cx-empty">${escapeHTML(e.message || String(e))}</td></tr>`;
+    }
+  }
+
+  function rfPintar(){
+    const tb = document.getElementById('rfTabla');
+    if(!rfUltimaLista.length){ tb.innerHTML = '<tr><td colspan="11" class="cx-empty">Todavía no hay referidos.</td></tr>'; return; }
+    tb.innerHTML = rfUltimaLista.map(r=>{
+      const a = r.acumulados || {};
+      const tipoTxt = r.tipo === 'PROFESIONAL' ? escapeHTML(r.professionalNombre || 'Profesional') : 'Externo';
+      const estadoTxt = r.estado === 'activo'
+        ? '<span style="color:#2e7d32;font-weight:600;">Activo</span>'
+        : '<span style="color:#c0392b;font-weight:600;">Pausado</span>';
+      const accionEditar = puedeEditarReferidos
+        ? `<button class="pc-ib" data-rf-editar="${r.id}" title="Editar">${PC_ICONO_LAPIZ}</button>`
+        : '';
+      const accionCopiar = `<button class="pc-ib" data-rf-copiar="${escapeHTML(r.codigo)}" title="Copiar link de referido">${PC_ICONO_LINK}</button>`;
+      return `<tr>
+        <td>${escapeHTML(r.nombre)}</td>
+        <td>${tipoTxt}</td>
+        <td>${escapeHTML(r.codigo)}</td>
+        <td class="r">${r.comisionPct}%</td>
+        <td class="r">${r.puntosClientePorMil}</td>
+        <td>${estadoTxt}</td>
+        <td class="r">${a.ventas || 0}</td>
+        <td class="r">${cxClp(a.montoGenerado || 0)}</td>
+        <td class="r">${cxClp(a.comisionGenerada || 0)}</td>
+        <td class="r">${a.puntosEntregados || 0}</td>
+        <td class="r"><div style="display:flex;gap:6px;justify-content:flex-end;">${accionCopiar}${accionEditar}</div></td>
+      </tr>`;
+    }).join('');
+    tb.querySelectorAll('[data-rf-editar]').forEach(btn=>
+      btn.addEventListener('click', ()=> rfAbrirModal(btn.dataset.rfEditar)));
+    tb.querySelectorAll('[data-rf-copiar]').forEach(btn=>
+      btn.addEventListener('click', ()=> rfCopiarLink(btn.dataset.rfCopiar)));
+  }
+
+  document.getElementById('rfNuevo').addEventListener('click', ()=> rfAbrirModal(null));
+
+  function rfTipoCambio(){
+    const tipo = document.getElementById('rfTipo').value;
+    document.getElementById('rfZonaProfesional').style.display = tipo === 'PROFESIONAL' ? '' : 'none';
+    document.getElementById('rfZonaExterno').style.display = tipo === 'EXTERNO' ? '' : 'none';
+  }
+  document.getElementById('rfTipo').addEventListener('change', rfTipoCambio);
+
+  function rfActualizarLinkModal(){
+    const codigo = document.getElementById('rfCodigo').value.trim().toUpperCase();
+    document.getElementById('rfLink').value = codigo ? rfConstruirLink(codigo) : '';
+  }
+  document.getElementById('rfCodigo').addEventListener('input', rfActualizarLinkModal);
+  document.getElementById('rfCopiarLinkModal').addEventListener('click', async ()=>{
+    const link = document.getElementById('rfLink').value;
+    if(!link) return showToast('Escribe un código primero');
+    try{ await navigator.clipboard.writeText(link); showToast('Link copiado'); }
+    catch(e){ showToast('No se pudo copiar: ' + (e.message || e)); }
+  });
+  document.getElementById('rfAbrirLinkModal').addEventListener('click', ()=>{
+    const link = document.getElementById('rfLink').value;
+    if(!link) return showToast('Escribe un código primero');
+    window.open(link, '_blank');
+  });
+
+  async function rfAbrirModal(id){
+    if(!puedeEditarReferidos) return showToast('No tienes permiso para editar referidos');
+    rfEditandoId = id;
+    await cargarCatalogo();
+    const selPro = document.getElementById('rfProfesional');
+    selPro.innerHTML = cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+
+    const r = id ? rfUltimaLista.find(x=> x.id === id) : null;
+    document.getElementById('rfmTitulo').textContent = r ? 'Editando referido' : 'Nuevo referido';
+    document.getElementById('rfNombre').value = r ? r.nombre : '';
+    document.getElementById('rfTipo').value = r ? r.tipo : 'PROFESIONAL';
+    document.getElementById('rfTipo').disabled = !!r; // el tipo no se puede cambiar después de creado (referidos.js)
+    if(r && r.tipo === 'PROFESIONAL') selPro.value = r.professionalId || '';
+    document.getElementById('rfExtEmail').value = (r && r.contactoExterno && r.contactoExterno.email) || '';
+    document.getElementById('rfExtTelefono').value = (r && r.contactoExterno && r.contactoExterno.telefono) || '';
+    document.getElementById('rfCodigo').value = r ? r.codigo : '';
+    document.getElementById('rfComisionPct').value = r ? r.comisionPct : '';
+    document.getElementById('rfPuntosPorMil').value = r ? r.puntosClientePorMil : '';
+    document.getElementById('rfEstado').value = r ? r.estado : 'activo';
+    rfTipoCambio();
+    rfActualizarLinkModal();
+    abrirModal('modalReferido');
+  }
+
+  document.getElementById('rfGuardar').addEventListener('click', async ()=>{
+    if(!puedeEditarReferidos) return showToast('No tienes permiso para editar referidos');
+    const btn = document.getElementById('rfGuardar');
+    const nombre = document.getElementById('rfNombre').value.trim();
+    if(!nombre) return showToast('Ingresa un nombre');
+    const codigo = document.getElementById('rfCodigo').value.trim();
+    if(!codigo) return showToast('Ingresa un código');
+    const tipo = document.getElementById('rfTipo').value;
+    const datos = {
+      nombre, codigo,
+      comisionPct: Number(document.getElementById('rfComisionPct').value) || 0,
+      puntosClientePorMil: parseInt(document.getElementById('rfPuntosPorMil').value, 10) || 0,
+      estado: document.getElementById('rfEstado').value,
+    };
+    if(!rfEditandoId){
+      datos.tipo = tipo;
+      if(tipo === 'PROFESIONAL'){
+        datos.professionalId = document.getElementById('rfProfesional').value;
+        if(!datos.professionalId) return showToast('Elige un profesional');
+      } else {
+        datos.contactoExterno = {
+          email: document.getElementById('rfExtEmail').value.trim(),
+          telefono: document.getElementById('rfExtTelefono').value.trim(),
+        };
+      }
+    } else if(tipo === 'EXTERNO'){
+      datos.contactoExterno = {
+        email: document.getElementById('rfExtEmail').value.trim(),
+        telefono: document.getElementById('rfExtTelefono').value.trim(),
+      };
+    }
+
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try{
+      if(rfEditandoId){
+        datos.id = rfEditandoId;
+        await functions.httpsCallable('actualizarReferido')(datos);
+      } else {
+        await functions.httpsCallable('crearReferido')(datos);
+      }
+      showToast('Referido guardado');
+      cerrarModales();
+      rfEditandoId = null;
+      await rfCargar();
     }catch(e){ showToast('No se pudo guardar: ' + (e.message || e)); }
     btn.disabled = false; btn.textContent = 'Guardar';
   });

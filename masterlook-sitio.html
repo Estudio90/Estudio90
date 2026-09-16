@@ -3253,16 +3253,16 @@
       <button class="auth-tab" data-tab="register" onclick="switchTab('register')">Crear cuenta</button>
     </div>
 
-    <div class="auth-form active" data-form="login">
+    <form class="auth-form active" data-form="login" id="loginForm">
       <span class="field-label">Correo</span>
       <input type="email" id="loginEmail" placeholder="tu@correo.cl">
       <span class="field-label">Contraseña</span>
       <input type="password" id="loginPass" placeholder="••••••••">
       <div class="field-err" id="loginErr"></div>
-      <button class="btn-full" onclick="doLogin()">Ingresar</button>
+      <button class="btn-full" type="submit">Ingresar</button>
       <p class="auth-hint">¿No tienes cuenta? <span class="auth-switch" onclick="switchTab('register')">Créala aquí</span></p>
       <p class="auth-hint"><span class="auth-switch" onclick="doForgotPassword()">¿Olvidaste tu contraseña?</span></p>
-    </div>
+    </form>
 
     <div class="auth-form" data-form="register">
       <span class="field-label">Nombre completo</span>
@@ -5300,27 +5300,31 @@
      Carrera del token: la lectura de staff/{uid} es `allow read: if isStaff()`.
      Justo tras signIn o al restaurar sesión, el token puede no haber llegado
      aún al SDK de Firestore -> la regla ve request.auth == null y responde
-     permission-denied por CARRERA, no porque el usuario no sea staff. Para
-     distinguirlo se hace una LECTURA DE CONTROL que cualquier sesión válida
-     puede hacer: su propio customers/{uid} (regla: auth.uid == uid; resuelve
-     aunque el doc no exista). Si la de control pasa, el token ya está y un
-     permission-denied de staff es definitivo -> 'cliente' al instante, sin
-     esperas. Si la de control también falla, es carrera real -> hasta 3
-     intentos, refrescando el token (getIdToken(true)) desde el 2º, con esperas
-     cortas. Nunca se cuelga: agotados los intentos, se asume 'cliente'. */
+     permission-denied por CARRERA, no porque el usuario no sea staff. Hasta
+     3 intentos, refrescando el token (getIdToken(true)) desde el 2º, con
+     esperas cortas entre cada uno. Nunca se cuelga: agotados los intentos,
+     se asume 'cliente'.
+     Antes había un atajo acá: una LECTURA DE CONTROL (customers/{uid}, regla
+     simple `auth.uid == uid` sin get() anidado) que, si pasaba, se asumía
+     "el token ya llegó" y un permission-denied de staff se trataba como
+     denegación real al instante, sin agotar los 3 intentos. Pero la regla de
+     staff/{uid} (isStaff() -> isAdmin()/hasStaffDoc()) SÍ hace su propio
+     get()/exists() interno sobre el mismo doc -- más lenta que la de
+     customers/{uid} -- así que la de control podía pasar un instante ANTES
+     de que la de staff estuviera lista, y el atajo mandaba a 'cliente' a
+     staff real (ver el mismo fix en masterlook-panel-interno.html,
+     leerFichaStaffPanel -- se vio con darlingquevedo02@gmail.com). Se quitó
+     el atajo: ahora siempre se agotan los 3 intentos antes de decidir. */
   async function destinoDeLogin(user){
     if(!user) return 'cliente';
     if(user.uid === OWNER_UID_FALLBACK) return 'panel';
     for(let intento = 0; intento < 3; intento++){
       try{ await user.getIdToken(intento > 0); }catch(e){}   // intento>0 -> fuerza refresh
-      let tokenListo = false;
-      try{ await db.collection('customers').doc(user.uid).get(); tokenListo = true; }catch(e){}
       try{
         const doc = await db.collection('staff').doc(user.uid).get();
         if(!doc.exists) return 'cliente';                     // leyó bien y no hay ficha
         return doc.data().active === false ? 'inactivo' : 'panel';
       }catch(e){
-        if(tokenListo) return 'cliente';                      // token confirmado -> staff-denied es real
         if(intento < 2) await new Promise(r=> setTimeout(r, 150));
       }
     }
@@ -5330,7 +5334,30 @@
 
   auth.onAuthStateChanged(async user=>{
     if(MODE === 'api') { if(resolverAuthListo) resolverAuthListo(); resolverAuthListo = null; return; } // ese modo maneja su propia sesión por token
+    await procesarEstadoAuthSitio(user);
+  });
+
+  /** Separado de onAuthStateChanged para poder auto-invocarse con el user
+   *  real sin depender de un segundo callback del propio observer. */
+  async function procesarEstadoAuthSitio(user){
     if(!user){
+      // Misma carrera documentada en masterlook-panel-interno.html
+      // (procesarEstadoAuthPanel) y en destinoDeLogin, más arriba: el SDK
+      // puede disparar este observer con null en el primer llamado incluso
+      // con una sesión LOCAL persistida real. Acá el efecto inmediato es
+      // menos grave (no expulsa a nadie, solo muestra "sin sesión" un
+      // instante) -- pero para staff real significa perder, en ESTE mismo
+      // llamado, la ventana en la que destinoDeLogin la manda al panel; el
+      // próximo llamado del observer (si llega) recién la redirige,
+      // sumando a la misma inestabilidad que causaba el bucle sitio<->panel.
+      // Se reconsulta auth.currentUser directo hasta 3 veces con respiro
+      // corto antes de tratarlo como logout real.
+      let real = auth.currentUser;
+      for(let intento = 0; !real && intento < 3; intento++){
+        await new Promise(r=> setTimeout(r, 150));
+        real = auth.currentUser;
+      }
+      if(real){ await procesarEstadoAuthSitio(real); return; }
       customerProfile = null; await renderAccount(); actualizarChipMisCursos(null); actualizarChipMisProductos(null); reiniciarTimerInactividad();
       if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
       return;
@@ -5401,7 +5428,7 @@
     actualizarChipMisProductos(user.uid);
     reiniciarTimerInactividad();
     if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
-  });
+  }
 
   function initials(name){
     // Defensivo: una ficha de cliente sin `name` no debe reventar el render.
@@ -5606,6 +5633,25 @@
     toast('Hola de nuevo, ' + nombre);
     document.getElementById('cuenta').scrollIntoView({behavior:'smooth'});
   }
+
+  // El botón de "Ingresar" pasó de onclick="doLogin()" suelto a
+  // type="submit" dentro de <form id="loginForm"> -- así Enter desde
+  // cualquier campo (antes solo funcionaba el clic) dispara el submit
+  // nativo del navegador, que este listener es el ÚNICO que atrapa y
+  // reenvía a doLogin() -- nunca se duplica su lógica, clic y Enter
+  // terminan en la misma llamada. preventDefault() evita la recarga de
+  // página que haría un submit normal. loginEnCurso evita un segundo
+  // doLogin() en vuelo si Enter se presiona varias veces seguidas
+  // mientras el primero todavía no responde (mismo resguardo aplicaría a
+  // clics repetidos del botón, ya que pasan por este mismo submit).
+  let loginEnCurso = false;
+  document.getElementById('loginForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(loginEnCurso) return;
+    loginEnCurso = true;
+    try{ await doLogin(); }
+    finally{ loginEnCurso = false; }
+  });
 
   // "¿Olvidaste tu contraseña?" -- único mecanismo de recuperación, para
   // cualquier tipo de cuenta (cliente, barbero, recepción, admin): el
@@ -6401,12 +6447,14 @@
     // Mercado Pago: SOLO si el carrito contiene únicamente cursos. Curso +
     // producto -> Webpay (que sí paga los dos juntos en una transacción).
     document.getElementById('cartMercadoPagoBlock').style.display = (hayCursos && !hayProductos) ? '' : 'none';
-    // Webpay/Transbank: oculto SIEMPRE que el carrito tenga cursos.
-    //  - solo cursos       -> se paga con Mercado Pago (bloque de abajo).
-    //  - cursos + productos -> carrito mixto viejo: sin botón de pago hasta que
-    //    el cliente lo separe (Webpay no procesa cursos todavía y Mercado Pago
-    //    no procesa productos). El banner y los guards de pago lo explican.
-    document.getElementById('ckPagarWebpay').style.display = hayCursos ? 'none' : '';
+    // Webpay/Transbank: disponible para SOLO productos y para SOLO cursos
+    // (coexiste con Mercado Pago en ese caso -- el cliente elige). Sigue
+    // oculto ÚNICAMENTE para el carrito mixto viejo (curso + producto,
+    // imposible de crear hoy vía agregarAlCarrito, pero un carrito guardado
+    // en localStorage antes de ese guard podría tenerlo) -- ese caso sigue
+    // sin botón de pago hasta que el cliente lo separe. El banner y los
+    // guards de pago lo explican.
+    document.getElementById('ckPagarWebpay').style.display = (hayCursos && hayProductos) ? 'none' : '';
 
     const label = document.getElementById('ckPagarWebpayLabel');
     const sub = document.getElementById('ckPagarWebpaySub');
@@ -6782,13 +6830,12 @@
       return toast('Tu carrito tiene cursos y productos juntos. Deja solo cursos o solo productos para continuar con el pago.');
     }
     if(cursos.length > 1) return toast('Compra un curso a la vez.');
-    // Carrito con exactamente 1 curso y 0 productos -> Mercado Pago:
-    // Webpay/Transbank queda oculto para cursos, asi que este camino (el
-    // boton oculto y el auto-checkout tras login/registro via
-    // carritoEsperandoAuth -> intentarPagarCheckout) tiene que ir a MP,
-    // igual que el boton "Pagar cursos con Mercado Pago". Curso + producto
-    // y el carrito de solo productos siguen por Webpay igual que antes.
-    if(cursos.length && !productos.length) return pagarCursoConMercadoPago();
+    // Carrito con exactamente 1 curso y 0 productos: sigue por Webpay, igual
+    // que un carrito de solo productos -- ya NO se fuerza a Mercado Pago
+    // (antes el botón de Webpay ni se mostraba para este caso). MP sigue
+    // disponible aparte, como una segunda opción con su propio botón
+    // ("Pagar cursos con Mercado Pago", pagarCursoConMercadoPago) -- este
+    // cambio no le toca una sola línea a esa función ni a su flujo.
 
     const conSesion = !!auth.currentUser;
     let nombre = '', correo = '', password = '', fono = '', pais = '';
@@ -6817,8 +6864,14 @@
     // producto acepta código) y LANZA si algo cambió desde el último
     // preview (decisión C: nunca cobrar un monto distinto al confirmado).
     const codigoParaCobro = (cdCodigoAplicado && cdCarritoCoincideConPreview()) ? cdCodigoAplicado : undefined;
+    // Referido por link (?rf=, ver capturarReferidoDeLink/obtenerReferidoAlmacenado
+    // más abajo) -- SOLO PRODUCT_ORDER, nunca CART_ORDER/COURSE_PURCHASE (mismo
+    // alcance que ya tiene el servidor, webpay.js/calcularMonto). Campo propio
+    // (`referidoCodigo`, nunca `codigo`) -- el servidor decide la exclusión mutua
+    // con el código promocional si ambos llegaran presentes.
+    const referidoParaCobro = tipo === 'PRODUCT_ORDER' ? obtenerReferidoAlmacenado() : null;
     const datos = tipo === 'PRODUCT_ORDER'
-      ? { items: productos.map(i=> ({ id:i.id, qty:i.qty })), ...(codigoParaCobro ? { codigo: codigoParaCobro } : {}) }
+      ? { items: productos.map(i=> ({ id:i.id, qty:i.qty })), ...(codigoParaCobro ? { codigo: codigoParaCobro } : {}), ...(referidoParaCobro ? { referidoCodigo: referidoParaCobro, referidoFuente: 'link' } : {}) }
       : tipo === 'COURSE_PURCHASE'
       ? { courseId: cursos[0].id }
       : { courseId: cursos[0].id, items: productos.map(i=> ({ id:i.id, qty:i.qty })), ...(codigoParaCobro ? { codigo: codigoParaCobro } : {}) };
@@ -7074,9 +7127,9 @@
       guardarCarrito();
       pintarCarrito();
     } else if(resultado === 'rechazado'){
-      toast('El pago fue rechazado. Tu hora no quedó reservada; puedes intentar de nuevo.');
+      toast('El pago fue rechazado. Puedes intentar con otro medio de pago.');
     } else if(resultado === 'abandonado'){
-      toast('Pago cancelado.');
+      toast('Pago cancelado. Puedes intentar de nuevo.');
     } else {
       toast('Ocurrió un problema al procesar el pago. Intenta de nuevo.');
     }
@@ -9866,6 +9919,41 @@
     if(b2) b2.style.cssText += `background-image:url('${foto2.photoUrl}');background-size:cover;background-position:center;`;
   }
 
+  /** Código de referido que llega por link (?rf=CODIGO -- nunca ?ref=, ese
+   *  ya lo usa el retorno de Mercado Pago más abajo). Se guarda en
+   *  localStorage (no en una variable de página) porque el cliente puede
+   *  navegar el sitio un rato antes de comprar; expira a los 30 días,
+   *  mismo criterio que una cookie de afiliado típica. Independiente del
+   *  código promocional (cdCodigoAplicado, más arriba) -- ambos pueden
+   *  viajar juntos en el body de PRODUCT_ORDER, el servidor decide la
+   *  exclusión mutua (regla cerrada 2026-09-11, ver referidos.js). El link
+   *  se genera en el panel interno (Productos -> Referidos ->
+   *  rfConstruirLink) con el mismo formato exacto que se lee acá. */
+  const RF_STORAGE_KEY = 'mlReferidoCodigo';
+  const RF_EXPIRA_MS = 30 * 24 * 60 * 60 * 1000;
+
+  function capturarReferidoDeLink(){
+    let p;
+    try{ p = new URLSearchParams(location.search); }catch(e){ return; }
+    const rf = (p.get('rf') || '').trim().toUpperCase();
+    if(!rf) return;
+    try{
+      localStorage.setItem(RF_STORAGE_KEY, JSON.stringify({ codigo: rf, expira: Date.now() + RF_EXPIRA_MS }));
+    }catch(e){}
+  }
+
+  /** Lee el código de referido guardado, si sigue vigente. Nunca lanza --
+   *  localStorage puede estar bloqueado (modo privado, etc.). */
+  function obtenerReferidoAlmacenado(){
+    try{
+      const raw = localStorage.getItem(RF_STORAGE_KEY);
+      if(!raw) return null;
+      const { codigo, expira } = JSON.parse(raw);
+      if(!codigo || !expira || Date.now() > expira){ localStorage.removeItem(RF_STORAGE_KEY); return null; }
+      return codigo;
+    }catch(e){ return null; }
+  }
+
   function revisarRetornoPago(){
     let p;
     try{ p = new URLSearchParams(location.search); }catch(e){ return; }
@@ -9913,6 +10001,7 @@
       dateInput.addEventListener('change', loadSlots);
     }
 
+    await etapa('código de referido', capturarReferidoDeLink);
     await detectMode();
 
     if(MODE === 'api'){
