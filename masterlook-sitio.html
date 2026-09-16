@@ -1997,6 +1997,17 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   @media (min-width:900px){ .toast{bottom:30px;} }
+  /* Variante "arriba" -- se activa por JS (toast()) solo mientras la barra
+     flotante de reserva (#rvBarra) está en pantalla. Evita por completo
+     tener que calcular su altura/posición real (frágil entre navegadores/
+     dispositivos reales -- ver commit anterior): en vez de competir por el
+     mismo espacio abajo, el toast se muestra arriba, lejos de la barra,
+     sin importar breakpoint, safe-area real ni cuántas líneas ocupe. */
+  .toast.toast-top{
+    top:max(70px, calc(14px + env(safe-area-inset-top))); bottom:auto;
+    transform:translateX(-50%) translateY(-20px);
+  }
+  .toast.toast-top.show{ transform:translateX(-50%) translateY(0); }
   @media (max-width:700px){ .account-grid{grid-template-columns:1fr;} }
 
   @media (max-width: 900px){
@@ -5439,24 +5450,18 @@
   function toast(msg){
     const t = document.getElementById('toast');
     // Si la barra flotante de reserva (#rvBarra) está visible, el toast se
-    // posiciona dinámicamente por encima de ella -- así nunca la tapa, sin
-    // importar el paso (1-4), la variante .rv-organic (paso 4, más alta),
-    // ni el breakpoint (su propio `bottom` cambia de 78px en móvil a 28px
-    // desde 900px, ver línea ~1751). Se lee el `bottom` YA RESUELTO por
-    // getComputedStyle (el valor final, sea cual sea el breakpoint o el
-    // safe-area-inset-bottom real del dispositivo) más la altura por
-    // getBoundingClientRect() -- NUNCA la posición/top por rect: la barra
-    // entra con una animación CSS (rv-barra-anim, translateY) y justo al
-    // agregar un servicio el toast se dispara en el mismo tick en que esa
-    // animación arranca, cuando el `top` todavía refleja el fotograma
-    // inicial (transform en 100px) y no la posición final -- `bottom` y la
-    // altura del layout no cambian con `transform`, así que no tienen ese
-    // problema. Altura 0 (oculta por sí misma o por un ancestro fuera del
-    // flujo de reserva) -> el toast vuelve a su posición fija normal.
+    // muestra ARRIBA (.toast-top) en vez de competir por el mismo espacio
+    // abajo -- dos intentos anteriores calculando su posición exacta sobre
+    // la barra (altura + bottom real) medían bien en las pruebas pero
+    // seguían fallando en un iPhone real, así que en vez de perseguir un
+    // tercer cálculo, se saca el problema de raíz: sin cálculo de altura/
+    // posición, sin depender del breakpoint (78px/28px) ni del safe-area
+    // real del dispositivo. Fuera del flujo de reserva (altura 0, oculta
+    // por sí misma o por un ancestro) -> el toast vuelve a su posición
+    // fija normal de siempre, sin ningún cambio.
     const barra = document.getElementById('rvBarra');
     const altoBarra = barra ? barra.getBoundingClientRect().height : 0;
-    const bottomBarra = altoBarra > 0 ? (parseFloat(getComputedStyle(barra).bottom) || 0) : 0;
-    t.style.bottom = altoBarra > 0 ? `${Math.ceil(bottomBarra + altoBarra + 14)}px` : '';
+    t.classList.toggle('toast-top', altoBarra > 0);
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(t._timer);
