@@ -5438,6 +5438,25 @@
   }
   function toast(msg){
     const t = document.getElementById('toast');
+    // Si la barra flotante de reserva (#rvBarra) está visible, el toast se
+    // posiciona dinámicamente por encima de ella -- así nunca la tapa, sin
+    // importar el paso (1-4), la variante .rv-organic (paso 4, más alta),
+    // ni el breakpoint (su propio `bottom` cambia de 78px en móvil a 28px
+    // desde 900px, ver línea ~1751). Se lee el `bottom` YA RESUELTO por
+    // getComputedStyle (el valor final, sea cual sea el breakpoint o el
+    // safe-area-inset-bottom real del dispositivo) más la altura por
+    // getBoundingClientRect() -- NUNCA la posición/top por rect: la barra
+    // entra con una animación CSS (rv-barra-anim, translateY) y justo al
+    // agregar un servicio el toast se dispara en el mismo tick en que esa
+    // animación arranca, cuando el `top` todavía refleja el fotograma
+    // inicial (transform en 100px) y no la posición final -- `bottom` y la
+    // altura del layout no cambian con `transform`, así que no tienen ese
+    // problema. Altura 0 (oculta por sí misma o por un ancestro fuera del
+    // flujo de reserva) -> el toast vuelve a su posición fija normal.
+    const barra = document.getElementById('rvBarra');
+    const altoBarra = barra ? barra.getBoundingClientRect().height : 0;
+    const bottomBarra = altoBarra > 0 ? (parseFloat(getComputedStyle(barra).bottom) || 0) : 0;
+    t.style.bottom = altoBarra > 0 ? `${Math.ceil(bottomBarra + altoBarra + 14)}px` : '';
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(t._timer);
