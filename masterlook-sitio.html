@@ -2433,7 +2433,7 @@
   .tv-head-in{ position: relative; min-height: 40px; }
   .tv-head .wordmark{
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    margin: 0; white-space: nowrap; z-index: 1;
+    margin: 0; white-space: nowrap; z-index: 1; cursor: pointer;
     font-size: 1.25rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
   }
   .tv-head .wordmark sup{ font-size: .5em; font-weight: 400; top: -.55em; }
@@ -3321,7 +3321,7 @@
   <header class="tv-head">
     <div class="tv-head-in">
       <button class="tv-back" id="rvVolver">← Volver al inicio</button>
-      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <div class="wordmark" onclick="irAInicio()">MASTER LOOK<sup>®</sup></div>
       <span class="rv-paso" id="rvPaso">Paso 1 de 4</span>
     </div>
     <div class="rv-progress"><div class="rv-progress-fill" id="rvBar"></div></div>
@@ -3559,7 +3559,7 @@
   <header class="tv-head">
     <div class="tv-head-in">
       <button class="tv-back" id="tvVolver">← Volver al inicio</button>
-      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <div class="wordmark" onclick="irAInicio()">MASTER LOOK<sup>®</sup></div>
       <button class="icon-btn cart-wrap" aria-label="Carrito" onclick="abrirCarrito()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L4.5 2H2"/></svg>
         <span class="cart-badge" id="cartBadge2" style="display:none;">0</span>
@@ -3709,7 +3709,7 @@
   <header class="tv-head">
     <div class="tv-head-in">
       <button class="tv-back" id="acVolver">← Volver al inicio</button>
-      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <div class="wordmark" onclick="irAInicio()">MASTER LOOK<sup>®</sup></div>
       <button class="icon-btn cart-wrap" aria-label="Carrito" onclick="abrirCarrito()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L4.5 2H2"/></svg>
         <span class="cart-badge" id="cartBadge3" style="display:none;">0</span>
@@ -3828,7 +3828,7 @@
   <header class="tv-head">
     <div class="tv-head-in">
       <button class="tv-back" id="mcVolver">← Volver al inicio</button>
-      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <div class="wordmark" onclick="irAInicio()">MASTER LOOK<sup>®</sup></div>
       <span></span>
     </div>
   </header>
@@ -3873,7 +3873,7 @@
   <header class="tv-head">
     <div class="tv-head-in">
       <button class="tv-back" id="mpVolver">← Volver al inicio</button>
-      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <div class="wordmark" onclick="irAInicio()">MASTER LOOK<sup>®</sup></div>
       <span></span>
     </div>
   </header>
