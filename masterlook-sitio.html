@@ -5384,8 +5384,33 @@
     // más, que se van al panel... recursión infinita de iframes -> se agota la
     // memoria de la pestaña (Safari en iPhone la mata: "Ocurrió un problema
     // varias veces"). Embebido -> se comporta como una visita normal.
+    // Chequeo de staff (destinoDeLogin) y lectura de la ficha básica del
+    // cliente EN PARALELO -- son independientes (uno decide si hay que
+    // redirigir al panel, el otro trae datos de un cliente) y antes corrían
+    // en serie sin necesidad. Igual que antes, NADA se pinta ni se asume
+    // hasta confirmar más abajo que esta sesión no es de staff -- la
+    // lectura de customers/{uid} solo se INICIA en paralelo, nunca se usa
+    // antes de pasar ese control.
+    const [dest, customerResult] = await Promise.all([
+      (!redirigiendoAlPanel && window.self === window.top) ? destinoDeLogin(user) : Promise.resolve('cliente'),
+      db.collection('customers').doc(user.uid).get()
+        .then(doc=> ({ ok:true, doc }))
+        .catch(e=> ({ ok:false, error:e })),
+    ]);
+
+    // Esta invocación pudo quedar "vieja": si en el tiempo que tardó el
+    // Promise.all de arriba hubo un logout y/o otro login (ej. cambio
+    // rápido de cuenta), auth.currentUser ya es OTRO uid -- onAuthStateChanged
+    // ya disparó (o va a disparar) una invocación nueva para ese uid real.
+    // Se descarta ACÁ, antes de cualquier acción -- ni redirigir al panel,
+    // ni cerrar sesión por "inactivo", ni pintar la ficha pueden depender
+    // de un resultado que ya no corresponde a quien está realmente
+    // autenticado ahora. Comparar contra auth.currentUser.uid (no contra
+    // una copia local) es a propósito: es la única fuente de verdad que no
+    // puede quedar desactualizada.
+    if(auth.currentUser?.uid !== user.uid) return;
+
     if(!redirigiendoAlPanel && window.self === window.top){
-      const dest = await destinoDeLogin(user);
       if(dest === 'panel'){
         redirigiendoAlPanel = true;
         if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
@@ -5398,47 +5423,90 @@
       }
     }
 
-    try{
-      const doc = await db.collection('customers').doc(user.uid).get();
+    // Mismo resultado que antes (try/catch alrededor de un solo await):
+    // doc.exists -> ficha real; no existe -> ficha nueva por defecto;
+    // lectura fallida (ej. permission-denied por carrera de token) ->
+    // customerProfile en null, igual que antes.
+    if(customerResult.ok){
+      const doc = customerResult.doc;
       // `name` primero como default -> si la ficha lo trae, gana; si la ficha
       // existe pero NO lo trae (dato incompleto), queda el correo y el resto
       // del flujo (renderAccount, chat) no revienta.
       customerProfile = doc.exists
         ? { uid:user.uid, name:user.email, email:user.email, ...doc.data() }
         : { uid:user.uid, name:user.email, email:user.email, phone:'', since:new Date().toISOString(), bookingIds:[] };
-    }catch(e){ customerProfile = null; }
+    } else {
+      customerProfile = null;
+    }
 
-    // Vincula reservas hechas como invitado con el mismo correo, SOLO si
-    // Firebase Auth ya confirmó que ese correo está verificado (si no,
-    // vincularMisReservas no hace nada -- se reintenta solo en el próximo
-    // login, ej. después de hacer clic en el enlace del correo). Si algo
-    // se vinculó, se vuelve a leer el perfil para que "Mi cuenta" muestre
-    // el historial real de una vez.
-    try{
-      const r = await functions.httpsCallable('vincularMisReservas')();
-      if(r?.data?.vinculadas > 0){
-        const doc2 = await db.collection('customers').doc(user.uid).get();
-        if(doc2.exists) customerProfile = { uid:user.uid, name:user.email, email:user.email, ...doc2.data() };
-      }
-    }catch(e){ /* no crítico -- "Mi cuenta" igual funciona con lo que ya tenía */ }
-
-    // Compras aprobadas que quedaron pendientes de vincular a una cuenta
-    // (ver plan/webpay.js/pendingAccountLinks -- carrera de cuenta entre
-    // crearTransaccion y confirmar). El servidor exige además correo
-    // verificado antes de resolver nada -- si todavía no lo está, no pasa
-    // nada acá, se reintenta solo en el próximo login. Silencioso salvo
-    // que de verdad haya activado algo (curso ya otorgado).
-    try{
-      const rp = await functions.httpsCallable('resolverComprasPendientesCliente')();
-      if(rp?.data?.resuelto && rp.data.items?.some(it=> it.courseId)){
-        toast('Tu compra pendiente ya quedó activada.');
-      }
-    }catch(e){ /* no crítico */ }
-
-    await renderAccount();
+    // Ficha básica (nombre, avatar, correo, "cliente desde") visible DE
+    // INMEDIATO con lo que ya tenemos -- ya no espera a reservas, cursos,
+    // vinculación ni compras pendientes. Esas secciones se completan solas
+    // más abajo y actualizan únicamente su propio pedazo de la vista
+    // cuando terminen (ver cargarHistorialReservas).
+    pintarFichaBasica();
+    reiniciarTimerInactividad();
+    cargarHistorialReservas();
     actualizarChipMisCursos(user.uid);
     actualizarChipMisProductos(user.uid);
-    reiniciarTimerInactividad();
+
+    // Vincula reservas de invitado + resuelve compras pendientes de
+    // vincular a la cuenta: independientes entre sí (la primera toca
+    // bookings/*/private y customers.bookingIds; la segunda toca
+    // entitlements/mail/pagosWebpay/pendingAccountLinks -- ninguna lee lo
+    // que la otra escribe, ambas derivan el correo del mismo token ya
+    // resuelto), así que corren en paralelo en vez de una tras otra.
+    // authListo se resuelve cuando ambas terminan, igual que antes (antes
+    // esperaba esto + más), para no cambiar el momento en que el resto del
+    // sitio puede asumir que esta reconciliación ya corrió.
+    await Promise.all([
+      (async ()=>{
+        // Vincula reservas hechas como invitado con el mismo correo, SOLO
+        // si Firebase Auth ya confirmó que ese correo está verificado (si
+        // no, vincularMisReservas no hace nada -- se reintenta solo en el
+        // próximo login, ej. después de hacer clic en el enlace del
+        // correo). Si algo se vinculó, se vuelve a leer el perfil (la
+        // respuesta solo trae el CONTEO vinculado, no los bookingIds) y se
+        // refresca la sección de reservas con el historial real.
+        try{
+          const r = await functions.httpsCallable('vincularMisReservas')();
+          // La sesión pudo cambiar MIENTRAS esta llamada estaba en el aire
+          // (ej. logout + login a otra cuenta) -- sin esto, esta respuesta
+          // tardía pisaría customerProfile del usuario que ahora sí está
+          // activo con datos de ESTE (ya no vigente). Se valida contra
+          // auth.currentUser.uid, la fuente de verdad real.
+          if(auth.currentUser?.uid !== user.uid) return;
+          if(r?.data?.vinculadas > 0){
+            const doc2 = await db.collection('customers').doc(user.uid).get();
+            if(auth.currentUser?.uid !== user.uid) return; // volvió a cambiar durante esta segunda lectura
+            if(doc2.exists){
+              customerProfile = { uid:user.uid, name:user.email, email:user.email, ...doc2.data() };
+              cargarHistorialReservas();
+            }
+          }
+        }catch(e){ /* no crítico -- "Mi cuenta" igual funciona con lo que ya tenía */ }
+      })(),
+      (async ()=>{
+        // Compras aprobadas que quedaron pendientes de vincular a una
+        // cuenta (ver plan/webpay.js/pendingAccountLinks -- carrera de
+        // cuenta entre crearTransaccion y confirmar). El servidor exige
+        // además correo verificado antes de resolver nada -- si todavía no
+        // lo está, no pasa nada acá, se reintenta solo en el próximo
+        // login. Silencioso salvo que de verdad haya activado algo (curso
+        // ya otorgado).
+        try{
+          const rp = await functions.httpsCallable('resolverComprasPendientesCliente')();
+          // Misma guarda que arriba: no mostrar un toast que hable de la
+          // compra de OTRA cuenta si la sesión ya cambió mientras esto
+          // corría.
+          if(auth.currentUser?.uid !== user.uid) return;
+          if(rp?.data?.resuelto && rp.data.items?.some(it=> it.courseId)){
+            toast('Tu compra pendiente ya quedó activada.');
+          }
+        }catch(e){ /* no crítico */ }
+      })(),
+    ]);
+
     if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
   }
 
@@ -6104,26 +6172,38 @@
       return;
     }
 
-    // ---- modo demo: historial real vía obtenerMisReservas ----
-    // Ya no se lee de un listener abierto sobre TODA la colección
-    // bookings (eso exponía nombre/precio/pago de todos los clientes a
-    // cualquier visitante anónimo) -- se llama a la Cloud Function, que
-    // solo trae, con Admin SDK, los IDs que ya están en el propio
-    // documento `customers/{uid}.bookingIds` del usuario autenticado.
-    let misReservas = [];
-    try{
-      const r = await functions.httpsCallable('obtenerMisReservas')();
-      misReservas = (r?.data?.reservas || []);
-    }catch(e){ /* sin conexión momentánea -- se vuelve a intentar en el próximo render */ }
-    misReservasCache = misReservas;
-    const decisionOf = id => (misReservas.find(r=> r.id === id) || {}).decision || 'pendiente';
+    // ---- modo demo: pinta la ficha ya mismo y deja el historial a cargo
+    // de cargarHistorialReservas() (más abajo) -- mismo resultado final,
+    // solo que ya no hay que esperar obtenerMisReservas para ver nombre/
+    // avatar/correo/"cliente desde".
+    pintarFichaBasica();
+    await cargarHistorialReservas();
+  }
 
-    // los puntos y visitas solo cuentan reservas confirmadas por el local
-    const confirmadas = misReservas.filter(b=> decisionOf(b.id) === 'aprobada');
-    const pendientes  = misReservas.filter(b=> decisionOf(b.id) === 'pendiente');
-    const puntos = confirmadas.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
-    const puntosPend = pendientes.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
+  /** Pinta SOLO lo que ya está disponible en customerProfile -- nombre,
+   *  avatar, correo, "cliente desde" -- sin ninguna llamada de red. Deja
+   *  puntos/visitas/historial en un estado de carga propio (ver
+   *  cargarHistorialReservas) la PRIMERA vez que se pinta la ficha en esta
+   *  sesión; en refrescos posteriores (cada 20s, tras reagendar, etc.) no
+   *  los toca, para no parpadear encima de datos que ya están ahí. */
+  function pintarFichaBasica(){
+    if(MODE === 'api') return; // ese modo pinta lo básico dentro de renderAccount(), sin tocar
+    const user = currentUser();
+    const section = document.getElementById('cuenta');
+    const label = document.getElementById('acLabel');
+    const avatar = document.getElementById('acAvatar');
 
+    if(!user){
+      section.classList.remove('show');
+      label.textContent = 'Ingresar';
+      avatar.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+      return;
+    }
+
+    // Defensivo: si la ficha del cliente no trae `name` (dato incompleto),
+    // NO reventar el render -- de lo que dependía el resto del flujo de login
+    // (resolverAuthListo()). Fallback: correo, o "Mi cuenta".
+    const nombreSeguro = String(user.name || user.email || 'Mi cuenta').trim() || 'Mi cuenta';
     const desde = user.since
       ? new Date(user.since).toLocaleDateString('es-CL',{month:'long', year:'numeric'})
       : '';
@@ -6135,6 +6215,61 @@
     document.getElementById('accName').textContent = nombreSeguro;
     document.getElementById('accEmail').textContent = user.email;
     document.getElementById('accSince').textContent = 'Cliente desde ' + desde;
+
+    if(!historialCargadoAlgunaVez){
+      const pts = document.getElementById('accPoints');
+      const vis = document.getElementById('accVisits');
+      if(pts) pts.textContent = '···';
+      if(vis) vis.textContent = '···';
+      const list = document.getElementById('historyList');
+      if(list) list.innerHTML = '<div class="empty-hist">Cargando historial...</div>';
+    }
+  }
+
+  // true apenas el historial se pintó una vez en esta sesión -- evita que
+  // pintarFichaBasica() vuelva a mostrar "Cargando..." (con el parpadeo
+  // que eso implica) en cada refresco silencioso posterior (cada 20s, tras
+  // reagendar, tras vincular una reserva nueva).
+  let historialCargadoAlgunaVez = false;
+
+  /** Puntos, visitas e historial de reservas -- la parte "pesada" de Mi
+   *  cuenta (llama a obtenerMisReservas). Separada de pintarFichaBasica()
+   *  para que nombre/avatar/correo nunca esperen esto. Mismo cálculo y
+   *  mismo HTML que antes, solo que ahora actualiza únicamente su propio
+   *  pedazo de la vista en vez de bloquear toda la ficha. */
+  async function cargarHistorialReservas(){
+    if(MODE === 'api') return; // ese modo ya trae todo junto dentro de renderAccount()
+    const user = currentUser();
+    if(!user) return;
+
+    // Ya no se lee de un listener abierto sobre TODA la colección
+    // bookings (eso exponía nombre/precio/pago de todos los clientes a
+    // cualquier visitante anónimo) -- se llama a la Cloud Function, que
+    // solo trae, con Admin SDK, los IDs que ya están en el propio
+    // documento `customers/{uid}.bookingIds` del usuario autenticado.
+    let misReservas = [];
+    try{
+      const r = await functions.httpsCallable('obtenerMisReservas')();
+      misReservas = (r?.data?.reservas || []);
+    }catch(e){ /* sin conexión momentánea -- se vuelve a intentar en el próximo render */ }
+
+    // La sesión pudo cambiar (logout, u otro usuario) mientras esta llamada
+    // estaba en el aire -- se valida contra auth.currentUser.uid (la fuente
+    // de verdad real, no una copia local) antes de pintar nada; si no
+    // coincide, se descarta esta respuesta y no se pisa la vista de quien
+    // está ahora.
+    if(auth.currentUser?.uid !== user.uid) return;
+
+    historialCargadoAlgunaVez = true;
+    misReservasCache = misReservas;
+    const decisionOf = id => (misReservas.find(r=> r.id === id) || {}).decision || 'pendiente';
+
+    // los puntos y visitas solo cuentan reservas confirmadas por el local
+    const confirmadas = misReservas.filter(b=> decisionOf(b.id) === 'aprobada');
+    const pendientes  = misReservas.filter(b=> decisionOf(b.id) === 'pendiente');
+    const puntos = confirmadas.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
+    const puntosPend = pendientes.reduce((sum,b)=> sum + Math.floor(b.price/1000), 0);
+
     document.getElementById('accPoints').textContent = puntos;
     document.getElementById('accVisits').textContent = confirmadas.length;
     const pendNote = document.getElementById('pointsPending');
@@ -9096,10 +9231,22 @@
     const link = document.getElementById('misCursosMenuLink');
     if(!link) return;
     if(!uid){ link.style.display = 'none'; return; }
+    let entitlements;
     try{
-      const entitlements = await obtenerEntitlementsActivos(uid);
-      link.style.display = entitlements.length ? '' : 'none';
-    }catch(e){ link.style.display = 'none'; }
+      entitlements = await obtenerEntitlementsActivos(uid);
+    }catch(e){
+      // La sesión pudo cambiar mientras esta consulta estaba en el aire
+      // (ej. logout + login a otra cuenta) -- si ya no coincide, se
+      // descarta en silencio, ni siquiera se toca el chip: esa decisión le
+      // corresponde a la llamada del usuario realmente activo, no a esta
+      // respuesta vieja.
+      if(auth.currentUser?.uid === uid) link.style.display = 'none';
+      return;
+    }
+    // Misma guarda para el camino exitoso: no aplicar un resultado que ya
+    // no corresponde a quien está autenticado ahora.
+    if(auth.currentUser?.uid !== uid) return;
+    link.style.display = entitlements.length ? '' : 'none';
   }
 
   const mcSvgCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
