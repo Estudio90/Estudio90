@@ -9,6 +9,12 @@
 <title>MASTERLOOK — Barbería</title>
 <link rel="preconnect" href="https://api.fontshare.com">
 <link href="https://api.fontshare.com/v2/css?f[]=general-sans@700,600,500,400&display=swap" rel="stylesheet">
+<!-- Noto Serif Display + Inter: SOLO para el flujo "Modificar mi reserva"
+     (#rescheduleModal) -- copia tipográfica exacta de su video de
+     referencia, ver la sección de CSS de #rescheduleModal para el detalle. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- video de fondo del Hero en celular (Bunny Stream): abre la conexión
      (DNS+TLS) desde ya, para que cuando el <video> pida el m3u8 no tenga
      que esperar ese primer viaje de red -- ver el script justo después de
@@ -521,7 +527,7 @@
   .dp-field input[type=text], .dp-field input[type=tel], .dp-field input[type=email]{
     flex:1; min-width:0; border:none; background:none; padding:12px 0; margin:0;
   }
-  .dp-field input[type=text]:focus-visible, .dp-field input[type=tel]:focus-visible, .dp-field input[type=email]:focus-visible{
+  .dp-field input[type=text]:focus-visible, .dp-field input[type=tel]:focus-visible, .dp-field input[type=email]:focus-visible, .dp-field textarea:focus-visible{
     outline:none;
   }
   .dp-lock-note{display:flex; align-items:center; gap:8px; color:var(--text-low); font-size:.76rem; margin:2px 0 26px;}
@@ -620,6 +626,102 @@
      se ocultan para no duplicar ambos controles en la misma pantalla
      (ver actualizarBarra() y el handler de #rvVolver). */
   .step-actions{display:none;}
+  /* ==========================================================
+     "Modificar mi reserva" (#rescheduleModal) -- copia visual 1:1 de la
+     referencia en video (2026-09). Pantalla completa, propia, NO usa
+     .modal-overlay/.modal-card (esas las comparten otros modales del
+     sitio -- términos, privacidad, auth -- y deben seguir viéndose como
+     hoy). Paleta y tipografía fijas (negro+blanco+gris+morado, Noto Serif
+     Display + Inter), independientes del tema claro/oscuro del sitio:
+     el video de referencia siempre es oscuro, sin excepción. */
+  #rescheduleModal{
+    --rsx-bg:#08080A; --rsx-card:#101013; --rsx-card2:#141418;
+    --rsx-text:#F8F8F8; --rsx-text2:#A7A7AE; --rsx-border:#2D2D34;
+    --rsx-accent:#7C46E8; --rsx-btn-ink:#141317;
+    --rsx-font-serif:'Noto Serif Display', serif;
+    --rsx-font-sans:'Inter Display', 'Inter', sans-serif;
+    position:fixed; inset:0; z-index:96; display:none;
+    background:var(--rsx-bg); overflow-y:auto; -webkit-font-smoothing:antialiased;
+  }
+  #rescheduleModal.open{display:block;}
+  #rescheduleModal .rsx-inner{max-width:480px; margin:0 auto; padding:64px 24px 48px; min-height:100%; box-sizing:border-box;}
+  #rescheduleModal .rsx-back{
+    position:fixed; top:20px; left:18px; z-index:2; width:36px; height:36px;
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(248,248,248,.06); border:1px solid rgba(248,248,248,.12);
+    color:var(--rsx-text2); cursor:pointer;
+  }
+  #rescheduleModal .rsx-back:hover{color:var(--rsx-text); border-color:rgba(248,248,248,.26);}
+
+  #rescheduleModal .rsx-brand{text-align:center; margin-bottom:44px;}
+  #rescheduleModal .rsx-brand-name{font-family:var(--rsx-font-serif); font-weight:900; font-size:24px; color:var(--rsx-text);}
+  #rescheduleModal .rsx-brand-sub{font-family:var(--rsx-font-sans); font-weight:500; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--rsx-text2); margin-top:4px;}
+
+  /* loader -- reutilizado para "cargando horarios" y "confirmando cambio" */
+  #rescheduleModal .rsx-loader{text-align:center; padding-top:72px;}
+  #rescheduleModal .rsx-spinner{position:relative; width:150px; height:150px; margin:0 auto 40px;}
+  #rescheduleModal .rsx-spinner-svg{width:100%; height:100%; animation:rsxSpin 1.3s linear infinite;}
+  #rescheduleModal .rsx-spinner-track{fill:none; stroke:var(--rsx-border); stroke-width:2;}
+  #rescheduleModal .rsx-spinner-arc{fill:none; stroke:var(--rsx-accent); stroke-width:2; stroke-linecap:round; stroke-dasharray:26 74;}
+  #rescheduleModal .rsx-spinner-m{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--rsx-font-serif); font-weight:900; font-size:86px; color:var(--rsx-text); line-height:1;}
+  @keyframes rsxSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  #rescheduleModal .rsx-loader-title{font-family:var(--rsx-font-sans); font-weight:700; font-size:22px; color:var(--rsx-text); margin-bottom:10px;}
+  #rescheduleModal .rsx-loader-sub{font-family:var(--rsx-font-sans); font-weight:400; font-size:15px; color:var(--rsx-text2);}
+
+  /* títulos, subtítulos, textos de cuerpo -- comunes a varias pantallas */
+  #rescheduleModal .rsx-step-label{font-family:var(--rsx-font-sans); font-weight:500; font-size:13px; color:var(--rsx-text2); margin-bottom:14px;}
+  /* pisa .display,h1,h2,h3{text-transform:uppercase; letter-spacing:.1em}
+     del sitio -- el video de referencia usa formato oración normal, nunca
+     mayúsculas, en todos sus títulos. */
+  #rescheduleModal .rsx-title{font-family:var(--rsx-font-serif); font-weight:700; font-size:28px; line-height:1.2; letter-spacing:normal; text-transform:none; color:var(--rsx-text); margin:0 0 8px;}
+  #rescheduleModal .rsx-subtitle{font-family:var(--rsx-font-sans); font-weight:400; font-size:15px; color:var(--rsx-text2); margin:0 0 28px;}
+  #rescheduleModal .rsx-body{font-family:var(--rsx-font-sans); font-weight:400; font-size:16px; line-height:1.5; color:var(--rsx-text2); margin:0 0 40px;}
+  #rescheduleModal .rsx-footnote{font-family:var(--rsx-font-sans); font-weight:400; font-size:13px; color:var(--rsx-text2); text-align:center; margin-top:20px;}
+
+  /* estados centrados: bloqueo (icono !) y éxito (check) */
+  #rescheduleModal .rsx-estado{text-align:center; padding-top:56px;}
+  #rescheduleModal .rsx-estado .rsx-title{text-align:center;}
+  #rescheduleModal .rsx-estado-icono{width:88px; height:88px; border-radius:50%; border:1.6px solid var(--rsx-text); color:var(--rsx-text); display:flex; align-items:center; justify-content:center; margin:0 auto 32px;}
+
+  /* botones principales */
+  #rescheduleModal .rsx-btn-primary, #rescheduleModal .rsx-btn-light, #rescheduleModal .rsx-btn-dark{
+    width:100%; border:none; border-radius:18px; padding:17px 20px;
+    font-family:var(--rsx-font-sans); font-weight:600; font-size:20px; text-align:center;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  #rescheduleModal .rsx-btn-primary, #rescheduleModal .rsx-btn-light{background:var(--rsx-text); color:var(--rsx-btn-ink);}
+  #rescheduleModal .rsx-btn-primary:hover, #rescheduleModal .rsx-btn-light:hover{opacity:.9;}
+  #rescheduleModal .rsx-btn-primary:disabled{background:#1C1C21; color:#5A5A62; cursor:not-allowed;}
+  #rescheduleModal .rsx-btn-primary:disabled .rsx-btn-arrow{display:none;}
+  #rescheduleModal .rsx-btn-dark{background:var(--rsx-card2); color:var(--rsx-text); border:1px solid var(--rsx-border);}
+  #rescheduleModal .rsx-btn-dark:hover{border-color:rgba(248,248,248,.3);}
+
+  /* paso 1 -- selector horizontal de días */
+  #rescheduleModal .rsx-dias{display:flex; gap:10px; overflow-x:auto; padding:2px 2px 6px; margin:28px 0 32px; scrollbar-width:none;}
+  #rescheduleModal .rsx-dias::-webkit-scrollbar{display:none;}
+  #rescheduleModal .rsx-dia{flex:0 0 auto; min-width:62px; background:var(--rsx-card2); border-radius:16px; padding:14px 8px; text-align:center; cursor:pointer;}
+  #rescheduleModal .rsx-dia-nom{font-family:var(--rsx-font-sans); font-weight:500; font-size:12px; color:var(--rsx-text2); text-transform:capitalize; margin-bottom:6px;}
+  #rescheduleModal .rsx-dia-num{font-family:var(--rsx-font-sans); font-weight:700; font-size:19px; color:var(--rsx-text);}
+  #rescheduleModal .rsx-dia.is-active{background:var(--rsx-accent);}
+  #rescheduleModal .rsx-dia.is-active .rsx-dia-nom, #rescheduleModal .rsx-dia.is-active .rsx-dia-num{color:#fff;}
+
+  /* paso 1 -- horarios agrupados por franja */
+  #rescheduleModal .rsx-franjas{display:flex; flex-direction:column; gap:28px; margin-bottom:36px;}
+  #rescheduleModal .rsx-franja-tit{font-family:var(--rsx-font-sans); font-weight:600; font-size:17px; color:var(--rsx-text); margin-bottom:14px;}
+  #rescheduleModal .rsx-slots{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+  #rescheduleModal .rsx-slot{background:var(--rsx-card2); border-radius:14px; padding:15px 4px; text-align:center; font-family:var(--rsx-font-sans); font-weight:500; font-size:16px; color:var(--rsx-text); cursor:pointer;}
+  #rescheduleModal .rsx-slot.is-active{background:var(--rsx-accent); color:#fff; font-weight:600;}
+  #rescheduleModal .rsx-slots-msg{font-family:var(--rsx-font-sans); font-weight:400; font-size:15px; color:var(--rsx-text2); text-align:center; padding:12px 0;}
+
+  /* paso 2 -- tarjeta de resumen, 4 filas cada una con su propio Editar */
+  #rescheduleModal .rsx-card{background:var(--rsx-card); border-radius:20px; padding:6px 20px; margin-bottom:36px;}
+  #rescheduleModal .rsx-card-fila{padding:18px 0; border-bottom:1px solid var(--rsx-border);}
+  #rescheduleModal .rsx-card-fila:last-child{border-bottom:none;}
+  #rescheduleModal .rsx-card-fila-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+  #rescheduleModal .rsx-card-label{font-family:var(--rsx-font-sans); font-weight:400; font-size:14px; color:var(--rsx-text2);}
+  #rescheduleModal .rsx-editar{font-family:var(--rsx-font-sans); font-weight:500; font-size:14px; color:var(--rsx-text2); background:none; border:none; cursor:pointer; padding:0;}
+  #rescheduleModal .rsx-editar:hover{color:var(--rsx-text);}
+  #rescheduleModal .rsx-card-valor{font-family:var(--rsx-font-sans); font-weight:600; font-size:18px; color:var(--rsx-text);}
   .btn-dark{background:var(--text-hi); color:var(--bg); border:1px solid var(--text-hi); padding:12px 22px; border-radius:var(--radius-sm); font-size:0.82rem; font-weight:600; cursor:pointer;}
   .btn-dark:hover{background:var(--accent); border-color:var(--accent);}
   .btn-dark:disabled{opacity:0.3; cursor:not-allowed;}
@@ -1971,10 +2073,6 @@
     font-size:0.76rem; color:var(--text-mid); line-height:1.55;
     margin-top:16px; padding-top:14px; border-top:1px solid var(--border);
   }
-  .rs-warn{
-    font-size:0.8rem; line-height:1.5; color:#8a6d1f; background:#f5efe0;
-    border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:6px;
-  }
 
   .hi-status.done{background:var(--ok-tint); color:var(--ok);}
   .hi-status.upcoming{background:var(--accent-tint); color:var(--text-hi);}
@@ -1982,6 +2080,9 @@
   .hi-status.rejected{background:#fbeceb; color:#b03a2e;}
   .history-item.is-rejected .hi-svc{text-decoration:line-through; color:var(--text-mid);}
   .hi-reason{font-size:0.76rem; color:#b03a2e; margin-top:5px; line-height:1.45; max-width:340px;}
+  .hi-nota{font-size:0.76rem; color:var(--text-mid); margin-top:6px; line-height:1.45; max-width:340px;}
+  .hi-nota b{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.3px; color:var(--text-low); margin-bottom:2px;}
+  .hi-nota p{margin:0;}
   .points-card{background:var(--panel-2); border-radius:var(--radius-sm); padding:16px; margin-top:16px;}
   .points-card .pv{font-family:var(--font-primary); font-size:1.5rem; font-weight:700;}
   .points-card .pl{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:0.7rem; text-transform:uppercase; color:var(--text-low); letter-spacing:0.05em;}
@@ -2363,7 +2464,6 @@
     .notify-demo-note{font-size:.66rem; margin-top:10px;}
 
     .toast{padding:10px 16px; font-size:.76rem; bottom:82px;}
-    .rs-warn{font-size:.74rem; padding:11px 12px;}
 
     /* academia (vista completa) */
     .ac-hero{padding:16px 0 22px; gap:16px;}
@@ -2769,6 +2869,32 @@
 </head>
 <body>
 <script>
+  /* Modo "Modificar mi reserva" (?reagendar=<id>&token=<token>): antes del
+     primer pintado, si la URL trae esos parámetros, oculta TODO el
+     contenido público del sitio y deja ver únicamente #rescheduleModal (que
+     por defecto ya muestra su loader "Cargando horarios" -- ver el <style>
+     de #rescheduleModal). Así el cliente que llega desde el botón del
+     correo nunca ve la página normal ni siquiera un instante -- sin esto,
+     la home se pinta primero y recién más abajo, cuando corre
+     manejarReagendarPorEnlace(), aparece el loader encima: ese hueco entre
+     ambos pintados es el "flash" que se quiere evitar. cerrarCambioHora()
+     quita esta clase cuando el cliente cierra el flujo, para volver a
+     revelar el sitio normal. */
+  try{
+    var pReag = new URLSearchParams(location.search);
+    if(pReag.get('reagendar') && pReag.get('token')) document.documentElement.classList.add('ml-boot-reagendar');
+  }catch(e){}
+</script>
+<style>
+  /* #rescheduleModal ya es display:none por defecto y solo se muestra con
+     su propia clase .open -- esta regla la fuerza a verse ANTES de esa
+     clase, únicamente mientras dura el arranque en modo reagendamiento.
+     Todo lo demás en <body> se oculta por completo. */
+  html.ml-boot-reagendar body > *:not(#rescheduleModal){display:none !important;}
+  html.ml-boot-reagendar #rescheduleModal{display:block !important;}
+</style>
+<script>
+
   /* fija el tema antes del primer pintado, para que no haya parpadeo */
   try{
     var t = localStorage.getItem('masterlook_theme');
@@ -3292,26 +3418,103 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="rescheduleModal">
-  <div class="modal-card">
-    <button class="modal-close" onclick="cerrarCambioHora()" aria-label="Cerrar">×</button>
-    <h2>Cambiar la hora</h2>
-    <p class="modal-sub" id="rsServicio">—</p>
+<div id="rescheduleModal" class="rsx-screen">
+  <button type="button" class="rsx-back" id="rsxBack" aria-label="Volver" style="display:none;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
 
-    <div class="rs-warn">
-      Este es tu <b>único cambio</b> disponible para esta reserva. Después de
-      confirmarlo no podrás modificarla de nuevo por el sitio.
+  <div class="rsx-inner">
+    <div class="rsx-brand">
+      <div class="rsx-brand-name">MASTERLOOK</div>
+      <div class="rsx-brand-sub">BARBERÍA</div>
     </div>
 
-    <span class="field-label">Nueva fecha</span>
-    <input type="date" id="rsFecha" class="date-input" style="width:100%;">
+    <!-- Loader -- se reutiliza tal cual para "cargando horarios" (al abrir) y
+         "confirmando cambio" (al pulsar Confirmar cambios); rsxLoaderTexto()
+         solo cambia el título/subtítulo. -->
+    <div id="rsxLoader" class="rsx-loader">
+      <div class="rsx-spinner">
+        <svg class="rsx-spinner-svg" viewBox="0 0 120 120">
+          <circle class="rsx-spinner-track" cx="60" cy="60" r="54" pathLength="100"/>
+          <circle class="rsx-spinner-arc" cx="60" cy="60" r="54" pathLength="100"/>
+        </svg>
+        <div class="rsx-spinner-m">M</div>
+      </div>
+      <div class="rsx-loader-title" id="rsxLoaderTitle">Cargando horarios</div>
+      <div class="rsx-loader-sub" id="rsxLoaderSub">Preparando opciones para tu cambio de hora…</div>
+    </div>
 
-    <span class="field-label">Horarios disponibles</span>
-    <div class="slots" id="rsHoras"><div class="slots-msg">Elige una fecha</div></div>
+    <!-- Bloqueado: enlace vencido, fuera de plazo, o ya usado -->
+    <div id="rsxBloqueo" class="rsx-estado" style="display:none;">
+      <div class="rsx-estado-icono">
+        <svg width="6" height="34" viewBox="0 0 6 34" fill="currentColor"><rect x="0" y="0" width="6" height="20" rx="3"/><circle cx="3" cy="30" r="3"/></svg>
+      </div>
+      <h2 class="rsx-title" id="rsxBloqueoTitulo">No es posible modificar<br>esta reserva</h2>
+      <p class="rsx-body" id="rsxBloqueoMsg">—</p>
+      <button type="button" class="rsx-btn-dark" onclick="cerrarCambioHora()">Cerrar</button>
+    </div>
 
-    <div class="step-actions">
-      <button class="btn-ghost" onclick="cerrarCambioHora()">Volver</button>
-      <button class="btn-dark" id="rsConfirmar" disabled>Confirmar cambio</button>
+    <!-- Paso 1: seleccionar nueva fecha y hora -->
+    <div id="rsxPaso1" style="display:none;">
+      <div class="rsx-step-label">Paso 1 de 2</div>
+      <h2 class="rsx-title">Selecciona fecha y hora de tu servicio</h2>
+
+      <div class="rsx-dias" id="rsxDias"></div>
+      <div class="rsx-franjas" id="rsxFranjas"></div>
+
+      <button type="button" class="rsx-btn-primary" id="rsxSiguiente" disabled>Siguiente<span class="rsx-btn-arrow"> →</span></button>
+    </div>
+
+    <!-- Paso 2: resumen antes de confirmar -->
+    <div id="rsxPaso2" style="display:none;">
+      <div class="rsx-step-label">Paso 2 de 2</div>
+      <h2 class="rsx-title">Información de tu servicio</h2>
+      <p class="rsx-subtitle">Revisa antes de confirmar</p>
+
+      <div class="rsx-card">
+        <div class="rsx-card-fila">
+          <div class="rsx-card-fila-top">
+            <span class="rsx-card-label">Servicio</span>
+            <button type="button" class="rsx-editar" data-rsx-editar>Editar</button>
+          </div>
+          <div class="rsx-card-valor" id="rsxResSvc">—</div>
+        </div>
+        <div class="rsx-card-fila">
+          <div class="rsx-card-fila-top">
+            <span class="rsx-card-label">Fecha</span>
+            <button type="button" class="rsx-editar" data-rsx-editar>Editar</button>
+          </div>
+          <div class="rsx-card-valor" id="rsxResFecha">—</div>
+        </div>
+        <div class="rsx-card-fila">
+          <div class="rsx-card-fila-top">
+            <span class="rsx-card-label">Horario</span>
+            <button type="button" class="rsx-editar" data-rsx-editar>Editar</button>
+          </div>
+          <div class="rsx-card-valor" id="rsxResHora">—</div>
+        </div>
+        <div class="rsx-card-fila">
+          <div class="rsx-card-fila-top">
+            <span class="rsx-card-label">Profesional</span>
+            <button type="button" class="rsx-editar" data-rsx-editar>Editar</button>
+          </div>
+          <div class="rsx-card-valor" id="rsxResBarbero">—</div>
+        </div>
+      </div>
+
+      <button type="button" class="rsx-btn-primary" id="rsxConfirmar">Confirmar cambios</button>
+      <p class="rsx-footnote">El cambio se realiza solo al confirmar.</p>
+    </div>
+
+    <!-- Éxito -->
+    <div id="rsxExito" class="rsx-estado" style="display:none;">
+      <div class="rsx-estado-icono">
+        <svg width="34" height="26" viewBox="0 0 34 26" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l9 9L31 3"/></svg>
+      </div>
+      <h2 class="rsx-title">¡Listo!</h2>
+      <p class="rsx-body">Tu reserva fue modificada correctamente.</p>
+      <button type="button" class="rsx-btn-light" onclick="cerrarCambioHora()">Cerrar</button>
+      <p class="rsx-footnote">Recibirás el correo actualizado automáticamente.</p>
     </div>
   </div>
 </div>
@@ -3465,6 +3668,11 @@
               <div class="dp-field">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 005.5 5.5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A16 16 0 015 5.1 1.5 1.5 0 016.5 3.5z"/></svg>
                 <input type="tel" placeholder="Teléfono" id="cPhone">
+              </div>
+
+              <div class="dp-field" style="align-items:flex-start;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-top:12px;"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+                <textarea id="cNota" maxlength="500" rows="2" placeholder="¿Alguna indicación para tu barbero? (opcional)" style="flex:1;min-width:0;border:none;background:none;padding:12px 0;margin:0;resize:vertical;font:inherit;color:inherit;"></textarea>
               </div>
 
               <div class="dp-lock-note">
@@ -4152,6 +4360,19 @@
 </script>
 
 <script>
+  /* Capturado ACÁ, antes de cualquier otra cosa: si el enlace trae
+   *  ?reagendar=<id>&token=<token>, ese enlace por sí solo autoriza el
+   *  cambio de hora (invitado, sin sesión) -- ver manejarReagendarPorEnlace()
+   *  más abajo. Se guarda en una constante de módulo, no se relee de
+   *  location.search más tarde, porque manejarReagendarPorEnlace() limpia la
+   *  URL con history.replaceState apenas arranca -- si procesarEstadoAuthSitio
+   *  (que corre async, disparado por Firebase) volviera a mirar
+   *  location.search en ese momento, el enlace ya se habría "perdido" de la URL. */
+  const ML_REAGENDAR_PENDIENTE = (function(){
+    var p = new URLSearchParams(location.search);
+    return !!(p.get('reagendar') && p.get('token'));
+  })();
+
   /* ==========================================================
      CONFIGURACIÓN
      Cambia esta URL por la de tu API cuando la publiques.
@@ -5209,6 +5430,7 @@
               tipo: 'RESERVATION_DEPOSIT',
               fecha: state.fecha,
               client: datos.name, phone: datos.phone, email: datos.email,
+              comentarioCliente: document.getElementById('cNota')?.value.trim() || '',
               citas: citas.map(c=> ({
                 serviceId: c.servicioId, servicio: c.servicio, price: c.precio,
                 barberName: c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
@@ -5257,6 +5479,7 @@
     pintarElegidos(); marcarTarjetas();
     document.querySelectorAll('.svc-opt, .barber-opt, .slot, .pay-opt').forEach(x=>x.classList.remove('selected'));
     nameInput.value=''; phoneInput.value=''; document.getElementById('cEmail').value='';
+    const cNotaEl = document.getElementById('cNota'); if(cNotaEl) cNotaEl.value='';
     document.getElementById('toStep2').disabled = true;
     document.getElementById('toStep3').disabled = true;
     pagoEnCurso = false; pagoServicioRedirigiendo(false);
@@ -5410,7 +5633,13 @@
     // puede quedar desactualizada.
     if(auth.currentUser?.uid !== user.uid) return;
 
-    if(!redirigiendoAlPanel && window.self === window.top){
+    // ML_REAGENDAR_PENDIENTE: si la sesión de staff que ya estaba abierta en
+    // este navegador (la dueña probando su propio enlace, por ejemplo) NO
+    // debe pisar el enlace de reagendo de un correo -- el token de la URL es
+    // lo que autoriza el cambio, no la sesión que haya quedada abierta. Sin
+    // esto, cualquier staff con sesión activa era mandada al panel ANTES de
+    // que manejarReagendarPorEnlace() alcanzara a abrir el modal.
+    if(!redirigiendoAlPanel && window.self === window.top && !ML_REAGENDAR_PENDIENTE){
       if(dest === 'panel'){
         redirigiendoAlPanel = true;
         if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
@@ -6309,12 +6538,19 @@
           ? `<button class="btn-ghost" style="padding:6px 12px;font-size:.78rem;" data-cambiar="${escapeHTML(b.id)}" data-svc="${escapeHTML(b.svc)}">Cambiar hora</button>`
           : '';
 
+        // Notas compartidas con el cliente (notaCliente) -- lo que el local
+        // le escribe a ESTA reserva. Solo lectura; si está vacía, no se
+        // muestra ni título ni espacio vacío.
+        const notaCompartida = b.notaCliente
+          ? `<div class="hi-nota"><b>Notas compartidas con el cliente</b><p>${escapeHTML(b.notaCliente)}</p></div>` : '';
+
         return `
         <div class="history-item ${decision === 'rechazada' ? 'is-rejected' : ''}">
           <div>
             <div class="hi-svc">${b.svc}</div>
             <div class="hi-meta">${b.barber} · ${b.slot} · ${b.pay}</div>
             ${reason}
+            ${notaCompartida}
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <span class="hi-status ${cls}">${label}</span>
@@ -6348,44 +6584,137 @@
        - invitado: llega por el botón "Modificar cita" del correo
          (?reagendar=<id>&token=<token>), se resuelve una vez vía
          obtenerReservaPorToken y se cachea en rsReservaInvitado. */
-  let rsEstado = { bookingId:null, token:null, startsAt:null };
+  let rsEstado = { bookingId:null, token:null, startMin:null, barberName:null };
   let rsReservaInvitado = null;
+  let rsFechaSel = null;
+  /** Texto del servicio a mostrar en el paso 2 -- viene de misReservasCache
+   *  (cuenta) o de obtenerReservaPorToken (invitado), según el caso; no
+   *  depende de ningún elemento visible del paso 1 (el video de referencia
+   *  no muestra el nombre del servicio ahí, solo en el resumen). */
+  let rsServicioTexto = null;
+  const RS_DIAS_CORTO = ['dom','lun','mar','mié','jue','vie','sáb'];
 
-  function abrirCambioHora(bookingId, servicio){
-    rsEstado = { bookingId, token:null, startsAt:null };
-    rsReservaInvitado = null;
-    abrirModalCambioHora(servicio);
+  /** Muestra una sola pantalla del flujo (loader/bloqueo/paso1/paso2/éxito)
+   *  y oculta el resto -- y decide si la flecha "volver" discreta debe
+   *  verse, y qué hace: en el paso 1 cierra el flujo completo (no hay nada
+   *  antes); en el paso 2 vuelve al paso 1 (igual que cualquier "Editar").
+   *  En el loader/bloqueo/éxito se oculta -- esas pantallas ya tienen su
+   *  propio "Cerrar" como única salida. */
+  function rsxMostrar(id){
+    ['rsxLoader','rsxBloqueo','rsxPaso1','rsxPaso2','rsxExito'].forEach(k=>{
+      const el = document.getElementById(k);
+      if(el) el.style.display = (k === id) ? '' : 'none';
+    });
+    const back = document.getElementById('rsxBack');
+    if(id === 'rsxPaso1'){ back.style.display = ''; back.onclick = cerrarCambioHora; }
+    else if(id === 'rsxPaso2'){ back.style.display = ''; back.onclick = rsxVolverAPaso1; }
+    else{ back.style.display = 'none'; back.onclick = null; }
   }
 
+  function rsxLoaderTexto(titulo, sub){
+    document.getElementById('rsxLoaderTitle').textContent = titulo;
+    document.getElementById('rsxLoaderSub').textContent = sub;
+  }
+
+  /** El loader debe verse un mínimo de tiempo aunque la red responda antes
+   *  -- si no, en una conexión rápida parpadea y se pierde toda la
+   *  animación que pide el video de referencia. Si la promesa rechaza, el
+   *  error se propaga de inmediato (no tiene sentido esperar el mínimo). */
+  function rsxEsperaMinima(promesa, ms = 700){
+    return Promise.all([promesa, new Promise(r => setTimeout(r, ms))]).then(([v]) => v);
+  }
+
+  function abrirCambioHora(bookingId, servicio){
+    rsEstado = { bookingId, token:null, startMin:null, barberName:null };
+    rsReservaInvitado = null;
+    rsServicioTexto = servicio;
+    document.getElementById('rescheduleModal').classList.add('open');
+    rsAbrirPaso1();
+  }
+
+  /** Una sola animación continua desde el clic hasta que se sabe qué
+   *  mostrar: el loader ya está visible desde antes del primer pintado (ver
+   *  el <style>/<script> justo después de <body>), así que acá solo hay
+   *  que mantenerlo mientras se valida token + reserva + 4h + único cambio
+   *  -- nunca una pantalla en blanco ni una segunda carga después. Recién
+   *  al resolver se decide Paso 1 (rsAbrirPaso1) o el mensaje de bloqueo
+   *  correspondiente (mostrarModalBloqueado). */
   async function abrirCambioHoraInvitado(bookingId, token){
+    rsEstado = { bookingId, token, startMin:null, barberName:null };
+    rsReservaInvitado = null;
+    document.getElementById('rescheduleModal').classList.add('open');
+    rsxMostrar('rsxLoader');
+    rsxLoaderTexto('Cargando horarios', 'Preparando opciones para tu cambio de hora…');
+
     let real;
     try{
       const resp = await fetch(FUNCTIONS_BASE + '/obtenerReservaPorToken', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ bookingId, token }),
       });
-      real = await resp.json();
-      if(!resp.ok || !real.ok) throw new Error(real.error || 'Enlace inválido');
+      const data = await resp.json();
+      if(!resp.ok || !data.ok){
+        // 'fuera_de_plazo' / 'ya_modificada' -- el backend ya validó que no
+        // se puede reagendar; el mensaje se muestra FIJO en la pantalla de
+        // bloqueo (nunca un toast que desaparece) y nunca se llega a
+        // mostrar el selector de horas. El backend sigue siendo quien
+        // decide: esto solo evita ofrecerle al cliente una pantalla que de
+        // todas formas el servidor iba a rechazar.
+        mostrarModalBloqueado(data.error || 'Ese enlace ya no es válido.', data.code);
+        return;
+      }
+      real = data;
     }catch(e){
-      toast(e.message || 'Ese enlace ya no es válido.');
+      mostrarModalBloqueado('Ese enlace ya no es válido.');
       return;
     }
-    rsEstado = { bookingId, token, startsAt:null };
     rsReservaInvitado = real;
-    abrirModalCambioHora(real.svc);
+    rsServicioTexto = real.svc;
+    await rsAbrirPaso1();
   }
 
-  function abrirModalCambioHora(servicio){
-    document.getElementById('rsServicio').textContent = servicio;
-    document.getElementById('rsConfirmar').disabled = true;
-
-    const input = document.getElementById('rsFecha');
-    const hoy = new Date().toISOString().slice(0,10);
-    input.value = hoy;
-    input.min = hoy;
-
+  /** Estado bloqueado (enlace vencido, fuera de plazo, o ya usado): un solo
+   *  mensaje fijo, sin paso 1 ni paso 2, hasta que el cliente lo cierre.
+   *  El título "No es posible modificar esta reserva" queda SOLO para
+   *  'ya_modificada' (segundo intento, enlace ya usado) -- para
+   *  'fuera_de_plazo' (se pasaron las 4 horas) va directo el mensaje, sin
+   *  ese título, tal como ya estaba pensado para ese caso. */
+  function mostrarModalBloqueado(mensaje, codigo){
     document.getElementById('rescheduleModal').classList.add('open');
-    cargarHorasCambio();
+    document.getElementById('rsxBloqueoMsg').textContent = mensaje;
+    document.getElementById('rsxBloqueoTitulo').style.display = (codigo === 'fuera_de_plazo') ? 'none' : '';
+    rsxMostrar('rsxBloqueo');
+  }
+
+  /** Muestra el loader, calcula el primer día con horario abierto, precarga
+   *  su ocupación real (para que el paso 1 aparezca ya listo, sin un
+   *  segundo "Buscando horarios..." encima del loader) y recién ahí revela
+   *  el paso 1. */
+  async function rsAbrirPaso1(){
+    rsxMostrar('rsxLoader');
+    rsxLoaderTexto('Cargando horarios', 'Preparando opciones para tu cambio de hora…');
+    rsEstado.startMin = null;
+    rsEstado.barberName = null;
+
+    rsFechaSel = null;
+    const hoy = new Date();
+    for(let n = 0; n < 60; n++){
+      const d = new Date(hoy); d.setDate(hoy.getDate() + n);
+      const iso = d.toISOString().slice(0,10);
+      if(horarioDelDia(iso)){ rsFechaSel = iso; break; }
+    }
+
+    try{
+      await rsxEsperaMinima(rsFechaSel ? nrObtenerOcupacionRealSitio(rsFechaSel) : Promise.resolve());
+    }catch(e){
+      // rsxCargarHoras() vuelve a intentar el mismo fetch y ahí sí muestra
+      // el mensaje de error dentro del paso 1 -- acá solo evita que un
+      // primer intento fallido deje el loader colgado.
+    }
+
+    rsxMostrar('rsxPaso1');
+    rsxPintarDias();
+    rsxCargarHoras(rsFechaSel);
   }
 
   /** La reserva que se está reagendando, sea de cuenta o de invitado --
@@ -6397,23 +6726,56 @@
 
   function cerrarCambioHora(){
     document.getElementById('rescheduleModal').classList.remove('open');
+    // Suelta el forzado "display:block" de arranque (ver el <style> justo
+    // después de <body>) -- si no, el modal seguiría viéndose aunque se le
+    // haya quitado .open, y el sitio público de atrás nunca se revelaría.
+    document.documentElement.classList.remove('ml-boot-reagendar');
   }
 
-  document.getElementById('rsFecha').addEventListener('change', cargarHorasCambio);
-  document.getElementById('rescheduleModal').addEventListener('click', e=>{
-    if(e.target.id === 'rescheduleModal') cerrarCambioHora();
-  });
+  /* ---------- paso 1: selector horizontal de días ---------- */
+  function rsxPintarDias(){
+    const cont = document.getElementById('rsxDias');
+    if(!cont) return;
+    const hoy = new Date();
+    const dias = [];
+    for(let n = 0; dias.length < 21 && n < 60; n++){
+      const d = new Date(hoy); d.setDate(hoy.getDate() + n);
+      const iso = d.toISOString().slice(0,10);
+      if(!horarioDelDia(iso)) continue; // cerrado ese día -- no se muestra
+      dias.push({ iso, d });
+    }
+    if(!rsFechaSel || !dias.some(x => x.iso === rsFechaSel)) rsFechaSel = dias[0]?.iso || null;
 
-  async function cargarHorasCambio(){
-    const cont = document.getElementById('rsHoras');
-    rsEstado.startsAt = null;
-    document.getElementById('rsConfirmar').disabled = true;
-    cont.innerHTML = '<div class="slots-msg">Buscando horarios...</div>';
+    cont.innerHTML = dias.map(({ iso, d }) =>
+      `<div class="rsx-dia ${iso === rsFechaSel ? 'is-active' : ''}" data-d="${iso}">
+        <div class="rsx-dia-nom">${RS_DIAS_CORTO[d.getDay()]}</div>
+        <div class="rsx-dia-num">${d.getDate()}</div>
+      </div>`
+    ).join('');
+
+    cont.querySelectorAll('.rsx-dia').forEach(el =>
+      el.addEventListener('click', () => {
+        rsFechaSel = el.dataset.d;
+        cont.querySelectorAll('.rsx-dia').forEach(x => x.classList.toggle('is-active', x === el));
+        rsxCargarHoras(rsFechaSel);
+      }));
+  }
+
+  /* ---------- paso 1: horarios agrupados por franja (Mañana/Tarde/Noche) ---------- */
+  async function rsxCargarHoras(fecha){
+    const cont = document.getElementById('rsxFranjas');
+    rsEstado.startMin = null;
+    rsEstado.barberName = null;
+    document.getElementById('rsxSiguiente').disabled = true;
+    if(!fecha){
+      cont.innerHTML = '<div class="rsx-slots-msg">No hay días disponibles.</div>';
+      return;
+    }
+    cont.innerHTML = '<div class="rsx-slots-msg">Buscando horarios…</div>';
 
     const reserva = reservaActualParaCambio();
-    const fecha = document.getElementById('rsFecha').value;
     if(!reserva){
-      cont.innerHTML = '<div class="slots-msg">No pudimos identificar la reserva.</div>';
+      cont.innerHTML = '<div class="rsx-slots-msg">No pudimos identificar la reserva.</div>';
       return;
     }
 
@@ -6423,11 +6785,11 @@
     try{
       real = await nrObtenerOcupacionRealSitio(fecha);
     }catch(e){
-      cont.innerHTML = '<div class="slots-msg">No pudimos confirmar la disponibilidad real. Intenta de nuevo en un momento.</div>';
+      cont.innerHTML = '<div class="rsx-slots-msg">No pudimos confirmar la disponibilidad real. Intenta de nuevo en un momento.</div>';
       return;
     }
     if(!real.horario){
-      cont.innerHTML = '<div class="slots-msg">Ese día el local no atiende.</div>';
+      cont.innerHTML = '<div class="rsx-slots-msg">Ese día el local no atiende.</div>';
       return;
     }
 
@@ -6452,20 +6814,32 @@
     }
 
     if(!opciones.length){
-      cont.innerHTML = '<div class="slots-msg">No hay horarios disponibles ese día con 4 horas de anticipación.</div>';
+      cont.innerHTML = '<div class="rsx-slots-msg">No hay horarios disponibles ese día con 4 horas de anticipación.</div>';
       return;
     }
 
-    cont.innerHTML = opciones.map(o=>
-      `<div class="slot" data-min="${o.min}" data-barber="${escapeHTML(o.barber)}">${String(Math.floor(o.min/60)).padStart(2,'0')}:${String(o.min%60).padStart(2,'0')}</div>`
-    ).join('');
+    const franjas = [
+      { nom:'Mañana', desde:0,     hasta:12*60 },
+      { nom:'Tarde',  desde:12*60, hasta:17*60 },
+      { nom:'Noche',  desde:17*60, hasta:24*60 },
+    ];
+    cont.innerHTML = franjas.map(f=>{
+      const dentro = opciones.filter(o=> o.min >= f.desde && o.min < f.hasta);
+      if(!dentro.length) return '';
+      return `<div>
+        <div class="rsx-franja-tit">${f.nom}</div>
+        <div class="rsx-slots">
+          ${dentro.map(o=> `<div class="rsx-slot" data-min="${o.min}" data-barber="${escapeHTML(o.barber)}">${String(Math.floor(o.min/60)).padStart(2,'0')}:${String(o.min%60).padStart(2,'0')}</div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
 
-    cont.querySelectorAll('.slot').forEach(o=>
+    cont.querySelectorAll('.rsx-slot').forEach(o=>
       o.addEventListener('click', ()=>{
         rsEstado.startMin = Number(o.dataset.min);
         rsEstado.barberName = o.dataset.barber;
-        cont.querySelectorAll('.slot').forEach(x=> x.classList.toggle('selected', x===o));
-        document.getElementById('rsConfirmar').disabled = false;
+        cont.querySelectorAll('.rsx-slot').forEach(x=> x.classList.toggle('is-active', x===o));
+        document.getElementById('rsxSiguiente').disabled = false;
       }));
   }
 
@@ -6480,33 +6854,67 @@
     return data;
   }
 
-  document.getElementById('rsConfirmar').addEventListener('click', async ()=>{
-    const btn = document.getElementById('rsConfirmar');
-    btn.disabled = true; btn.textContent = 'Cambiando...';
+  /* ---------- paso 1 -> paso 2 (resumen, sin confirmar todavía) ---------- */
+  function rsxVolverAPaso1(){
+    rsxMostrar('rsxPaso1');
+  }
+  document.querySelectorAll('#rsxPaso2 [data-rsx-editar]').forEach(btn =>
+    btn.addEventListener('click', rsxVolverAPaso1));
+
+  function rsxCapitaliza(s){
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+  function rsxHora12(min){
+    let h = Math.floor(min / 60), m = min % 60;
+    const suf = h < 12 ? 'am' : 'pm';
+    let h12 = h % 12; if(h12 === 0) h12 = 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${suf}`;
+  }
+
+  document.getElementById('rsxSiguiente').addEventListener('click', ()=>{
+    if(rsEstado.startMin == null) return;
+
+    document.getElementById('rsxResSvc').textContent = rsServicioTexto || '—';
+    document.getElementById('rsxResFecha').textContent = rsxCapitaliza(fmtFechaLarga(rsFechaSel));
+    document.getElementById('rsxResHora').textContent = rsxHora12(rsEstado.startMin);
+    document.getElementById('rsxResBarbero').textContent = rsEstado.barberName || '—';
+
+    rsxMostrar('rsxPaso2');
+  });
+
+  /* ---------- paso 2: confirmar de verdad (acá recién se llama al backend) ---------- */
+  document.getElementById('rsxConfirmar').addEventListener('click', async ()=>{
+    rsxMostrar('rsxLoader');
+    rsxLoaderTexto('Confirmando cambio', 'Estamos actualizando tu reserva…');
     try{
       const reserva = reservaActualParaCambio();
       const datos = {
         bookingId: rsEstado.bookingId, barberName: rsEstado.barberName,
-        fecha: document.getElementById('rsFecha').value,
+        fecha: rsFechaSel,
         startMin: rsEstado.startMin, minutes: reserva?.duracion || 45,
       };
-      if(rsEstado.token){
-        const resp = await fetch(FUNCTIONS_BASE + '/reagendarReservaToken', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ ...datos, token: rsEstado.token }),
-        });
-        const r = await resp.json();
-        if(!resp.ok || !r.ok) throw new Error(r.error || 'No se pudo cambiar la hora.');
-      } else {
-        await functions.httpsCallable('reagendarReservaCliente')(datos);
-      }
-      cerrarCambioHora();
-      toast('Hora actualizada. Te enviamos un correo con el nuevo horario.');
+      await rsxEsperaMinima((async () => {
+        if(rsEstado.token){
+          const resp = await fetch(FUNCTIONS_BASE + '/reagendarReservaToken', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ ...datos, token: rsEstado.token }),
+          });
+          const r = await resp.json();
+          if(!resp.ok || !r.ok) throw new Error(r.error || 'No se pudo cambiar la hora.');
+        } else {
+          await functions.httpsCallable('reagendarReservaCliente')(datos);
+        }
+      })());
+      rsxMostrar('rsxExito');
       if(!rsEstado.token) await renderAccount();
     }catch(e){
       toast(e.message || 'No se pudo cambiar la hora.');
+      // El backend es la autoridad definitiva: si rechazó el cambio (p.ej.
+      // alguien más tomó ese horario, o se pasaron las 4h mientras el
+      // cliente estaba en el resumen), vuelve al paso 1 para que elija otra
+      // hora en vez de dejarlo atascado frente a una pantalla que solo falló.
+      rsxMostrar('rsxPaso1');
     }
-    btn.disabled = false; btn.textContent = 'Confirmar cambio';
   });
 
 

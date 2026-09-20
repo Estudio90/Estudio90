@@ -60,6 +60,22 @@
     --ok:#189d79; --pend:#c98a2e; --done:#4a5cf0; --no:#d14545;
     --reservado:#3b8fa3; --asistio:#d64fb0;
     --reservado-tint:#c9e8ec; --pend-tint:#f5e0b8; --asistio-tint:#f6c9e6; --no-tint:#f5c9c9;
+    /* Los 6 estados reales de reserva, calcados de AgendaPro -- colores
+       exactos medidos en vivo en app.agendapro.com (no aproximados).
+       Variables DEDICADAS (--ap-*), separadas a propósito de --reservado/
+       --pend/--asistio/--no de arriba: esas 4 siguen existiendo con su
+       color viejo de Masterlook porque --pend en particular se reutiliza
+       en la etiqueta ".combo" (línea ~1362), ajena al estado de una
+       reserva -- cambiar esa variable directamente le habría cambiado el
+       color a algo sin relación. Todo lo que pinta el estado real de una
+       reserva (pills, tarjeta de agenda, leyenda, filtro) usa --ap-* desde
+       este cambio en adelante. Tints ~75% hacia blanco, misma proporción
+       que ya usan los tints viejos -- se ajustan si hace falta en la
+       comparación visual lado a lado. */
+    --ap-reservado:#77d0fa; --ap-confirmado:#ecbe51; --ap-asiste:#fab5fb;
+    --ap-no-asistio:#fccac2; --ap-pendiente:#fd8991; --ap-en-espera:#b6ed80;
+    --ap-reservado-tint:#e9f7fe; --ap-confirmado-tint:#faefd4; --ap-asiste-tint:#fdedfd;
+    --ap-no-asistio-tint:#fef4f2; --ap-pendiente-tint:#fee6e7; --ap-en-espera-tint:#edfbdf;
     --amber:#c98a2e;
 
     /* Resumen de Ventas -- identidad real de Master Look (la misma del
@@ -968,6 +984,10 @@
     .mg-modal.open{animation:mgModalInReduced 150ms ease-out;}
   }
   @keyframes mgModalInReduced{from{opacity:0;}to{opacity:1;}}
+  /* mgConfirm()/mgPrompt() se pueden abrir ENCIMA de otro .mg-modal ya abierto
+     (p.ej. "Descartar cambios" sobre Nueva Reserva). Necesitan quedar arriba
+     sin depender del orden en el DOM -- ver cerrarModales() en el JS. */
+  #modalMgConfirm, #modalMgPrompt{ z-index:189; }
   .mg-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
   .mg-head h3{font-size:17px; font-weight:600;}
   .mg-close{background:#f1f1f4; border:none; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:#57565f;}
@@ -1134,10 +1154,12 @@
      ENTERA, no solo el puntito -- reemplaza el color de servicio de arriba
      mientras la reserva tenga ese estado (mismo criterio visual que ya
      usa el servicio: tinte de fondo + franja sólida a la izquierda). */
-  .appt.st-reservado{background:var(--reservado-tint);} .appt.st-reservado::before{background:var(--reservado);}
-  .appt.st-pend{background:var(--pend-tint);} .appt.st-pend::before{background:var(--pend);}
-  .appt.st-asistio{background:var(--asistio-tint);} .appt.st-asistio::before{background:var(--asistio);}
-  .appt.st-no{background:var(--no-tint);} .appt.st-no::before{background:var(--no);}
+  .appt.st-reservado{background:var(--ap-reservado-tint);} .appt.st-reservado::before{background:var(--ap-reservado);}
+  .appt.st-pend{background:var(--ap-pendiente-tint);} .appt.st-pend::before{background:var(--ap-pendiente);}
+  .appt.st-asistio{background:var(--ap-asiste-tint);} .appt.st-asistio::before{background:var(--ap-asiste);}
+  .appt.st-no{background:var(--ap-no-asistio-tint);} .appt.st-no::before{background:var(--ap-no-asistio);}
+  .appt.st-confirmado{background:var(--ap-confirmado-tint);} .appt.st-confirmado::before{background:var(--ap-confirmado);}
+  .appt.st-en_espera{background:var(--ap-en-espera-tint);} .appt.st-en_espera::before{background:var(--ap-en-espera);}
   .appt:hover{transform:translateY(-1px);box-shadow:var(--shadow-hover);border-color:var(--border-strong);z-index:8;}
   /* Nombre / servicio / hora apilados en 3 líneas, mismo tamaño y alto de
      línea que AgendaPro (12px / 13px) -- ya no nombre+hora en la misma
@@ -1149,10 +1171,11 @@
   .appt-bottom{display:none;}
   .appt-bottom-left{display:flex;align-items:center;gap:5px;min-width:0;}
   .status-dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;}
-  .status-dot.ok{background:var(--ok);} .status-dot.pend{background:var(--pend);}
-  .status-dot.done{background:var(--done);} .status-dot.no{background:var(--no);}
+  .status-dot.ok{background:var(--ok);} .status-dot.pend{background:var(--ap-pendiente);}
+  .status-dot.done{background:var(--done);} .status-dot.no{background:var(--ap-no-asistio);}
   .status-dot.new{background:var(--corte);} .status-dot.resched{background:#e2836f;}
-  .status-dot.reservado{background:var(--reservado);} .status-dot.asistio{background:var(--asistio);}
+  .status-dot.reservado{background:var(--ap-reservado);} .status-dot.asistio{background:var(--ap-asiste);}
+  .status-dot.confirmado{background:var(--ap-confirmado);} .status-dot.en_espera{background:var(--ap-en-espera);}
   .status-txt{font-size:9.5px;color:var(--text-low);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   /* Tooltip flotante al pasar el mouse por una reserva. */
   .appt-hover{
@@ -1938,6 +1961,183 @@
     .cldb-pag-controls{justify-content:space-between;}
     .cldb-pag-select{flex:1;}
   }
+
+  /* =====================================================================
+     NUEVA RESERVA -- calco exacto de AgendaPro (app.agendapro.com/calendar,
+     medido en vivo: ancho, radios, sombra, tipografía, colores). Roboto en
+     todo (Google Sans no se puede incorporar -- ver auditoría). Prefijo
+     nr2- para no chocar con .mg-modal/.mg-* que siguen usando los otros
+     modales (Nuevo cliente aparte, Bloquear horario, Venta de producto).
+     ===================================================================== */
+  #modalReserva.nr2-modal{
+    width:720px; max-width:calc(100vw - 32px); border-radius:16px;
+    box-shadow:0 14px 16px 0 rgba(51,65,86,.1); font-family:'Roboto',sans-serif;
+    padding:0; max-height:calc(100vh - 48px); flex-direction:column;
+  }
+  /* display:flex SOLO cuando está .open -- si no, gana por especificidad de ID
+     sobre ".mg-modal{display:none}" y el modal queda visible siempre. */
+  #modalReserva.nr2-modal.open{ display:flex; }
+  .nr2-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;flex:0 0 auto;}
+  .nr2-title{font-size:16px;font-weight:500;color:#101827;margin:0;}
+  .nr2-head-right{display:flex;align-items:center;gap:10px;}
+  .nr2-close{width:28px;height:28px;border:none;background:transparent;border-radius:999px;color:#697382;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .nr2-close:hover{background:#f3f4f6;}
+  .nr2-body{padding:0 24px 20px;overflow-y:auto;flex:1 1 auto;}
+  .nr2-label{display:block;font-size:14px;font-weight:500;color:#101827;margin:16px 0 6px;}
+  .nr2-label:first-child{margin-top:0;}
+  .nr2-input{width:100%;height:40px;border:1px solid #c2cad5;border-radius:8px;padding:0 12px;font-family:'Roboto',sans-serif;font-size:14px;font-weight:400;color:#101827;background:#fff;box-sizing:border-box;}
+  .nr2-input:focus{outline:none;border-color:#812df2;box-shadow:0 0 0 1px #812df2;}
+  .nr2-input::placeholder{color:#99a3b2;}
+  textarea.nr2-input{height:auto;padding:8px 12px;resize:vertical;min-height:64px;font-family:'Roboto',sans-serif;}
+
+  /* Fila Fecha / Hora inicio / Hora fin / Repetir */
+  .nr2-row-top{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;}
+  .nr2-row-top .nr2-field{flex:1 1 150px;min-width:130px;}
+  .nr2-row-top .nr2-field .nr2-label{margin-top:0;}
+  .nr2-repetir-btn{background:none;border:none;color:#1f293a;font-size:14px;font-weight:500;font-family:'Roboto',sans-serif;cursor:pointer;padding:0 0 10px;text-decoration:none;white-space:nowrap;}
+
+  /* Fecha/Hora -- calendario y rueda emergentes, calco de AgendaPro (medido
+     en vivo: tamaños, radios, colores, sombra). El <input type=hidden> sigue
+     siendo la fuente de datos que lee el resto del código (validarNuevaReserva,
+     nr2ActualizarHoraFin, el payload de guardado); estos widgets solo le
+     cambian la presentación y despachan change/input para que todo lo demás
+     siga funcionando sin tocarlo. */
+  .nr2-pick-wrap{position:relative;}
+  .nr2-pick-trigger{
+    width:100%; height:40px; border:1px solid #c2cad5; border-radius:12px; background:#fff;
+    display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box;
+    font-family:'Roboto',sans-serif; font-size:14px; color:#101827; cursor:pointer;
+  }
+  .nr2-pick-trigger:focus, .nr2-pick-trigger.open{outline:none; border:2px solid #812df2; padding:0 11px;}
+  .nr2-pick-trigger .nr2-pick-icon, .nr2-pick-trigger .nr2-pick-icon-r{flex:0 0 auto; color:#101827; display:flex;}
+  .nr2-pick-trigger span{flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left;}
+  .nr2-pick-trigger .nr2-pick-chev{flex:0 0 auto; color:#101827; transition:transform .15s;}
+  .nr2-pick-trigger.open .nr2-pick-chev{transform:rotate(180deg);}
+  .nr2-pick-placeholder{color:#99a3b2;}
+
+  .nr2-cal-pop, .nr2-wheel-pop{
+    display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:70;
+    background:#fff; border:1px solid #e3e7ed; border-radius:12px;
+    box-shadow:0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1);
+    font-family:'Roboto',sans-serif;
+  }
+  .nr2-cal-pop.open, .nr2-wheel-pop.open{display:block;}
+  .nr2-cal-pop{width:250px; padding:12px;}
+  .nr2-cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+  .nr2-cal-nav{width:32px; height:32px; border:none; background:transparent; border-radius:8px; cursor:pointer;
+    color:#101827; display:flex; align-items:center; justify-content:center;}
+  .nr2-cal-nav:hover{background:#f3f4f6;}
+  .nr2-cal-my{display:flex; gap:4px;}
+  .nr2-cal-my span{height:32px; display:flex; align-items:center; padding:0 8px; border-radius:8px;
+    font-size:14px; color:#101827;}
+  .nr2-cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:2px;}
+  .nr2-cal-weekdays span{font-size:12px; color:#48566a; text-align:center; line-height:32px;}
+  .nr2-cal-days{display:grid; grid-template-columns:repeat(7,1fr); gap:2px;}
+  .nr2-cal-day{width:32px; height:32px; border:none; background:transparent; border-radius:8px;
+    font-size:12px; color:#101827; cursor:pointer; font-family:'Roboto',sans-serif;}
+  .nr2-cal-day:hover{background:#f3f4f6;}
+  .nr2-cal-day.muted{color:#48566a;}
+  .nr2-cal-day.sel{background:#812df2; color:#fff; font-weight:500;}
+  .nr2-cal-day.disabled{color:#c2cad5; cursor:not-allowed; pointer-events:none;}
+
+  .nr2-wheel-body{position:relative; display:flex; height:200px; overflow:hidden; padding:0 8px;}
+  .nr2-wheel-col{width:48px; overflow-y:auto; scroll-snap-type:y mandatory; scrollbar-width:none; position:relative; z-index:1;}
+  .nr2-wheel-col::-webkit-scrollbar{display:none;}
+  .nr2-wheel-colon{display:flex; align-items:center; justify-content:center; color:#48566a; font-size:16px; font-weight:500; width:12px;}
+  .nr2-wheel-pad{height:80px; flex-shrink:0;}
+  .nr2-wheel-item{
+    height:40px; width:100%; display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:#64748b; font-weight:400; cursor:pointer; scroll-snap-align:center;
+    background:none; border:none; font-family:'Roboto',sans-serif;
+  }
+  .nr2-wheel-item.sel{color:#101827; font-weight:500;}
+  .nr2-wheel-band{position:absolute; left:8px; right:8px; top:80px; height:40px; background:#f1f4f7; border-radius:6px; z-index:0;}
+
+  /* Estado -- píldora + menú desplegable de 6 opciones, colores exactos de AgendaPro */
+  .nr2-estado-pill{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:1px solid #c2cad5;border-radius:999px;background:#fff;cursor:pointer;font-family:'Roboto',sans-serif;font-size:14px;font-weight:500;color:#101827;}
+  .nr2-estado-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .nr2-estado-wrap{position:relative;}
+  .nr2-estado-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;width:180px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,39,.12);padding:6px;z-index:40;}
+  .nr2-estado-menu.open{display:block;}
+  .nr2-estado-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:14px;color:#101827;}
+  .nr2-estado-opt:hover{background:#f3f4f6;}
+  .nr2-estado-opt .nr2-estado-dot{width:8px;height:8px;}
+  .nr2-estado-check{display:none;margin-left:auto;flex:0 0 auto;color:#101827;}
+  .nr2-estado-opt.sel .nr2-estado-check{display:block;}
+
+  /* Cliente -- buscador */
+  .nr2-cliente-row{display:flex;gap:10px;align-items:flex-start;}
+  .nr2-cliente-row .nr2-cliente-input-wrap{flex:1;position:relative;}
+  .nr2-btn-outline{height:40px;padding:0 16px;border:1px solid #c2cad5;border-radius:999px;background:#fff;color:#1f293a;font-family:'Roboto',sans-serif;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;}
+  .nr2-btn-outline:hover{background:#f9fafb;}
+  .nr2-cliente-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:280px;overflow-y:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,39,.12);z-index:30;}
+  .nr2-cliente-dropdown.open{display:block;}
+  .nr2-cliente-dropdown-search{padding:10px 12px;border-bottom:1px solid #f0f1f3;font-size:13px;color:#697382;}
+  .nr2-cliente-item{padding:10px 14px;cursor:pointer;}
+  .nr2-cliente-item:hover{background:#f9fafb;}
+  .nr2-cliente-item-nombre{font-size:14px;font-weight:600;color:#101827;}
+  .nr2-cliente-item-sub{font-size:12px;color:#697382;margin-top:2px;}
+  .nr2-cliente-empty{padding:16px;font-size:13px;color:#697382;text-align:center;}
+
+  /* Cliente -- tarjeta seleccionada */
+  .nr2-cliente-card{border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-top:6px;}
+  .nr2-cc-top{display:flex;align-items:center;gap:12px;}
+  .nr2-cc-avatar{width:36px;height:36px;border-radius:50%;background:#ede9fe;color:#812df2;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:0 0 auto;}
+  .nr2-cc-info{flex:1;min-width:0;}
+  .nr2-cc-nombre{font-size:14px;font-weight:600;color:#101827;}
+  .nr2-cc-sub{font-size:12px;color:#697382;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .nr2-cc-actions{display:flex;gap:4px;flex:0 0 auto;}
+  .nr2-cc-icon-btn{width:28px;height:28px;border:none;background:transparent;border-radius:999px;color:#697382;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .nr2-cc-icon-btn:hover{background:#f3f4f6;}
+
+  /* Pestañas Planes/Sesiones/Prepago/Recientes */
+  /* Grupo segmentado (pill group) -- medido en vivo sobre AgendaPro
+     2026-09-17: track gris #f1f4f7 radio 12px padding 4px, cada pestaña
+     flex:1 alto 32px radio 8px texto 14px centrado; inactiva = transparente
+     + #99a3b2 peso 400; activa = blanco + sombra 0 4px 8px rgba(51,65,86,.14)
+     + peso 500 + #101827. NO es un tab con subrayado -- es un selector tipo
+     segmented control. */
+  .nr2-tabs{display:flex;gap:4px;margin-top:14px;background:#f1f4f7;border-radius:12px;padding:4px;}
+  .nr2-tab{flex:1 1 0;background:none;border:none;height:32px;border-radius:8px;font-family:'Roboto',sans-serif;font-size:14px;font-weight:400;color:#99a3b2;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
+  .nr2-tab.active{background:#fff;color:#101827;font-weight:500;box-shadow:0 4px 8px 0 rgba(51,65,86,.14);}
+  .nr2-tab-badge{background:#ede9fe;color:#812df2;font-size:11px;font-weight:700;border-radius:999px;padding:1px 6px;}
+  .nr2-tab-body{padding:14px 2px 2px;min-height:64px;}
+  .nr2-tab-empty{font-size:13px;color:#697382;text-align:center;padding:20px 10px;}
+  .nr2-reciente-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;cursor:pointer;}
+  .nr2-reciente-item:hover{background:#f9fafb;}
+  .nr2-reciente-item.sel{border-color:#812df2;background:#f9f5ff;}
+  .nr2-reciente-item input[type=radio]{margin-top:3px;accent-color:#812df2;}
+  .nr2-volver-btn{background:none;border:none;padding:0 0 14px;margin:0;color:#101827;font-family:'Roboto',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-align:left;display:block;}
+  .nr2-volver-btn:hover{color:#812df2;}
+  .nr2-reciente-svc{font-size:13px;font-weight:600;color:#101827;}
+  .nr2-reciente-sub{font-size:12px;color:#697382;margin-top:2px;}
+
+  /* "Creando cliente" -- inline, mismo formulario, no un modal aparte */
+  .nr2-nc-head{font-size:14px;font-weight:500;color:#101827;margin:16px 0 10px;}
+  .nr2-nc-section{border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .nr2-nc-section-title{font-size:13px;font-weight:600;color:#101827;margin-bottom:12px;}
+  .nr2-nc-req::after{content:" *";color:#e11d48;}
+  .nr2-nc-phone-row{display:flex;gap:8px;}
+  .nr2-nc-country{width:76px;height:40px;border:1px solid #c2cad5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto;}
+
+  /* Botonera inferior */
+  .nr2-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #f0f1f3;flex:0 0 auto;}
+  .nr2-btn-ghost{height:36px;padding:0 16px;border:1px solid #c2cad5;border-radius:999px;background:#fff;color:#1f293a;font-family:'Roboto',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+  .nr2-btn-ghost:hover{background:#f9fafb;}
+  .nr2-btn-primary{height:36px;padding:0 16px;border:none;border-radius:999px;background:#812df2;color:#fff;font-family:'Roboto',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+  .nr2-btn-primary:disabled{background:#e3e7ed;color:#99a3b2;cursor:not-allowed;}
+  .nr2-btn-primary:not(:disabled):hover{background:#6d28d9;}
+
+  /* Aviso inline (disponibilidad) -- preparado para el bloque de Servicios/Profesional */
+  .nr2-aviso{font-size:12.5px;color:#c2660a;margin-top:6px;}
+
+  /* Descartar cambios -- modal chico centrado sobre el modal principal */
+  .nr2-confirm-overlay{display:none;position:fixed;inset:0;background:rgba(16,24,39,.35);z-index:200;align-items:center;justify-content:center;}
+  .nr2-confirm-overlay.open{display:flex;}
+  .nr2-confirm-box{width:360px;max-width:calc(100vw - 32px);background:#fff;border-radius:14px;padding:20px;box-shadow:0 14px 16px 0 rgba(51,65,86,.1);font-family:'Roboto',sans-serif;}
+  .nr2-confirm-title{font-size:15px;font-weight:600;color:#101827;margin:0 0 8px;}
+  .nr2-confirm-text{font-size:13.5px;color:#4b5563;margin:0 0 18px;}
+  .nr2-confirm-actions{display:flex;justify-content:flex-end;gap:10px;}
 </style>
 <!-- Unificación visual del área administrativa interna -- ver
      masterlook-estilos-comunes.css. Roboto (antes no se cargaba en el
@@ -1945,7 +2145,7 @@
      <style> propio de arriba sin necesitar más especificidad. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="masterlook-estilos-comunes.css">
 </head>
 <body>
@@ -2449,6 +2649,33 @@
           <p class="mg-note" style="margin-top:14px;">
             Cada número de este mes es el que quedó guardado en la venta cuando ocurrió — si un porcentaje
             cambia hoy, los meses anteriores no se recalculan.
+          </p>
+
+          <!-- ===== Comisión por referidos -- mismo mes elegido arriba
+               (#cbmMes), SIN selector de fecha propio. SOLO lectura, fuente
+               exclusiva paymentMovements (comisionTipo:'referido') filtrada
+               server-side por el barberId de esta cuenta -- nunca por nada
+               que mande el navegador. Independiente de Servicios/Propinas/
+               Productos/Código: nunca se suma a esos totales. ===== -->
+          <h3 class="cx-tbl-title">Comisión por referidos</h3>
+          <div class="cx-kpis">
+            <div class="cx-kpi"><div class="k">Ventas por referido</div><div class="v" id="cbrCantidad">0</div></div>
+            <div class="cx-kpi pay"><div class="k">Comisión total generada</div><div class="v" id="cbrComision">$0</div></div>
+          </div>
+          <button class="ctrl-btn" id="cbrVerDetalle" style="margin-top:10px;">Ver detalle</button>
+          <div class="cx-tablebox" id="cbrDetalleBox" style="display:none;margin-top:10px;overflow-x:auto;">
+            <table class="cx-table">
+              <thead><tr>
+                <th>Fecha</th><th>Cliente</th><th>Código usado</th><th class="r">Monto de la venta</th>
+                <th class="r">% aplicado</th><th class="r">Tu comisión</th>
+              </tr></thead>
+              <tbody id="cbrDetalleTabla"></tbody>
+              <tfoot><tr id="cbrDetalleTotales"></tr></tfoot>
+            </table>
+          </div>
+          <p class="mg-note" style="margin-top:14px;">
+            Se muestran las ventas del mismo mes elegido arriba en las que un cliente usó tu código de
+            referido. El cliente siempre paga el precio normal — esto nunca sale de un descuento tuyo.
           </p>
         </div>
       </div>
@@ -3882,9 +4109,11 @@
         <select class="filter" id="statusFilter">
           <option value="all">Activo, todos</option>
           <option value="reservado">Reservado</option>
-          <option value="pend">Pendiente</option>
-          <option value="asistio">Asistió</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="asistio">Asiste</option>
           <option value="no">No asistió</option>
+          <option value="pend">Pendiente</option>
+          <option value="en_espera">En espera</option>
         </select>
       </aside>
 
@@ -3948,10 +4177,12 @@
         </div>
 
         <div class="legend-strip">
-          <div class="legend-item"><span class="ldot" style="background:var(--reservado)"></span>Reservado</div>
-          <div class="legend-item"><span class="ldot" style="background:var(--pend)"></span>Pendiente</div>
-          <div class="legend-item"><span class="ldot" style="background:var(--asistio)"></span>Asistió</div>
-          <div class="legend-item"><span class="ldot" style="background:var(--no)"></span>No asistió</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--ap-reservado)"></span>Reservado</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--ap-confirmado)"></span>Confirmado</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--ap-asiste)"></span>Asiste</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--ap-no-asistio)"></span>No asistió</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--ap-pendiente)"></span>Pendiente</div>
+          <div class="legend-item"><span class="ldot" style="background:var(--ap-en-espera)"></span>En espera</div>
         </div>
       </div>
 
@@ -4021,57 +4252,189 @@
   </div>
 </div>
 
-<!-- Nueva reserva desde el local -->
-<div class="mg-modal" id="modalReserva">
+<!-- Editar precio de una reserva -- SOLO ADMIN (verificado también del lado
+     del servidor en editarPrecioReserva; esto es solo la interfaz). -->
+<div class="mg-modal" id="modalEditarPrecio">
   <div class="mg-head">
-    <h3>Nueva reserva</h3>
+    <h3>Editar precio</h3>
     <button class="mg-close" data-close>✕</button>
   </div>
-  <p class="mg-note">Para clientes que llaman por teléfono o llegan sin cita. Queda confirmada de inmediato.</p>
+  <p class="mg-note" style="margin-bottom:4px;">Precio original: <b id="epPrecioOriginal">$0</b></p>
+  <p class="mg-note" id="epYaPagadoNota" style="margin-bottom:14px; display:none;">Ya pagado: <b id="epYaPagado">$0</b></p>
+  <label class="field-label" for="epPrecioNuevo">Precio final</label>
+  <input type="number" id="epPrecioNuevo" class="mg-input" min="0" step="1" style="margin-bottom:14px; width:100%;">
+  <label class="field-label" for="epMotivo">Motivo del ajuste (opcional)</label>
+  <input type="text" id="epMotivo" class="mg-input" placeholder="Ej: se agregó barba" style="margin-bottom:16px; width:100%;">
+  <div style="display:flex; gap:10px;">
+    <button class="mg-btn ghost" data-close style="flex:1;">Cancelar</button>
+    <button class="mg-btn solid" id="epGuardar" style="flex:1;">Guardar precio</button>
+  </div>
+</div>
 
-  <label class="mg-label">Nombre del cliente</label>
-  <div class="nr-nombre-wrap">
-    <input type="text" id="nrNombre" class="mg-input" placeholder="Ej: Pedro Ramírez" autocomplete="off">
-    <div class="nr-sugerencias" id="nrSugerencias"></div>
+<!-- Nueva reserva desde el local -->
+<div class="mg-modal nr2-modal" id="modalReserva">
+  <div class="nr2-head">
+    <h3 class="nr2-title">Nueva Reserva</h3>
+    <div class="nr2-head-right">
+      <div class="nr2-estado-wrap">
+        <button type="button" class="nr2-estado-pill" id="nr2EstadoBtn">
+          <span class="nr2-estado-dot" id="nr2EstadoDot"></span>
+          <span id="nr2EstadoTexto">Reservado</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nr2-estado-menu" id="nr2EstadoMenu"></div>
+      </div>
+      <button type="button" class="nr2-close" id="nr2Close">✕</button>
+    </div>
   </div>
 
-  <label class="mg-label">Teléfono <span class="mg-opt">(opcional)</span></label>
-  <input type="tel" id="nrFono" class="mg-input" placeholder="+56 9 1234 5678">
+  <div class="nr2-body">
+   <div id="nr2VistaForm">
+    <div class="nr2-row-top">
+      <div class="nr2-field">
+        <label class="nr2-label">Fecha</label>
+        <div class="nr2-pick-wrap">
+          <button type="button" class="nr2-pick-trigger" id="nrFechaTrigger">
+            <svg class="nr2-pick-icon" width="16" height="16" viewBox="0 0 18 19" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.75 0C5.16421 0 5.5 0.335786 5.5 0.75V1H12V0.75C12 0.335786 12.3358 0 12.75 0C13.1642 0 13.5 0.335786 13.5 0.75V1H13.75C15.8211 1 17.5 2.67893 17.5 4.75V14.75C17.5 16.8211 15.8211 18.5 13.75 18.5H3.75C1.67893 18.5 0 16.8211 0 14.75V4.75C0 2.67893 1.67893 1 3.75 1H4V0.75C4 0.335786 4.33579 0 4.75 0ZM4 2.5H3.75C2.50736 2.5 1.5 3.50736 1.5 4.75V6H16V4.75C16 3.50736 14.9926 2.5 13.75 2.5H13.5V3.75C13.5 4.16421 13.1642 4.5 12.75 4.5C12.3358 4.5 12 4.16421 12 3.75V2.5H5.5V3.75C5.5 4.16421 5.16421 4.5 4.75 4.5C4.33579 4.5 4 4.16421 4 3.75V2.5ZM16 7.5H1.5V14.75C1.5 15.9926 2.50736 17 3.75 17H13.75C14.9926 17 16 15.9926 16 14.75V7.5Z" fill="currentColor"/></svg>
+            <span id="nrFechaTexto" class="nr2-pick-placeholder">Selecciona una fecha</span>
+            <svg class="nr2-pick-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <input type="hidden" id="nrFecha">
+          <div class="nr2-cal-pop" id="nrFechaPop"></div>
+        </div>
+      </div>
+      <div class="nr2-field">
+        <label class="nr2-label">Hora</label>
+        <div class="nr2-pick-wrap">
+          <button type="button" class="nr2-pick-trigger" id="nr2HoraInicioTrigger">
+            <span id="nr2HoraInicioTexto" class="nr2-pick-placeholder">--:--</span>
+            <svg class="nr2-pick-icon-r" width="16" height="16" viewBox="0 0 17.5 17.5" fill="none"><path d="M16 8.75C16 4.74594 12.7541 1.5 8.75 1.5C4.74594 1.5 1.5 4.74594 1.5 8.75C1.5 12.7541 4.74594 16 8.75 16C12.7541 16 16 12.7541 16 8.75ZM8 3.9502C8 3.53598 8.33579 3.2002 8.75 3.2002C9.16421 3.2002 9.5 3.53598 9.5 3.9502V8.28613L12.2852 9.67871C12.6556 9.86395 12.8063 10.3151 12.6211 10.6855C12.4359 11.056 11.9847 11.2057 11.6143 11.0205L8.41504 9.4209C8.16095 9.29385 8 9.03408 8 8.75V3.9502ZM17.5 8.75C17.5 13.5825 13.5825 17.5 8.75 17.5C3.91751 17.5 0 13.5825 0 8.75C6.44277e-08 3.91751 3.91751 6.44256e-08 8.75 0C13.5825 0 17.5 3.91751 17.5 8.75Z" fill="currentColor"/></svg>
+          </button>
+          <input type="hidden" id="nr2HoraInicio">
+          <div class="nr2-wheel-pop" id="nr2HoraInicioPop"></div>
+        </div>
+      </div>
+      <div class="nr2-field" id="nr2FinWrap" style="display:none;">
+        <label class="nr2-label">Fin</label>
+        <div class="nr2-pick-wrap">
+          <button type="button" class="nr2-pick-trigger" id="nr2HoraFinTrigger">
+            <span id="nr2HoraFinTexto" class="nr2-pick-placeholder">--:--</span>
+            <svg class="nr2-pick-icon-r" width="16" height="16" viewBox="0 0 17.5 17.5" fill="none"><path d="M16 8.75C16 4.74594 12.7541 1.5 8.75 1.5C4.74594 1.5 1.5 4.74594 1.5 8.75C1.5 12.7541 4.74594 16 8.75 16C12.7541 16 16 12.7541 16 8.75ZM8 3.9502C8 3.53598 8.33579 3.2002 8.75 3.2002C9.16421 3.2002 9.5 3.53598 9.5 3.9502V8.28613L12.2852 9.67871C12.6556 9.86395 12.8063 10.3151 12.6211 10.6855C12.4359 11.056 11.9847 11.2057 11.6143 11.0205L8.41504 9.4209C8.16095 9.29385 8 9.03408 8 8.75V3.9502ZM17.5 8.75C17.5 13.5825 13.5825 17.5 8.75 17.5C3.91751 17.5 0 13.5825 0 8.75C6.44277e-08 3.91751 3.91751 6.44256e-08 8.75 0C13.5825 0 17.5 3.91751 17.5 8.75Z" fill="currentColor"/></svg>
+          </button>
+          <input type="hidden" id="nr2HoraFin">
+          <div class="nr2-wheel-pop" id="nr2HoraFinPop"></div>
+        </div>
+      </div>
+      <button type="button" class="nr2-repetir-btn" id="nr2RepetirBtn" disabled title="Se habilita en un bloque siguiente">Repetir</button>
+    </div>
 
-  <label class="mg-label">Servicio</label>
-  <select id="nrServicio" class="mg-input"></select>
+    <label class="nr2-label">Cliente</label>
+    <div class="nr2-cliente-row" id="nr2ClienteBuscarZone">
+      <div class="nr2-cliente-input-wrap">
+        <input type="text" id="nr2ClienteBuscar" class="nr2-input" placeholder="Busca por nombre, apellido, rut, email" autocomplete="off">
+        <div class="nr2-cliente-dropdown" id="nr2ClienteDropdown"></div>
+      </div>
+      <button type="button" class="nr2-btn-outline" id="nr2NuevoClienteBtn">+ Nuevo cliente</button>
+    </div>
 
-  <div class="mg-two">
-    <div>
+    <div class="nr2-cliente-card" id="nr2ClienteCard" style="display:none;">
+      <div class="nr2-cc-top">
+        <div class="nr2-cc-avatar" id="nr2CcAvatar">--</div>
+        <div class="nr2-cc-info">
+          <div class="nr2-cc-nombre" id="nr2CcNombre"></div>
+          <div class="nr2-cc-sub" id="nr2CcSub"></div>
+        </div>
+        <div class="nr2-cc-actions">
+          <button type="button" class="nr2-cc-icon-btn" id="nr2CcQuitar" title="Quitar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="nr2-tabs" id="nr2Tabs">
+        <button type="button" class="nr2-tab" data-tab="planes">Planes</button>
+        <button type="button" class="nr2-tab" data-tab="sesiones">Sesiones</button>
+        <button type="button" class="nr2-tab" data-tab="prepago">Prepago</button>
+        <button type="button" class="nr2-tab active" data-tab="recientes">Recientes <span class="nr2-tab-badge" id="nr2RecientesBadge" style="display:none;">0</span></button>
+      </div>
+    </div>
+
+    <div class="nr2-nuevo-cliente" id="nr2NuevoClienteForm" style="display:none;">
+      <div class="nr2-nc-head">Creando cliente</div>
+      <div class="nr2-nc-section">
+        <div class="nr2-nc-section-title">Información requerida</div>
+        <label class="nr2-label nr2-nc-req" style="margin-top:0;">Nombre</label>
+        <input type="text" id="nr2NcNombre" class="nr2-input">
+        <label class="nr2-label nr2-nc-req">Apellido</label>
+        <input type="text" id="nr2NcApellido" class="nr2-input">
+      </div>
+      <div class="nr2-nc-section">
+        <div class="nr2-nc-section-title">Información adicional</div>
+        <label class="nr2-label" style="margin-top:0;">Email</label>
+        <input type="email" id="nr2NcEmail" class="nr2-input">
+        <label class="nr2-label">Teléfono</label>
+        <div class="nr2-nc-phone-row">
+          <div class="nr2-nc-country">🇨🇱 +56</div>
+          <input type="tel" id="nr2NcTelefono" class="nr2-input" placeholder="9 1234 5678">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <button type="button" class="nr2-btn-ghost" id="nr2NcVolver">← Volver</button>
+        <button type="button" class="nr2-btn-primary" id="nr2NcGuardar">+ Guardar cliente</button>
+      </div>
+    </div>
+
+    <!-- ===== A partir de acá: Servicio/Barbero/Nota/Avisar siguen con la
+         UI anterior -- Profesional, Servicios, Información adicional,
+         Notificaciones y Repetir se rehacen en los próximos bloques (esto
+         es a propósito, no un olvido: Bloque 1 = Encabezado/Estados/Fecha/
+         Hora/Cliente/Nuevo cliente/clienteId/Planes-Sesiones-Prepago/
+         Recientes solamente). El guardado sigue 100% funcional mientras
+         tanto. Se ocultan (no se quitan del DOM) mientras el formulario de
+         Nuevo cliente está abierto -- igual a AgendaPro, que tampoco los
+         muestra ahí. ===== -->
+    <div id="nr2CamposViejos">
+      <label class="mg-label">Servicio</label>
+      <select id="nrServicio" class="mg-input"></select>
+
       <label class="mg-label">Barbero</label>
       <select id="nrBarbero" class="mg-input"></select>
+
+      <!-- Información adicional -- igual a AgendaPro: Notas compartidas con
+           el cliente (va en su comprobante/confirmación) y Nota interna
+           (solo el staff, jamás el cliente -- misma nota que ya se
+           mostraba en el detalle de la reserva y en "Mi día" del
+           barbero como notaAdmin). -->
+      <div class="mg-label" style="margin-top:14px;font-weight:600;">Información adicional</div>
+      <label class="mg-label">Notas compartidas con el cliente <span class="mg-opt">(opcional)</span></label>
+      <input type="text" id="nr2NotaCliente" class="mg-input" placeholder="Esta nota la puede ver el cliente">
+
+      <label class="mg-label">Nota interna <span class="mg-opt">(opcional)</span></label>
+      <input type="text" id="nr2NotaInterna" class="mg-input" placeholder="Solo la ve el equipo -- nunca el cliente">
+
+      <label class="mg-check">
+        <input type="checkbox" id="nrAvisar"> Enviarle confirmación por WhatsApp y correo
+      </label>
     </div>
-    <div>
-      <label class="mg-label">Fecha</label>
-      <input type="date" id="nrFecha" class="mg-input">
-    </div>
+   </div>
+
+   <!-- Vista de detalle de Planes/Sesiones/Prepago/Recientes -- reemplaza TODO
+        el contenido de arriba (igual a AgendaPro: no es una lista embebida
+        bajo la tarjeta del cliente, es una pantalla propia dentro del mismo
+        modal, con su propio "Volver"). #nr2Tabs se reutiliza -- JS lo mueve
+        entre esta vista y #nr2ClienteCard según corresponda, nunca se
+        duplica ni se recrea, así que sus listeners no cambian. -->
+   <div id="nr2VistaDetalle" style="display:none;">
+     <button type="button" class="nr2-volver-btn" id="nr2Volver">← Volver a la reserva</button>
+     <div class="nr2-tab-body" id="nr2TabBody"></div>
+   </div>
   </div>
 
-  <label class="mg-label">Hora</label>
-  <div class="mg-slots" id="nrHoras"><div class="mg-msg">Elige servicio y barbero</div></div>
-
-  <div id="nrForzarWrap" style="display:none;margin-top:6px;">
-    <label class="mg-check">
-      <input type="checkbox" id="nrForzarCheck"> Elegir una hora manual (fuera del horario normal o aunque el barbero ya tenga otra cita)
-    </label>
-    <input type="time" id="nrForzarHora" class="mg-input" style="display:none;margin-top:6px;">
+  <div class="nr2-footer" id="nr2FooterForm">
+    <button type="button" class="nr2-btn-ghost" id="nr2Cancelar">Cancelar</button>
+    <button type="button" class="nr2-btn-primary" id="nrGuardar" disabled>Agendar</button>
   </div>
-
-  <label class="mg-label">Nota <span class="mg-opt">(opcional)</span></label>
-  <input type="text" id="nrNota" class="mg-input" placeholder="Ej: pidió máquina, no tijera">
-
-  <label class="mg-check">
-    <input type="checkbox" id="nrAvisar"> Enviarle confirmación por WhatsApp y correo
-  </label>
-
-  <div class="mg-actions">
-    <button class="mg-btn ghost" data-close>Cancelar</button>
-    <button class="mg-btn solid" id="nrGuardar" disabled>Agendar</button>
+  <div class="nr2-footer" id="nr2FooterDetalle" style="display:none;">
+    <button type="button" class="nr2-btn-primary" id="nr2SeleccionarServicio" disabled>Seleccionar servicio</button>
   </div>
 </div>
 
@@ -4223,6 +4586,37 @@
     <label class="mg-label">Descuento por agregar producto al reservar <span style="text-transform:none;">(%)</span></label>
     <input type="number" id="cfgDescuentoProducto" class="mg-input" min="0" max="90" step="1" placeholder="10">
     <p class="mg-note" style="margin-top:-8px;margin-bottom:14px;">Se aplica solo cuando un cliente agrega un producto directo en el paso de pago de una reserva -- no afecta las compras normales de la Tienda.</p>
+
+    <label class="mg-label">Notas del correo de confirmación <span class="mg-opt">(opcional)</span></label>
+    <textarea id="cfgNotasCorreo" class="mg-input" rows="5" placeholder="Ej: Gracias por tu reservación. Recuerda que solo podemos esperar 15 minutos por tu asistencia..."></textarea>
+    <p class="mg-note" style="margin-top:-8px;margin-bottom:14px;">Aparece en el correo de confirmación de reserva, dentro de un bloque "Notas". Si lo dejas vacío, el bloque no aparece.</p>
+
+    <label class="mg-label">Políticas de modificación <span class="mg-opt">(opcional)</span></label>
+    <textarea id="cfgPoliticasCorreo" class="mg-input" rows="3" placeholder="Ej: Se podrá modificar hasta 4 horas antes. Podrás modificar la reserva un máximo de 1 vez."></textarea>
+    <p class="mg-note" style="margin-top:-8px;margin-bottom:14px;">Aparece en el correo de confirmación, en un bloque aparte "Políticas de Modificación de la Reserva". Si lo dejas vacío, el bloque no aparece.</p>
+
+    <label class="mg-label">Imagen del mapa (correo de reserva) <span class="mg-opt">(opcional)</span></label>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <div class="cu-thumb" id="cfgMapaThumb" title="Subir imagen del mapa"
+           style="width:96px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;overflow:hidden;
+             background-size:cover;background-position:center;
+             display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto;">🗺️</div>
+      <button class="mg-btn ghost" id="cfgMapaBtn" style="flex:none;padding:9px 16px;">⬆ Elegir imagen</button>
+      <button class="mg-btn ghost" id="cfgQuitarMapa" style="flex:none;padding:9px 16px;">Quitar</button>
+    </div>
+    <p class="mg-note" style="margin-top:-8px;margin-bottom:14px;">Una sola imagen fija (captura de la ubicación real), se reutiliza en todos los correos de reserva -- no se genera un mapa nuevo por cada uno. Al hacer clic, el cliente va a Google Maps. Si no subes ninguna, el correo simplemente omite el mapa.</p>
+
+    <label class="mg-label">Foto del banner promocional (correo de reserva) <span class="mg-opt">(opcional)</span></label>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <div class="cu-thumb" id="cfgBannerThumb" title="Subir foto del banner"
+           style="width:96px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;overflow:hidden;
+             background-size:cover;background-position:center;
+             display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto;">📷</div>
+      <button class="mg-btn ghost" id="cfgBannerBtn" style="flex:none;padding:9px 16px;">⬆ Elegir foto</button>
+      <button class="mg-btn ghost" id="cfgQuitarBanner" style="flex:none;padding:9px 16px;">Quitar</button>
+    </div>
+    <p class="mg-note" style="margin-top:-8px;margin-bottom:14px;">Foto a la derecha del banner "Tu estilo, nuestra prioridad" (ej. una silla del local). Si no subes ninguna, el banner se muestra sin foto.</p>
+
     <button class="mg-btn solid full" id="cfgGuardarContacto">Guardar datos de contacto</button>
   </div>
 
@@ -4548,7 +4942,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>
     </div>
     <div class="drawer-service-big" id="dServiceBig">Corte de cabello</div>
-    <div class="drawer-price-big" id="dPriceBig">$14.000</div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div class="drawer-price-big" id="dPriceBig">$14.000</div>
+      <button class="icon-btn" id="btnEditarPrecio" title="Editar precio" style="display:none; width:26px; height:26px; padding:4px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>
+      </button>
+      <span id="dPrecioModificadoBadge" style="display:none; font-size:11px; font-weight:600; color:#8a6d1f; background:#fdf6e8; border-radius:6px; padding:3px 8px;">Precio ajustado</span>
+    </div>
     <div class="drawer-datetime" id="dDateTime">lunes, 24 de agosto - 11:45 a 12:30 hrs</div>
 
     <div class="lock-row">
@@ -4576,17 +4976,33 @@
       <div class="notes-line" id="dNotes">Sin información</div>
     </div>
 
+    <!-- Nota del cliente: lo que el cliente escribió al reservar
+         públicamente (comentarioCliente) -- solo lectura, nunca se edita
+         acá. Visible para ADMIN/RECEPTION únicamente; oculta entera si no
+         hay texto o si quien mira es BARBER. Distinta de "Notas
+         compartidas con el cliente" (lo que NOSOTROS le escribimos) y de
+         "Nota del barbero" (interna, nunca la ve el cliente). -->
+    <div id="dNotaClienteBlock" style="display:none;margin-top:14px;">
+      <div class="field-label">Nota del cliente</div>
+      <div class="notes-line" id="dNotaClienteOrigen"></div>
+    </div>
+
     <div class="field-label" style="margin-top:16px;">Etiqueta</div>
     <div class="status-pills" id="statusPills">
-      <div class="tag-dot" data-s="reservado" data-tip="Reservado" style="background:var(--reservado)"></div>
-      <div class="tag-dot" data-s="pend" data-tip="Pendiente" style="background:var(--pend)"></div>
-      <div class="tag-dot" data-s="asistio" data-tip="Asistió" style="background:var(--asistio)"></div>
-      <div class="tag-dot" data-s="no" data-tip="No asistió" style="background:var(--no)"></div>
+      <div class="tag-dot" data-s="reservado" data-tip="Reservado" style="background:var(--ap-reservado)"></div>
+      <div class="tag-dot" data-s="confirmado" data-tip="Confirmado" style="background:var(--ap-confirmado)"></div>
+      <div class="tag-dot" data-s="asistio" data-tip="Asiste" style="background:var(--ap-asiste)"></div>
+      <div class="tag-dot" data-s="no" data-tip="No asistió" style="background:var(--ap-no-asistio)"></div>
+      <div class="tag-dot" data-s="pend" data-tip="Pendiente" style="background:var(--ap-pendiente)"></div>
+      <div class="tag-dot" data-s="en_espera" data-tip="En espera" style="background:var(--ap-en-espera)"></div>
       <span class="tag-label" id="tagLabel">Reservado</span>
     </div>
 
     <div class="field-label">Nota del barbero</div>
     <textarea class="note-box" id="dNota" placeholder="Sin notas todavía…"></textarea>
+
+    <div class="field-label">Notas compartidas con el cliente</div>
+    <textarea class="note-box" id="dNotaCliente" placeholder="Sin notas todavía…"></textarea>
 
     <div class="drawer-actions">
       <div class="payment-wrap" style="margin-top:0;flex:1;">
@@ -6445,7 +6861,7 @@
       a.status = 'asistio';
       el.className = 'appt ' + a.type + ' ' + apptStatusClass('asistio');
       el.querySelector('.status-dot').className = 'status-dot asistio';
-      el.querySelector('.status-txt').textContent = 'Asistió';
+      el.querySelector('.status-txt').textContent = tagLabels['asistio'];
       if(document.querySelector('.tag-dot')){
         document.querySelectorAll('.tag-dot').forEach(x=> x.classList.toggle('selected', x.dataset.s === 'asistio' && currentAppt === a));
         if(currentAppt === a) placeTagLabel();
@@ -6926,12 +7342,20 @@
     const barberName = BARBER_COL[r.barber]
       ? r.barber
       : (barbers.find(b=> b.id===col) || {}).name;
+    // precioFinal ?? price -- si ADMIN ajustó el precio manualmente, la
+    // agenda/tarjeta muestra ese valor final, nunca el original de catálogo.
+    const precioMostrado = typeof r.precioFinal === 'number' ? r.precioFinal : Number(r.price) || 0;
 
     return {
       webId: r.id, col, fecha: r.fecha,
       client: r.client || 'Cliente web',
       service: r.svc,
-      price: '$' + Number(r.price).toLocaleString('es-CL'),
+      price: '$' + precioMostrado.toLocaleString('es-CL'),
+      precioOriginal: Number(r.price) || 0,
+      precioFinal: typeof r.precioFinal === 'number' ? r.precioFinal : null,
+      precioModificado: !!r.precioModificado,
+      precioModificadoPorUid: r.precioModificadoPorUid || null,
+      motivoAjuste: r.motivoAjuste || '',
       start, end, type: meta.type,
       status: r.etiqueta || (r.estado === 'done' ? 'done' : (r.decision === 'aprobada' ? 'reservado' : 'pend')),
       barber: barberName,
@@ -6948,6 +7372,12 @@
       pagado: r.pagado || false, metodoPago: r.metodoPago,
       montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
       notaAdmin: r.notaAdmin || '',
+      notaCliente: r.notaCliente || '',
+      // comentarioCliente: lo que el cliente escribió al reservar (nunca lo
+      // escribimos nosotros, nunca se edita desde acá) -- distinto de
+      // notaCliente (lo que NOSOTROS le escribimos a él) y de notaAdmin
+      // (interno, nunca lo ve el cliente).
+      comentarioCliente: r.comentarioCliente || '',
     };
   }
 
@@ -7399,8 +7829,23 @@
   let mgConfirmResolver = null;
   let mgPromptResolver = null;
   function cerrarModales(){
-    mgOverlay.classList.remove('open');
-    document.querySelectorAll('.mg-modal').forEach(m=> m.classList.remove('open'));
+    // mgConfirm()/mgPrompt() pueden abrirse ENCIMA de otro .mg-modal ya
+    // abierto (p.ej. "Descartar cambios" sobre Nueva Reserva). En ese caso
+    // cerrar debe afectar SOLO esa capa superior -- igual que AgendaPro,
+    // donde "Seguir editando" no descarta el formulario de fondo. Si no hay
+    // ningún modal de fondo, el comportamiento es idéntico al de siempre.
+    const modalConfirm = document.getElementById('modalMgConfirm');
+    const modalPrompt = document.getElementById('modalMgPrompt');
+    const capaSuperiorAbierta = modalConfirm.classList.contains('open') || modalPrompt.classList.contains('open');
+    if(capaSuperiorAbierta){
+      modalConfirm.classList.remove('open');
+      modalPrompt.classList.remove('open');
+      const quedaOtroAbierto = Array.from(document.querySelectorAll('.mg-modal')).some(m=> m.classList.contains('open'));
+      if(!quedaOtroAbierto) mgOverlay.classList.remove('open');
+    } else {
+      mgOverlay.classList.remove('open');
+      document.querySelectorAll('.mg-modal').forEach(m=> m.classList.remove('open'));
+    }
     // Cualquier camino de cierre (botón, overlay, Escape) debe resolver un
     // mgConfirm()/mgPrompt() pendiente -- igual que confirm()/prompt()
     // nativos devuelven false/null si se cancelan de cualquier forma.
@@ -7423,6 +7868,7 @@
       const btnOk = document.getElementById('mgConfirmAceptar');
       const btnCancel = document.getElementById('mgConfirmCancelar');
       btnOk.textContent = opts.textoConfirmar || 'Confirmar';
+      btnCancel.textContent = opts.textoCancelar || 'Cancelar';
       btnCancel.style.display = opts.soloOk ? 'none' : '';
       mgConfirmResolver = resolve;
       abrirModal('modalMgConfirm');
@@ -7502,7 +7948,176 @@
   }
 
   /* ---------- Nueva reserva desde el local ---------- */
-  let nrSeleccion = { startsAt:null };
+  // nrSeleccion.clienteId / .clienteNombre / .clienteTelefono / .clienteEmail
+  // -- el cliente real elegido en el buscador (o recién creado inline).
+  // nrSeleccion.estado -- uno de los 6 valores reales (tagLabels), 'reservado'
+  // por defecto. Ambos nuevos en este bloque; forzar queda deshabilitado acá
+  // a propósito -- se rehace junto con el aviso de disponibilidad de
+  // AgendaPro en el bloque de Servicios/Profesional/Disponibilidad.
+  let nrSeleccion = { startsAt:null, forzar:false, clienteId:null, estado:'reservado' };
+
+  /* ---------- Fecha/Hora: calendario y rueda emergentes, calco de AgendaPro
+     (medido en vivo el 2026-09-17: tamaños, radios, colores, formato de
+     fecha, comportamiento). Los <input type=hidden> #nrFecha/#nr2HoraInicio/
+     #nr2HoraFin siguen siendo la fuente de datos real -- todo el código que
+     ya existía (validarNuevaReserva, nr2ActualizarHoraFin, el payload de
+     guardado, la búsqueda de disponibilidad) sigue leyendo/escribiendo esos
+     mismos IDs sin cambios; estos widgets solo le cambian la presentación y
+     despachan change/input para que esos listeners sigan disparando igual. */
+  const NR2_DIAS_LARGO = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const NR2_MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const NR2_MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const NR2_DIAS_CORTO = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  let nr2CalVista = { anio:2026, mes:0 };
+
+  function nr2FormatearFechaLarga(iso){
+    const [y,m,d] = iso.split('-').map(Number);
+    const dt = new Date(y, m-1, d, 12);
+    const diaSemana = NR2_DIAS_LARGO[dt.getDay()];
+    return `${diaSemana.charAt(0).toUpperCase()}${diaSemana.slice(1)}, ${d} de ${NR2_MESES_LARGO[m-1]} de ${y}`;
+  }
+  function nr2SincronizarFechaTexto(){
+    const iso = document.getElementById('nrFecha').value;
+    const txt = document.getElementById('nrFechaTexto');
+    if(!iso){ txt.textContent = 'Selecciona una fecha'; txt.classList.add('nr2-pick-placeholder'); return; }
+    txt.textContent = nr2FormatearFechaLarga(iso);
+    txt.classList.remove('nr2-pick-placeholder');
+  }
+  function nr2SetFecha(iso){
+    const el = document.getElementById('nrFecha');
+    if(el.value === iso) return;
+    el.value = iso;
+    nr2SincronizarFechaTexto();
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  function nr2SincronizarHoraTexto(inputId, textoId){
+    const val = document.getElementById(inputId).value;
+    const txt = document.getElementById(textoId);
+    if(!val){ txt.textContent = '--:--'; txt.classList.add('nr2-pick-placeholder'); return; }
+    txt.textContent = val;
+    txt.classList.remove('nr2-pick-placeholder');
+  }
+  function nr2SetHora(inputId, textoId, hhmm){
+    const el = document.getElementById(inputId);
+    if(el.value === hhmm) return;
+    el.value = hhmm;
+    nr2SincronizarHoraTexto(inputId, textoId);
+    el.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+
+  function nr2CerrarPickers(){
+    ['nrFechaTrigger','nr2HoraInicioTrigger','nr2HoraFinTrigger'].forEach(id=> document.getElementById(id).classList.remove('open'));
+    ['nrFechaPop','nr2HoraInicioPop','nr2HoraFinPop'].forEach(id=> document.getElementById(id).classList.remove('open'));
+  }
+  document.addEventListener('click', nr2CerrarPickers);
+
+  function nr2PintarCalendario(){
+    const pop = document.getElementById('nrFechaPop');
+    const { anio, mes } = nr2CalVista;
+    const seleccionado = document.getElementById('nrFecha').value;
+    const minIso = document.getElementById('nrFecha').min || '';
+    const primerDiaSemana = (new Date(anio, mes, 1).getDay() + 6) % 7; // 0 = lunes, igual a AgendaPro
+    const diasEnMes = new Date(anio, mes+1, 0).getDate();
+    const diasEnMesAnterior = new Date(anio, mes, 0).getDate();
+    let celdas = [];
+    for(let i=0;i<primerDiaSemana;i++) celdas.push({ dia: diasEnMesAnterior - primerDiaSemana + 1 + i, muted:true, iso:null });
+    for(let d=1; d<=diasEnMes; d++) celdas.push({ dia:d, muted:false, iso:`${anio}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` });
+    let diaSig = 1;
+    while(celdas.length % 7 !== 0) celdas.push({ dia: diaSig++, muted:true, iso:null });
+    const filas = celdas.map(c=>{
+      const cls = ['nr2-cal-day'];
+      if(c.muted) cls.push('muted');
+      if(c.iso && c.iso === seleccionado) cls.push('sel');
+      if(c.iso && minIso && c.iso < minIso) cls.push('disabled');
+      return `<button type="button" class="${cls.join(' ')}" data-iso="${c.iso||''}">${c.dia}</button>`;
+    }).join('');
+    pop.innerHTML = `
+      <div class="nr2-cal-head">
+        <button type="button" class="nr2-cal-nav" id="nrCalPrev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="nr2-cal-my"><span>${NR2_MESES_CORTO[mes]}</span><span>${anio}</span></div>
+        <button type="button" class="nr2-cal-nav" id="nrCalNext"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <div class="nr2-cal-weekdays">${NR2_DIAS_CORTO.map(d=>`<span>${d}</span>`).join('')}</div>
+      <div class="nr2-cal-days">${filas}</div>`;
+    pop.addEventListener('click', e=> e.stopPropagation());
+    document.getElementById('nrCalPrev').addEventListener('click', ()=>{ nr2CalVista.mes--; if(nr2CalVista.mes<0){ nr2CalVista.mes=11; nr2CalVista.anio--; } nr2PintarCalendario(); });
+    document.getElementById('nrCalNext').addEventListener('click', ()=>{ nr2CalVista.mes++; if(nr2CalVista.mes>11){ nr2CalVista.mes=0; nr2CalVista.anio++; } nr2PintarCalendario(); });
+    pop.querySelectorAll('.nr2-cal-day:not(.disabled)').forEach(btn=>{
+      if(!btn.dataset.iso) return;
+      btn.addEventListener('click', ()=>{ nr2SetFecha(btn.dataset.iso); nr2CerrarPickers(); });
+    });
+  }
+  document.getElementById('nrFechaTrigger').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const abrir = !document.getElementById('nrFechaPop').classList.contains('open');
+    nr2CerrarPickers();
+    if(!abrir) return;
+    const iso = document.getElementById('nrFecha').value;
+    const base = iso ? new Date(iso + 'T12:00:00') : new Date();
+    nr2CalVista = { anio: base.getFullYear(), mes: base.getMonth() };
+    nr2PintarCalendario();
+    document.getElementById('nrFechaTrigger').classList.add('open');
+    document.getElementById('nrFechaPop').classList.add('open');
+  });
+
+  /** Rueda de hora:minuto (1 en 1, igual a AgendaPro) para #nr2HoraInicio y
+   *  #nr2HoraFin -- misma construcción para ambas, parametrizada por id. */
+  function nr2ConstruirRueda(popId, inputId, textoId){
+    const pop = document.getElementById(popId);
+    const horas = Array.from({length:24}, (_,i)=> String(i).padStart(2,'0'));
+    const mins = Array.from({length:60}, (_,i)=> String(i).padStart(2,'0'));
+    pop.innerHTML = `
+      <div class="nr2-wheel-body">
+        <div class="nr2-wheel-band"></div>
+        <div class="nr2-wheel-col" id="${popId}H">
+          <div class="nr2-wheel-pad"></div>
+          ${horas.map(h=>`<button type="button" class="nr2-wheel-item" data-h="${h}">${h}</button>`).join('')}
+          <div class="nr2-wheel-pad"></div>
+        </div>
+        <div class="nr2-wheel-colon">:</div>
+        <div class="nr2-wheel-col" id="${popId}M">
+          <div class="nr2-wheel-pad"></div>
+          ${mins.map(m=>`<button type="button" class="nr2-wheel-item" data-m="${m}">${m}</button>`).join('')}
+          <div class="nr2-wheel-pad"></div>
+        </div>
+      </div>`;
+    pop.addEventListener('click', e=> e.stopPropagation());
+    const colH = document.getElementById(popId+'H');
+    const colM = document.getElementById(popId+'M');
+    function marcar(col, valor, attr){ col.querySelectorAll('.nr2-wheel-item').forEach(b=> b.classList.toggle('sel', b.dataset[attr]===valor)); }
+    function centrar(col, idx){ col.scrollTop = idx*40; }
+    function actual(){ const [h,m] = (document.getElementById(inputId).value || '00:00').split(':'); return { h: h||'00', m: m||'00' }; }
+    function aplicar(h, m){
+      nr2SetHora(inputId, textoId, `${h}:${m}`);
+      marcar(colH, h, 'h'); marcar(colM, m, 'm');
+    }
+    colH.querySelectorAll('.nr2-wheel-item').forEach((b,i)=> b.addEventListener('click', ()=>{ const {m} = actual(); aplicar(b.dataset.h, m); centrar(colH, i); }));
+    colM.querySelectorAll('.nr2-wheel-item').forEach((b,i)=> b.addEventListener('click', ()=>{ const {h} = actual(); aplicar(h, b.dataset.m); centrar(colM, i); }));
+    let tH, tM;
+    // Guarda contra el popover ya cerrado: si se cierra (display:none) antes
+    // de que venza el debounce, un scrollTop leído entonces puede llegar en
+    // 0 y pisar la hora recién elegida de vuelta a 00:00 -- se descarta el
+    // snap si el popover ya no está abierto.
+    colH.addEventListener('scroll', ()=>{ clearTimeout(tH); tH = setTimeout(()=>{ if(!pop.classList.contains('open')) return; const idx = Math.max(0, Math.min(23, Math.round(colH.scrollTop/40))); const {m} = actual(); aplicar(horas[idx], m); }, 120); });
+    colM.addEventListener('scroll', ()=>{ clearTimeout(tM); tM = setTimeout(()=>{ if(!pop.classList.contains('open')) return; const idx = Math.max(0, Math.min(59, Math.round(colM.scrollTop/40))); const {h} = actual(); aplicar(h, mins[idx]); }, 120); });
+    return { colH, colM, marcar, centrar };
+  }
+  function nr2CablearTriggerHora(triggerId, popId, inputId, textoId){
+    document.getElementById(triggerId).addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const abrir = !document.getElementById(popId).classList.contains('open');
+      nr2CerrarPickers();
+      if(!abrir) return;
+      const rueda = nr2ConstruirRueda(popId, inputId, textoId);
+      const [h,m] = (document.getElementById(inputId).value || '00:00').split(':');
+      rueda.marcar(rueda.colH, h, 'h'); rueda.marcar(rueda.colM, m, 'm');
+      rueda.centrar(rueda.colH, Number(h)); rueda.centrar(rueda.colM, Number(m));
+      document.getElementById(triggerId).classList.add('open');
+      document.getElementById(popId).classList.add('open');
+    });
+  }
+  nr2CablearTriggerHora('nr2HoraInicioTrigger', 'nr2HoraInicioPop', 'nr2HoraInicio', 'nr2HoraInicioTexto');
+  nr2CablearTriggerHora('nr2HoraFinTrigger', 'nr2HoraFinPop', 'nr2HoraFin', 'nr2HoraFinTexto');
 
   document.getElementById('btnNuevaReserva').addEventListener('click', async ()=>{
     await cargarCatalogo();
@@ -7511,51 +8126,58 @@
     llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
     document.getElementById('nrFecha').value = currentDate;
     document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
-    nrSeleccion.startsAt = null;
-    resetNrForzar();
+    document.getElementById('nr2HoraInicio').value = '09:00'; // mismo default que AgendaPro
+    document.getElementById('nr2HoraFin').value = '';
+    nr2SincronizarFechaTexto();
+    nr2SincronizarHoraTexto('nr2HoraInicio', 'nr2HoraInicioTexto');
+    nr2SincronizarHoraTexto('nr2HoraFin', 'nr2HoraFinTexto');
+    document.getElementById('nr2FinWrap').style.display = 'none';
+    nrSeleccion = { startsAt: currentDate + 'T09:00:00', hora:'09:00', forzar:false, clienteId:null, estado:'reservado' };
+    nr2LimpiarCliente();
+    nr2MostrarVistaFormulario();
+    nr2InicializarMenuEstado();
+    nr2PintarEstado('reservado');
     document.getElementById('nrGuardar').disabled = true;
     abrirModal('modalReserva');
-    cargarHorasLibres();
   });
 
-  ['nrServicio','nrBarbero','nrFecha'].forEach(id=>
-    document.getElementById(id).addEventListener('change', cargarHorasLibres));
-
-  /* Hora manual, solo ADMIN real (dueño o staff con rol ADMIN, igual que
-     verifica el backend en crearReservaLocal): permite elegir cualquier
-     hora, incluso fuera del horario del local o encima de otra cita ya
-     existente del mismo barbero -- pensado para casos que la administradora
-     coordina a mano y decide asumir ella misma, no para uso normal. */
-  function resetNrForzar(){
-    const wrap = document.getElementById('nrForzarWrap');
-    wrap.style.display = (userRole === 'ADMIN') ? '' : 'none';
-    document.getElementById('nrForzarCheck').checked = false;
-    document.getElementById('nrForzarHora').style.display = 'none';
-    document.getElementById('nrForzarHora').value = '';
-    nrSeleccion.forzar = false;
-  }
-
-  document.getElementById('nrForzarCheck').addEventListener('change', (e)=>{
-    const horaInput = document.getElementById('nrForzarHora');
-    horaInput.style.display = e.target.checked ? '' : 'none';
-    if(e.target.checked){
-      nrSeleccion.forzar = true;
-      document.getElementById('nrHoras').querySelectorAll('.mg-slot').forEach(x=> x.classList.remove('sel'));
-      nrSeleccion.startsAt = horaInput.value ? document.getElementById('nrFecha').value + 'T' + horaInput.value + ':00' : null;
-      nrSeleccion.hora = horaInput.value || null;
-    } else {
-      nrSeleccion.forzar = false;
-      nrSeleccion.startsAt = null;
-      nrSeleccion.hora = null;
-    }
-    validarNuevaReserva();
-  });
-
-  document.getElementById('nrForzarHora').addEventListener('input', (e)=>{
-    nrSeleccion.startsAt = e.target.value ? document.getElementById('nrFecha').value + 'T' + e.target.value + ':00' : null;
+  document.getElementById('nr2HoraInicio').addEventListener('input', (e)=>{
+    const fecha = document.getElementById('nrFecha').value;
+    nrSeleccion.startsAt = (e.target.value && fecha) ? fecha + 'T' + e.target.value + ':00' : null;
     nrSeleccion.hora = e.target.value || null;
+    nr2ActualizarHoraFin();
     validarNuevaReserva();
   });
+  document.getElementById('nrFecha').addEventListener('change', ()=>{
+    const hora = document.getElementById('nr2HoraInicio').value;
+    const fecha = document.getElementById('nrFecha').value;
+    nrSeleccion.startsAt = (hora && fecha) ? fecha + 'T' + hora + ':00' : null;
+    validarNuevaReserva();
+  });
+  document.getElementById('nr2HoraFin').addEventListener('input', validarNuevaReserva);
+  document.getElementById('nrServicio').addEventListener('change', ()=>{ nr2ActualizarHoraFin(); validarNuevaReserva(); });
+  document.getElementById('nrBarbero').addEventListener('change', validarNuevaReserva);
+
+  /** Hora fin = hora inicio + duración del servicio elegido (igual a
+   *  AgendaPro: se recalcula solo, pero el campo queda editable -- si la
+   *  administradora la toca a mano, ya no se pisa mientras no cambien
+   *  hora inicio o servicio de nuevo). */
+  let nr2FinTocadaAMano = false;
+  document.getElementById('nr2HoraFin').addEventListener('input', ()=>{ nr2FinTocadaAMano = true; });
+  function nr2ActualizarHoraFin(){
+    const wrap = document.getElementById('nr2FinWrap');
+    const servicio = cfgServicios.find(s=> s.id === document.getElementById('nrServicio').value);
+    const horaIni = document.getElementById('nr2HoraInicio').value;
+    if(!servicio || !horaIni){ wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    if(nr2FinTocadaAMano) return;
+    const [h,m] = horaIni.split(':').map(Number);
+    const finMin = h*60 + m + (servicio.minutes || 45);
+    document.getElementById('nr2HoraFin').value =
+      String(Math.floor(finMin/60) % 24).padStart(2,'0') + ':' + String(finMin%60).padStart(2,'0');
+    nr2SincronizarHoraTexto('nr2HoraFin', 'nr2HoraFinTexto');
+  }
+  document.getElementById('btnNuevaReserva').addEventListener('click', ()=>{ nr2FinTocadaAMano = false; });
 
   /** Ocupación real por fecha -- MISMA fuente que usa el sitio público
    *  (Cloud Function `obtenerOcupacionDia`), nunca un horario propio del
@@ -7575,7 +8197,13 @@
     return resp.json(); // { horario: {abre,cierra} | null, ocupacion: {nombreBarbero: [[ini,fin],...]} }
   }
 
-  async function cargarHorasLibres(){
+  // cargarHorasLibres() (la grilla vieja de horas fijas) se retiró de Nueva
+  // Reserva a propósito -- Hora Inicio ahora es un input libre (ver
+  // #nr2HoraInicio más arriba), igual que AgendaPro. nrObtenerOcupacionReal
+  // se conserva tal cual: la reutiliza el próximo bloque (Disponibilidad)
+  // para el aviso inline sin bloqueo, sobre la MISMA fuente real de
+  // ocupación -- nunca se recalculó ni se tocó su lógica.
+  async function cargarHorasLibres_DESACTIVADA_ver_nr2HoraInicio(){
     const cont = document.getElementById('nrHoras');
     // Si la administradora ya está usando la hora manual, no se pisa su
     // selección solo porque cambió fecha/servicio/barbero de fondo.
@@ -7691,7 +8319,7 @@
 
   function validarNuevaReserva(){
     document.getElementById('nrGuardar').disabled =
-      !(document.getElementById('nrNombre').value.trim() && nrSeleccion.startsAt);
+      !(nrSeleccion.clienteId && nrSeleccion.startsAt);
   }
 
   /* ═══ Búsqueda de clientes server-side (compartida por la vista Clientes
@@ -7885,130 +8513,342 @@
     }catch(e){ return []; }
   }
 
-  function nrPintarSugerencias(lista){
-    const cont = document.getElementById('nrSugerencias');
-    if(!lista.length){ cont.style.display = 'none'; cont.innerHTML = ''; return; }
-    cont.innerHTML = lista.map(c=>{
-      const nombreCompleto = ((c.nombre||'') + ' ' + (c.apellido||'')).trim();
-      return `<div class="nr-sug-item" data-nombre="${escapeHTML(nombreCompleto)}" data-fono="${escapeHTML(c.telefono||'')}">
-        <span class="nr-sug-nombre">${escapeHTML(nombreCompleto)}</span>
-        <span class="nr-sug-detalle">${escapeHTML(c.telefono || c.email || '')}</span>
-      </div>`;
-    }).join('');
-    cont.style.display = 'block';
-    cont.querySelectorAll('.nr-sug-item').forEach(item=>{
-      // mousedown (no click) para que dispare antes del blur del input
-      item.addEventListener('mousedown', (e)=>{
-        e.preventDefault();
-        document.getElementById('nrNombre').value = item.dataset.nombre;
-        document.getElementById('nrFono').value = item.dataset.fono;
-        cont.style.display = 'none';
-        cont.innerHTML = '';
-        validarNuevaReserva();
-      });
-    });
+  /* ═══════════════════════════════════════════════════════════════════
+     NUEVA RESERVA -- Cliente (buscador real + tarjeta + pestañas Planes/
+     Sesiones/Prepago/Recientes + Nuevo cliente inline) + selector de
+     Estado + Guardar. Calco de AgendaPro; reusa clRutearBusqueda/
+     clConsultarClientes/clDerivados (ya existían, sin tocar su lógica).
+     ═══════════════════════════════════════════════════════════════════ */
+
+  function nr2Iniciales(nombre, apellido){
+    return ((nombre||'')[0]||'').toUpperCase() + ((apellido||'')[0]||'').toUpperCase() || '--';
   }
 
-  document.getElementById('nrNombre').addEventListener('input', ()=>{
+  function nr2LimpiarCliente(){
+    nrSeleccion.clienteId = null;
+    nrSeleccion.clienteNombre = null;
+    nrSeleccion.clienteTelefono = '';
+    nrSeleccion.clienteEmail = '';
+    document.getElementById('nr2ClienteCard').style.display = 'none';
+    document.getElementById('nr2ClienteBuscarZone').style.display = '';
+    document.getElementById('nr2ClienteBuscar').value = '';
+    document.getElementById('nr2ClienteDropdown').classList.remove('open');
+    document.getElementById('nr2NuevoClienteForm').style.display = 'none';
+    ['nr2NcNombre','nr2NcApellido','nr2NcEmail','nr2NcTelefono'].forEach(id=> document.getElementById(id).value = '');
+    nr2CambiarTab('recientes');
+  }
+
+  /** Pinta la tarjeta del cliente elegido y guarda su clienteId real en
+   *  nrSeleccion -- ESTE es el dato que después viaja a crearReservaLocal,
+   *  nunca se reconstruye desde texto libre. */
+  function nr2SeleccionarCliente(c){
+    nrSeleccion.clienteId = c.id;
+    nrSeleccion.clienteNombre = ((c.nombre||'') + ' ' + (c.apellido||'')).trim();
+    nrSeleccion.clienteTelefono = c.telefono || '';
+    nrSeleccion.clienteEmail = c.email || '';
+    document.getElementById('nr2CcAvatar').textContent = nr2Iniciales(c.nombre, c.apellido);
+    document.getElementById('nr2CcNombre').textContent = nrSeleccion.clienteNombre || '(sin nombre)';
+    document.getElementById('nr2CcSub').textContent =
+      [c.email, c.telefono].filter(Boolean).join(' | ') || '—';
+    document.getElementById('nr2ClienteBuscarZone').style.display = 'none';
+    document.getElementById('nr2ClienteCard').style.display = '';
+    document.getElementById('nr2ClienteDropdown').classList.remove('open');
+    nr2CambiarTab('recientes');
     validarNuevaReserva();
-    const val = document.getElementById('nrNombre').value;
+  }
+
+  document.getElementById('nr2CcQuitar').addEventListener('click', nr2LimpiarCliente);
+
+  // ---- Buscador (dropdown en vivo, igual a AgendaPro) ----
+  const nr2Buscar = document.getElementById('nr2ClienteBuscar');
+  const nr2Dropdown = document.getElementById('nr2ClienteDropdown');
+  function nr2PintarDropdown(lista){
+    if(!lista.length){
+      nr2Dropdown.innerHTML = '<div class="nr2-cliente-empty">Sin resultados</div>';
+    } else {
+      nr2Dropdown.innerHTML = lista.map(c=>{
+        const nombreCompleto = ((c.nombre||'') + ' ' + (c.apellido||'')).trim();
+        return `<div class="nr2-cliente-item" data-id="${escapeHTML(c.id)}">
+          <div class="nr2-cliente-item-nombre">${escapeHTML(nombreCompleto || '(sin nombre)')}</div>
+          <div class="nr2-cliente-item-sub">${escapeHTML([c.email, c.telefono].filter(Boolean).join(' | ') || '—')}</div>
+        </div>`;
+      }).join('');
+      nr2Dropdown.querySelectorAll('.nr2-cliente-item').forEach(item=>{
+        item.addEventListener('mousedown', (e)=>{
+          e.preventDefault();
+          const c = lista.find(x=> x.id === item.dataset.id);
+          if(c) nr2SeleccionarCliente(c);
+        });
+      });
+    }
+    nr2Dropdown.classList.add('open');
+  }
+  nr2Buscar.addEventListener('input', ()=>{
+    const val = nr2Buscar.value;
     clearTimeout(nrBuscarTimer);
+    if(val.trim().length < 2){ nr2Dropdown.classList.remove('open'); return; }
     nrBuscarTimer = setTimeout(async ()=>{
       const lista = await nrBuscarClientes(val);
-      if(document.getElementById('nrNombre').value === val) nrPintarSugerencias(lista);
+      if(nr2Buscar.value === val) nr2PintarDropdown(lista);
     }, 250);
   });
-  document.getElementById('nrNombre').addEventListener('focus', async ()=>{
-    const val = document.getElementById('nrNombre').value;
-    if(val.trim().length >= 2) nrPintarSugerencias(await nrBuscarClientes(val));
+  nr2Buscar.addEventListener('focus', async ()=>{
+    const val = nr2Buscar.value;
+    if(val.trim().length >= 2) nr2PintarDropdown(await nrBuscarClientes(val));
   });
-  document.getElementById('nrNombre').addEventListener('blur', ()=>{
-    setTimeout(()=>{ document.getElementById('nrSugerencias').style.display = 'none'; }, 150);
+  nr2Buscar.addEventListener('blur', ()=> setTimeout(()=> nr2Dropdown.classList.remove('open'), 150));
+
+  // ---- Pestañas Planes / Sesiones / Prepago / Recientes -- igual a
+  // AgendaPro: entrar a una pestaña REEMPLAZA todo el contenido del modal
+  // (no es una lista embebida bajo la tarjeta del cliente). #nr2Tabs es un
+  // único elemento que se reubica entre #nr2ClienteCard (vista formulario)
+  // y #nr2VistaDetalle (vista de detalle) -- nunca se clona, así que sus
+  // listeners de clic no cambian con el movimiento. ----
+  function nr2MostrarVistaDetalle(){
+    document.getElementById('nr2VistaDetalle').insertBefore(
+      document.getElementById('nr2Tabs'), document.getElementById('nr2TabBody'));
+    document.getElementById('nr2VistaForm').style.display = 'none';
+    document.getElementById('nr2VistaDetalle').style.display = '';
+    document.getElementById('nr2FooterForm').style.display = 'none';
+    document.getElementById('nr2FooterDetalle').style.display = '';
+  }
+  function nr2MostrarVistaFormulario(){
+    document.getElementById('nr2ClienteCard').appendChild(document.getElementById('nr2Tabs'));
+    document.getElementById('nr2VistaDetalle').style.display = 'none';
+    document.getElementById('nr2VistaForm').style.display = '';
+    document.getElementById('nr2FooterDetalle').style.display = 'none';
+    document.getElementById('nr2FooterForm').style.display = '';
+  }
+  document.getElementById('nr2Volver').addEventListener('click', nr2MostrarVistaFormulario);
+
+  let nr2RecienteElegido = null; // índice en nr2RecientesCache pendiente de "Seleccionar servicio"
+  function nr2CambiarTab(tab){
+    document.querySelectorAll('#nr2Tabs .nr2-tab').forEach(b=> b.classList.toggle('active', b.dataset.tab === tab));
+    nr2RecienteElegido = null;
+    document.getElementById('nr2SeleccionarServicio').disabled = true;
+    const body = document.getElementById('nr2TabBody');
+    if(tab === 'planes'){ body.innerHTML = '<div class="nr2-tab-empty">Sin planes disponibles</div>'; return; }
+    if(tab === 'sesiones'){ body.innerHTML = '<div class="nr2-tab-empty">Sin sesiones disponibles</div>'; return; }
+    if(tab === 'prepago'){ body.innerHTML = '<div class="nr2-tab-empty">Sin servicios prepagados disponibles</div>'; return; }
+    nr2CargarRecientes();
+  }
+  document.querySelectorAll('#nr2Tabs .nr2-tab').forEach(b=>
+    b.addEventListener('click', ()=>{ nr2CambiarTab(b.dataset.tab); nr2MostrarVistaDetalle(); }));
+  document.getElementById('nr2SeleccionarServicio').addEventListener('click', ()=>{
+    if(nr2RecienteElegido == null) return;
+    const r = nr2RecientesCache[nr2RecienteElegido];
+    if(r && r.serviceId){
+      document.getElementById('nrServicio').value = r.serviceId;
+      nr2ActualizarHoraFin(); validarNuevaReserva();
+    }
+    nr2MostrarVistaFormulario();
   });
+
+  /** Recientes -- últimas reservas REALES del cliente por clienteId (misma
+   *  fuente/índice que "Clientes y datos > Historial de reservas": el
+   *  índice bookings(clienteId,fecha) ya está desplegado). Elegir una fila
+   *  la deja pendiente (radio + resaltado); "Seleccionar servicio" recién
+   *  ahí precarga el servicio y vuelve al formulario -- igual a AgendaPro. */
+  let nr2RecientesCache = [];
+  async function nr2CargarRecientes(){
+    const body = document.getElementById('nr2TabBody');
+    const badge = document.getElementById('nr2RecientesBadge');
+    if(!nrSeleccion.clienteId){ body.innerHTML = ''; return; }
+    body.innerHTML = '<div class="nr2-tab-empty">Cargando...</div>';
+    try{
+      const snap = await db.collection('bookings')
+        .where('clienteId','==', nrSeleccion.clienteId)
+        .orderBy('fecha','desc').limit(5).get();
+      nr2RecientesCache = snap.docs.map(d=> d.data());
+      badge.style.display = nr2RecientesCache.length ? '' : 'none';
+      badge.textContent = nr2RecientesCache.length;
+      if(!nr2RecientesCache.length){
+        body.innerHTML = '<div class="nr2-tab-empty">Sin reservas recientes.</div>';
+        return;
+      }
+      body.innerHTML = nr2RecientesCache.map((r,i)=> `
+        <div class="nr2-reciente-item" data-i="${i}">
+          <input type="radio" name="nr2Reciente">
+          <div>
+            <div class="nr2-reciente-svc">${escapeHTML(r.svc || '')}</div>
+            <div class="nr2-reciente-sub">Profesional: ${escapeHTML((r.barber||'').toUpperCase())} · ${fmtFecha(r.fecha)}</div>
+          </div>
+        </div>`).join('');
+      body.querySelectorAll('.nr2-reciente-item').forEach(item=>{
+        item.addEventListener('click', ()=>{
+          body.querySelectorAll('.nr2-reciente-item').forEach(x=> x.classList.remove('sel'));
+          body.querySelectorAll('input[type=radio]').forEach(r=> r.checked = false);
+          item.classList.add('sel');
+          item.querySelector('input[type=radio]').checked = true;
+          nr2RecienteElegido = Number(item.dataset.i);
+          document.getElementById('nr2SeleccionarServicio').disabled = false;
+        });
+      });
+    }catch(e){
+      body.innerHTML = '<div class="nr2-tab-empty">No se pudo cargar: ' + escapeHTML(e.message||'') + '</div>';
+    }
+  }
+
+  // ---- Nuevo cliente inline (mismo formulario, no un modal aparte) ----
+  document.getElementById('nr2NuevoClienteBtn').addEventListener('click', ()=>{
+    document.getElementById('nr2ClienteBuscarZone').style.display = 'none';
+    document.getElementById('nr2NuevoClienteForm').style.display = '';
+    document.getElementById('nr2CamposViejos').style.display = 'none';
+    document.getElementById('nr2NcNombre').focus();
+  });
+  function nr2VolverDeCrearCliente(){
+    document.getElementById('nr2NuevoClienteForm').style.display = 'none';
+    document.getElementById('nr2ClienteBuscarZone').style.display = '';
+    document.getElementById('nr2CamposViejos').style.display = '';
+  }
+  document.getElementById('nr2NcVolver').addEventListener('click', nr2VolverDeCrearCliente);
+  document.getElementById('nr2NcGuardar').addEventListener('click', ()=> nr2GuardarClienteInline());
+
+  /** Dedup por teléfono normalizado, exactamente el mismo criterio que ya
+   *  usa #clGuardar en "Clientes y datos" -- una sola fuente de verdad de
+   *  clientes, nunca dos registros sueltos para la misma persona. */
+  async function nr2GuardarClienteInline(){
+    const nombre = document.getElementById('nr2NcNombre').value.trim();
+    const apellido = document.getElementById('nr2NcApellido').value.trim();
+    if(!nombre || !apellido) return showToast('Nombre y apellido son obligatorios');
+    const datos = {
+      nombre, apellido,
+      email: document.getElementById('nr2NcEmail').value.trim(),
+      telefono: document.getElementById('nr2NcTelefono').value.trim(),
+      rut: '',
+    };
+    const derivados = clDerivados(datos);
+    try{
+      let existente = null;
+      if(derivados.telefonoDigitos){
+        const dup = await db.collection('clientes').where('telefonoDigitos','==',derivados.telefonoDigitos).limit(1).get();
+        existente = dup.docs[0] || null;
+      }
+      let doc;
+      if(existente){
+        await existente.ref.set({ ...datos, ...derivados }, { merge:true });
+        doc = { id: existente.id, ...existente.data(), ...datos, ...derivados };
+        showToast('Ya existía un cliente con ese teléfono — se actualizaron sus datos');
+      } else {
+        const id = 'c' + Date.now();
+        doc = { id, ...datos, ...derivados, createdAt: new Date().toISOString() };
+        await db.collection('clientes').doc(id).set(doc);
+        showToast('Cliente creado');
+      }
+      nrCacheBusqueda.clear();
+      nr2VolverDeCrearCliente();
+      nr2SeleccionarCliente(doc);
+    }catch(e){ showToast('No se pudo crear el cliente: ' + e.message); }
+  }
+
+  // ---- Selector de Estado (6 reales de AgendaPro, ver tagLabels/--ap-*) ----
+  // OJO: tagLabels se declara MÁS ABAJO en este mismo script (const, sin
+  // hoisting de valor) -- todo lo que lo usa tiene que diferirse a después
+  // de que el script entero haya terminado de correr una vez (evento de
+  // usuario), nunca ejecutarse en el nivel superior del archivo. Por eso
+  // el menú de Estado se arma recién dentro de nr2InicializarMenuEstado(),
+  // llamada desde btnNuevaReserva -- igual que Servicios/Barbero, que ya
+  // esperaban a abrirModal() para llenarse.
+  const NR2_ESTADOS_ORDEN = ['reservado','confirmado','asistio','no','pend','en_espera'];
+  const NR2_ESTADO_VAR = { reservado:'--ap-reservado', confirmado:'--ap-confirmado', asistio:'--ap-asiste', no:'--ap-no-asistio', pend:'--ap-pendiente', en_espera:'--ap-en-espera' };
+  function nr2PintarEstado(valor){
+    nrSeleccion.estado = valor;
+    document.getElementById('nr2EstadoTexto').textContent = tagLabels[valor];
+    document.getElementById('nr2EstadoDot').style.background = `var(${NR2_ESTADO_VAR[valor]})`;
+    document.querySelectorAll('#nr2EstadoMenu .nr2-estado-opt').forEach(opt=>
+      opt.classList.toggle('sel', opt.dataset.v === valor));
+  }
+  let nr2MenuEstadoListo = false;
+  function nr2InicializarMenuEstado(){
+    if(nr2MenuEstadoListo) return;
+    nr2MenuEstadoListo = true;
+    document.getElementById('nr2EstadoMenu').innerHTML = NR2_ESTADOS_ORDEN.map(v=>
+      `<div class="nr2-estado-opt" data-v="${v}"><span class="nr2-estado-dot" style="background:var(${NR2_ESTADO_VAR[v]})"></span>${tagLabels[v]}<svg class="nr2-estado-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>`
+    ).join('');
+    document.getElementById('nr2EstadoMenu').querySelectorAll('.nr2-estado-opt').forEach(opt=>
+      opt.addEventListener('click', ()=>{
+        nr2PintarEstado(opt.dataset.v);
+        document.getElementById('nr2EstadoMenu').classList.remove('open');
+      }));
+  }
+  document.getElementById('nr2EstadoBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('nr2EstadoMenu').classList.toggle('open');
+  });
+  document.addEventListener('click', ()=> document.getElementById('nr2EstadoMenu').classList.remove('open'));
+
+  // ---- Cerrar / Descartar cambios -- igual a AgendaPro: si no hay nada
+  // cargado, cierra directo; si hay algo, confirma antes de perderlo. ----
+  function nr2HayCambiosSinGuardar(){
+    return !!(nrSeleccion.clienteId || nrSeleccion.startsAt
+      || document.getElementById('nr2NotaCliente').value.trim()
+      || document.getElementById('nr2NotaInterna').value.trim()
+      || document.getElementById('nr2ClienteBuscar').value.trim()
+      || document.getElementById('nr2NuevoClienteForm').style.display !== 'none');
+  }
+  async function nr2IntentarCerrar(){
+    if(nr2HayCambiosSinGuardar()){
+      const ok = await mgConfirm('Tienes cambios sin guardar. ¿Estás seguro de que deseas descartarlos?',
+        { titulo:'Descartar cambios', textoConfirmar:'Descartar', textoCancelar:'Seguir editando' });
+      if(!ok) return;
+    }
+    cerrarModales();
+  }
+  document.getElementById('nr2Close').addEventListener('click', nr2IntentarCerrar);
+  document.getElementById('nr2Cancelar').addEventListener('click', nr2IntentarCerrar);
 
   document.getElementById('nrGuardar').addEventListener('click', async ()=>{
     const btn = document.getElementById('nrGuardar');
     btn.disabled = true; btn.textContent = 'Agendando...';
 
-    const nombre = document.getElementById('nrNombre').value.trim();
     const servicio = cfgServicios.find(s=> s.id === document.getElementById('nrServicio').value);
     const barbero = cfgBarberos.find(b=> b.id === document.getElementById('nrBarbero').value);
+    const nombre = nrSeleccion.clienteNombre || '';
 
-    if(MODE === 'api'){
-      try{
-        await api('/admin/bookings', {
-          method:'POST',
-          body: JSON.stringify({
-            serviceId: servicio.id,
-            barberId: barbero.id,
-            startsAt: nrSeleccion.startsAt,
-            clientName: nombre,
-            clientPhone: document.getElementById('nrFono').value.trim(),
-            notes: document.getElementById('nrNota').value.trim() || undefined,
-            notify: document.getElementById('nrAvisar').checked,
-          })
-        });
-        await irADia(currentDate);
-      }catch(e){
-        btn.disabled = false; btn.textContent = 'Agendar';
-        showToast(e.message);
-        return;
-      }
-    } else {
-      // Pasa por la MISMA función atómica que ya protege las reservas web
-      // (crearReservaLocal -> crearReservaTransaccional): revalida el
-      // horario real y reclama el slotLock dentro de una transacción, así
-      // dos personas del staff nunca pueden ganar la misma hora del mismo
-      // profesional -- nunca más una escritura directa a Firestore acá.
-      const fecha = document.getElementById('nrFecha').value;
-      const [h,m] = nrSeleccion.hora.split(':').map(Number);
-      const fono = document.getElementById('nrFono').value.trim();
-      const notas = document.getElementById('nrNota').value.trim() || 'Reserva tomada en el local';
+    // Pasa por la MISMA función atómica que ya protege las reservas web
+    // (crearReservaLocal -> crearReservaTransaccional): revalida el
+    // horario real y reclama el slotLock dentro de una transacción, así
+    // dos personas del staff nunca pueden ganar la misma hora del mismo
+    // profesional -- nunca más una escritura directa a Firestore acá.
+    const fecha = document.getElementById('nrFecha').value;
+    const [h,m] = nrSeleccion.hora.split(':').map(Number);
+    const notaInterna = document.getElementById('nr2NotaInterna').value.trim() || 'Reserva tomada en el local';
+    const notaCliente = document.getElementById('nr2NotaCliente').value.trim();
 
-      try{
-        await functions.httpsCallable('crearReservaLocal')({
-          fecha, client: nombre, phone: fono, email: '', pay: 'Efectivo en local', notaAdmin: notas,
-          forzar: nrSeleccion.forzar === true,
-          citas: [{
-            serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
-            barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
-            label: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
-          }],
-        });
-      }catch(e){
-        btn.disabled = false; btn.textContent = 'Agendar';
-        showToast('No se pudo guardar: ' + (e.message || 'Ese horario ya no está disponible.'));
-        cargarHorasLibres(); // por si alguien más se adelantó a ese mismo horario
-        return;
-      }
-
-      // (la ficha del cliente ya se creó/actualizó del lado del servidor,
-      // dentro de crearReservaLocal -- una sola fuente para ese upsert)
-      nrCacheBusqueda.clear(); // el autocomplete volverá a consultar y traerá este cliente nuevo
-
-      // No la dibujamos a mano acá: el listener en vivo de "bookings" (el mismo
-      // que usan las reservas del sitio) la va a traer y pintar solo en cuanto
-      // Firestore confirme el guardado. Pintarla también aquí duplicaba la
-      // tarjeta, porque ambos caminos corrían casi al mismo tiempo.
-      await pintarSemana();
-
-      cerrarModales();
-      btn.textContent = 'Agendar';
-      showToast(fecha === currentDate
-        ? `Reserva de ${nombre} agendada`
-        : `Reserva de ${nombre} agendada para el ${fmtFecha(fecha)}`);
-      document.getElementById('nrNombre').value = '';
-      document.getElementById('nrFono').value = '';
-      document.getElementById('nrNota').value = '';
+    try{
+      await functions.httpsCallable('crearReservaLocal')({
+        fecha, client: nombre, phone: nrSeleccion.clienteTelefono, email: nrSeleccion.clienteEmail,
+        pay: 'Efectivo en local', notaAdmin: notaInterna, notaCliente,
+        clienteId: nrSeleccion.clienteId, etiqueta: nrSeleccion.estado,
+        forzar: false,
+        citas: [{
+          serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
+          barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
+          label: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
+        }],
+      });
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Agendar';
+      showToast('No se pudo guardar: ' + (e.message || 'Ese horario ya no está disponible.'));
       return;
     }
 
-    btn.textContent = 'Agendar';
+    nrCacheBusqueda.clear(); // el autocomplete volverá a consultar y traerá cualquier dato nuevo
+
+    // No la dibujamos a mano acá: el listener en vivo de "bookings" (el mismo
+    // que usan las reservas del sitio) la va a traer y pintar solo en cuanto
+    // Firestore confirme el guardado. Pintarla también aquí duplicaba la
+    // tarjeta, porque ambos caminos corrían casi al mismo tiempo.
+    await pintarSemana();
+
     cerrarModales();
-    showToast(`Reserva de ${nombre} agendada`);
-    document.getElementById('nrNombre').value = '';
-    document.getElementById('nrFono').value = '';
-    document.getElementById('nrNota').value = '';
+    btn.textContent = 'Agendar';
+    showToast(fecha === currentDate
+      ? `Reserva de ${nombre} agendada`
+      : `Reserva de ${nombre} agendada para el ${fmtFecha(fecha)}`);
+    document.getElementById('nr2NotaCliente').value = '';
+    document.getElementById('nr2NotaInterna').value = '';
+    nr2LimpiarCliente();
   });
 
   /* ---------- Bloquear horario ----------
@@ -8433,6 +9273,10 @@
       document.getElementById('cfgCorreo').value = d.correo || 'hola@masterlook.cl';
       document.getElementById('cfgInstagram').value = d.instagram || '@masterlook.cl';
       document.getElementById('cfgDescuentoProducto').value = d.descuentoProductoReserva ?? 10;
+      document.getElementById('cfgNotasCorreo').value = d.notasCorreoReserva || '';
+      document.getElementById('cfgPoliticasCorreo').value = d.politicasModificacionCorreo || '';
+      pintarMapaThumb(d.mapaImagenUrl || '');
+      pintarBannerThumb(d.promoBannerFotoUrl || '');
     }catch(e){}
   }
 
@@ -9022,11 +9866,103 @@
     const correo = document.getElementById('cfgCorreo').value.trim();
     const instagram = document.getElementById('cfgInstagram').value.trim();
     const descuentoProductoReserva = Math.max(0, Math.min(90, Number(document.getElementById('cfgDescuentoProducto').value) || 0));
+    const notasCorreoReserva = document.getElementById('cfgNotasCorreo').value.trim();
+    const politicasModificacionCorreo = document.getElementById('cfgPoliticasCorreo').value.trim();
     try{
-      await db.collection('settings').doc('negocio').set({ nombre, descripcion, direccion, telefono, correo, instagram, descuentoProductoReserva }, { merge:true });
+      await db.collection('settings').doc('negocio').set({ nombre, descripcion, direccion, telefono, correo, instagram, descuentoProductoReserva, notasCorreoReserva, politicasModificacionCorreo }, { merge:true });
       invalidarSettingsNegocio();
       showToast('Datos de contacto actualizados');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  /* Imagen del mapa (correo de reserva) -- UNA sola imagen fija, reutilizada
+   * en todos los correos (confirmada/modificada/cancelada/recordatorio) --
+   * mismo patrón de subida que la foto del celular de Academy (redimensionar
+   * + Firebase Storage), nunca una llamada a una API de mapas por correo. */
+  function pintarMapaThumb(url){
+    const thumb = document.getElementById('cfgMapaThumb');
+    if(!thumb) return;
+    thumb.style.backgroundImage = url ? `url('${url}')` : '';
+    thumb.textContent = url ? '' : '🗺️';
+  }
+  function subirImagenMapa(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('cfgMapaThumb');
+      thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file, 900);
+        const ref = storage.ref(`negocioMapa/${Date.now()}.jpg`);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ mapaImagenUrl: url }, { merge:true });
+        invalidarSettingsNegocio();
+        pintarMapaThumb(url);
+        showToast('Imagen del mapa actualizada');
+      }catch(e){
+        showToast('No se pudo subir la imagen: ' + e.message);
+        pintarMapaThumb('');
+      }
+    });
+    input.click();
+  }
+  document.getElementById('cfgMapaThumb').addEventListener('click', subirImagenMapa);
+  document.getElementById('cfgMapaBtn').addEventListener('click', subirImagenMapa);
+  document.getElementById('cfgQuitarMapa').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({ mapaImagenUrl: '' }, { merge:true });
+      invalidarSettingsNegocio();
+      pintarMapaThumb('');
+      showToast('Imagen del mapa quitada');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
+  });
+
+  /* Foto del banner promocional del correo de reserva -- mismo patrón que
+   * la imagen del mapa de arriba. */
+  function pintarBannerThumb(url){
+    const thumb = document.getElementById('cfgBannerThumb');
+    if(!thumb) return;
+    thumb.style.backgroundImage = url ? `url('${url}')` : '';
+    thumb.textContent = url ? '' : '📷';
+  }
+  function subirFotoBanner(){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('cfgBannerThumb');
+      thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file, 700);
+        const ref = storage.ref(`negocioBannerCorreo/${Date.now()}.jpg`);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ promoBannerFotoUrl: url }, { merge:true });
+        invalidarSettingsNegocio();
+        pintarBannerThumb(url);
+        showToast('Foto del banner actualizada');
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pintarBannerThumb('');
+      }
+    });
+    input.click();
+  }
+  document.getElementById('cfgBannerThumb').addEventListener('click', subirFotoBanner);
+  document.getElementById('cfgBannerBtn').addEventListener('click', subirFotoBanner);
+  document.getElementById('cfgQuitarBanner').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({ promoBannerFotoUrl: '' }, { merge:true });
+      invalidarSettingsNegocio();
+      pintarBannerThumb('');
+      showToast('Foto del banner quitada');
+    }catch(e){ showToast('No se pudo quitar: ' + e.message); }
   });
 
   /* ---------- Portada del sitio (foto de fondo del hero externo) ---------- */
@@ -9637,6 +10573,12 @@
       }
 
       pintarDetalleProductosBarbero(); // re-pinta el detalle si ya estaba abierto (usa d.detalle en memoria, sin nueva lectura)
+
+      // ---- Comisión por referidos (mismo mes elegido arriba) ----
+      const cr = d.comisionReferidos || { comision: 0, cantidad: 0, detalle: [] };
+      document.getElementById('cbrCantidad').textContent = cr.cantidad;
+      document.getElementById('cbrComision').textContent = cxClp(cr.comision);
+      pintarDetalleReferidosBarbero(); // re-pinta el detalle si ya estaba abierto (usa d.comisionReferidos en memoria)
     }catch(e){
       contenido.style.display = 'none';
       sinVincular.style.display = '';
@@ -9688,6 +10630,45 @@
     box.style.display = abrir ? '' : 'none';
     document.getElementById('cbmVerDetalle').textContent = abrir ? 'Ocultar detalle' : 'Ver detalle';
     if(abrir) pintarDetalleProductosBarbero();
+  });
+
+  /** Detalle de comisión por referidos del mes elegido -- viene completo en
+   *  la misma respuesta de obtenerMisComisiones (d.comisionReferidos), así
+   *  que abrir/cerrar "Ver detalle" no dispara ninguna lectura nueva. */
+  function pintarDetalleReferidosBarbero(){
+    const tb = document.getElementById('cbrDetalleTabla');
+    const totales = document.getElementById('cbrDetalleTotales');
+    const detalle = (cbUltimoReporte && cbUltimoReporte.comisionReferidos && cbUltimoReporte.comisionReferidos.detalle) || [];
+    if(!detalle.length){
+      tb.innerHTML = '<tr><td colspan="6" class="cx-empty">Sin ventas por referido en este mes.</td></tr>';
+      totales.innerHTML = '';
+      return;
+    }
+    let totMonto = 0, totComision = 0;
+    tb.innerHTML = detalle.map(v=>{
+      totMonto += v.comisionBase;
+      totComision += v.monto;
+      const fechaTxt = cxFmtFechaCorta(v.fecha ? String(v.fecha).slice(0,10) : '');
+      return `<tr>
+        <td>${fechaTxt}</td>
+        <td>${escapeHTML(v.cliente || '')}</td>
+        <td>${escapeHTML(v.codigoReferido || '')}</td>
+        <td class="r">${cxClp(v.comisionBase)}</td>
+        <td class="r">${v.comisionPct}%</td>
+        <td class="r">${cxClp(v.monto)}</td>
+      </tr>`;
+    }).join('');
+    totales.innerHTML = `<td colspan="3"><b>Total del mes</b></td>
+      <td class="r"><b>${cxClp(totMonto)}</b></td>
+      <td></td>
+      <td class="r"><b>${cxClp(totComision)}</b></td>`;
+  }
+  document.getElementById('cbrVerDetalle').addEventListener('click', ()=>{
+    const box = document.getElementById('cbrDetalleBox');
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    document.getElementById('cbrVerDetalle').textContent = abrir ? 'Ocultar detalle' : 'Ver detalle';
+    if(abrir) pintarDetalleReferidosBarbero();
   });
 
   /** Propinas -- rango independiente del mes de Productos/Código. Consulta
@@ -9805,7 +10786,7 @@
       .sort((a,b)=> (a.start[0]*60+a.start[1]) - (b.start[0]*60+b.start[1]));
 
     let comisionServicios = 0, propinas = 0, comisionProductos = 0, realizados = 0;
-    const ESTADOS = {reservado:'Reservado', pend:'Pendiente', asistio:'Asistió', no:'No asistió', ok:'Confirmada', done:'Completado'};
+    const ESTADOS = {reservado:'Reservado', confirmado:'Confirmado', pend:'Pendiente', asistio:'Asiste', no:'No asistió', en_espera:'En espera', ok:'Confirmada', done:'Completado'};
 
     const filas = misCitas.map(a=>{
       const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
@@ -15251,17 +16232,17 @@
     const pendientes = (await reservasDeManana()).filter(r=> !r.recordatorioEnviado);
     if(!pendientes.length) return;
 
+    // El HTML del correo lo arma el servidor (misma plantilla maestra que
+    // confirmada/modificada/cancelada) -- un solo llamado con todos los IDs
+    // pendientes, en vez de un doc `mail` armado uno por uno en el navegador.
     btn.disabled = true; btn.textContent = 'Enviando...';
-    let conCorreo = 0;
-    for(const r of pendientes){
-      if(r.email){
-        const { subject, html, text } = plantillaCorreoReserva(bookingParaAviso(r), 'recordatorio');
-        try{ const correoRecordatorio = prepararCorreoCliente({ to:[r.email], message:{ subject, html, text } }); if(correoRecordatorio){ await db.collection('mail').add(correoRecordatorio); conCorreo++; } }catch(e){}
-      }
-      try{ await db.collection('bookings').doc(r.id).update({ recordatorioEnviado: true }); }catch(e){}
+    try{
+      const r = await functions.httpsCallable('enviarCorreoRecordatorioReserva')({ bookingIds: pendientes.map(p=> p.id) });
+      showToast(`Recordatorio enviado por correo a ${r.data.enviados} de ${r.data.total} reserva(s)`);
+    }catch(e){
+      showToast('No se pudo enviar: ' + (e.message || 'Error desconocido'));
     }
     btn.textContent = 'Enviar ahora';
-    showToast(`Recordatorio enviado por correo a ${conCorreo} de ${pendientes.length} reserva(s)`);
     await cargarRecordatorios();
   });
 
@@ -15353,6 +16334,17 @@
     document.getElementById('dPhone').textContent = !verContacto ? 'No visible para tu cuenta' : (faltaCargar ? 'Cargando...' : (a.phone || '—'));
     document.getElementById('dEmail').textContent = !verContacto ? 'No visible para tu cuenta' : (faltaCargar ? 'Cargando...' : (a.email || '—'));
     document.getElementById('dNotes').textContent = a.notes || 'Sin información';
+
+    // Nota del cliente (comentarioCliente) -- solo lectura, visible para
+    // ADMIN/RECEPTION (mismo gate que el resto del contacto); nunca para
+    // BARBER, y el bloque entero se oculta si no hay texto.
+    const dNotaClienteBlock = document.getElementById('dNotaClienteBlock');
+    if(verContacto && a.comentarioCliente){
+      document.getElementById('dNotaClienteOrigen').textContent = a.comentarioCliente;
+      dNotaClienteBlock.style.display = '';
+    } else {
+      dNotaClienteBlock.style.display = 'none';
+    }
     const waNumber = (a.phone || '').replace(/[^0-9]/g,'');
     document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
     document.getElementById('dWhatsapp').style.display = verContacto ? '' : 'none';
@@ -15369,6 +16361,22 @@
     document.getElementById('dNota').readOnly = !puedeGestionarCita;
     document.getElementById('dNota').placeholder = puedeGestionarCita
       ? 'Sin notas todavía…' : 'El administrador no ha dejado notas';
+
+    // Notas compartidas con el cliente -- a diferencia de la nota interna
+    // (dNota/notaAdmin), esta la puede ver el cliente, así que un BARBER
+    // también puede leerla (no es información sensible) pero solo
+    // ADMIN/RECEPTION la edita.
+    document.getElementById('dNotaCliente').value = a.notaCliente || '';
+    document.getElementById('dNotaCliente').readOnly = !puedeGestionarCita;
+    document.getElementById('dNotaCliente').placeholder = puedeGestionarCita
+      ? 'Sin notas todavía…' : 'Sin notas compartidas';
+
+    // Editar precio: SOLO ADMIN. La verificación real está en el servidor
+    // (editarPrecioReserva) -- ocultar el botón aquí es solo UX, nunca la
+    // barrera de seguridad. Solo aplica a reservas reales (fromWeb+webId).
+    document.getElementById('btnEditarPrecio').style.display =
+      (userRole === 'ADMIN' && a.fromWeb && a.webId) ? '' : 'none';
+    document.getElementById('dPrecioModificadoBadge').style.display = a.precioModificado ? '' : 'none';
 
     document.querySelectorAll('.tag-dot').forEach(d=>{
       d.classList.toggle('selected', d.dataset.s === a.status);
@@ -15421,15 +16429,34 @@
     }catch(e){ showToast('No se pudo guardar la nota: ' + e.message); }
   });
 
+  document.getElementById('dNotaCliente').addEventListener('blur', async (ev)=>{
+    const a = currentAppt;
+    if(!a || !a.fromWeb || !a.webId) return;
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')) return;
+    const nota = ev.target.value.trim();
+    if(nota === (a.notaCliente || '')) return;
+    try{
+      await db.collection('bookings').doc(a.webId).update({ notaCliente: nota });
+      a.notaCliente = nota;
+      showToast('Nota guardada');
+    }catch(e){ showToast('No se pudo guardar la nota: ' + e.message); }
+  });
+
   document.getElementById('btnEliminarCita').addEventListener('click', async ()=>{
     const a = currentAppt;
     if(!a) return;
     if(!(await mgConfirm(`¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`))) return;
 
     if(a.fromWeb && a.webId){
+      // El correo de cancelación se arma en el servidor (misma plantilla
+      // maestra que confirmada/modificada/recordatorio) -- se manda ANTES
+      // de borrar, mientras la reserva todavía existe para que el backend
+      // la lea fresca. Si el correo falla, igual se borra: el envío nunca
+      // bloquea la acción de eliminar.
+      try{ await functions.httpsCallable('enviarCorreoCancelacionReserva')({ bookingId: a.webId }); }
+      catch(e){ console.error('enviarCorreoCancelacionReserva', e); }
       try{ await db.collection('bookings').doc(a.webId).delete(); }
       catch(e){ showToast('No se pudo eliminar: ' + e.message); return; }
-      enviarCorreoReserva(a, 'eliminada');
     }
 
     const idx = appointments.indexOf(a);
@@ -15469,6 +16496,72 @@
   document.getElementById('editBack').addEventListener('click', ()=>{
     editView.classList.remove('open');
     detailView.classList.add('open');
+  });
+
+  /* ---------------- Editar precio (SOLO ADMIN) ----------------
+     precioFinal es un override opcional sobre price (el original de
+     catálogo, que nunca se toca). El servidor (editarPrecioReserva) es
+     quien de verdad decide si esto se permite -- esto es solo la UI. */
+  document.getElementById('btnEditarPrecio').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a || !a.webId) return;
+    const precioActual = typeof a.precioFinal === 'number' ? a.precioFinal : (a.precioOriginal || parsePrice(a.price));
+    document.getElementById('epPrecioOriginal').textContent = formatCLP(a.precioOriginal || parsePrice(a.price));
+    document.getElementById('epPrecioNuevo').value = precioActual;
+    document.getElementById('epMotivo').value = '';
+    document.getElementById('epYaPagadoNota').style.display = 'none';
+    abrirModal('modalEditarPrecio');
+    setTimeout(()=> document.getElementById('epPrecioNuevo').focus(), 50);
+
+    // Ya pagado -- solo informativo, para que ADMIN vea el anticipo antes de
+    // decidir el precio nuevo. La regla real (anticipo intacto, saldo nunca
+    // negativo en silencio) la aplica el servidor al guardar.
+    try{
+      const r = await functions.httpsCallable('obtenerHistorialPagosReserva')({ bookingId: a.webId });
+      const yaPagado = Math.max(0, (r.data.price || 0) - (r.data.saldoPendiente || 0));
+      if(yaPagado > 0){
+        document.getElementById('epYaPagado').textContent = formatCLP(yaPagado);
+        document.getElementById('epYaPagadoNota').style.display = '';
+      }
+    }catch(e){ /* informativo -- si falla, simplemente no se muestra */ }
+  });
+
+  document.getElementById('epGuardar').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a || !a.webId) return;
+    const precioNuevo = parseInt(document.getElementById('epPrecioNuevo').value, 10);
+    if(!Number.isFinite(precioNuevo) || precioNuevo < 0){ showToast('Ingresa un precio válido'); return; }
+    const motivo = document.getElementById('epMotivo').value.trim();
+
+    const btn = document.getElementById('epGuardar');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try{
+      const r = await functions.httpsCallable('editarPrecioReserva')({ bookingId: a.webId, precioNuevo, motivo });
+      const d = r.data;
+      a.price = '$' + Number(d.precioFinal).toLocaleString('es-CL');
+      a.precioFinal = d.precioFinal;
+      a.precioModificado = true;
+      a.motivoAjuste = motivo;
+      // El saldo cacheado quedó obsoleto -- se recalcula la próxima vez que
+      // se abra la pantalla de cobro (goToPayView -> cargarHistorialPagos).
+      delete a._saldoServicio;
+      document.getElementById('dPriceBig').textContent = a.price;
+      document.getElementById('dPrecioModificadoBadge').style.display = '';
+      cerrarModales();
+      if(d.alertaSaldoNegativo){
+        await mgAlert(
+          `El precio nuevo (${formatCLP(d.precioFinal)}) es menor que lo ya pagado (${formatCLP(d.yaPagado)}).\n\n` +
+          `Hay un excedente de ${formatCLP(d.montoExcedente)} que requiere resolución manual (por ejemplo, devolución o descuento en otro servicio). El sistema no hace devoluciones automáticas.`,
+          { titulo: 'Revisar saldo' }
+        );
+      } else {
+        showToast('Precio actualizado');
+      }
+    }catch(e){
+      showToast('No se pudo actualizar el precio: ' + (e.message || 'Error desconocido'));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Guardar precio';
+    }
   });
 
   document.getElementById('editGuardar').addEventListener('click', async ()=>{
@@ -15535,12 +16628,19 @@
     closeDrawer();
   });
 
-  // Estados operativos vigentes: reservado/pend/asistio/no (únicos seleccionables
-  // en las pills, ver #statusPills). new/ok/resched/done quedan solo para seguir
-  // mostrando correctamente reservas históricas -- ya no se escriben desde ningún
-  // lugar del panel, ver auditoría de estados de reservas.
+  // Estados operativos vigentes -- 6 reales, calcados 1:1 de AgendaPro (nombre
+  // visible y color exactos, verificados en vivo en app.agendapro.com):
+  // reservado/confirmado/asistio/no/pend/en_espera (únicos seleccionables en
+  // las pills, ver #statusPills). new/ok/resched/done quedan solo para seguir
+  // mostrando correctamente reservas históricas -- ya no se escriben desde
+  // ningún lugar del panel, ver auditoría de estados de reservas. OJO: el
+  // texto real de AgendaPro para 'asistio' es "Asiste" (no "Asistió") --
+  // confirmado tanto en la lista del selector como en la píldora ya elegida.
+  // Internamente el valor sigue siendo 'asistio' -- ningún cálculo de
+  // comisión ni reporte cambia, solo el texto que se muestra.
   const tagLabels = {
-    reservado:'Reservado', pend:'Pendiente', asistio:'Asistió', no:'No asistió',
+    reservado:'Reservado', confirmado:'Confirmado', asistio:'Asiste', no:'No asistió',
+    pend:'Pendiente', en_espera:'En espera',
     new:'Nuevo cliente', ok:'Asiste', resched:'Reagendó', done:'Completado',
   };
   /** Clase que pinta la tarjeta ENTERA de la agenda según la etiqueta
@@ -15550,7 +16650,7 @@
    *  reservas siguen mostrando el color de servicio de siempre. */
   function apptStatusClass(status){
     if(status === 'done') return 'st-asistio';
-    return ['reservado','pend','asistio','no'].includes(status) ? 'st-' + status : '';
+    return ['reservado','confirmado','asistio','no','pend','en_espera'].includes(status) ? 'st-' + status : '';
   }
 
   /* Tooltip al pasar el mouse por una reserva (sin hacer clic) -- mismo
@@ -15763,7 +16863,10 @@
     // Fuente única: 'etiqueta' (no 'estado', que solo lo escribía un botón y
     // quedaba desincronizado si la asistencia se marcaba por otro camino).
     const completadas = reservas.filter(r=> r.etiqueta === 'asistio' || r.etiqueta === 'done');
-    const totalGastado = completadas.reduce((s,r)=> s + (Number(r.price)||0), 0);
+    // precioFinal ?? price -- si ADMIN ajustó el precio, la ficha del cliente
+    // refleja el precio final real, no el original de catálogo.
+    const precioDe = (r)=> (typeof r.precioFinal === 'number' ? r.precioFinal : Number(r.price)) || 0;
+    const totalGastado = completadas.reduce((s,r)=> s + precioDe(r), 0);
     const primeraFecha = reservas.length ? reservas[reservas.length - 1].fecha : '—';
 
     const ESTADOS = { pendiente:'Por confirmar', aprobada:'Confirmada', rechazada:'Rechazada' };
@@ -15775,7 +16878,7 @@
           <b>${escapeHTML(r.fecha || '')} · ${escapeHTML(r.svc || '')}</b>
           <span class="rc-chip ${cls}">${estadoTxt}</span>
         </div>
-        <span style="color:#57565f;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(r.price)}${(r.etiqueta === 'asistio' || r.etiqueta === 'done') ? ' · Asistió' : ''}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
+        <span style="color:#57565f;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(precioDe(r))}${(r.etiqueta === 'asistio' || r.etiqueta === 'done') ? ' · ' + tagLabels['asistio'] : ''}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
       </div>`;
     }).join('');
 
@@ -16555,26 +17658,43 @@
   /* ---------------- Clic en hueco vacío = popover "Reserva / Bloquear horario" ---------------- */
 
   /** Abre el mismo formulario de "+ Nueva reserva" de siempre, con el
-   *  barbero y la fecha ya elegidos según dónde se hizo clic en la agenda
-   *  -- misma lógica que ya existía, ahora como función aparte para que la
-   *  llame también el popover en vez de abrirse directo al hacer clic. */
+   *  barbero y la hora ya elegidos según dónde se hizo clic en la agenda --
+   *  misma lógica que ya existía, ahora como función aparte para que la
+   *  llame también el popover en vez de abrirse directo al hacer clic.
+   *  Reescrita para usar el mismo reset que btnNuevaReserva (la versión
+   *  vieja llamaba a resetNrForzar()/#nrHoras, que ya no existen desde el
+   *  rediseño de Nueva Reserva -- quedaba rota, sin abrir nada, al hacer
+   *  clic en un hueco vacío de la Agenda). */
   async function abrirReservaDesdeAgenda(barberoCalId, timeTxt){
     await cargarCatalogo();
     llenarSelect(document.getElementById('nrServicio'), cfgServicios.filter(s=> s.active), 'id',
       s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
     llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
-    const barbero = cfgBarberos.find(b=> b.calId === barberoCalId);
-    if(barbero) document.getElementById('nrBarbero').value = barbero.id;
     document.getElementById('nrFecha').value = currentDate;
     document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
-    nrSeleccion.startsAt = null;
-    resetNrForzar();
+    document.getElementById('nr2HoraInicio').value = '';
+    document.getElementById('nr2HoraFin').value = '';
+    nr2SincronizarFechaTexto();
+    nr2SincronizarHoraTexto('nr2HoraInicio', 'nr2HoraInicioTexto');
+    nr2SincronizarHoraTexto('nr2HoraFin', 'nr2HoraFinTexto');
+    document.getElementById('nr2FinWrap').style.display = 'none';
+    nrSeleccion = { startsAt:null, forzar:false, clienteId:null, estado:'reservado' };
+    nr2FinTocadaAMano = false;
+    nr2LimpiarCliente();
+    nr2MostrarVistaFormulario();
+    nr2InicializarMenuEstado();
+    nr2PintarEstado('reservado');
     document.getElementById('nrGuardar').disabled = true;
-    abrirModal('modalReserva');
-    await cargarHorasLibres();
 
-    // si la hora exacta donde se hizo clic sigue libre, la dejamos ya elegida
-    document.querySelector(`#nrHoras .mg-slot[data-h="${timeTxt}"]`)?.click();
+    const barbero = cfgBarberos.find(b=> b.calId === barberoCalId);
+    if(barbero) document.getElementById('nrBarbero').value = barbero.id;
+
+    abrirModal('modalReserva');
+
+    // si se hizo clic en un hueco puntual de la agenda, esa hora queda ya
+    // elegida (dispara nr2ActualizarHoraFin/validarNuevaReserva igual que
+    // si la admin la hubiese tocado en la rueda).
+    if(timeTxt) nr2SetHora('nr2HoraInicio', 'nr2HoraInicioTexto', timeTxt);
   }
 
   // Popover compacto y flotante, un solo elemento compartido por toda la
