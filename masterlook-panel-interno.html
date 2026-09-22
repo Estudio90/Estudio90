@@ -16485,12 +16485,18 @@
     if(a.fromWeb && a.webId){
       // El correo de cancelación se arma en el servidor (misma plantilla
       // maestra que confirmada/modificada/recordatorio) -- se manda ANTES
-      // de borrar, mientras la reserva todavía existe para que el backend
-      // la lea fresca. Si el correo falla, igual se borra: el envío nunca
+      // de cancelar, mientras la reserva todavía existe para que el backend
+      // la lea fresca. Si el correo falla, igual se cancela: el envío nunca
       // bloquea la acción de eliminar.
       try{ await functions.httpsCallable('enviarCorreoCancelacionReserva')({ bookingId: a.webId }); }
       catch(e){ console.error('enviarCorreoCancelacionReserva', e); }
-      try{ await db.collection('bookings').doc(a.webId).delete(); }
+      // cancelarReserva (Cloud Function, Admin SDK) reemplaza el borrado
+      // directo a Firestore: además de eliminar el documento, libera (o
+      // transfiere a una cita hermana activa, si comparte horario en una
+      // reserva combinada) el bloqueo de agenda -- el borrado directo NO
+      // tocaba slotLocks, dejando el horario bloqueado hasta que vencía
+      // solo. Todo corre en UNA transacción atómica del lado del servidor.
+      try{ await functions.httpsCallable('cancelarReserva')({ bookingId: a.webId }); }
       catch(e){ showToast('No se pudo eliminar: ' + e.message); return; }
     }
 
