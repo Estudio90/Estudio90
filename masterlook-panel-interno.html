@@ -22,6 +22,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <script src="config-comun.js"></script>
+<script src="tiempo-santiago.js"></script>
 <script src="masterlook-nav-comun.js"></script>
 <!-- Generador de PDF para la cartola de comisiones (Comisiones > Comisiones barberos) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -5209,13 +5210,12 @@
   document.getElementById('kpiDesde').addEventListener('change', cargarKpisPorRango);
   document.getElementById('kpiHasta').addEventListener('change', cargarKpisPorRango);
   document.getElementById('kpiRangeHoy').addEventListener('click', ()=>{
-    const hoy = new Date().toISOString().slice(0,10);
+    const hoy = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
     kpiAplicarRango(hoy, hoy);
   });
   document.getElementById('kpiRangeMes').addEventListener('click', ()=>{
-    const ahora = new Date();
-    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().slice(0,10);
-    const hoy = ahora.toISOString().slice(0,10);
+    const hoy = TiempoSantiago.fechaSantiago();
+    const inicioMes = hoy.slice(0, 7) + '-01';
     kpiAplicarRango(inicioMes, hoy);
   });
 
@@ -5740,10 +5740,9 @@
     ocultarFlotante(true);
 
     if(!document.getElementById('abHasta').value){
-      const hoy = new Date();
-      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-      document.getElementById('abDesde').value = inicioMes.toISOString().slice(0,10);
-      document.getElementById('abHasta').value = hoy.toISOString().slice(0,10);
+      const hoy = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
+      document.getElementById('abDesde').value = hoy.slice(0, 7) + '-01';
+      document.getElementById('abHasta').value = hoy;
     }
     abCargar();
   }
@@ -5885,10 +5884,9 @@
     ocultarFlotante(true);
 
     if(!document.getElementById('rvHasta').value){
-      const hoy = new Date();
-      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-      document.getElementById('rvDesde').value = inicioMes.toISOString().slice(0,10);
-      document.getElementById('rvHasta').value = hoy.toISOString().slice(0,10);
+      const hoy = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
+      document.getElementById('rvDesde').value = hoy.slice(0, 7) + '-01';
+      document.getElementById('rvHasta').value = hoy;
     }
     rvCargar();
   }
@@ -6401,7 +6399,7 @@
     const offset = (primero.getDay() + 6) % 7;          // lunes = 0
     const diasMes = new Date(anio, mes + 1, 0).getDate();
     const diasPrev = new Date(anio, mes, 0).getDate();
-    const hoyISO = new Date().toISOString().slice(0,10);
+    const hoyISO = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
 
     const celda = (num, fecha, muted)=>{
       const el = document.createElement('div');
@@ -6923,8 +6921,10 @@
   // Si la hora real está fuera de START_HOUR–END_HOUR, se crea igual pero
   // oculta (marcarHoraActual la vuelve a evaluar en cada boot/cambio de
   // día) -- así nunca queda dibujada fuera de la grilla desbordando el contenedor.
-  const ahoraInicial = new Date();
-  const nowHour = ahoraInicial.getHours(), nowMin = ahoraInicial.getMinutes();
+  // TiempoSantiago.ahoraSantiago() -- NUNCA getHours()/getMinutes() del
+  // navegador (hora del DISPOSITIVO, no necesariamente la de Santiago).
+  const ahoraInicialSantiago = TiempoSantiago.ahoraSantiago();
+  const nowHour = Math.floor(ahoraInicialSantiago.minutos / 60), nowMin = ahoraInicialSantiago.minutos % 60;
   const dentroDelRangoInicial = nowHour >= START_HOUR && nowHour < END_HOUR;
   const gridBody = document.getElementById('gridBody');
   const line = document.createElement('div');
@@ -7464,15 +7464,19 @@
     reconciliarAgenda({ silencioso: silencioso !== false });
   }
 
+  // TiempoSantiago.diaSemanaNumero()/sumarDiasSantiago() -- aritmética de
+  // calendario pura (Date.UTC explícito sobre las partes Y-M-D), nunca
+  // new Date(str+'T12:00:00') + toISOString(): ese patrón es autoconsistente
+  // solo mientras el dispositivo esté a menos de 12h de diferencia de UTC
+  // en la dirección correcta -- técnicamente sigue dependiendo de la
+  // configuración del dispositivo, que el usuario pidió eliminar del todo.
   function lunesISO(iso){
-    const d = new Date((iso || currentDate) + 'T12:00:00');
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    return d.toISOString().slice(0,10);
+    const fecha = iso || currentDate;
+    const dia = TiempoSantiago.diaSemanaNumero(fecha); // 0=domingo..6=sábado
+    return TiempoSantiago.sumarDiasSantiago(fecha, -((dia + 6) % 7));
   }
   function domingoISO(lunesIso){
-    const d = new Date(lunesIso + 'T12:00:00');
-    d.setDate(d.getDate() + 6);
-    return d.toISOString().slice(0,10);
+    return TiempoSantiago.sumarDiasSantiago(lunesIso, 6);
   }
 
   /**
@@ -7586,7 +7590,11 @@
   /* ==========================================================
      GESTIÓN: días, reserva local, bloqueos y configuración
      ========================================================== */
-  let currentDate = new Date().toISOString().slice(0,10);
+  // TiempoSantiago.fechaSantiago() -- NUNCA new Date().toISOString() (día
+  // UTC): entre ~20:00 y medianoche hora Chile, el día UTC ya adelantó al
+  // siguiente y el panel abría mostrando el día equivocado (ver
+  // docs/INCIDENCIA-regla-4h-utc-vs-santiago.md).
+  let currentDate = TiempoSantiago.fechaSantiago();
   let cfgServicios = [];
   let cfgBarberos = [];
 
@@ -7670,7 +7678,12 @@
   /* En modo demo guardamos la agenda de cada día en memoria,
      para poder navegar entre fechas y reservar en días futuros. */
   const demoAgenda = {};
-  const HOY_ISO = new Date().toISOString().slice(0,10);
+  // Función, no una constante fija al cargar el script: si el panel queda
+  // abierto y cruza la medianoche (de Santiago, no de UTC -- ver
+  // TiempoSantiago.fechaSantiago()), la pastilla "hoy" debe seguir
+  // recalculándose en cada pintado, no quedar pegada al día en que se
+  // abrió el panel.
+  function HOY_ISO(){ return TiempoSantiago.fechaSantiago(); }
 
   function guardarDiaActual(){
     if(MODE === 'api') return;
@@ -7725,14 +7738,18 @@
 
   /** La línea roja de "ahora" solo tiene sentido en el día de hoy. */
   function marcarHoraActual(){
-    const ahora = new Date();
-    const esHoy = currentDate === ahora.toISOString().slice(0,10);
+    // TiempoSantiago.ahoraSantiago() -- NUNCA toISOString()/getHours() del
+    // navegador (día UTC / hora del DISPOSITIVO, no la hora oficial de
+    // Santiago vía Intl/IANA) -- ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+    const ahoraSantiago = TiempoSantiago.ahoraSantiago();
+    const esHoy = currentDate === ahoraSantiago.fecha;
+    const horaActual = Math.floor(ahoraSantiago.minutos / 60);
     // Si la hora real ya pasó el horario visible (ej. 23:06 con la grilla
     // terminando a las 21:00), la línea/badge de "ahora" quedaban dibujados
     // fuera de la grilla -- eso hacía que el contenedor se desbordara hacia
     // abajo y apareciera el scroll interno que no se quería. Fuera del
     // rango visible, simplemente no tiene sentido mostrar el marcador.
-    const dentroDelRango = ahora.getHours() >= START_HOUR && ahora.getHours() < END_HOUR;
+    const dentroDelRango = horaActual >= START_HOUR && horaActual < END_HOUR;
     document.querySelectorAll('.now-line, .now-badge').forEach(el=>{
       el.style.display = (esHoy && dentroDelRango) ? '' : 'none';
     });
@@ -7748,21 +7765,22 @@
         dias = data.days;
       }catch(e){ return; }
     } else {
-      // construimos la semana con lo que tenemos guardado en memoria
-      const base = new Date(currentDate + 'T12:00:00');
-      const lunes = new Date(base);
-      lunes.setDate(base.getDate() - ((base.getDay() + 6) % 7));
+      // construimos la semana con lo que tenemos guardado en memoria --
+      // reusa lunesISO() (ya corregida arriba) en vez de recalcular el
+      // lunes por su cuenta.
+      const lunes = lunesISO(currentDate);
       const NOMBRES = ['dom','lun','mar','mié','jue','vie','sáb'];
       dias = [];
       for(let i=0; i<7; i++){
-        const d = new Date(lunes);
-        d.setDate(lunes.getDate() + i);
-        const iso = d.toISOString().slice(0,10);
+        const iso = TiempoSantiago.sumarDiasSantiago(lunes, i);
+        // Solo para leer componentes de calendario -- 'T12:00:00Z' + getters
+        // UTC, sin ambigüedad de zona horaria.
+        const d = new Date(iso + 'T12:00:00Z');
         const lista = iso === currentDate ? appointments : (demoAgenda[iso] || []);
         dias.push({
           date: iso,
-          label: NOMBRES[d.getDay()],
-          dayNumber: d.getDate(),
+          label: NOMBRES[d.getUTCDay()],
+          dayNumber: d.getUTCDate(),
           count: lista.length,
           pending: lista.filter(a=> a.status === 'pend').length,
         });
@@ -7771,7 +7789,7 @@
 
     strip.style.display = '';
     strip.innerHTML = dias.map(d=>`
-      <div class="wk-day ${d.date === currentDate ? 'active' : ''} ${d.date === HOY_ISO ? 'today' : ''}" data-date="${d.date}">
+      <div class="wk-day ${d.date === currentDate ? 'active' : ''} ${d.date === HOY_ISO() ? 'today' : ''}" data-date="${d.date}">
         <div class="wk-name">${d.label}</div>
         <div class="wk-num">${d.dayNumber}</div>
         <div class="wk-count">${d.count} ${d.count === 1 ? 'hora' : 'horas'}${d.pending ? '<span class="wk-dot"></span>' : ''}</div>
@@ -7793,7 +7811,7 @@
   }
 
   document.getElementById('btnHoy').addEventListener('click', ()=>
-    irADia(new Date().toISOString().slice(0,10)));
+    irADia(TiempoSantiago.fechaSantiago())); // nunca toISOString() (día UTC)
   document.getElementById('btnPrevDay').addEventListener('click', ()=> moverDia(-1));
   document.getElementById('btnNextDay').addEventListener('click', ()=> moverDia(1));
 
@@ -7807,9 +7825,7 @@
   }
 
   function moverDia(n){
-    const d = new Date(currentDate + 'T12:00:00');
-    d.setDate(d.getDate() + n);
-    irADia(d.toISOString().slice(0,10));
+    irADia(TiempoSantiago.sumarDiasSantiago(currentDate, n));
   }
 
   /* ---------- Modales ---------- */
@@ -8125,7 +8141,12 @@
       s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
     llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
     document.getElementById('nrFecha').value = currentDate;
-    document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
+    // TiempoSantiago.fechaSantiago() -- NUNCA toISOString() (día UTC): con
+    // el bug, entre ~20:00 y medianoche hora Chile el propio día de hoy
+    // (currentDate, ya correcto arriba) quedaba POR DEBAJO del mínimo
+    // permitido -- el staff no podía crear una reserva para hoy mismo en
+    // ese horario. Ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+    document.getElementById('nrFecha').min = TiempoSantiago.fechaSantiago();
     document.getElementById('nr2HoraInicio').value = '09:00'; // mismo default que AgendaPro
     document.getElementById('nr2HoraFin').value = '';
     nr2SincronizarFechaTexto();
@@ -9782,7 +9803,7 @@
       const weekday = d.getDay();
 
       const head = document.createElement('div');
-      head.className = 'sb-day-head' + (iso === HOY_ISO ? ' today' : '');
+      head.className = 'sb-day-head' + (iso === HOY_ISO() ? ' today' : '');
       head.innerHTML = `<div class="sb-dname">${DIAS_CORTOS[weekday]}</div><div class="sb-dnum">${d.getDate()}</div>`;
       headerRow.appendChild(head);
 
@@ -11066,11 +11087,14 @@
    *  (15/20/30 días, mes completo) es el mismo en las dos, no un dato de
    *  comisiones en sí. */
   function cxRango(tipo){
-    const h = new Date(), iso = d=> d.toISOString().slice(0,10);
-    if(tipo === '15'){ const i = new Date(h); i.setDate(h.getDate()-14); return [iso(i), iso(h)]; }
-    if(tipo === '20'){ const i = new Date(h); i.setDate(h.getDate()-19); return [iso(i), iso(h)]; }
-    if(tipo === '30'){ const i = new Date(h); i.setDate(h.getDate()-29); return [iso(i), iso(h)]; }
-    return [iso(new Date(h.getFullYear(), h.getMonth(), 1)), iso(h)]; // 'mes' (mes completo)
+    // TiempoSantiago.fechaSantiago()/sumarDiasSantiago() -- nunca
+    // toISOString() (día UTC): comisiones/propinas son dinero asociado a
+    // citas, mismo motivo que el fix ya hecho en comisionesProductos.js.
+    const hoy = TiempoSantiago.fechaSantiago();
+    if(tipo === '15') return [TiempoSantiago.sumarDiasSantiago(hoy, -14), hoy];
+    if(tipo === '20') return [TiempoSantiago.sumarDiasSantiago(hoy, -19), hoy];
+    if(tipo === '30') return [TiempoSantiago.sumarDiasSantiago(hoy, -29), hoy];
+    return [hoy.slice(0, 7) + '-01', hoy]; // 'mes' (mes completo)
   }
   function cxFmtFechaCorta(iso){
     if(!iso) return '';
@@ -12142,8 +12166,8 @@
     ocultarFlotante(true);
     document.getElementById('vtTitulo').textContent = VENTAS_CONFIG[tipo].titulo;
     document.getElementById('vtSub').textContent = VENTAS_CONFIG[tipo].sub;
-    const hoy = new Date().toISOString().slice(0,10);
-    const hace30 = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
+    const hoy = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
+    const hace30 = TiempoSantiago.sumarDiasSantiago(hoy, -30);
     document.getElementById('vtDesde').value = hace30;
     document.getElementById('vtHasta').value = hoy;
     document.getElementById('vtKpis').innerHTML = '';
@@ -12166,7 +12190,10 @@
     kpis.innerHTML = '';
     try{
       let filas = [];
-      const fechaDeTimestamp = (ts)=> ts?.toDate ? ts.toDate().toISOString().slice(0,10) : '';
+      // TiempoSantiago.fechaSantiago() -- nunca toISOString() (día UTC): una
+      // venta pagada cerca de medianoche hora Chile mostraría el día
+      // siguiente en la tabla.
+      const fechaDeTimestamp = (ts)=> ts?.toDate ? TiempoSantiago.fechaSantiago(ts.toDate()) : '';
       if(ventasTipoActual === 'academy'){
         // Ventas de curso reales: Webpay (histórico, colección pagosWebpay) +
         // Mercado Pago (colección pagosCursoMP, SOLO estado 'confirmado'). Son
@@ -12259,7 +12286,9 @@
       return Array.from(correos);
     }
     if(modo === 'reciente'){
-      const hace30 = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
+      // nunca toISOString() (día UTC) para comparar contra bookings.fecha
+      // (día calendario de Santiago) -- ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+      const hace30 = TiempoSantiago.sumarDiasSantiago(TiempoSantiago.fechaSantiago(), -30);
       const snap = await db.collection('bookings').where('fecha', '>=', hace30).get();
       const correos = new Set();
       // Los contactos privados se leen en paralelo (antes: N+1 secuencial,
@@ -16125,7 +16154,13 @@
       listener en vivo solo cubre la semana visible, que puede no incluir
       mañana si se está mirando otra fecha. */
   async function reservasDeManana(){
-    const manana = new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,10);
+    // TiempoSantiago.sumarDiasSantiago() -- NUNCA Date.now()+24h seguido de
+    // toISOString() (día UTC): entre ~20:00 y medianoche hora Chile, "mañana"
+    // calculado así saltaba un día de más (el día UTC ya había adelantado
+    // antes de sumar las 24h) -- la sección "Recordatorios" del panel
+    // mostraba/enviaba avisos para el día equivocado. Ver
+    // docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+    const manana = TiempoSantiago.sumarDiasSantiago(TiempoSantiago.fechaSantiago(), 1);
     const snap = await db.collection('bookings').where('fecha', '==', manana).get();
     return snap.docs.map(d=> ({ id: d.id, ...d.data() }))
       .filter(r=> r.decision === 'aprobada')
@@ -17671,7 +17706,12 @@
       s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
     llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
     document.getElementById('nrFecha').value = currentDate;
-    document.getElementById('nrFecha').min = new Date().toISOString().slice(0,10);
+    // TiempoSantiago.fechaSantiago() -- NUNCA toISOString() (día UTC): con
+    // el bug, entre ~20:00 y medianoche hora Chile el propio día de hoy
+    // (currentDate, ya correcto arriba) quedaba POR DEBAJO del mínimo
+    // permitido -- el staff no podía crear una reserva para hoy mismo en
+    // ese horario. Ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+    document.getElementById('nrFecha').min = TiempoSantiago.fechaSantiago();
     document.getElementById('nr2HoraInicio').value = '';
     document.getElementById('nr2HoraFin').value = '';
     nr2SincronizarFechaTexto();

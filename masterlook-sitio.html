@@ -37,6 +37,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <script src="config-comun.js"></script>
+<script src="tiempo-santiago.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
 <style>
   /* ==========================================================
@@ -6307,8 +6308,11 @@
 
   function fmtWhen(iso){
     try{
+      // timeZone explícito: la hora de la cita debe verse siempre en hora
+      // oficial de Santiago, sin importar la zona configurada en el
+      // dispositivo que la mira (ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md).
       return new Date(iso).toLocaleString('es-CL',
-        { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+        { timeZone: TiempoSantiago.ZONA, weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
     }catch(e){ return iso; }
   }
 
@@ -6697,10 +6701,12 @@
     rsEstado.barberName = null;
 
     rsFechaSel = null;
-    const hoy = new Date();
+    // TiempoSantiago.fechaSantiago()/sumarDiasSantiago() -- nunca
+    // toISOString()/setDate() (día UTC / zona del dispositivo), mismo
+    // motivo que pintarDias() de la reserva nueva más arriba.
+    const hoySantiago = TiempoSantiago.fechaSantiago();
     for(let n = 0; n < 60; n++){
-      const d = new Date(hoy); d.setDate(hoy.getDate() + n);
-      const iso = d.toISOString().slice(0,10);
+      const iso = TiempoSantiago.sumarDiasSantiago(hoySantiago, n);
       if(horarioDelDia(iso)){ rsFechaSel = iso; break; }
     }
 
@@ -6736,20 +6742,21 @@
   function rsxPintarDias(){
     const cont = document.getElementById('rsxDias');
     if(!cont) return;
-    const hoy = new Date();
+    const hoySantiago = TiempoSantiago.fechaSantiago();
     const dias = [];
     for(let n = 0; dias.length < 21 && n < 60; n++){
-      const d = new Date(hoy); d.setDate(hoy.getDate() + n);
-      const iso = d.toISOString().slice(0,10);
+      const iso = TiempoSantiago.sumarDiasSantiago(hoySantiago, n);
       if(!horarioDelDia(iso)) continue; // cerrado ese día -- no se muestra
-      dias.push({ iso, d });
+      // Solo para leer día/mes del string ya resuelto -- 'T12:00:00Z' +
+      // getters UTC, sin ambigüedad de zona horaria.
+      dias.push({ iso, d: new Date(iso + 'T12:00:00Z') });
     }
     if(!rsFechaSel || !dias.some(x => x.iso === rsFechaSel)) rsFechaSel = dias[0]?.iso || null;
 
     cont.innerHTML = dias.map(({ iso, d }) =>
       `<div class="rsx-dia ${iso === rsFechaSel ? 'is-active' : ''}" data-d="${iso}">
-        <div class="rsx-dia-nom">${RS_DIAS_CORTO[d.getDay()]}</div>
-        <div class="rsx-dia-num">${d.getDate()}</div>
+        <div class="rsx-dia-nom">${RS_DIAS_CORTO[d.getUTCDay()]}</div>
+        <div class="rsx-dia-num">${d.getUTCDate()}</div>
       </div>`
     ).join('');
 
@@ -6798,11 +6805,31 @@
     const dur = reserva.duracion || 45;
     const opciones = [];
     for(let min = inicioGrilla; min + dur <= real.horario.cierra; min += 60){
-      const horaAbsoluta = new Date(fecha + 'T00:00:00').getTime() + min * 60 * 1000;
+      // TiempoSantiago.instanteSantiagoMs() -- NUNCA new Date(fecha+'T00:00:00')
+      // (medianoche del DISPOSITIVO, no de Santiago): mismo bug que el
+      // backend (reagendarTransaccional), acá del lado del cliente --
+      // podía ocultarle al cliente horas válidas con más de 4h reales de
+      // anticipación. Ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md. El
+      // backend sigue siendo la validación definitiva de todos modos.
+      if(!TiempoSantiago.existeHorarioEnSantiago(fecha, min)) continue; // hueco del adelanto de hora
+      const horaAbsoluta = TiempoSantiago.instanteSantiagoMs(fecha, min);
       if(horaAbsoluta < limite) continue;
       // esta misma reserva no debe bloquearse a sí misma si se está mirando
       // su propia fecha actual
-      const libres = Object.keys(real.ocupacion).filter(nombreBarbero=>{
+      //
+      // Candidatos = TODOS los barberos reales, nunca solo
+      // Object.keys(real.ocupacion) -- ocupacionDelDia() (backend) solo
+      // agrega una clave al mapa cuando hay ALGO que ocupa a ese barbero
+      // (una reserva, un bloqueo, un horario propio recortado); un barbero
+      // sin ninguna ocupación ese día simplemente NO aparece como clave. Si
+      // acá solo se recorrían las claves existentes, un barbero
+      // completamente libre (o un día donde NINGÚN barbero tiene nada
+      // agendado, real.ocupacion === {}) nunca se consideraba disponible --
+      // el cliente veía "No hay horarios disponibles ese día con 4 horas de
+      // anticipación" aunque sí los hubiera. Bug real encontrado en vivo
+      // (2026-09-22), sin relación con la regla de las 4 horas en sí.
+      const nombresBarberos = (catalog.barbers && catalog.barbers.length ? catalog.barbers : BARB_DEMO).map((b)=> b.name);
+      const libres = nombresBarberos.filter(nombreBarbero=>{
         if(fecha === reserva.fecha && nombreBarbero === reserva.barber){
           const ocupadoSinPropia = (real.ocupacion[nombreBarbero]||[]).filter(([ini,fin])=>
             !(ini === reserva.startMin && fin === reserva.startMin + reserva.duracion));
@@ -8404,32 +8431,39 @@
     const cont = document.getElementById('rvDias');
     if(!cont) return;
 
-    const hoy = new Date();
-    const sel = document.getElementById('bookDate').value || hoy.toISOString().slice(0,10);
+    // TiempoSantiago.fechaSantiago()/sumarDiasSantiago() -- NUNCA
+    // hoy.toISOString() (día UTC) ni d.setDate()/d.getDay() del navegador
+    // (zona del DISPOSITIVO): durante la tarde/noche en Chile "hoy" saltaba
+    // al día siguiente y el cliente veía/reservaba la fecha equivocada.
+    // Ver docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+    const hoySantiago = TiempoSantiago.fechaSantiago();
+    const sel = document.getElementById('bookDate').value || hoySantiago;
     let html = '';
     let primerDia = null;
     const saltar = (rvDiasOffset === 0 && rvOcultarHoyDeLista) ? 1 : 0;
 
     for(let i = 0; i < 14; i++){
       const n = rvDiasOffset + saltar + i;
-      const d = new Date(hoy);
-      d.setDate(hoy.getDate() + n);
+      const iso = TiempoSantiago.sumarDiasSantiago(hoySantiago, n);
+      // Solo para leer componentes de calendario (día/mes/año/día de semana)
+      // del string 'YYYY-MM-DD' ya resuelto -- 'T12:00:00Z' + getters UTC,
+      // sin ninguna ambigüedad de zona horaria.
+      const d = new Date(iso + 'T12:00:00Z');
       if(i === 0) primerDia = d;
-      const iso = d.toISOString().slice(0,10);
       const cerrado = !horarioDelDia(iso);
-      const etiqueta = n === 0 ? 'hoy' : n === 1 ? 'mañana' : DIAS_CORTO[d.getDay()];
+      const etiqueta = n === 0 ? 'hoy' : n === 1 ? 'mañana' : DIAS_CORTO[d.getUTCDay()];
 
       html += `<div class="rv-dia ${iso===sel?'on':''} ${cerrado?'cerrado':''}" data-d="${iso}">
         <div class="rv-dia-nom">${etiqueta}</div>
-        <div class="rv-dia-num">${d.getDate()}</div>
-        <div class="rv-dia-libre">${cerrado ? 'cerrado' : MESES_CORTO[d.getMonth()]}</div>
+        <div class="rv-dia-num">${d.getUTCDate()}</div>
+        <div class="rv-dia-libre">${cerrado ? 'cerrado' : MESES_CORTO[d.getUTCMonth()]}</div>
       </div>`;
     }
 
     cont.innerHTML = html;
 
     const mesLbl = document.getElementById('rvDiasMes');
-    if(mesLbl && primerDia) mesLbl.textContent = `${MESES_LARGO[primerDia.getMonth()]} ${primerDia.getFullYear()}`;
+    if(mesLbl && primerDia) mesLbl.textContent = `${MESES_LARGO[primerDia.getUTCMonth()]} ${primerDia.getUTCFullYear()}`;
     const btnPrev = document.getElementById('rvDiasPrev');
     if(btnPrev) btnPrev.disabled = rvDiasOffset <= 0;
     cont.querySelectorAll('.rv-dia:not(.cerrado)').forEach(el=>
@@ -8496,15 +8530,15 @@
   /* ---------- primer horario disponible ---------- */
   async function buscarPrimerHorario(aplicar, elegirSlot = true){
     const detalle = document.getElementById('rvProntoDetalle');
-    const hoy = new Date();
+    // TiempoSantiago.fechaSantiago()/sumarDiasSantiago() -- nunca
+    // toISOString() (día UTC), mismo motivo que pintarDias() más arriba.
+    const hoySantiago = TiempoSantiago.fechaSantiago();
 
     // Días candidatos (el local atiende ese día) -- se decide sin red,
     // horarioDelDia() es puro cálculo local.
     const candidatos = [];
     for(let i = 0; i < 14; i++){
-      const d = new Date(hoy);
-      d.setDate(hoy.getDate() + i);
-      const iso = d.toISOString().slice(0,10);
+      const iso = TiempoSantiago.sumarDiasSantiago(hoySantiago, i);
       if(horarioDelDia(iso)) candidatos.push({ i, iso });
     }
 
@@ -8608,8 +8642,14 @@
     const totalCitas = (state.servicios || []).reduce((n,x)=> n + (x.qty || 1), 0) || 1;
 
     const cierre = horario.cierra;
-    const esHoy = fecha === new Date().toISOString().slice(0,10);
-    const ahora = new Date().getHours()*60 + new Date().getMinutes();
+    // TiempoSantiago.ahoraSantiago() -- NUNCA toISOString() (día UTC) ni
+    // getHours()/getMinutes() (hora del DISPOSITIVO, no necesariamente la
+    // de Santiago -- un cliente reservando desde otro país o con el reloj
+    // mal configurado vería/enviaría horas incorrectas). Ver
+    // docs/INCIDENCIA-regla-4h-utc-vs-santiago.md.
+    const ahoraSantiago = TiempoSantiago.ahoraSantiago();
+    const esHoy = fecha === ahoraSantiago.fecha;
+    const ahora = ahoraSantiago.minutos;
 
     // solo horas en punto: si el local abre en un minuto suelto (ej. 10:30),
     // el primer bloque ofrecido es la siguiente hora exacta
@@ -8618,6 +8658,9 @@
     const libres = [];
     for(let min = inicioGrilla; min + durMin <= cierre; min += 60){
       if(esHoy && min < ahora + 5) continue;
+      // Defensa contra el hueco del adelanto de hora (horario de verano):
+      // un horario que nunca existió realmente en Santiago jamás se ofrece.
+      if(!TiempoSantiago.existeHorarioEnSantiago(fecha, min)) continue;
 
       // barberos realmente libres en ese bloque
       let disponibles;
@@ -8645,7 +8688,7 @@
   async function loadSlots(){
     const cont = document.getElementById('slotPick');
     if(!cont) return;
-    const fecha = document.getElementById('bookDate')?.value || new Date().toISOString().slice(0,10);
+    const fecha = document.getElementById('bookDate')?.value || TiempoSantiago.fechaSantiago();
 
     cont.innerHTML = '<div class="slots-msg">Buscando horarios...</div>';
     const slots = await calcularSlots(fecha);
@@ -8984,7 +9027,7 @@
     // tenga hueco, dejando que el cliente elija la hora dentro de ese día, y
     // "hoy" ni siquiera aparece en la fila de fechas (igual que AgendaPro).
     // Si hoy sí tiene, se queda en hoy como siempre.
-    const hoyIso = new Date().toISOString().slice(0,10);
+    const hoyIso = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
     document.getElementById('bookDate').value = hoyIso;
     const slotsHoy = await calcularSlots(hoyIso);
     rvOcultarHoyDeLista = !slotsHoy.length;
@@ -10575,7 +10618,7 @@
   (async function boot(){
     const dateInput = document.getElementById('bookDate');
     if(dateInput){
-      const hoy = new Date().toISOString().slice(0,10);
+      const hoy = TiempoSantiago.fechaSantiago(); // nunca toISOString() (día UTC)
       dateInput.value = hoy;
       dateInput.min = hoy;
       dateInput.addEventListener('change', loadSlots);
