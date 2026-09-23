@@ -1696,6 +1696,26 @@
     display:flex;align-items:center;justify-content:center;color:var(--text-hi);flex:0 0 auto;}
   .pc-ib:hover{border-color:var(--border-strong);}
   .pc-ib.del{color:#c0392b;}
+
+  /* Galería de fotos adicionales del producto (además de la foto principal,
+     .pc-thumb, que sigue exactamente igual que siempre) -- alimenta el
+     visor tipo Falabella del sitio público (varias fotos por producto). */
+  .pcm-galeria{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .pcm-gal-item{position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;
+    background:var(--panel-2);border:1px solid var(--border);flex:0 0 auto;}
+  .pcm-gal-item img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pcm-gal-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;
+    background:rgba(0,0,0,.65);color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;}
+  .pcm-gal-mover{position:absolute;bottom:2px;left:2px;right:2px;display:flex;gap:2px;justify-content:center;}
+  .pcm-gal-mover button{width:17px;height:15px;border-radius:3px;background:rgba(0,0,0,.6);color:#fff;
+    border:none;font-size:9px;cursor:pointer;line-height:1;padding:0;}
+  .pcm-gal-mover button:disabled{opacity:.3;cursor:default;}
+  .pcm-gal-add{width:64px;height:64px;border-radius:10px;border:1.5px dashed var(--border-strong);
+    background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:var(--text-low);font-size:22px;flex:0 0 auto;font-family:inherit;}
+  .pcm-gal-add:hover{border-color:var(--text-mid);color:var(--text-mid);}
+  .pcm-gal-nota{font-size:11.5px;color:var(--text-low);margin-top:6px;}
   .pc-ib.save{color:#189d79;border-color:#189d79;}
   .pc-cat-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px;}
   .pc-cat-count{font-size:12.5px;color:var(--text-mid);}
@@ -3793,6 +3813,12 @@
           </div>
           <div class="cu-campo full" style="margin-top:10px;margin-bottom:8px;"><label>Descripción (sitio web)</label><textarea id="pcmDescripcion" rows="2" placeholder="Se muestra en la tienda pública"></textarea></div>
 
+          <div class="cu-campo full" style="margin-bottom:8px;">
+            <label>Galería de fotos (además de la foto principal)</label>
+            <div class="pcm-galeria" id="pcmGaleria"></div>
+            <p class="pcm-gal-nota">Se muestran en este orden al cliente cuando toca la foto del producto en el sitio. La foto principal (arriba en el catálogo) siempre va primero.</p>
+          </div>
+
           <div class="cu-box" style="margin-top:8px;">
             <div class="cu-box-title">Comisiones, descuentos y código promocional</div>
 
@@ -4689,6 +4715,13 @@
          style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
            display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;">🎬</div>
     <button class="mg-btn ghost full" id="cfgQuitarPortadaVideo" style="margin-top:10px;">Quitar video de celular (volver a la foto de celular)</button>
+
+    <p class="mg-note" style="margin-top:30px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Portada de la tienda</p>
+    <p class="mg-note" style="margin-top:2px;">Foto de fondo del encabezado de la Tienda ("CUIDADO QUE SE NOTA."), independiente de las fotos de los productos. Si no subes una, se usa automáticamente la foto del primer producto disponible (como hasta ahora).</p>
+    <div class="svc-thumb" id="cfgTiendaHeroThumb" title="Subir foto de portada de la tienda"
+         style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
+           background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:26px;">📷</div>
+    <button class="mg-btn ghost full" id="cfgQuitarTiendaHero" style="margin-top:10px;">Quitar foto de la tienda (volver a usar la del primer producto)</button>
   </div>
 </div>
 
@@ -9305,6 +9338,7 @@
       pintarPortadaMobileThumb(d.portadaUrlMobile || '');
       pintarPortadaVideoThumb(d.heroStreamVideoId || '', d.heroStreamStatus || '');
       pintarPortadaVideoDesktopThumb(d.heroStreamVideoIdDesktop || '', d.heroStreamStatusDesktop || '');
+      pintarTiendaHeroThumb(d.tiendaHeroUrl || '');
       document.getElementById('cfgNombreNegocio').value = d.nombre || 'MASTERLOOK';
       document.getElementById('cfgDescNegocio').value = d.descripcion || 'Barbería y grooming studio. Reservas simples, resultados de maestro.';
       document.getElementById('cfgDireccion').value = d.direccion || 'Santiago, Chile';
@@ -10103,6 +10137,53 @@
       invalidarSettingsNegocio();
       pintarPortadaMobileThumb('');
       showToast('Foto de celular restablecida al diseño por defecto');
+    }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
+  });
+
+  /* ---------- Portada de la tienda (fondo del encabezado de #vistaTienda) --
+     mismo mecanismo que la portada del sitio de arriba, campo propio
+     (tiendaHeroUrl) en settings/negocio -- totalmente independiente de las
+     fotos de los productos. Sin esta foto, el sitio sigue usando la del
+     primer producto disponible (comportamiento de siempre, sin cambios). */
+  function pintarTiendaHeroThumb(url){
+    const thumb = document.getElementById('cfgTiendaHeroThumb');
+    if(!thumb) return;
+    thumb.style.backgroundImage = url ? `url('${url}')` : '';
+    thumb.textContent = url ? '' : '📷';
+  }
+
+  document.getElementById('cfgTiendaHeroThumb').addEventListener('click', ()=>{
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('cfgTiendaHeroThumb');
+      thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file, 1600);
+        const ref = storage.ref(`heroPhotos/${Date.now()}-tienda.jpg`);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        await db.collection('settings').doc('negocio').set({ tiendaHeroUrl: url }, { merge:true });
+        invalidarSettingsNegocio();
+        pintarTiendaHeroThumb(url);
+        showToast('Portada de la tienda actualizada');
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pintarTiendaHeroThumb('');
+      }
+    });
+    input.click();
+  });
+
+  document.getElementById('cfgQuitarTiendaHero').addEventListener('click', async ()=>{
+    try{
+      await db.collection('settings').doc('negocio').set({ tiendaHeroUrl: '' }, { merge:true });
+      invalidarSettingsNegocio();
+      pintarTiendaHeroThumb('');
+      showToast('Foto de la tienda quitada -- vuelve a usar la del primer producto');
     }catch(e){ showToast('No se pudo quitar la foto: ' + e.message); }
   });
 
@@ -14863,6 +14944,66 @@
   const PC_CATEGORIAS = ['Barbería profesional','Cuidado de la piel','Fragancias','Herramientas y accesorios','Ropa running','Accesorios'];
   let pcAEliminar = null;
   let pcEditorProductoId = null; // id del producto cargado ahora mismo en modalPcEditarProducto
+  let pcmFotos = []; // fotos de galería (además de photoUrl) del producto en edición -- se guarda en pcmGuardar
+
+  /** Pinta la galería de fotos adicionales dentro de modalPcEditarProducto:
+   *  una miniatura por foto (con borrar y mover) + el botón "+" para agregar. */
+  function pcmPintarGaleria(){
+    const cont = document.getElementById('pcmGaleria');
+    if(!cont) return;
+    cont.innerHTML = pcmFotos.map((url,i)=> `
+      <div class="pcm-gal-item">
+        <img src="${url}" alt="">
+        <button type="button" class="pcm-gal-del" data-pcm-quitar="${i}" title="Quitar foto">✕</button>
+        <div class="pcm-gal-mover">
+          <button type="button" data-pcm-mover="${i}:-1" ${i===0?'disabled':''} title="Mover antes">‹</button>
+          <button type="button" data-pcm-mover="${i}:1" ${i===pcmFotos.length-1?'disabled':''} title="Mover después">›</button>
+        </div>
+      </div>`).join('') + `<button type="button" class="pcm-gal-add" id="pcmGalAgregar" title="Agregar foto">+</button>`;
+
+    cont.querySelectorAll('[data-pcm-quitar]').forEach(b=>
+      b.addEventListener('click', ()=>{ pcmFotos.splice(Number(b.dataset.pcmQuitar), 1); pcmPintarGaleria(); }));
+    cont.querySelectorAll('[data-pcm-mover]').forEach(b=>
+      b.addEventListener('click', ()=>{
+        const [i, dir] = b.dataset.pcmMover.split(':').map(Number);
+        const j = i + dir;
+        if(j < 0 || j >= pcmFotos.length) return;
+        [pcmFotos[i], pcmFotos[j]] = [pcmFotos[j], pcmFotos[i]];
+        pcmPintarGaleria();
+      }));
+    document.getElementById('pcmGalAgregar')?.addEventListener('click', pcmAgregarFotoGaleria);
+  }
+
+  /** Sube una foto nueva a la galería del producto en edición (no toca la
+   *  foto principal, photoUrl) -- mismo mecanismo de subida que
+   *  subirFotoProducto (redimensionarImagen + Storage), solo que agrega al
+   *  arreglo en vez de reemplazar. Se guarda recién al presionar "Guardar"
+   *  del modal (igual que el resto de los campos). */
+  function pcmAgregarFotoGaleria(){
+    if(!pcEditorProductoId) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const btn = document.getElementById('pcmGalAgregar');
+      if(btn){ btn.disabled = true; btn.textContent = '…'; }
+      try{
+        const blob = await redimensionarImagen(file, 1000);
+        const ruta = `productPhotos/${pcEditorProductoId}/${Date.now()}.jpg`;
+        const ref = storage.ref(ruta);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        pcmFotos.push(url);
+        pcmPintarGaleria();
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pcmPintarGaleria();
+      }
+    });
+    input.click();
+  }
 
   const PC_ICONO_LAPIZ = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
   // Mismo ícono de "link" que ya usa "Asociar transacción" (cobro en local) -- se reutiliza tal cual.
@@ -15114,6 +15255,8 @@
     document.getElementById('pcmNombre').value = p.name || '';
     document.getElementById('pcmPrecio').value = p.price ?? 0;
     document.getElementById('pcmDescripcion').value = p.description || '';
+    pcmFotos = Array.isArray(p.photos) ? p.photos.slice() : [];
+    pcmPintarGaleria();
     const selCat = document.getElementById('pcmCategoria');
     selCat.innerHTML = `<option value="">Sin categoría</option>` +
       PC_CATEGORIAS.map(c=> `<option value="${c}" ${p.category===c?'selected':''}>${c}</option>`).join('');
@@ -15160,6 +15303,9 @@
       price: Number(document.getElementById('pcmPrecio').value) || 0,
       description: document.getElementById('pcmDescripcion').value.trim(),
       category: document.getElementById('pcmCategoria').value,
+      // galería adicional (además de photoUrl) -- alimenta el visor tipo
+      // Falabella del sitio público; nunca reemplaza la foto principal.
+      photos: pcmFotos.slice(),
       // comisiones, descuento y código -- mismos 8 campos que ya usaban el
       // backend/reglas/resolvers desde el Bloque 1; nunca cambiaron.
       aceptaCodigoPromo: document.getElementById('pcmAceptaCodigo').checked,

@@ -366,11 +366,11 @@
      oculta la ilustración decorativa de los frascos (.hero-productos --
      gráfico de adorno, no es texto ni información) para liberar espacio
      real; ya se oculta igual cuando hay foto/video de portada (ver el
-     <script> de más abajo). Nunca se toca tipografía. */
+     bloque de JS de más abajo). Nunca se toca tipografía. */
   @media (max-width:899px) and (max-height:560px){
-    /* section{padding:52px 0} (regla genérica de TODAS las <section>, más
-       abajo en el archivo) es la que de verdad infla el hero acá -- se pisa
-       puntual, solo para .hero, solo en esta franja. */
+    /* la regla genérica section{padding:52px 0} (aplica a toda etiqueta
+       section del archivo, más abajo) es la que de verdad infla el hero
+       acá -- se pisa puntual, solo para .hero, solo en esta franja. */
     .hero{min-height:0; padding:2px 0;}
     .hero-productos{display:none;}
     .hero-in{padding:2px 20px 0;}
@@ -433,6 +433,22 @@
   .svc-precio{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.94rem;
     background:var(--grafito); border:1px solid var(--linea); padding:8px 15px; border-radius:99px;}
   .svc-dur{font-size:.74rem; color:var(--gris-tenue);}
+
+  /* ===== tienda (vitrina en el inicio) =====
+     Reutiliza a propósito las mismas clases .svc-card/.svc-foto/.svc-badge/
+     .svc-body/.svc-nombre/.svc-desc/.svc-pie/.svc-precio que "Nuestros
+     servicios" -- así hereda automáticamente el mismo tamaño, tipografía y
+     espaciado ya aprobados, sin duplicar ni una regla, y sin riesgo de que
+     las dos vitrinas se desalineen con el tiempo. El botón "+" es lo único
+     nuevo: mismo mecanismo de compra que la tienda completa (data-buy ->
+     agregarAlCarrito), solo que en miniatura dentro de la tarjeta. */
+  .svc-add{width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:var(--grafito); border:1px solid var(--linea); color:var(--hueso);
+    display:flex; align-items:center; justify-content:center; font-size:1.05rem;
+    font-weight:700; cursor:pointer; transition:.2s;}
+  .svc-add:hover{border-color:var(--oro); color:var(--oro);}
+  .svc-add:disabled{opacity:.42; cursor:not-allowed;}
+  .tienda-home-sub{font-size:.86rem; color:var(--gris); margin-top:-10px; margin-bottom:18px;}
 
   /* ===== garantías ===== */
   .garantias{display:grid; grid-template-columns:repeat(4,1fr);
@@ -1100,6 +1116,76 @@
   .tienda-vista{position:fixed; inset:0; background:var(--bg); z-index:70; overflow-y:auto; display:none;}
   .tienda-vista.open{display:block;}
 
+  /* ===== visor de producto -- varias fotos + descripción, tipo Falabella --
+     paleta oscura fija (no depende del tema claro/oscuro, igual criterio
+     que #rescheduleModal: siempre queda legible sobre cualquier foto).
+     Se abre al tocar la foto de un producto, en el inicio o en la tienda
+     completa; nunca cambia colores, fotos ni funcionalidad de compra --
+     el botón de acá adentro es la misma agregarAlCarrito de siempre. */
+  .mg-galeria{position:fixed; inset:0; z-index:97; background:#08080A;
+    display:none; overflow-y:auto; -webkit-font-smoothing:antialiased;}
+  .mg-galeria.open{display:block;}
+  .mg-gal-cerrar{position:fixed; top:18px; right:18px; z-index:3; width:40px; height:40px;
+    border-radius:50%; background:rgba(248,248,248,.08); border:1px solid rgba(248,248,248,.14);
+    color:#F8F8F8; font-size:1.05rem; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .mg-gal-cerrar:hover{border-color:#DFC08A; color:#DFC08A;}
+  .mg-gal-panel{max-width:1080px; margin:0 auto; min-height:100%;
+    display:flex; flex-direction:column; align-items:stretch;}
+  .mg-gal-fotos{position:relative; flex:none; padding-top:64px;}
+  .mg-gal-contador{position:absolute; top:28px; left:24px; z-index:2; font-family:var(--font-primary);
+    font-variant-numeric:tabular-nums; font-size:.78rem; color:#A7A7AE; letter-spacing:.04em;}
+  .mg-gal-main{position:relative; width:100%; height:52vh; min-height:280px;
+    display:flex; align-items:center; justify-content:center; padding:0 18px;}
+  .mg-gal-imgwrap{width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .mg-gal-imgwrap img{max-width:100%; max-height:100%; object-fit:contain; border-radius:10px;
+    transition:transform .25s ease; cursor:zoom-in; user-select:none;}
+  .mg-gal-imgwrap img.zoom{transform:scale(1.85); cursor:zoom-out;}
+  .mg-gal-flecha{position:absolute; top:50%; transform:translateY(-50%); z-index:2; width:42px; height:42px;
+    border-radius:50%; background:rgba(248,248,248,.08); border:1px solid rgba(248,248,248,.14);
+    color:#F8F8F8; font-size:1.3rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .mg-gal-flecha:hover{border-color:#DFC08A; color:#DFC08A;}
+  .mg-gal-flecha.izq{left:14px;} .mg-gal-flecha.der{right:14px;}
+  .mg-gal-miniaturas{display:flex; gap:8px; padding:16px; overflow-x:auto; max-width:100%; flex-shrink:0; scrollbar-width:none;}
+  .mg-gal-miniaturas::-webkit-scrollbar{height:0;}
+  .mg-gal-mini{width:50px; height:50px; border-radius:9px; overflow:hidden; border:1.5px solid transparent;
+    background:#141418; flex:0 0 auto; padding:0; cursor:pointer; opacity:.5; transition:.2s;}
+  .mg-gal-mini img{width:100%; height:100%; object-fit:cover; display:block;}
+  .mg-gal-mini.on{border-color:#DFC08A; opacity:1;}
+  .mg-gal-mini:hover{opacity:.85;}
+  /* info del producto -- nombre, precio y "Descripción" con su texto,
+     igual que la ficha de producto de Falabella, en la paleta del sitio. */
+  .mg-gal-info{padding:8px 24px 48px; border-top:1px solid rgba(248,248,248,.1); margin-top:8px; padding-top:24px;}
+  .mg-gal-nombre{font-family:var(--font-primary); font-weight:700; text-transform:uppercase;
+    letter-spacing:.02em; font-size:1.15rem; color:#F8F8F8; margin-bottom:10px; line-height:1.3;}
+  .mg-gal-precio{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-weight:700;
+    font-size:1.3rem; color:#F8F8F8; margin-bottom:22px;}
+  .mg-gal-desc-tit{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-weight:700;
+    font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#A7A7AE; margin-bottom:10px;}
+  .mg-gal-desc{font-size:.9rem; line-height:1.65; color:#C7C7CC; margin-bottom:26px; white-space:pre-line;}
+  .mg-gal-desc:empty::after{content:'Este producto todavía no tiene descripción cargada.'; color:#6E6D75; font-style:italic;}
+  .mg-gal-comprar{width:100%; padding:15px; border-radius:99px; border:none; cursor:pointer;
+    background:#F8F8F8; color:#141317; font-family:var(--font-primary); font-weight:700; font-size:.86rem;
+    letter-spacing:.02em; transition:.2s;}
+  .mg-gal-comprar:hover{background:#DFC08A;}
+  .mg-gal-comprar:disabled{background:#1C1C21; color:#5A5A62; cursor:not-allowed;}
+  @media (min-width:860px){
+    .mg-gal-panel{flex-direction:row; align-items:flex-start; padding-top:40px;}
+    .mg-gal-fotos{flex:1 1 58%; padding-top:0;}
+    .mg-gal-main{height:74vh; min-height:420px; padding:0 32px;}
+    .mg-gal-contador{top:0; left:32px;}
+    .mg-gal-info{flex:1 1 42%; max-width:400px; border-top:none; border-left:1px solid rgba(248,248,248,.1);
+      margin-top:0; padding:6px 40px 40px 40px;}
+  }
+  @media (max-width:480px){
+    .mg-gal-main{height:44vh;}
+    .mg-gal-flecha{width:36px; height:36px; font-size:1.1rem;}
+    .mg-gal-flecha.izq{left:8px;} .mg-gal-flecha.der{right:8px;}
+    .mg-gal-mini{width:42px; height:42px;}
+    .mg-gal-cerrar{width:36px; height:36px; top:14px; right:14px;}
+    .mg-gal-contador{top:22px; left:18px;}
+    .mg-gal-info{padding-left:18px; padding-right:18px;}
+  }
+
   /* ===== comprobante de pago -- réplica exacta del diseño de referencia,
      paleta oscura forzada (mismo criterio que #vistaTienda fuerza claro)
      sin importar el tema del sitio: todo pago aprobado (servicio,
@@ -1197,7 +1283,7 @@
      solo tenían :hover, así que nunca se sentía que el botón escuchara el
      clic (una de las señales más comunes de interfaz sin terminar). */
   #vistaTienda button, #vistaTienda .st-section-head a, #vistaTienda .st-cat{
-    transition:transform 140ms ease-out, color 140ms ease, background 140ms ease, border-color 140ms ease;
+    transition:transform 140ms ease-out, color 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 180ms ease;
   }
   #vistaTienda button:active, #vistaTienda .st-section-head a:active, #vistaTienda .st-cat:active{
     transform:scale(.96);
@@ -1230,12 +1316,6 @@
   .st-hero-l{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(24px,5vw,64px);}
   .st-hero-l h1{font-family:var(--font-primary);margin-bottom:18px;}
   .st-hero-l p{color:var(--text-mid);font-size:.98rem;line-height:1.6;max-width:420px;margin-bottom:28px;}
-  .st-hero-cta{align-self:flex-start;background:var(--text-hi);color:var(--bg);border:none;
-    padding:14px 26px;border-radius:99px;font-family:inherit;font-size:.85rem;font-weight:800;
-    cursor:pointer;display:inline-flex;align-items:center;gap:9px;margin-bottom:36px;
-    transition:background 160ms ease, transform 160ms ease-out;}
-  .st-hero-cta:hover{background:var(--accent);}
-  .st-hero-cta:active{transform:scale(.97);}
   /* Mientras no haya foto real de producto (pintarHeroTienda la reemplaza
      apenas exista una con photoUrl), este fondo queda visible tal cual --
      antes era un degradé gris plano que se leía como un espacio roto/vacío. */
@@ -1248,17 +1328,77 @@
   }
   .st-hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 
-  .st-cats-wrap{margin:-34px auto 0;padding:0 24px;position:relative;z-index:3;}
-  .st-cats{max-width:1180px;margin:0 auto;background:var(--panel);border:1px solid var(--border);
-    border-radius:18px;box-shadow:var(--shadow-md);padding:22px 12px;
-    display:grid;grid-template-columns:repeat(7,1fr);}
-  .st-cat{background:none;border:none;border-right:1px solid var(--border);cursor:pointer;font-family:inherit;
-    display:flex;flex-direction:column;align-items:center;gap:9px;padding:6px 8px;
-    font-size:.68rem;font-weight:800;letter-spacing:.01em;color:var(--text-hi);text-align:center;line-height:1.25;}
-  .st-cat:last-child{border-right:none;}
-  .st-cat svg{color:var(--text-hi);}
-  .st-cat:hover{color:var(--text-mid);}
-  .st-cat.on{color:var(--accent);}
+  /* Botones de categoría -- cada uno "sobresale" de la página como su
+     propia tarjeta flotante (tipo Apple): sombra suave + un borde muy
+     sutil propio de CADA botón (no una línea compartida entre dos
+     botones -- eso sería volver a "dividirlos"). El blanco del botón
+     queda casi pegado al gris clarísimo de fondo de esta página, así
+     que solo la sombra no bastaba para que se lean separados a simple
+     vista -- el borde propio + más espacio entre ellos es lo que da el
+     contorno nítido. El negro seleccionado reusa el mismo #12100e que
+     "COMPRAR AHORA" y el footer -- misma identidad, no un color nuevo. */
+  .st-cats-wrap{padding:2px 24px 4px;position:relative;z-index:3;}
+  .st-cats{max-width:1180px;margin:0 auto;display:flex;gap:18px;overflow-x:auto;
+    scroll-snap-type:x proximity;padding:4px 2px 16px;scrollbar-width:none;}
+  .st-cats::-webkit-scrollbar{display:none;}
+  .st-cat{flex:0 0 auto;scroll-snap-align:start;background:var(--panel);
+    border:1px solid rgba(20,20,20,.09);
+    border-radius:18px;cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    min-width:100px;padding:16px 18px 14px;font-size:.64rem;font-weight:800;letter-spacing:.02em;
+    color:var(--text-hi);text-align:center;line-height:1.3;
+    box-shadow:0 1px 2px rgba(20,20,20,.05), 0 10px 22px -8px rgba(20,20,20,.16);}
+  .st-cat svg{width:22px;height:22px;}
+  .st-cat:hover{transform:translateY(-2px);border-color:rgba(20,20,20,.16);
+    box-shadow:0 2px 4px rgba(20,20,20,.06), 0 14px 28px -8px rgba(20,20,20,.22);}
+  .st-cat.on{background:#12100e;border-color:#12100e;color:#f5f3ef;
+    box-shadow:0 4px 10px rgba(18,16,14,.2), 0 16px 30px -8px rgba(18,16,14,.4);}
+  .st-cat.on:hover{background:#221f1b;border-color:#221f1b;
+    box-shadow:0 4px 12px rgba(18,16,14,.24), 0 18px 34px -8px rgba(18,16,14,.46);}
+
+  /* Escritorio SOLO -- el celular (regla de arriba, <=960px) no se toca:
+     conserva su borde + sombra + separación tal cual estaban. En
+     escritorio se quita el borde de cada tarjeta y se deja una sombra
+     apenas perceptible; con más aire entre tarjetas alcanza para que se
+     lean separadas sin necesidad de un contorno dibujado -- así no se
+     lee como una caja/franja contenedora.
+     El problema real no era el borde/sombra -- era que .st-cats hereda
+     max-width:1180px + margin:0 auto (de la regla base, para que
+     coincida con el resto de las secciones de la Tienda). En una
+     pantalla más ancha que ~1230px eso centra la fila dentro de un
+     carril invisible, dejando el mismo aire vacío y simétrico a cada
+     lado -- que es justo lo que se lee como "encerrado en una caja",
+     con o sin borde. Se saca ese límite SOLO para esta fila (las demás
+     secciones -- hero, MÁS VENDIDOS, footer -- siguen alineadas a
+     1180px sin cambios): la fila arranca pegada al padding del wrap
+     (24px, igual que el resto de la página) en vez de centrada. */
+  @media (min-width:961px){
+    /* width:fit-content (no max-width:1180px fijo) -- la fila se ancha
+       solo lo que sus 7 categorías realmente ocupan, y margin:0 auto la
+       centra sobre ESE ancho real. Así no vuelve el carril rígido de
+       1180px (que dejaba el mismo aire fijo a cada lado sin importar el
+       contenido) ni queda pegada al borde izquierdo (que dejaba todo el
+       aire sobrante de un solo lado, a la derecha). */
+    .st-cats{gap:26px;width:fit-content;max-width:100%;margin:0 auto;}
+    /* Una sola sombra difusa, sin capa "ajustada" -- una sombra con muy
+       poco desenfoque (blur bajo) se ve como una línea fina pegada al
+       borde de la tarjeta, que es exactamente el efecto "caja" que se
+       quería sacar. Con una sola sombra ancha y difusa, sin ninguna capa
+       de contacto cercano, no hay ningún trazo duro alrededor. */
+    .st-cat{border:none;
+      box-shadow:0 6px 18px -8px rgba(20,20,20,.13);}
+    /* Prefijo #vistaTienda -- iguala la especificidad de la transición
+       compartida (#vistaTienda button, ... .st-cat) para que esta curva
+       más elegante la gane en escritorio (si no, la transición vieja
+       -- más brusca -- seguía ganando por especificidad aunque esta
+       regla fuera la última en el archivo). */
+    #vistaTienda .st-cat{
+      transition:transform 240ms cubic-bezier(.16,1,.3,1), box-shadow 240ms cubic-bezier(.16,1,.3,1), background 240ms ease;}
+    .st-cat:hover{transform:translateY(-3px);
+      box-shadow:0 12px 26px -8px rgba(20,20,20,.18);}
+    .st-cat.on{box-shadow:0 8px 22px -8px rgba(18,16,14,.28);}
+    .st-cat.on:hover{box-shadow:0 14px 30px -8px rgba(18,16,14,.34);}
+  }
 
   .st-section{padding:64px 24px 8px;}
   .st-section-head{max-width:1180px;margin:0 auto 26px;display:flex;align-items:baseline;justify-content:space-between;}
@@ -1271,7 +1411,7 @@
   .st-card{display:flex;flex-direction:column;}
   .st-card-photo{aspect-ratio:1/1.05;background:var(--panel-2);border-radius:14px;position:relative;
     overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
-  .st-card-photo img{width:88%;height:88%;object-fit:contain;}
+  .st-card-photo img{width:100%;height:100%;object-fit:cover;}
   .st-card-photo .ph{font-size:2rem;opacity:.25;}
   .st-card-tag{position:absolute;top:10px;left:10px;background:var(--bg);color:var(--text-hi);
     font-size:.62rem;font-weight:800;letter-spacing:.03em;padding:4px 9px;border-radius:99px;border:1px solid var(--border);}
@@ -1285,17 +1425,11 @@
   .st-add:hover{background:var(--accent);}
   .st-add:disabled{opacity:.35;cursor:not-allowed;}
 
-  .st-editorial{max-width:1180px;margin:70px auto 0;padding:0 24px;display:grid;
-    grid-template-columns:1.15fr 1.15fr 1fr;gap:18px;}
-  .st-edit-block{position:relative;border-radius:16px;overflow:hidden;min-height:280px;
-    display:flex;flex-direction:column;justify-content:flex-end;padding:26px;color:#f2f0ec;}
-  .st-edit-block::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.65));}
-  .st-edit-block > *{position:relative;z-index:1;}
-  .st-edit-eyebrow{font-size:.66rem;font-weight:800;letter-spacing:.1em;opacity:.85;margin-bottom:8px;}
-  .st-edit-block h3{font-family:var(--font-primary);font-size:1.3rem;font-weight:700;line-height:1.2;margin-bottom:14px;}
-  .st-edit-block button{align-self:flex-start;background:#fff;color:#12100e;border:none;padding:10px 18px;
-    border-radius:99px;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:7px;}
-  .st-perks{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px;
+  /* Los dos bloques editoriales (Barbería profesional / Colección
+     running) se quitaron. La tarjeta de confianza (.st-perks) ya no va
+     sola en su propia fila -- se mudó dentro de .st-news, como versión
+     chica (.st-perks-mini), al lado de "Únete a Masterlook". */
+  .st-perks{max-width:420px;width:100%;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px;
     display:flex;flex-direction:column;gap:16px;color:var(--text-hi);}
   .st-perk{display:flex;align-items:center;gap:12px;}
   .st-perk svg{flex:0 0 auto;color:var(--text-hi);}
@@ -1303,9 +1437,20 @@
   .st-perk span{display:block;font-size:.7rem;color:var(--text-mid);margin-top:1px;}
   .st-perks button{margin-top:4px;background:#12100e;color:#f2f0ec;border:none;padding:11px 16px;border-radius:99px;
     font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  /* Versión chica -- mismo componente, todo reducido para que se sienta
+     un acompañante discreto del bloque de newsletter, no una tarjeta
+     protagonista como antes. */
+  .st-perks-mini{max-width:270px;padding:16px;gap:10px;border-radius:14px;}
+  .st-perks-mini .st-perk{gap:9px;}
+  .st-perks-mini .st-perk svg{width:15px;height:15px;}
+  .st-perks-mini .st-perk b{font-size:.68rem;}
+  .st-perks-mini .st-perk span{font-size:.6rem;margin-top:0;}
+  .st-perks-mini button{padding:7px 12px;font-size:.64rem;gap:5px;margin-top:2px;}
+  .st-perks-mini button svg{width:11px;height:11px;}
 
   .st-news{max-width:1180px;margin:64px auto 0;padding:0 24px 56px;display:flex;align-items:center;
     justify-content:flex-end;gap:16px;flex-wrap:wrap;}
+  @media (min-width:961px){ .st-perks-mini{margin-right:auto;} }
   .st-news-txt{text-align:right;}
   .st-news-txt h4{font-family:var(--font-primary);font-size:.92rem;font-weight:800;}
   .st-news-txt p{color:var(--text-mid);font-size:.76rem;margin-top:3px;}
@@ -1316,7 +1461,7 @@
     font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;white-space:nowrap;}
 
   .st-footer{background:var(--panel-2);border-top:1px solid var(--border);margin-top:20px;padding:52px 24px 26px;}
-  .st-footer-in{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;}
+  .st-footer-in{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.6fr 1fr;gap:24px;}
   .st-footer-brand .st-logo{margin-bottom:12px;}
   .st-footer-brand p{color:var(--text-mid);font-size:.78rem;line-height:1.6;max-width:240px;margin-bottom:16px;}
   .st-footer-social{display:flex;gap:10px;}
@@ -1342,13 +1487,11 @@
     .st-hero-l{padding:22px 20px;}
     .st-hero-l h1{margin-bottom:10px;}
     .st-hero-l p{font-size:.82rem;line-height:1.5;margin-bottom:16px;}
-    .st-hero-cta{padding:11px 20px;font-size:.76rem;margin-bottom:20px;}
 
-    .st-cats-wrap{margin-top:-18px;padding:0 14px;}
-    .st-cats{display:flex;overflow-x:auto;gap:4px;padding:12px 8px;scrollbar-width:none;grid-template-columns:none;}
-    .st-cats::-webkit-scrollbar{display:none;}
-    .st-cat{flex:0 0 auto;min-width:64px;border-right:none;padding:4px 7px;font-size:.52rem;gap:4px;line-height:1.15;}
-    .st-cat svg{width:15px;height:15px;}
+    .st-cats-wrap{padding:0 16px 2px;}
+    .st-cats{gap:11px;padding:4px 2px 14px;}
+    .st-cat{min-width:82px;padding:13px 12px 11px;font-size:.56rem;gap:7px;}
+    .st-cat svg{width:19px;height:19px;}
 
     .st-section{padding:32px 16px 4px;}
     .st-section-head{margin-bottom:14px;}
@@ -1360,20 +1503,11 @@
     .st-card-price{font-size:.8rem;}
     .st-add{width:28px;height:28px;font-size:.95rem;}
 
-    .st-editorial{grid-template-columns:1fr 1fr;margin-top:36px;padding:0 16px;gap:10px;}
-    .st-edit-block{min-height:120px;padding:14px;}
-    .st-edit-eyebrow{font-size:.56rem;margin-bottom:4px;}
-    .st-edit-block h3{font-size:.82rem;margin-bottom:10px;}
-    .st-edit-block button{padding:7px 12px;font-size:.62rem;gap:5px;}
-    .st-edit-block button svg{width:11px;height:11px;}
-    .st-perks{grid-column:1/-1;}
-    .st-edit-block h3{font-size:1.05rem;}
-    .st-perks{padding:18px;}
-
     .st-news{margin-top:36px;padding:0 16px 36px;justify-content:flex-start;}
     .st-news-txt{text-align:left;}
     .st-news-form{width:100%;}
     .st-news-form input{flex:1;min-width:0;width:auto;}
+    .st-perks-mini{max-width:none;}
 
     .st-footer{padding:36px 16px 20px;}
     .st-footer-in{grid-template-columns:1fr 1fr;gap:24px 16px;}
@@ -1393,7 +1527,7 @@
     .st-grid::-webkit-scrollbar{height:0;}
     .st-card{flex:0 0 132px;scroll-snap-align:start;}
     .st-card-photo{aspect-ratio:auto;height:132px;margin-bottom:8px;}
-    .st-card-photo img{width:78%;height:78%;}
+    .st-card-photo img{width:100%;height:100%;}
     .st-card-tag{font-size:.56rem;padding:3px 7px;top:6px;left:6px;}
     .st-card h4{font-size:.7rem;line-height:1.25;margin-bottom:2px;
       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -2281,6 +2415,8 @@
     .svc-pie{padding-top:4px;}
     .svc-precio{font-size:.72rem; padding:5px 10px;}
     .svc-dur{font-size:.6rem;}
+    .svc-add{width:26px; height:26px; font-size:.86rem;}
+    .tienda-home-sub{font-size:.76rem; margin-top:-6px; margin-bottom:13px;}
 
     /* garantías */
     .garantias{padding:14px 4px; gap:14px 0; border-radius:14px;}
@@ -2652,11 +2788,9 @@
   @media (max-width:960px){                 /* móvil / tablet: 1 columna, foto arriba */
     .st-hero-l h1{ font-size: 1.4rem; }
     .st-hero-r{ height: 150px; }
-    .st-hero-cta{ margin-bottom: 24px; }
   }
   @media (min-width:961px){                 /* escritorio: 2 columnas con foto */
     .st-hero{ min-height: 340px; }
-    .st-hero-cta{ margin-bottom: 28px; }
   }
   /* overrides "sin foto" -- después de las reglas de .st-hero para ganarlas por orden */
   .st-hero-sin-foto{
@@ -3236,6 +3370,25 @@
     </div>
   </div>
 </div>
+
+<!-- ===== Tienda (vitrina en el inicio) -- catálogo real, misma fuente que
+     la tienda completa (productosSiteCache / #shopGrid), ver
+     pintarTiendaHome(). Se oculta sola si todavía no hay productos activos
+     en el catálogo (nunca datos de prueba). ===== -->
+<section id="tiendaHome" style="display:none;">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Nuestra tienda</h2>
+      <span class="sec-linea"></span>
+      <button class="ver-todos" onclick="abrirTienda()">
+        Ver todos
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <p class="tienda-home-sub">Productos profesionales de barbería, listos para llevar a casa.</p>
+    <div class="svc-fila" id="tiendaFilaHome"></div>
+  </div>
+</section>
 
 <!-- ===== Promociones ===== -->
 <section id="promos" style="display:none;">
@@ -3824,6 +3977,35 @@
   </div>
 </div>
 
+<!-- ===== Visor de producto (varias fotos + descripción, tipo Falabella) --
+     se abre al tocar la foto de un producto, en el inicio o en la tienda.
+     El botón "Agregar al carrito" de acá adentro usa el mismo mecanismo de
+     siempre (agregarAlCarrito) -- no es una compra nueva, es otra puerta de
+     entrada a la misma, igual que el "+" de la tarjeta. ===== -->
+<div class="mg-galeria" id="modalGaleriaProducto">
+  <button class="mg-gal-cerrar" id="galCerrar" aria-label="Cerrar">✕</button>
+  <div class="mg-gal-panel">
+    <div class="mg-gal-fotos">
+      <div class="mg-gal-contador" id="galContador"></div>
+      <div class="mg-gal-main">
+        <button class="mg-gal-flecha izq" id="galAnterior" aria-label="Foto anterior">‹</button>
+        <div class="mg-gal-imgwrap" id="galImgWrap">
+          <img id="galImgActual" src="" alt="">
+        </div>
+        <button class="mg-gal-flecha der" id="galSiguiente" aria-label="Foto siguiente">›</button>
+      </div>
+      <div class="mg-gal-miniaturas" id="galMiniaturas"></div>
+    </div>
+    <div class="mg-gal-info">
+      <h3 class="mg-gal-nombre" id="galNombre"></h3>
+      <div class="mg-gal-precio" id="galPrecio"></div>
+      <div class="mg-gal-desc-tit">Descripción</div>
+      <p class="mg-gal-desc" id="galDesc"></p>
+      <button class="mg-gal-comprar" id="galComprar">Agregar al carrito</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Tienda (página completa dentro del sitio) ===== -->
 <div id="vistaTienda" class="tienda-vista">
   <header class="tv-head">
@@ -3876,7 +4058,6 @@
       <div class="st-hero-l">
         <h1>Cuidado que<br>se nota.</h1>
         <p>Productos de barbería profesionales, los mismos que usamos en el sillón — listos para llevar a casa.</p>
-        <button class="st-hero-cta" id="stHeroCta">COMPRAR AHORA <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       </div>
       <div class="st-hero-r" id="stHeroFoto"></div>
     </div>
@@ -3893,18 +4074,8 @@
       <div class="shop-grid st-grid" id="shopGrid"></div>
     </div>
 
-    <div class="st-editorial">
-      <div class="st-edit-block" id="stEditBarberia">
-        <div class="st-edit-eyebrow">BARBERÍA PROFESIONAL</div>
-        <h3>Herramientas que<br>marcan la diferencia.</h3>
-        <button data-stnav="Herramientas y accesorios">VER HERRAMIENTAS <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-      </div>
-      <div class="st-edit-block" id="stEditRunning">
-        <div class="st-edit-eyebrow">COLECCIÓN RUNNING</div>
-        <h3>Rendimiento<br>con estilo.</h3>
-        <button data-stnav="Ropa running">COMPRAR AHORA <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-      </div>
-      <div class="st-perks">
+    <div class="st-news">
+      <div class="st-perks st-perks-mini">
         <div class="st-perk">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="7" width="15" height="13" rx="1"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="20" r="1.6"/><circle cx="17.5" cy="20" r="1.6"/></svg>
           <div><b>Retiro en tienda</b><span>Coordina el retiro de tu pedido en Masterlook</span></div>
@@ -3919,9 +4090,6 @@
         </div>
         <button onclick="cerrarTienda();document.querySelector('a[href=\'#servicios\']')?.scrollIntoView();">VER MÁS INFORMACIÓN <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       </div>
-    </div>
-
-    <div class="st-news">
       <div class="st-news-txt">
         <h4>ÚNETE A MASTERLOOK</h4>
         <p>Entérate antes que nadie de productos nuevos y novedades.</p>
@@ -3941,25 +4109,6 @@
             <a href="https://wa.me/56949124645" target="_blank" rel="noopener" aria-label="WhatsApp"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.7 14.2c-.2.6-1.4 1.2-1.9 1.2-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-5-4.3-5.1-4.5-.1-.2-1.2-1.6-1.2-3.1s.8-2.2 1-2.5c.3-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.3 0 .5-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.8c.2-.3.4-.2.7-.1l1.7.8c.2.1.4.2.5.3.1.2.1.9-.1 1.5z"/></svg></a>
             <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
           </div>
-        </div>
-        <div class="st-footer-col">
-          <h5>TIENDA</h5>
-          <button data-stnav="todos">Todos los productos</button>
-          <button data-stnav="bestsellers">Más vendidos</button>
-        </div>
-        <div class="st-footer-col">
-          <h5>COLECCIONES</h5>
-          <button data-stnav="Barbería profesional">Barbería profesional</button>
-          <button data-stnav="Cuidado de la piel">Cuidado de la piel</button>
-          <button data-stnav="Fragancias">Fragancias</button>
-          <button data-stnav="Herramientas y accesorios">Herramientas</button>
-          <button data-stnav="Ropa running">Ropa running</button>
-          <button data-stnav="Accesorios">Accesorios</button>
-        </div>
-        <div class="st-footer-col">
-          <h5>ACERCA DE</h5>
-          <div>Nuestra historia</div>
-          <div>Prensa</div>
         </div>
         <div class="st-footer-col">
           <h5>AYUDA</h5>
@@ -5200,6 +5349,7 @@
     pintarFondoHero();
     pintarTextoHero();
     aplicarColoresPersonalizados();
+    pintarHeroTienda(); // por si la foto propia de la tienda llega después que los productos
     if(document.getElementById('vistaAcademia')?.classList.contains('open')){ pintarVideoAcademia(); pintarCtaFotoAcademia(); }
   });
 
@@ -5248,7 +5398,9 @@
   db.collection('products').onSnapshot(snap=>{
     productosSiteCache = snap.docs.map(d=> d.data()).filter(p=> p.active !== false).map(p=>
       ({ id:p.id, kind:'PRODUCT', name:p.name, description:p.description || '',
-         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0, photoUrl:p.photoUrl || '', category:p.category || '' }));
+         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0, photoUrl:p.photoUrl || '', category:p.category || '',
+         photos:Array.isArray(p.photos) ? p.photos : [] }));
+    pintarTiendaHome();
     if(!cursosListos) return;
     cargarTienda();
   });
@@ -9336,6 +9488,167 @@
       }));
   }
 
+  /** Vitrina de "Nuestra tienda" en el inicio -- SOLO LECTURA del catálogo
+   *  real (productosSiteCache, la misma caché en vivo que alimenta la tienda
+   *  completa, #shopGrid / pintarProductos()). No crea productos, no duplica
+   *  inventario: es la misma fuente de datos, en una selección acotada para
+   *  el carrusel del inicio. Si todavía no hay ningún producto activo, la
+   *  sección entera queda oculta (nunca se muestran datos de prueba). */
+  function pintarTiendaHome(){
+    const seccion = document.getElementById('tiendaHome');
+    const fila = document.getElementById('tiendaFilaHome');
+    if(!seccion || !fila) return;
+
+    if(!productosSiteCache.length){
+      seccion.style.display = 'none';
+      fila.innerHTML = '';
+      return;
+    }
+    seccion.style.display = '';
+
+    const tonos = ['#3B352C','#2E2A25','#42392C','#332F29','#3A342A','#2A2724','#38322A','#302C26'];
+    const HOME_MAX = 8; // vitrina acotada -- el catálogo completo vive en "Ver todos"
+    const lista = productosSiteCache.slice(0, HOME_MAX);
+
+    fila.innerHTML = lista.map((p,i)=>`
+      <div class="svc-card reveal in" data-prod-id="${p.id}">
+        <div class="svc-foto" data-foto-producto="${p.id}" title="Ver fotos" style="${p.photoUrl
+          ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center;`
+          : `background:linear-gradient(158deg,${tonos[i % tonos.length]},#0C0C0D);`}">
+          ${p.photoUrl ? '' : '<div class="svc-inicial"><span style="font-size:2rem;">🧴</span></div>'}
+          <span></span>
+        </div>
+        <div class="svc-body">
+          <div class="svc-nombre">${escapeHTML(p.name)}</div>
+          <div class="svc-desc">${escapeHTML(p.description || '')}</div>
+          <div class="svc-pie">
+            <span class="svc-precio">${money(p.priceClp)}</span>
+            <button class="svc-add" data-buy="${p.id}" data-name="${escapeHTML(p.name)}" data-price="${p.priceClp}" data-kind="PRODUCT"
+              ${p.soldOut ? 'disabled' : ''} title="${p.soldOut ? 'Agotado' : 'Agregar al carrito'}">${p.soldOut ? '✕' : '+'}</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    // tocar la FOTO abre el visor de varias fotos (tipo Falabella, ver
+    // abrirGaleriaProducto). Tocar el resto de la tarjeta (nombre/precio,
+    // fuera del botón +) lleva a la tienda completa -- el mismo sistema de
+    // siempre para consultar y comprar, sin inventar una vista nueva. El
+    // botón + agrega directo al carrito con el mismo mecanismo de la
+    // tienda completa.
+    fila.querySelectorAll('.svc-card').forEach(el=>
+      el.addEventListener('click', e=>{
+        if(e.target.closest('[data-buy]')) return;
+        const foto = e.target.closest('[data-foto-producto]');
+        if(foto){
+          const p = productosSiteCache.find(x=> x.id === foto.dataset.fotoProducto);
+          if(p) abrirGaleriaProducto(p);
+          return;
+        }
+        abrirTienda();
+      }));
+    conectarBotonesCompra();
+  }
+
+  /** Fotos disponibles de un producto para el visor, en orden: la foto
+   *  principal (photoUrl, la de siempre) primero, y la galería adicional
+   *  (photos[], cargada desde el panel) después. Nunca inventa fotos --
+   *  si el producto no tiene ninguna, la lista queda vacía. */
+  function fotosDeProducto(p){
+    const lista = [p.photoUrl, ...(Array.isArray(p.photos) ? p.photos : [])].filter(Boolean);
+    return lista;
+  }
+
+  /* ---------- visor de fotos del producto (varias fotos, tipo Falabella) ----------
+     Solo muestra imágenes -- no toca precio, stock, descuentos ni el
+     carrito. "Agregar al carrito" sigue siendo siempre el mismo botón +
+     de la tarjeta (agregarAlCarrito), nunca uno nuevo acá adentro. */
+  let galFotos = [];
+  let galIndice = 0;
+  let galProducto = null;
+
+  function abrirGaleriaProducto(p){
+    const fotos = fotosDeProducto(p);
+    if(!fotos.length) return; // sin fotos reales -- no hay nada que mostrar
+    galFotos = fotos;
+    galIndice = 0;
+    galProducto = p;
+    pintarGaleriaProducto();
+    document.getElementById('modalGaleriaProducto').classList.add('open');
+    document.getElementById('modalGaleriaProducto').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+  }
+  function cerrarGaleriaProducto(){
+    document.getElementById('modalGaleriaProducto').classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('galImgActual').classList.remove('zoom');
+  }
+  function pintarGaleriaProducto(){
+    const img = document.getElementById('galImgActual');
+    img.src = galFotos[galIndice];
+    img.classList.remove('zoom');
+    document.getElementById('galContador').textContent = galFotos.length > 1 ? `${galIndice + 1} / ${galFotos.length}` : '';
+    const varias = galFotos.length > 1;
+    document.getElementById('galAnterior').style.display = varias ? 'flex' : 'none';
+    document.getElementById('galSiguiente').style.display = varias ? 'flex' : 'none';
+    const minis = document.getElementById('galMiniaturas');
+    if(!varias){ minis.innerHTML = ''; minis.style.display = 'none'; }
+    else{
+      minis.style.display = 'flex';
+      minis.innerHTML = galFotos.map((url,i)=>
+        `<button type="button" class="mg-gal-mini ${i === galIndice ? 'on' : ''}" data-gal-i="${i}"><img src="${url}" alt=""></button>`).join('');
+      minis.querySelectorAll('[data-gal-i]').forEach(b=>
+        b.addEventListener('click', ()=>{ galIndice = Number(b.dataset.galI); pintarGaleriaProducto(); }));
+    }
+
+    // nombre, precio y descripción -- igual que la ficha de producto de
+    // Falabella; los mismos datos reales que ya se muestran en la tarjeta,
+    // nada inventado. La descripción queda vacía (con su propio aviso) si
+    // el producto todavía no tiene una cargada.
+    const p = galProducto;
+    if(!p) return;
+    document.getElementById('galNombre').textContent = p.name || '';
+    document.getElementById('galPrecio').textContent = money(p.priceClp);
+    document.getElementById('galDesc').textContent = p.description || '';
+    const btn = document.getElementById('galComprar');
+    btn.dataset.buy = p.id;
+    btn.dataset.name = p.name;
+    btn.dataset.price = p.priceClp;
+    btn.dataset.kind = 'PRODUCT';
+    btn.disabled = !!p.soldOut;
+    btn.textContent = p.soldOut ? 'Agotado' : 'Agregar al carrito';
+    conectarBotonesCompra(); // idempotente (ver btn._listo) -- misma función que usan todos los "+"
+  }
+  function galSiguienteFoto(){ if(galFotos.length < 2) return; galIndice = (galIndice + 1) % galFotos.length; pintarGaleriaProducto(); }
+  function galAnteriorFoto(){ if(galFotos.length < 2) return; galIndice = (galIndice - 1 + galFotos.length) % galFotos.length; pintarGaleriaProducto(); }
+
+  document.getElementById('galSiguiente').addEventListener('click', galSiguienteFoto);
+  document.getElementById('galAnterior').addEventListener('click', galAnteriorFoto);
+  document.getElementById('galCerrar').addEventListener('click', cerrarGaleriaProducto);
+  document.getElementById('modalGaleriaProducto').addEventListener('click', e=>{
+    if(e.target.id === 'modalGaleriaProducto') cerrarGaleriaProducto();
+  });
+  // tocar la foto grande alterna zoom -- gesto simple, sin arrastrar ni pellizcar.
+  document.getElementById('galImgActual').addEventListener('click', e=>{
+    e.stopPropagation();
+    e.currentTarget.classList.toggle('zoom');
+  });
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('modalGaleriaProducto').classList.contains('open')) return;
+    if(e.key === 'Escape') cerrarGaleriaProducto();
+    else if(e.key === 'ArrowRight') galSiguienteFoto();
+    else if(e.key === 'ArrowLeft') galAnteriorFoto();
+  });
+  // deslizar con el dedo (celular) para pasar de foto.
+  let galTouchX = null;
+  const galImgWrap = document.getElementById('galImgWrap');
+  galImgWrap.addEventListener('touchstart', e=>{ galTouchX = e.touches[0].clientX; }, { passive:true });
+  galImgWrap.addEventListener('touchend', e=>{
+    if(galTouchX === null) return;
+    const dx = e.changedTouches[0].clientX - galTouchX;
+    if(Math.abs(dx) > 40) (dx > 0 ? galAnteriorFoto() : galSiguienteFoto());
+    galTouchX = null;
+  });
+
   /* ---------- tema claro / oscuro ---------- */
   const THEME_KEY = 'masterlook_theme';
 
@@ -10518,7 +10831,7 @@
 
     grid.innerHTML = lista.map(p=>`
       <div class="st-card">
-        <div class="st-card-photo">
+        <div class="st-card-photo" data-foto-producto="${p.id}" title="Ver fotos" style="cursor:pointer;">
           ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${escapeHTML(p.name)}" loading="lazy">` : '<span class="ph">🧴</span>'}
           ${p.featured ? '<span class="st-card-tag">Bestseller</span>' : ''}
         </div>
@@ -10531,6 +10844,15 @@
         </div>
       </div>`).join('');
 
+    // tocar la foto abre el visor de varias fotos (tipo Falabella) -- ver
+    // abrirGaleriaProducto/fotosDeProducto, definidos junto a
+    // pintarTiendaHome(). No toca el botón + (agregar al carrito).
+    grid.querySelectorAll('[data-foto-producto]').forEach(el=>
+      el.addEventListener('click', ()=>{
+        const p = tvProductos.find(x=> x.id === el.dataset.fotoProducto);
+        if(p) abrirGaleriaProducto(p);
+      }));
+
     conectarBotonesCompra();
   }
 
@@ -10542,9 +10864,6 @@
     if(!btn) return;
     tvFiltro = btn.dataset.stnav;
     pintarProductos();
-    document.getElementById('shopGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
-  });
-  document.getElementById('stHeroCta')?.addEventListener('click', ()=>{
     document.getElementById('shopGrid')?.scrollIntoView({ behavior:'smooth', block:'start' });
   });
   document.getElementById('stVerTodo')?.addEventListener('click', ()=>{
@@ -10584,23 +10903,27 @@
     const cont = document.getElementById('stHeroFoto');
     if(!cont) return;
     const conFoto = productosSiteCache.filter(p=> p.photoUrl);
-    // Sin foto de producto -> se oculta el recuadro y el hero va a una columna
+    // Foto propia de la tienda (subida desde el panel, "Portada de la
+    // tienda") tiene prioridad; si la dueña no subió ninguna, se sigue
+    // usando automáticamente la del primer producto disponible -- mismo
+    // comportamiento de siempre, sin romper nada para quien no configure
+    // esto todavía.
+    const fotoTiendaPropia = horarioNegocio.tiendaHeroUrl || '';
+    const principal = conFoto[0]; // solo se usa si no hay foto propia de tienda
+    const urlElegida = fotoTiendaPropia || (principal ? principal.photoUrl : '');
+    // Sin ninguna foto -> se oculta el recuadro y el hero va a una columna
     // (evita el bloque gris vacío desbordado). Con foto -> layout de 2 columnas.
-    cont.closest('.st-hero')?.classList.toggle('st-hero-sin-foto', !conFoto.length);
-    if(!conFoto.length || cont.dataset.pintado) return; // se reintenta al re-pintar la tienda
-    cont.dataset.pintado = '1';
-    const principal = conFoto[0];
-    cont.innerHTML = `<img src="${principal.photoUrl}" alt="${escapeHTML(principal.name)}">`;
-
-    // Los dos bloques editoriales de abajo (Barbería / Running) también
-    // necesitan una foto de fondo -- se reutilizan fotos reales de
-    // productos ya subidas (nunca imágenes inventadas). Si solo hay una,
-    // se repite; sin ninguna, queda el degradé oscuro sin foto.
-    const b1 = document.getElementById('stEditBarberia');
-    const b2 = document.getElementById('stEditRunning');
-    const foto2 = conFoto[1] || conFoto[0];
-    if(b1) b1.style.cssText += `background-image:url('${principal.photoUrl}');background-size:cover;background-position:center;`;
-    if(b2) b2.style.cssText += `background-image:url('${foto2.photoUrl}');background-size:cover;background-position:center;`;
+    cont.closest('.st-hero')?.classList.toggle('st-hero-sin-foto', !urlElegida);
+    // Se compara contra la ÚLTIMA url pintada (no un simple "ya se pintó
+    // una vez") -- productos y "settings/negocio" llegan en dos listeners
+    // separados, en cualquier orden; así, si la foto propia de la tienda
+    // llega después de la del primer producto (o viceversa), se corrige
+    // sola en vez de quedar pegada con la que ganó la carrera.
+    if(!urlElegida || cont.dataset.pintadoUrl === urlElegida) return;
+    cont.dataset.pintadoUrl = urlElegida;
+    cont.innerHTML = fotoTiendaPropia
+      ? `<img src="${urlElegida}" alt="Master Look">`
+      : `<img src="${urlElegida}" alt="${escapeHTML(principal.name)}">`;
   }
 
   /** Código de referido que llega por link (?rf=CODIGO -- nunca ?ref=, ese
