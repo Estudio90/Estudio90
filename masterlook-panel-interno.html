@@ -5397,8 +5397,12 @@
 
   function enviarCorreoReserva(reserva, estado, motivo){
     if(!reserva.email) return;
+    // FASE 1 (cierre): la regla de `mail` ahora exige `bookingId` de una
+    // reserva real que exista -- sin esto, la creación queda rechazada.
+    const bookingId = reserva.webId || reserva.id;
+    if(!bookingId) return;
     const { subject, html, text } = plantillaCorreoReserva(reserva, estado, motivo);
-    const correoReserva = prepararCorreoCliente({ to:[reserva.email], message:{ subject, html, text } });
+    const correoReserva = prepararCorreoCliente({ to:[reserva.email], message:{ subject, html, text }, bookingId });
     if(correoReserva) db.collection('mail').add(correoReserva).catch(()=>{});
   }
 
@@ -6245,6 +6249,15 @@
   // o reincorporando este botón, sin volver a tocar el resto del sistema.
 
   let userBarberName = null;
+  // FASE 1 (seguridad de permisos): id real del barbero vinculado a esta
+  // cuenta (staff/{uid}.barberId) -- necesario para que suscribirBookingsSemana()
+  // pueda filtrar por barberId cuando el rol no tiene AGENDA_TODOS, igual
+  // que ya exige la regla de Firestore de `bookings`. null para ADMIN/
+  // RECEPTION o cualquier cuenta sin barbero vinculado.
+  let userBarberId = null;
+  // FASE 1 (cierre): calId propio (para blocks) -- ver dónde se resuelve, en
+  // procesarEstadoAuthPanel.
+  let userCalId = null;
 
   // Login unificado: este archivo ya no tiene un formulario de login
   // propio. La única puerta de autenticación es el sitio público
@@ -6266,6 +6279,14 @@
   // re-disparos de la MISMA sesión no repiten las lecturas ni vuelven a montar.
   // Un signOut real dispara la rama `!user`, que va antes de este guard.
   let sesionResuelta = false;
+  // FASE 1 (cierre): true recién cuando userRole/userBarberId/userPermissions/
+  // userCalId están TODOS asentados -- userRole se asigna antes que userCalId
+  // (que depende de un `await` extra a barbers/{barberId}), así que esperar
+  // solo "userRole !== null" (como ya hacía el wait-loop de bookings) deja
+  // una ventana real donde userCalId sigue null -- exactamente lo que le
+  // pasaba a suscribirBlocks(). Los wait-loops del arranque esperan ESTA
+  // bandera, no userRole directo.
+  let rolCompletamenteResuelto = false;
 
   /* Lee staff/{uid} resistente a la carrera del token: justo al restaurar
      sesión (F5 en el panel, llegada directa por URL, o un redirect completo
@@ -6358,8 +6379,22 @@
         }
         userRole = doc.data().role || 'BARBER';
         userBarberName = doc.data().barber?.name || null;
+        userBarberId = doc.data().barberId || null;
         userPermissions = doc.data().permissions || [];
         userIsStaff = true;
+        // FASE 1 (cierre): calId propio -- `blocks` identifica al
+        // profesional por calId (entero corto), no por barberId (id real
+        // de barbers/{id}). Se resuelve una sola vez acá, leyendo el
+        // documento público `barbers/{barberId}` (ya es de lectura
+        // pública, sin PII). Solo hace falta para roles sin AGENDA_TODOS
+        // (BARBER); se resuelve igual para cualquiera con barberId propio,
+        // es barato y no hace daño tenerlo.
+        if(userBarberId){
+          try{
+            const bDoc = await db.collection('barbers').doc(userBarberId).get();
+            userCalId = bDoc.exists ? (bDoc.data().calId ?? null) : null;
+          }catch(e){ userCalId = null; }
+        }
       }
       // doc === null (3 lecturas fallidas con token refrescado) o !doc.exists
       // -> userIsStaff sigue false -> se expulsa abajo, igual que antes.
@@ -6371,6 +6406,12 @@
       location.href = 'index.html';
       return;
     }
+
+    // FASE 1 (cierre): recién ACÁ -- después del await a barbers/{barberId}
+    // para userCalId -- queda todo asentado (userRole/userBarberId/
+    // userPermissions/userCalId). Antes de este punto cualquier lectura de
+    // esas variables puede ser parcial.
+    rolCompletamenteResuelto = true;
 
     document.querySelector('.app').classList.remove('oculto');
     mostrarControlesAdmin();
@@ -6417,7 +6458,8 @@
     // el resto (products, promos, catálogo) por prolijidad -- salir del panel
     // debe dejar 0 listeners vivos.
     try{ if(unsubBookings){ unsubBookings(); unsubBookings = null; } }catch(e){}
-    try{ if(unsubBlocks){ unsubBlocks(); unsubBlocks = null; } }catch(e){}
+    try{ if(unsubBlocksAll){ unsubBlocksAll(); unsubBlocksAll = null; } }catch(e){}
+    try{ if(unsubBlocksMine){ unsubBlocksMine(); unsubBlocksMine = null; } }catch(e){}
     try{ if(unsubProducts){ unsubProducts(); unsubProducts = null; } }catch(e){}
     try{ if(unsubPromos){ unsubPromos(); unsubPromos = null; } }catch(e){}
     try{ if(unsubTestimonios){ unsubTestimonios(); unsubTestimonios = null; tsListenerActivo = false; } }catch(e){}
@@ -7120,14 +7162,13 @@
     const testiOn = (userRole === 'ADMIN' || userPermissions.includes('TESTIMONIOS_GESTIONAR')) ? '' : 'none';
     document.getElementById('btnTestimonios').style.display = testiOn;
 
-    // Comisiones y códigos (pestaña de Productos): ADMIN siempre, o staff con
-    // COMISIONES_VER/COMISIONES_EDITAR -- el mismo criterio que exige el
-    // backend (verificarComisionesVer/Editar en comisionesProductos.js).
-    // TIENDA_EDITAR por sí solo NO alcanza (decisión E). RECEPTION no lo
-    // recibe por rol (decisión H); puede asignarse el permiso individualmente.
-    puedeVerComisionesProductos = userRole === 'ADMIN'
-      || userPermissions.includes('COMISIONES_VER') || userPermissions.includes('COMISIONES_EDITAR');
-    puedeEditarComisionesProductos = userRole === 'ADMIN' || userPermissions.includes('COMISIONES_EDITAR');
+    // Comisiones y códigos (pestaña de Productos): ver = ADMIN o staff con
+    // COMISIONES_VER (mismo criterio que exige el backend,
+    // verificarComisionesVer en comisionesProductos.js). Editar = EXCLUSIVO
+    // de ADMIN (Fase 1, cierre) -- COMISIONES_EDITAR dejó de ser un permiso
+    // delegable, igual que ya exige el backend (verificarComisionesEditar).
+    puedeVerComisionesProductos = userRole === 'ADMIN' || userPermissions.includes('COMISIONES_VER');
+    puedeEditarComisionesProductos = userRole === 'ADMIN';
     const tabComEl = document.getElementById('pvTabComisiones');
     if(tabComEl) tabComEl.style.display = puedeVerComisionesProductos ? '' : 'none';
 
@@ -7231,7 +7272,6 @@
      y reconciliarAgenda() más abajo. */
   let firestoreBookings = [];
   let unsubBookings = null;      // corta el listener de la semana anterior al navegar
-  let unsubBlocks = null;        // se cancela en el logout junto con unsubBookings
   let bookingsWeekKey = null;    // 'YYYY-MM-DD' del lunes de la semana suscrita
   let bookingsSubEpoch = 0;      // invalida callbacks de un listener ya reemplazado
 
@@ -7552,9 +7592,20 @@
     return new Promise(resolve=>{
       let primera = true;
       const listo = ()=>{ if(primera){ primera = false; resolve(); } };
-      unsubBookings = db.collection('bookings')
+      // FASE 1 (seguridad de permisos): la regla de Firestore de `bookings`
+      // ahora exige, para quien no tiene AGENDA_TODOS (BARBER por rol), que
+      // la consulta venga acotada a su propio barberId -- si no, la regla
+      // no puede probarse contra un `.where()` sin ese filtro y Firestore
+      // rechaza el listener entero (permission-denied), dejando al barbero
+      // sin ver ni sus propias citas. ADMIN/RECEPTION (con AGENDA_TODOS)
+      // conservan la consulta sin filtrar, igual que siempre.
+      let qBookings = db.collection('bookings')
         .where('fecha', '>=', lunes)
-        .where('fecha', '<=', domingo)
+        .where('fecha', '<=', domingo);
+      if(!userPermissions.includes('AGENDA_TODOS') && userBarberId){
+        qBookings = qBookings.where('barberId', '==', userBarberId);
+      }
+      unsubBookings = qBookings
         .onSnapshot(snap=>{
           // callback de un listener ya reemplazado (doble navegación rápida):
           // se ignora, pero igual se resuelve la promesa para no colgar a quien
@@ -8928,17 +8979,51 @@
      calendario, y el sitio del cliente (masterlook-sitio.html) los lee
      en vivo para no ofrecer esos horarios en las reservas online. */
   let demoBlocks = [];
-  unsubBlocks = db.collection('blocks').onSnapshot(snap=>{
-    demoBlocks = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+  // FASE 1 (cierre): antes este listener se armaba SIN FILTRO al cargar el
+  // script, incluso antes de saber el rol -- la regla nueva de `blocks`
+  // exige, para quien no tiene AGENDA_TODOS (BARBER por rol), que la
+  // consulta venga acotada (mismo motivo que suscribirBookingsSemana). Se
+  // convirtió en función, invocada desde el arranque DESPUÉS de esperar a
+  // que el rol esté resuelto (ver el mismo wait-loop de bookings).
+  let unsubBlocksAll = null, unsubBlocksMine = null;
+  let demoBlocksAll = [], demoBlocksMine = [];
+  function pintarBlocksMerge(){
+    // 'all' primero, luego las propias -- si algún día coincidiera un id
+    // (no debería, son colecciones/consultas distintas) se prioriza la
+    // propia por ir al final del merge.
+    const porId = new Map();
+    demoBlocksAll.forEach(b=> porId.set(b.id, b));
+    demoBlocksMine.forEach(b=> porId.set(b.id, b));
+    demoBlocks = Array.from(porId.values());
     renderBlocks();
     renderBlockList();
-  }, ()=>{
-    // Este listener se engancha al cargar el panel, antes de que
-    // onAuthStateChanged confirme la sesión. Si quien entró NO es del
-    // equipo (un cliente que abrió la URL por error), la regla `blocks`
-    // (isStaff) rechaza la lectura -- pero a esa persona ya se la está
-    // expulsando, así que el error se ignora en silencio.
-  });
+  }
+  function suscribirBlocks(){
+    if(unsubBlocksAll){ try{ unsubBlocksAll(); }catch(e){} unsubBlocksAll = null; }
+    if(unsubBlocksMine){ try{ unsubBlocksMine(); }catch(e){} unsubBlocksMine = null; }
+    const necesitaAcotar = !userPermissions.includes('AGENDA_TODOS') && userCalId != null;
+    if(!necesitaAcotar){
+      // ADMIN / RECEPTION (o el dueño, vía OWNER_UID_FALLBACK): igual que
+      // siempre, sin filtro -- lo necesitan para gestionar la agenda de
+      // todos los profesionales.
+      unsubBlocksAll = db.collection('blocks').onSnapshot(snap=>{
+        demoBlocksAll = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+        pintarBlocksMerge();
+      }, ()=>{});
+      return;
+    }
+    // BARBER (solo AGENDA_PROPIA): dos consultas acotadas en vez de una sin
+    // filtro -- cierres/feriados generales (scope 'all', visibles para
+    // todos) + los bloqueos del propio calId. Nunca los de un colega.
+    unsubBlocksAll = db.collection('blocks').where('scope','==','all').onSnapshot(snap=>{
+      demoBlocksAll = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+      pintarBlocksMerge();
+    }, ()=>{});
+    unsubBlocksMine = db.collection('blocks').where('calId','==',userCalId).onSnapshot(snap=>{
+      demoBlocksMine = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+      pintarBlocksMerge();
+    }, ()=>{});
+  }
 
   function minsOf(hhmm){ const [h,m] = hhmm.split(':').map(Number); return h*60+m; }
 
@@ -10540,10 +10625,23 @@
   async function cxCargarTarifas(){
     if(cxTarifasCargadas) return;
     try{
-      const doc = await db.collection('settings').doc('comisiones').get();
-      if(doc.exists){
-        cxDemoDefault = doc.data().default || {};
-        cxDemoOverride = doc.data().overrides || {};
+      // FASE 1 (cierre): un BARBER ya no puede leer settings/comisiones
+      // completo (traía la tarifa de TODOS los profesionales) -- usa
+      // obtenerMiTarifaComision(), que el servidor resuelve SOLO para su
+      // propio barberId, en la misma forma {default, overrides} que ya
+      // espera cxComisionDemo() más abajo. ADMIN/RECEPTION (con
+      // COMISIONES_VER) siguen leyendo el documento completo directo, sin
+      // cambio -- lo necesitan para configurar la tarifa de todos.
+      if(userRole === 'BARBER'){
+        const r = await functions.httpsCallable('obtenerMiTarifaComision')();
+        cxDemoDefault = r.data.default || {};
+        cxDemoOverride = r.data.overrides || {};
+      } else {
+        const doc = await db.collection('settings').doc('comisiones').get();
+        if(doc.exists){
+          cxDemoDefault = doc.data().default || {};
+          cxDemoOverride = doc.data().overrides || {};
+        }
       }
     }catch(e){}
     cxTarifasCargadas = true;
@@ -14791,6 +14889,16 @@
   /* ==========================================================
      USUARIOS Y PERMISOS
      ========================================================== */
+  // FASE 1 (cierre): se quitaron 4 permisos del catálogo delegable --
+  // SERVICIOS_EDITAR/EQUIPO_EDITAR/USUARIOS_EDITAR nunca estuvieron
+  // conectados a ninguna regla ni función real (casillas puramente
+  // decorativas, confirmado por grep exhaustivo en todo el backend); y
+  // COMISIONES_EDITAR pasó a ser exclusivo de ADMIN, sin permiso delegable
+  // (pedido explícito) -- verificado antes de quitarlo que solo una cuenta
+  // de prueba en DEV lo tenía asignado (ninguna cuenta real de producción).
+  // Editar servicios/precios y dar de alta staff/accesos siguen siendo,
+  // como ya eran en la práctica, exclusivos de ADMIN (services/staff ya
+  // exigían isAdmin() en las reglas, con o sin esta casilla).
   const PERMISOS = [
     { id:'AGENDA_PROPIA',     nombre:'Ver su propia agenda',       grupo:'Agenda' },
     { id:'AGENDA_TODOS',      nombre:'Ver la agenda de todos',     grupo:'Agenda' },
@@ -14798,16 +14906,12 @@
     { id:'RESERVAS_APROBAR',  nombre:'Aprobar reservas web',       grupo:'Agenda' },
     { id:'CLIENTES_VER',      nombre:'Ver clientes',               grupo:'Clientes' },
     { id:'CLIENTES_EDITAR',   nombre:'Editar clientes',            grupo:'Clientes' },
-    { id:'SERVICIOS_EDITAR',  nombre:'Editar servicios y precios', grupo:'Configuración' },
-    { id:'EQUIPO_EDITAR',     nombre:'Agregar o quitar barberos',  grupo:'Configuración' },
     { id:'CURSOS_EDITAR',     nombre:'Administrar cursos',         grupo:'Configuración' },
     { id:'TESTIMONIOS_GESTIONAR', nombre:'Administrar experiencias de alumnos', grupo:'Configuración' },
     { id:'TIENDA_EDITAR',     nombre:'Administrar productos',      grupo:'Configuración' },
     { id:'COMISIONES_VER',    nombre:'Ver comisiones',             grupo:'Dinero', sensible:true },
-    { id:'COMISIONES_EDITAR', nombre:'Cambiar porcentajes',        grupo:'Dinero', sensible:true },
     { id:'REFERIDOS_VER',     nombre:'Ver referidos',              grupo:'Dinero', sensible:true },
     { id:'REFERIDOS_EDITAR',  nombre:'Crear y editar referidos',   grupo:'Dinero', sensible:true },
-    { id:'USUARIOS_EDITAR',   nombre:'Dar acceso a otros',         grupo:'Dinero', sensible:true },
     { id:'CURSOS_ACCESOS',    nombre:'Otorgar, extender o revocar acceso a cursos', grupo:'Dinero', sensible:true },
   ];
 
@@ -15253,7 +15357,14 @@
     pcEditorProductoId = id;
 
     document.getElementById('pcmNombre').value = p.name || '';
-    document.getElementById('pcmPrecio').value = p.price ?? 0;
+    // FASE 1 (cierre): el precio es exclusivo de ADMIN (igual que la regla
+    // de Firestore ya exige) -- RECEPTION conserva TIENDA_EDITAR para el
+    // resto del catálogo (nombre/foto/categoría/stock), pero el campo de
+    // precio queda de solo lectura para cualquiera que no sea ADMIN.
+    const precioInput = document.getElementById('pcmPrecio');
+    precioInput.value = p.price ?? 0;
+    precioInput.readOnly = userRole !== 'ADMIN';
+    precioInput.title = userRole !== 'ADMIN' ? 'Cambiar el precio es exclusivo de un administrador' : '';
     document.getElementById('pcmDescripcion').value = p.description || '';
     pcmFotos = Array.isArray(p.photos) ? p.photos.slice() : [];
     pcmPintarGaleria();
@@ -16448,6 +16559,21 @@
   // primera carga + escucha en vivo
   setTimeout(async ()=>{
     // la sesión activa (si existe) la confirma Firebase vía onAuthStateChanged
+
+    // FASE 1 (seguridad de permisos): este arranque no esperaba a que
+    // procesarEstadoAuthPanel() resolviera el rol real -- ni `bookings` ni
+    // `blocks` pueden suscribirse sin filtro para una cuenta sin
+    // AGENDA_TODOS (BARBER por rol); la regla los rechaza enteros si el
+    // filtro (barberId / calId) no viene. Se espera acá a
+    // `rolCompletamenteResuelto` (userRole + userBarberId + userPermissions
+    // + userCalId, TODOS asentados -- no solo userRole, que se asienta antes
+    // que userCalId) -- o a un tope de ~6s por si no hay sesión -- antes de
+    // suscribirse a ninguno de los dos. Así solo existe UN punto que arma
+    // cada listener, sin carrera con procesarEstadoAuthPanel().
+    for(let espera = 0; !rolCompletamenteResuelto && espera < 120; espera++){
+      await new Promise(r=> setTimeout(r, 50));
+    }
+    suscribirBlocks();
 
     await cargarCatalogo();
     sincronizarBarberosDesdeFirestore();
