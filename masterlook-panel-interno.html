@@ -5414,7 +5414,7 @@
    *  enviarCorreoComprobanteReserva en reservas.js -- mismo diseño/copy,
    *  byte a byte). */
   function enviarCorreoComprobante(a, metodoLabel, total, operationId){
-    if(!a.email || !a.webId || !operationId) return;
+    if(!a.webId || !operationId) return; // el correo se resuelve siempre en el servidor, fresco
     functions.httpsCallable('enviarCorreoComprobanteReserva')({ bookingId:a.webId, operationId, metodoLabel, total })
       .catch(()=>{});
   }
