@@ -5406,61 +5406,24 @@
     if(correoReserva) db.collection('mail').add(correoReserva).catch(()=>{});
   }
 
-  /** Comprobante de pago: mismo diseño que los otros correos, con el detalle del cobro. */
-  function enviarCorreoComprobante(a, metodoLabel, total){
-    if(!a.email) return;
-    const corto = (a.client || '').split(' ')[0];
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#faf8f4;">
-        <div style="background:#1A1815;padding:28px 24px;text-align:center;">
-          <div style="color:#D9B25C;font-size:20px;font-weight:bold;letter-spacing:2px;">MASTERLOOK</div>
-          <div style="color:#8a8880;font-size:11px;letter-spacing:1px;margin-top:4px;">BARBERÍA &amp; SPA</div>
-        </div>
-        <div style="padding:28px 24px;">
-          <div style="display:inline-block;background:#2E7D32;color:#fff;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px;">Pago recibido</div>
-          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${corto}, este es tu comprobante de pago.</p>
-          <div style="background:#fff;border:1px solid #e5e2d9;border-radius:10px;padding:16px 18px;margin-top:16px;">
-            <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Servicio</div>
-            <div style="font-size:15px;color:#1A1815;font-weight:bold;margin-bottom:14px;">${a.service || ''}</div>
-            <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Método de pago</div>
-            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${metodoLabel}</div>
-            <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Total pagado</div>
-            <div style="font-size:15px;color:#1A1815;font-weight:bold;">${total}</div>
-          </div>
-          <p style="font-size:12px;color:#57565f;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
-        </div>
-      </div>`;
-    const text = `Hola ${corto}, este es tu comprobante de pago.\n\nServicio: ${a.service}\nMétodo de pago: ${metodoLabel}\nTotal pagado: ${total}\n\nMASTERLOOK · +56 9 4912 4645`;
-    const correoComprobante = prepararCorreoCliente({ to:[a.email], message:{ subject:'MASTERLOOK · Comprobante de pago', html, text } });
-    if(correoComprobante) db.collection('mail').add(correoComprobante).catch(()=>{});
+  /** Comprobante de pago: mismo diseño de siempre, pero el HTML ya no se
+   *  arma acá -- el navegador solo pide el envío (bookingId + el mismo
+   *  operationId del cobro que se acaba de registrar) y el servidor lee
+   *  la reserva real, arma el correo y lo despacha. Necesario para poder
+   *  mandar por Resend sin exponer ninguna credencial acá (ver
+   *  enviarCorreoComprobanteReserva en reservas.js -- mismo diseño/copy,
+   *  byte a byte). */
+  function enviarCorreoComprobante(a, metodoLabel, total, operationId){
+    if(!a.email || !a.webId || !operationId) return;
+    functions.httpsCallable('enviarCorreoComprobanteReserva')({ bookingId:a.webId, operationId, metodoLabel, total })
+      .catch(()=>{});
   }
 
-  /** Al cobrar una cita (ya atendida y pagada), invitamos por correo a
-      calificar la atención. El link lleva directo al formulario de reseñas
-      del sitio, con el nombre precargado; si califica con 4 o 5 estrellas,
-      el sitio la abre directo en Google Maps (mismo comportamiento que
-      calificar desde la página). */
-  function enviarCorreoCalificacion(a){
-    if(!a.email) return;
-    const corto = (a.client || '').split(' ')[0];
-    const link = SITE_BASE + '/?resena=1&nombre=' + encodeURIComponent(a.client || '') + '#resenas';
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#faf8f4;">
-        <div style="background:#1A1815;padding:28px 24px;text-align:center;">
-          <div style="color:#D9B25C;font-size:20px;font-weight:bold;letter-spacing:2px;">MASTERLOOK</div>
-          <div style="color:#8a8880;font-size:11px;letter-spacing:1px;margin-top:4px;">BARBERÍA &amp; SPA</div>
-        </div>
-        <div style="padding:28px 24px;">
-          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${corto}, ¡gracias por venir a MASTERLOOK!</p>
-          <p style="font-size:14px;color:#57565f;line-height:1.5;margin-top:10px;">¿Cómo estuvo tu ${a.service || 'visita'} con ${a.barber || 'nosotros'}? Cuéntanos en menos de un minuto.</p>
-          <a href="${link}" style="display:block;text-align:center;background:#1A1815;color:#D9B25C;font-size:14px;font-weight:bold;padding:14px;border-radius:10px;text-decoration:none;margin-top:20px;">Calificar mi experiencia</a>
-          <p style="font-size:12px;color:#57565f;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
-        </div>
-      </div>`;
-    const text = `Hola ${corto}, ¡gracias por venir a MASTERLOOK!\n\n¿Cómo estuvo tu ${a.service || 'visita'} con ${a.barber || 'nosotros'}?\n\nCalifícanos aquí: ${link}\n\nMASTERLOOK · +56 9 4912 4645`;
-    const correoEncuesta = prepararCorreoCliente({ to:[a.email], message:{ subject:'MASTERLOOK · ¿Cómo estuvo tu visita?', html, text } });
-    if(correoEncuesta) db.collection('mail').add(correoEncuesta).catch(()=>{});
-  }
+  // La encuesta de satisfacción YA NO se dispara desde acá (pagar no es
+  // asistir) -- se manda sola, del lado del servidor, en el momento en que
+  // se marca "Asistió" (pill de Etiqueta o botón "Marcar asistencia"), sin
+  // importar si el cobro fue antes o después. Ver enviarEncuestaAlAsistir
+  // en reservas.js (trigger de Firestore sobre bookings.etiqueta).
 
   /** Agrega una tarjeta flotante al contenedor de avisos: se cierra sola a
       los 15s (pausa si el mouse está encima) y nunca deja más de 3 a la vez,
@@ -17971,9 +17934,10 @@
       // de Etiqueta o el botón "Marcar asistencia"), nunca un efecto
       // secundario de cobrar. El pago solo actualiza el dinero recibido.
 
-      enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt);
+      enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt, operationId);
       mostrarAlertaComprobante(currentAppt, metodoLabel, totalTxt);
-      enviarCorreoCalificacion(currentAppt);
+      // La encuesta se manda sola al marcar "Asistió" -- ver
+      // enviarEncuestaAlAsistir en reservas.js.
 
       cart = {};
     }

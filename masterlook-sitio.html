@@ -1241,6 +1241,40 @@
     .cp-wrap{padding:22px 14px 44px;}
     .cp-monto{font-size:2.1rem;}
   }
+
+  /* ===== Ticket de comprobante de reserva (cobro presencial) -- réplica
+     del comprobante de AgendaPro: papel claro, separadores punteados,
+     todo centrado, como una boleta impresa. Paleta clara forzada, igual
+     criterio que #vistaComprobante fuerza oscura -- ninguna depende del
+     tema del sitio. ===== */
+  #vistaComprobanteReserva{ background:#38352E; }
+  .crx-wrap{max-width:480px; margin:40px auto 60px; padding:0 20px;}
+  .crx-ticket{background:#FDFCFA; color:#161513; border-radius:6px;
+    padding:38px 30px 34px; box-shadow:0 18px 44px rgba(0,0,0,.35);}
+  .crx-logo{text-align:center; font-family:var(--font-primary); font-weight:800;
+    font-size:1.5rem; letter-spacing:.02em; line-height:1.08; margin-bottom:22px;}
+  .crx-comercio{text-align:center; margin-bottom:22px;}
+  .crx-comercio b{display:block; font-size:.92rem; font-weight:800; letter-spacing:.02em;}
+  .crx-comercio span{display:block; font-size:.76rem; color:#6b6a63; margin-top:3px;}
+  .crx-titulo{text-align:center; font-weight:800; font-size:.82rem; text-transform:uppercase;
+    letter-spacing:.05em; margin-bottom:10px;}
+  .crx-dashes{border:none; border-top:2.5px dashed #161513; margin:12px 0;}
+  .crx-item{display:flex; justify-content:space-between; gap:14px; font-size:.86rem;
+    line-height:1.45; padding:4px 0;}
+  .crx-item span:last-child{white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .crx-totales{margin-top:14px;}
+  .crx-totales .crx-item{font-weight:800; font-size:.9rem;}
+  .crx-meta{text-align:center; margin-top:22px; font-size:.86rem; line-height:1.7;}
+  .crx-btn{display:block; width:100%; text-align:center; margin-top:26px; padding:14px 22px;
+    border-radius:99px; background:#161513; color:#fff; font-family:inherit; font-size:.85rem;
+    font-weight:700; border:none; cursor:pointer; text-decoration:none;}
+  .crx-btn:hover{background:#33302a;}
+  .crx-loader{text-align:center; padding:90px 20px; color:#d8d6cf; font-size:.9rem;}
+  @media(max-width:520px){
+    .crx-wrap{margin:20px auto 44px;}
+    .crx-ticket{padding:30px 20px 26px;}
+  }
+
   .tv-head{position:sticky; top:0; background:var(--glass); backdrop-filter:blur(14px);
     border-bottom:1px solid var(--linea); z-index:5;}
   .tv-head-in{display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
@@ -4311,6 +4345,18 @@
 <div id="vistaComprobante" class="tienda-vista">
   <div class="cp-wrap" id="cpContenido">
     <div class="cp-loader">Verificando tu pago…</div>
+  </div>
+</div>
+
+<!-- ===== Comprobante de un cobro presencial de reserva (servicio) --
+     ticket claro tipo boleta, pedido explícito del usuario (réplica del
+     comprobante de AgendaPro) -- distinto del comprobante oscuro de
+     arriba (compras online por Webpay: curso/producto/carrito/anticipo).
+     Solo se pinta con datos ya verificados por el backend
+     (obtenerComprobanteReserva, bookingId+token opaco). ===== -->
+<div id="vistaComprobanteReserva" class="tienda-vista">
+  <div class="crx-wrap" id="crxContenido">
+    <div class="crx-loader">Verificando tu comprobante…</div>
   </div>
 </div>
 
@@ -7862,6 +7908,71 @@
     if(!desdeHistorial && hashActual().indexOf('#comprobante=') === 0) irHistorial('back');
   }
 
+  /** Ticket del comprobante de un cobro PRESENCIAL de reserva (servicio) --
+   *  réplica del comprobante de AgendaPro: pinta EXACTAMENTE los datos que
+   *  devolvió el backend (obtenerComprobanteReserva, ya verificados ahí:
+   *  bookingId + token opaco coincide). Nunca se arma con datos propios. */
+  function pintarComprobanteReserva(datos){
+    // Razón social/actividad/identificación fiscal -- SOLO si están
+    // configuradas (settings/negocio, ver armarDatosComprobanteReserva);
+    // nunca un valor inventado si el negocio no las completó.
+    const filaFiscal = datos.razonComercial ? `
+        <div class="crx-comercio">
+          <b>${escapeHTML(datos.razonComercial)}</b>
+          ${datos.actividadFiscal ? `<span>Actividad: ${escapeHTML(datos.actividadFiscal)}</span>` : ''}
+          ${datos.identificacionFiscal ? `<span>Identificación fiscal: ${escapeHTML(datos.identificacionFiscal)}</span>` : ''}
+        </div>` : '';
+    document.getElementById('crxContenido').innerHTML = `
+      <div class="crx-ticket">
+        <div class="crx-logo">MASTER<br>LOOK</div>
+        ${filaFiscal}
+        <div class="crx-titulo">Detalle de la venta</div>
+        <hr class="crx-dashes">
+        <div class="crx-item"><span>${escapeHTML(datos.servicio)}</span><span>${escapeHTML(datos.totalTexto)}</span></div>
+        <hr class="crx-dashes">
+        <div class="crx-totales">
+          <div class="crx-item"><span>Total</span><span>${escapeHTML(datos.totalTexto)}</span></div>
+          <div class="crx-item"><span>Monto pagado</span><span>${escapeHTML(datos.montoPagadoTexto)}</span></div>
+          <div class="crx-item"><span>Monto por pagar</span><span>${escapeHTML(datos.montoPorPagarTexto)}</span></div>
+        </div>
+        <div class="crx-meta">
+          Ticket #${escapeHTML(datos.ticket)}<br>
+          ${escapeHTML(datos.fecha)}<br>
+          Pagado en: ${escapeHTML(datos.metodoPago)}
+        </div>
+        <button class="crx-btn" id="crxInicio">Volver al inicio</button>
+      </div>`;
+    document.getElementById('crxInicio').addEventListener('click', ()=>{ cerrarComprobanteReserva(true); irHistorial('limpiar'); irAInicio(); });
+  }
+
+  /** Abre el ticket -- SIEMPRE por bookingId+token opaco (el enlace del
+   *  correo, ver enviarCorreoComprobanteReserva en reservas.js), cero
+   *  dependencia de sesión: quien pagó como invitado también debe poder
+   *  verlo. Sin token válido, el backend devuelve `comprobante:null` y acá
+   *  se muestra un aviso genérico -- nunca una pista de por qué falló. */
+  async function abrirComprobanteReserva(bookingId, token){
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true);
+    document.getElementById('vistaComprobanteReserva').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('crxContenido').innerHTML = '<div class="crx-loader">Verificando tu comprobante…</div>';
+    try{
+      const resp = await fetch(FUNCTIONS_BASE + '/obtenerComprobanteReserva', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ bookingId, t: token }),
+      });
+      const r = resp.ok ? await resp.json() : null;
+      if(r && r.comprobante){
+        pintarComprobanteReserva(r.comprobante);
+        return;
+      }
+    }catch(e){ /* cae al aviso genérico de abajo */ }
+    document.getElementById('crxContenido').innerHTML = '<div class="crx-loader">No pudimos verificar este comprobante. Si crees que es un error, escríbenos.</div>';
+  }
+  function cerrarComprobanteReserva(desdeHistorial){
+    document.getElementById('vistaComprobanteReserva').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
   /** Al volver de Webpay (confirmado por el servidor en webpayConfirmar),
    *  se verifica el resultado REAL contra el backend -- nunca se asume
    *  éxito solo por haber llegado a esta página con ?pago=confirmado, eso
@@ -8072,6 +8183,20 @@
     // carrito INTACTO en todos los caminos de timeout
   }
   manejarRetornoWebpay();
+
+  /** Botón "Ver comprobante" del correo de comprobante de reserva --
+   *  ?comprobante=1&bookingId=<id>&t=<token>. Igual criterio que el
+   *  reagendo por enlace de abajo: el token por sí solo autoriza, sin
+   *  depender de sesión. */
+  (function manejarComprobanteReservaPorEnlace(){
+    const params = new URLSearchParams(location.search);
+    if(params.get('comprobante') !== '1') return;
+    const bookingId = params.get('bookingId');
+    const token = params.get('t');
+    history.replaceState(null, '', location.pathname + location.hash);
+    if(!bookingId || !token) return;
+    abrirComprobanteReserva(bookingId, token);
+  })();
 
   /** Botón "Modificar cita" del correo (invitado, sin sesión) --
    *  ?reagendar=<bookingId>&token=<token>. No depende de "Mi cuenta": el
@@ -10759,6 +10884,7 @@
     else if(document.getElementById('vistaMisCursos').classList.contains('open')) mcRetroceder();
     else if(document.getElementById('vistaMisProductos').classList.contains('open')) cerrarMisProductos();
     else if(document.getElementById('vistaComprobante').classList.contains('open')) cerrarComprobante();
+    else if(document.getElementById('vistaComprobanteReserva').classList.contains('open')) cerrarComprobanteReserva();
   });
 
   // el botón atrás del navegador cierra la vista abierta
