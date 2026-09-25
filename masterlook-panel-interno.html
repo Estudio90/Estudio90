@@ -3638,6 +3638,69 @@
           <button class="mg-btn solid" id="miPreguntar" style="flex:0 0 auto;width:auto;padding:0 18px;">Preguntar</button>
         </div>
       </div>
+
+      <!-- Control de gasto/abuso del asistente de clientes (Max) -- Fase A aprobada 2026-09-24 -->
+      <div class="cx-panel" style="margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h3 style="font-size:14px;margin:0 0 4px;">Control de gasto del asistente (Max)</h3>
+            <p class="mg-note" id="iaEstadoTexto" style="margin:0;">Cargando…</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="ctrl-btn" id="iaRefrescar" title="Actualizar" style="padding:0 10px;">↻</button>
+            <button class="mg-btn" id="iaBtnPausar" style="width:auto;padding:0 18px;" disabled>Cargando…</button>
+          </div>
+        </div>
+
+        <div style="margin:14px 0 4px;background:#eee;border-radius:8px;height:10px;overflow:hidden;">
+          <div id="iaBarraGasto" style="height:100%;width:0%;background:var(--ok);transition:width .3s, background .3s;"></div>
+        </div>
+        <p class="mg-note" id="iaGastoDetalle" style="margin:0;">—</p>
+
+        <details style="margin-top:16px;">
+          <summary style="cursor:pointer;font-size:13px;font-weight:600;color:#555;">Configuración de límites (sin tocar código)</summary>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+            <div>
+              <label class="field-label">Presupuesto diario global (US$)</label>
+              <input type="number" step="0.01" min="0" class="mg-input" id="iaLimiteDiarioUsd">
+            </div>
+            <div>
+              <label class="field-label">Presupuesto por conversación (US$)</label>
+              <input type="number" step="0.01" min="0" class="mg-input" id="iaLimiteConversacionUsd">
+            </div>
+            <div>
+              <label class="field-label">Mensajes máximos por conversación</label>
+              <input type="number" step="1" min="1" class="mg-input" id="iaLimiteMensajesPorConversacion">
+            </div>
+            <div>
+              <label class="field-label">Cooldown entre mensajes (segundos)</label>
+              <input type="number" step="1" min="0" class="mg-input" id="iaCooldownSegundos">
+            </div>
+            <div>
+              <label class="field-label">Preguntas por IP al día</label>
+              <input type="number" step="1" min="1" class="mg-input" id="iaLimitePreguntasDiaIp">
+            </div>
+            <div>
+              <label class="field-label">Preguntas por cliente logueado al día</label>
+              <input type="number" step="1" min="1" class="mg-input" id="iaLimitePreguntasDiaUsuario">
+            </div>
+            <div>
+              <label class="field-label">Preguntas de ADMIN al día (panel)</label>
+              <input type="number" step="1" min="1" class="mg-input" id="iaLimitePreguntasAdminDia">
+            </div>
+            <div>
+              <label class="field-label">Misma pregunta repetida → corta sin IA a las</label>
+              <input type="number" step="1" min="2" class="mg-input" id="iaRepeticionesParaCortoCircuito">
+            </div>
+            <div style="grid-column:1 / -1;">
+              <label class="field-label">Correo para las alertas de presupuesto (50/80/100%)</label>
+              <input type="email" class="mg-input" id="iaCorreoAlerta">
+            </div>
+          </div>
+          <p class="mg-note" style="margin-top:10px;">Pausar el asistente (o cualquiera de estos límites) nunca afecta reservas manuales, Webpay ni el resto del sitio — solo detiene nuevas llamadas pagadas a Anthropic.</p>
+          <button class="mg-btn solid" id="iaGuardarConfig" style="margin-top:12px;width:auto;padding:0 18px;">Guardar configuración</button>
+        </details>
+      </div>
     </div>
 
     <!-- ===== VISTA: PRODUCTOS (ventas y comisiones) ===== -->
@@ -9707,6 +9770,7 @@
     document.getElementById('vistaIntelligence').style.display = '';
     ocultarFlotante(true);
     miCargarEstadisticas();
+    iaCargarEstado();
   }
 
   function miVolverAgenda(){
@@ -9807,6 +9871,139 @@
   document.getElementById('miPregunta').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter') miPreguntar();
   });
+
+  /* ---------- Control de gasto/abuso del asistente de clientes -- Max (Fase A, 2026-09-24) ----------
+   * Interruptor de emergencia + límites por conversación/usuario/IP + cooldown +
+   * alertas -- todo editable acá, sin tocar código. aiCostoDiario/aiConversaciones/
+   * aiRateLimit* quedan cerradas en firestore.rules (igual que aiAuditLog) --
+   * este panel pasa por la Cloud Function obtenerEstadoIA (ADMIN) para verlas. */
+  let iaEstadoActual = null;
+
+  function iaPct(){
+    const p = iaEstadoActual ? iaEstadoActual.porcentajeDelLimite : 0;
+    return Math.max(0, Math.min(1, p));
+  }
+
+  async function iaCargarEstado(){
+    const btnPausar = document.getElementById('iaBtnPausar');
+    const textoEstado = document.getElementById('iaEstadoTexto');
+    try{
+      const llamar = functions.httpsCallable('obtenerEstadoIA');
+      const { data } = await llamar();
+      iaEstadoActual = data;
+
+      const pct = iaPct();
+      const barra = document.getElementById('iaBarraGasto');
+      barra.style.width = Math.round(pct * 100) + '%';
+      barra.style.background = data.pausado ? 'var(--no)' : (pct >= 0.8 ? 'var(--no)' : pct >= 0.5 ? 'var(--pend)' : 'var(--ok)');
+
+      document.getElementById('iaGastoDetalle').textContent =
+        `Hoy (${data.fecha}): US$${data.gastoHoyUsd.toFixed(4)} de US$${data.config.limiteDiarioUsd} (${Math.round(pct*100)}%) · ${data.llamadasApiHoy} llamadas reales a Anthropic.`;
+
+      if(data.pausado){
+        textoEstado.textContent = 'Max está PAUSADO -- no está respondiendo a clientes en este momento.';
+        textoEstado.style.color = 'var(--no)';
+        btnPausar.textContent = 'Reactivar Max';
+        btnPausar.style.background = 'var(--ok)';
+        btnPausar.style.color = '#fff';
+        btnPausar.style.borderColor = 'var(--ok)';
+      } else {
+        textoEstado.textContent = 'Max está activo y respondiendo a clientes normalmente.';
+        textoEstado.style.color = '';
+        btnPausar.textContent = 'Pausar Max (emergencia)';
+        btnPausar.style.background = 'var(--no)';
+        btnPausar.style.color = '#fff';
+        btnPausar.style.borderColor = 'var(--no)';
+      }
+      btnPausar.disabled = false;
+
+      // Prellena el formulario con los valores vigentes (por defecto o ya guardados).
+      const c = data.config;
+      document.getElementById('iaLimiteDiarioUsd').value = c.limiteDiarioUsd;
+      document.getElementById('iaLimiteConversacionUsd').value = c.limiteConversacionUsd;
+      document.getElementById('iaLimiteMensajesPorConversacion').value = c.limiteMensajesPorConversacion;
+      document.getElementById('iaCooldownSegundos').value = c.cooldownSegundos;
+      document.getElementById('iaLimitePreguntasDiaIp').value = c.limitePreguntasDiaIp;
+      document.getElementById('iaLimitePreguntasDiaUsuario').value = c.limitePreguntasDiaUsuario;
+      document.getElementById('iaLimitePreguntasAdminDia').value = c.limitePreguntasAdminDia;
+      document.getElementById('iaRepeticionesParaCortoCircuito').value = c.repeticionesParaCortoCircuito;
+      document.getElementById('iaCorreoAlerta').value = c.correoAlerta;
+    }catch(e){
+      textoEstado.textContent = 'No se pudo cargar el estado: ' + (e.message || 'error desconocido');
+      textoEstado.style.color = 'var(--no)';
+      btnPausar.textContent = 'Reintentar';
+      btnPausar.disabled = false;
+    }
+  }
+
+  async function iaTogglePausado(){
+    if(!iaEstadoActual) return;
+    const vaAPausar = !iaEstadoActual.pausado;
+    const mensaje = vaAPausar
+      ? '¿Pausar a Max ahora? Los clientes que escriban al chat dejarán de recibir respuestas de la IA hasta que lo reactives -- las reservas manuales, Webpay y el resto del sitio siguen funcionando igual.'
+      : '¿Reactivar a Max? Volverá a responder a los clientes con normalidad.';
+    if(!(await mgConfirm(mensaje))) return;
+
+    const btn = document.getElementById('iaBtnPausar');
+    btn.disabled = true;
+    try{
+      await db.collection('settings').doc('iaConfig').set({ pausado: vaAPausar }, { merge:true });
+      showToast(vaAPausar ? 'Max quedó pausado' : 'Max quedó reactivado');
+      await iaCargarEstado();
+    }catch(e){
+      showToast('No se pudo cambiar: ' + (e.message || 'error'));
+      btn.disabled = false;
+    }
+  }
+
+  async function iaGuardarConfig(){
+    const num = (id, entero)=>{
+      const v = Number(document.getElementById(id).value);
+      return entero ? Math.round(v) : v;
+    };
+    const correo = document.getElementById('iaCorreoAlerta').value.trim();
+    const config = {
+      limiteDiarioUsd: num('iaLimiteDiarioUsd'),
+      limiteConversacionUsd: num('iaLimiteConversacionUsd'),
+      limiteMensajesPorConversacion: num('iaLimiteMensajesPorConversacion', true),
+      cooldownSegundos: num('iaCooldownSegundos', true),
+      limitePreguntasDiaIp: num('iaLimitePreguntasDiaIp', true),
+      limitePreguntasDiaUsuario: num('iaLimitePreguntasDiaUsuario', true),
+      limitePreguntasAdminDia: num('iaLimitePreguntasAdminDia', true),
+      repeticionesParaCortoCircuito: num('iaRepeticionesParaCortoCircuito', true),
+      correoAlerta: correo,
+    };
+    for(const [clave, valor] of Object.entries(config)){
+      if(clave === 'correoAlerta') continue;
+      if(!(valor > 0) || !Number.isFinite(valor)){
+        showToast('Revisa los valores -- todos deben ser mayores que 0.');
+        return;
+      }
+    }
+    if(config.limiteConversacionUsd > config.limiteDiarioUsd){
+      if(!(await mgConfirm('El presupuesto por conversación es mayor que el diario global -- el diario mandará igual, pero revisa si es lo que quieres. ¿Guardar igual?'))) return;
+    }
+    if(!/^\S+@\S+\.\S+$/.test(correo)){
+      showToast('El correo de alertas no tiene un formato válido.');
+      return;
+    }
+
+    const btn = document.getElementById('iaGuardarConfig');
+    btn.disabled = true;
+    try{
+      await db.collection('settings').doc('iaConfig').set(config, { merge:true });
+      showToast('Configuración de la IA guardada');
+      await iaCargarEstado();
+    }catch(e){
+      showToast('No se pudo guardar: ' + (e.message || 'error'));
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('iaRefrescar').addEventListener('click', iaCargarEstado);
+  document.getElementById('iaBtnPausar').addEventListener('click', iaTogglePausado);
+  document.getElementById('iaGuardarConfig').addEventListener('click', iaGuardarConfig);
 
   /* ---------- Vista semanal de un barbero (clic en su nombre en la agenda) ---------- */
   let sbCalId = null;

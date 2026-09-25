@@ -903,12 +903,18 @@
     box-shadow:var(--shadow-md); display:none; flex-direction:column; overflow:hidden;
   }
   .chat-panel.open{display:flex;}
-  .chat-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--negro); flex-shrink:0;}
-  .chat-head-info{display:flex; align-items:center; gap:10px;}
-  .chat-avatar{width:32px; height:32px; border-radius:50%; background:var(--oro); color:#12100A; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0;}
-  .chat-head h4{margin:0; font-size:13.5px; color:#fff;}
-  .chat-head span{font-size:11px; color:var(--oro-claro);}
-  .chat-close{background:none; border:none; color:#fff; cursor:pointer; padding:4px; font-size:16px; line-height:1;}
+  .chat-head{position:relative; display:flex; align-items:center; padding:16px 52px 16px 18px; background:var(--negro); flex-shrink:0;}
+  .chat-head-info{display:flex; align-items:center; gap:14px; min-width:0;}
+  .chat-avatar{width:76px; height:76px; border-radius:50%; background:var(--oro); object-fit:cover; flex-shrink:0;}
+  .chat-head h4{margin:0; font-size:21px; font-weight:800; letter-spacing:-.01em; line-height:1.15; color:var(--text-hi);}
+  .chat-head span{display:block; margin-top:4px; font-size:13px; color:var(--oro-claro);}
+  .chat-close{
+    position:absolute; top:10px; right:10px; width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center;
+    background:#fff; border:1px solid #E1E0DC; border-radius:50%;
+    color:#1c1c1c; cursor:pointer; padding:0; font-size:17px; line-height:1;
+    box-shadow:0 1px 3px rgba(20,20,25,.08);
+  }
   .chat-body{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--panel-2);}
   .chat-msg{max-width:82%; padding:9px 12px; border-radius:14px; font-size:13.5px; line-height:1.45; white-space:pre-line;}
   .chat-msg.bot{align-self:flex-start; background:var(--panel); border:1px solid var(--border); border-bottom-left-radius:4px; color:var(--text-hi);}
@@ -927,6 +933,12 @@
   }
   @media (max-width:480px){
     .chat-panel{right:10px; left:10px; width:auto; bottom:132px;}
+    .chat-head{padding:14px 50px 14px 14px;}
+    .chat-head-info{gap:12px;}
+    .chat-avatar{width:62px; height:62px;}
+    .chat-head h4{font-size:19px;}
+    .chat-head span{font-size:12px;}
+    .chat-close{top:8px; right:8px; width:40px; height:40px; font-size:18px;}
   }
 
   /* ===== auth modal ===== */
@@ -4490,8 +4502,8 @@
 <div class="chat-panel" id="chatPanel">
   <div class="chat-head">
     <div class="chat-head-info">
-      <div class="chat-avatar">ML</div>
-      <div><h4>Asistente MASTERLOOK</h4><span>Suele responder al instante</span></div>
+      <video id="chatAvatarVideo" class="chat-avatar" src="chat-avatar-max.mp4" muted loop playsinline preload="auto"></video>
+      <div><h4>MAX</h4><span>Suele responder al instante</span></div>
     </div>
     <button class="chat-close" id="chatClose" aria-label="Cerrar chat">✕</button>
   </div>
@@ -6294,6 +6306,20 @@
   function chatToggle(){
     chatAbierto = !chatAbierto;
     document.getElementById('chatPanel').classList.toggle('open', chatAbierto);
+
+    // El video del avatar de Max arranca desde el principio cada vez que se
+    // abre el chat (no solo la primera vez) -- se pausa al cerrar para no
+    // gastar CPU/batería de más con el panel oculto.
+    const avatarVideo = document.getElementById('chatAvatarVideo');
+    if(avatarVideo){
+      if(chatAbierto){
+        avatarVideo.currentTime = 0;
+        avatarVideo.play().catch(()=>{});
+      } else {
+        avatarVideo.pause();
+      }
+    }
+
     if(chatAbierto && !chatIniciado){
       chatIniciado = true;
       chatSaludoInicial();
@@ -6367,14 +6393,14 @@
     const ultima = chatUltimaReservaDe(user);
 
     if(ultima && ultima.decision === 'pendiente'){
-      chatAgregar('bot', `Hola${nombre ? ' '+nombre : ''}, vi que tienes una hora pendiente por confirmar: ${ultima.svc} el ${ultima.slot}. Normalmente la confirmamos en minutos. ¿Te ayudo con algo mientras tanto?`);
+      chatAgregar('bot', `¡Hola${nombre ? ' '+nombre : ''}! 👋🏻 Soy Max. Vi que tienes una hora pendiente por confirmar: ${ultima.svc} el ${ultima.slot} — normalmente se confirma en minutos. ¿Te ayudo con algo mientras tanto?`);
       chatChips([
         { label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp(`Hola, quiero confirmar el estado de mi reserva (${ultima.svc}, ${ultima.slot}).`) },
         { label:'Ver mi cuenta', accion: ()=>{ chatToggle(); onAccountChipClick(); } },
         { label:'Otra pregunta', intent:'menu' }
       ]);
     } else {
-      chatAgregar('bot', `Hola${nombre ? ' '+nombre : ''} 👋 Soy el asistente de MASTERLOOK. ¿Te ayudo a reservar tu hora o tienes alguna duda?`);
+      chatAgregar('bot', `¡Hola${nombre ? ' '+nombre : ''}! 👋🏻 Soy Max. ¿Te ayudo a reservar tu hora, o tienes alguna consulta? 😊`);
       chatMenuPrincipal();
     }
   }
@@ -6394,6 +6420,42 @@
   // reglas) para que pueda seguir el hilo de una reserva de varios mensajes.
   let chatHistorialIA = [];
 
+  // Identifica ESTA conversación puntual para los límites por conversación
+  // del servidor (mensajes/costo/cooldown -- aprobado 2026-09-24). Vive en
+  // sessionStorage a propósito: se renueva por pestaña/sesión nueva, nunca
+  // por mensaje. Es SOLO una clave de límite de uso, no de seguridad --
+  // como cualquier dato que manda el navegador, el servidor NUNCA confía
+  // en ella sola (siempre corre junto a los límites de IP y de usuario).
+  function chatConversationId(){
+    try{
+      let id = sessionStorage.getItem('chatConversationId');
+      if(!id){
+        id = (crypto.randomUUID ? crypto.randomUUID() : 'c-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+        sessionStorage.setItem('chatConversationId', id);
+      }
+      return id;
+    }catch(e){
+      // sessionStorage puede fallar (modo privado estricto, cuota) -- una
+      // conversación sin id estable sigue protegida por IP/usuario igual.
+      return 'c-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+    }
+  }
+
+  /** Al toparse un límite del servidor (cooldown, conversación, IP, usuario,
+   *  presupuesto diario, o el asistente pausado), nunca se deja al
+   *  visitante sin salida: se muestra el motivo real que ya armó el
+   *  servidor (amigable, sin tecnicismos) y dos formas de seguir SIN volver
+   *  a llamar a la IA -- reservar por el calendario normal, o escribir por
+   *  WhatsApp. Cualquier otro error (de red, Anthropic caído) usa el mismo
+   *  camino: nunca deja al visitante sin ninguna opción. */
+  function chatMostrarLimiteAlcanzado(mensaje){
+    chatAgregar('bot', mensaje || 'No pude responder eso en este momento.');
+    chatChips([
+      { label:'Reservar en el calendario', accion: ()=>{ chatToggle(); abrirReservas(); } },
+      { label:'Escríbenos por WhatsApp', accion: ()=> chatAbrirWhatsApp('Hola, quiero reservar una hora.') },
+    ]);
+  }
+
   async function chatPreguntarIA(textoOriginal){
     const espera = CHAT_IA_ESPERA_MS - (Date.now() - chatIaUltimoEnvio);
     if(espera > 0){
@@ -6406,7 +6468,7 @@
     pensando.classList.add('pensando');
     try{
       const llamar = functions.httpsCallable('preguntarIACliente');
-      const { data } = await llamar({ pregunta: textoOriginal, historial: chatHistorialIA });
+      const { data } = await llamar({ pregunta: textoOriginal, historial: chatHistorialIA, conversationId: chatConversationId() });
       pensando.remove();
       chatAgregar('bot', data.respuesta);
 
@@ -6416,16 +6478,92 @@
       if(data.propuesta) chatMostrarPropuesta(data.propuesta);
     }catch(e){
       pensando.remove();
-      chatAgregar('bot', 'No pude responder eso en este momento. Te dejo el menú de todas formas:');
-      chatMenuPrincipal();
+      // resource-exhausted (límite de conversación/IP/usuario/cooldown/
+      // presupuesto) y unavailable (asistente pausado) ya traen un mensaje
+      // real y amigable armado en el servidor -- se muestra tal cual, con
+      // las dos salidas de arriba. Cualquier otro error usa un mensaje
+      // genérico, pero con las MISMAS dos salidas (nunca deja al
+      // visitante sin poder seguir).
+      const mensaje = (e && e.message) ? e.message : 'No pude responder eso en este momento.';
+      chatMostrarLimiteAlcanzado(mensaje);
     }
   }
 
-  /** Muestra un botón para continuar la reserva que la IA preparó -- el cliente la confirma él mismo en el flujo normal. */
+  /** Muestra el resumen completo (servicio, profesional, fecha/hora, precio,
+   *  anticipo y los datos de contacto que la IA ya juntó) para que el
+   *  visitante confirme antes de pagar -- nunca se paga ni se reserva sin
+   *  este paso. "Prefiero elegir en el calendario" queda como respaldo, por
+   *  si el visitante prefiere revisarlo en el flujo normal del sitio. */
   function chatMostrarPropuesta(propuesta){
+    const precio = Number(propuesta.precioClp || 0).toLocaleString('es-CL');
+    const anticipo = Number(propuesta.anticipoClp || 0).toLocaleString('es-CL');
+    const resumen = 'Resumen de tu reserva:\n\n' +
+      `Servicio: ${propuesta.servicioNombre}\n` +
+      `Profesional: ${propuesta.barberoNombre || '—'}\n` +
+      `Fecha: ${fmtFechaLarga(propuesta.fecha)}\n` +
+      `Hora: ${propuesta.horaInicio}\n` +
+      `Precio: $${precio}\n` +
+      `Anticipo a pagar ahora: $${anticipo}\n\n` +
+      `A nombre de: ${propuesta.nombreCompleto}\n` +
+      `Celular: ${propuesta.telefono}\n` +
+      `Correo: ${propuesta.correo}\n\n` +
+      '¿Están bien todos los datos para continuar al pago del anticipo con Webpay?';
+    chatAgregar('bot', resumen);
     chatChips([
-      { label:`✅ Continuar: ${propuesta.servicioNombre} — ${propuesta.horaInicio}`, accion: ()=> chatIniciarReservaDesdeIA(propuesta) }
+      { label:'✅ Confirmar y pagar', accion: ()=> chatConfirmarYPagarIA(propuesta) },
+      { label:'Prefiero elegir en el calendario', accion: ()=> chatIniciarReservaDesdeIA(propuesta) },
     ]);
+  }
+
+  /** Al confirmar el resumen: arma EXACTAMENTE el mismo payload que ya arma
+   *  el flujo manual del paso 3 (ver el listener de #confirmBtn más abajo)
+   *  y llama a la MISMA Cloud Function -- una sola llamada a
+   *  webpayCrearTransaccion crea el hold temporal (10 min) y la transacción
+   *  de Transbank juntas. Nunca se crea la reserva ni se llama a Webpay
+   *  antes de este clic explícito del visitante. El servidor vuelve a
+   *  comprobar la disponibilidad real antes de bloquear la hora -- si ya no
+   *  está libre, esta llamada falla con un error claro, nunca "reserva" algo
+   *  que ya no existe. */
+  let chatPagoIaEnCurso = false;
+  async function chatConfirmarYPagarIA(propuesta){
+    if(chatPagoIaEnCurso) return;
+    chatPagoIaEnCurso = true;
+    document.getElementById('chatChips').innerHTML = '';
+    const msg = chatAgregar('bot', 'Redirigiendo a Webpay…');
+
+    const [hh, mm] = String(propuesta.horaInicio || '0:0').split(':').map(Number);
+    const startMin = (hh || 0) * 60 + (mm || 0);
+
+    try{
+      const pagoHeaders = { 'Content-Type': 'text/plain' };
+      if(auth.currentUser){
+        try{ pagoHeaders['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken(); }catch(e){}
+      }
+      const pagoResp = await fetch(FUNCTIONS_BASE + '/webpayCrearTransaccion', {
+        method: 'POST',
+        headers: pagoHeaders,
+        body: JSON.stringify({
+          tipo: 'RESERVATION_DEPOSIT',
+          fecha: propuesta.fecha,
+          client: propuesta.nombreCompleto, phone: propuesta.telefono, email: propuesta.correo,
+          comentarioCliente: 'Reserva realizada por el chat con IA.',
+          citas: [{
+            serviceId: propuesta.servicioId, servicio: propuesta.servicioNombre, price: propuesta.precioClp,
+            barberName: propuesta.barberoNombre, startMin, minutes: propuesta.duracionMin, label: '',
+          }],
+          datos: { productos: [] },
+          buyerName: propuesta.nombreCompleto, buyerEmail: propuesta.correo, buyerPhone: propuesta.telefono,
+        }),
+      });
+      const pago = await pagoResp.json();
+      if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo reservar ni iniciar el pago. Intenta de nuevo.');
+      redirectToWebpay(pago.url, pago.token);
+    }catch(e){
+      chatPagoIaEnCurso = false;
+      msg.textContent = `No pude completar la reserva: ${e.message}`;
+      chatAgregar('bot', '¿Buscamos otro horario?');
+      chatChips([{ label:'Ver otra hora', intent: propuesta.servicioNombre } ]);
+    }
   }
 
   /** Pre-llena el servicio (y barbero, si la IA lo sugirió) y deja al cliente justo en la fecha sugerida, listo para elegir la hora. */
@@ -6464,70 +6602,87 @@
     }, 350);
   }
 
+  // Respuestas rápidas sin costo (no llaman a Max) para las consultas más
+  // simples y repetidas -- precios, horario, dirección, etc. Cada una vive en
+  // su propia función para no duplicar el texto entre el intent exacto de un
+  // chip y la detección de texto libre de más abajo.
+  function chatRespPrecios(){
+    chatAgregar('bot', `Estos son algunos de nuestros precios:\n\n${chatListaPrecios()}\n\n¿Quieres reservar alguno?`);
+    chatChips([
+      { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+      { label:'Ver todos los servicios', accion: ()=>{ chatToggle(); document.getElementById('servicios')?.scrollIntoView({behavior:'smooth'}); } },
+      { label:'Otra pregunta', intent:'menu' }
+    ]);
+  }
+  function chatRespHorario(){
+    chatAgregar('bot', `Atendemos Lunes a Viernes de ${horarioNegocio.horarioSemana}, y Sábado de ${horarioNegocio.horarioSabado}. Domingo: ${horarioNegocio.horarioDomingo}.`);
+    chatChips([
+      { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
+      { label:'Otra pregunta', intent:'menu' }
+    ]);
+  }
+  function chatRespMiReserva(){
+    const user = currentUser();
+    const ultima = chatUltimaReservaDe(user);
+    if(!ultima){
+      chatAgregar('bot','No encuentro reservas a tu nombre todavía. ¿Quieres agendar una ahora?');
+      chatChips([{ label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+    } else if(ultima.decision === 'aprobada'){
+      chatAgregar('bot', `¡Tu hora ya está confirmada! ${ultima.svc} el ${ultima.slot}. Te esperamos.`);
+      chatChips([{ label:'Gracias', intent:'gracias' }]);
+    } else if(ultima.decision === 'rechazada'){
+      chatAgregar('bot', `Esa hora no se pudo tomar${ultima.reason ? ' (' + ultima.reason + ')' : ''}. ¿Buscamos otro horario?`);
+      chatChips([{ label:'Reservar otra hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+    } else {
+      chatAgregar('bot', `Tu hora está pendiente de confirmación: ${ultima.svc} el ${ultima.slot}. Te avisamos apenas quede lista.`);
+      chatChips([{ label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp('Hola, quiero saber el estado de mi reserva.') }]);
+    }
+  }
+  function chatRespReservar(){
+    chatAgregar('bot', 'Con gusto. Te dejo abierta la reserva para que elijas servicio, barbero y horario — toma menos de un minuto.');
+    chatChips([{ label:'Ir a reservar →', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
+  }
+  function chatRespDireccion(){
+    chatAgregar('bot', `Estamos en ${horarioNegocio.direccion}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
+    chatChips([{ label:'Otra pregunta', intent:'menu' }]);
+  }
+  function chatRespGracias(){
+    chatAgregar('bot', '¡De nada! Cualquier cosa, aquí estoy. 🙌');
+    chatChips([{ label:'Otra pregunta', intent:'menu' }]);
+  }
+  function chatRespHola(){
+    chatAgregar('bot','¡Hola! ¿Te ayudo a reservar o tienes alguna duda?');
+    chatMenuPrincipal();
+  }
+
+  // Categorías de texto libre que disparan una respuesta rápida. IMPORTANTE:
+  // solo se usan cuando el mensaje coincide con UNA sola categoría -- si
+  // coincide con más de una a la vez (p.ej. "Hola, quiero reservar" coincide
+  // con el saludo Y con "reservar"), es un pedido real y compuesto, y debe
+  // llegar completo a Max: antes, el primer `if` que coincidía se quedaba con
+  // el mensaje entero y Max nunca lo recibía (bug reportado 2026-09-24).
+  const CHAT_CATEGORIAS_RAPIDAS = [
+    { id:'precios', test: /precio|cu[aá]nto (cuesta|vale)|valor|tarifa/, fn: chatRespPrecios },
+    { id:'horario', test: /horario|abren|cierran|atienden|abierto|cerrado/, fn: chatRespHorario },
+    { id:'mireserva', test: /mi reserva|estado de mi|confirmad|pendiente/, fn: chatRespMiReserva },
+    { id:'reservar', test: /reservar|agendar|sacar hora|una cita/, fn: chatRespReservar },
+    { id:'direccion', test: /direcci[oó]n|ubicaci[oó]n|d[oó]nde (est[aá]n|queda)/, fn: chatRespDireccion },
+    { id:'gracias', test: /gracias|listo|perfecto|chao|adios|adiós/, fn: chatRespGracias },
+    { id:'hola', test: /hola|buenas|buenos d[ií]as|buenas tardes/, fn: chatRespHola },
+  ];
+
   function chatResponder(textoOriginal){
     const t = textoOriginal.toLowerCase();
 
     if(t === 'menu'){ chatAgregar('bot','¿En qué más te ayudo?'); chatMenuPrincipal(); return; }
+    // Intents exactos de los chips (siempre gratis, nunca son un mensaje compuesto).
+    if(t === 'precios'){ chatRespPrecios(); return; }
+    if(t === 'horario'){ chatRespHorario(); return; }
+    if(t === 'gracias'){ chatRespGracias(); return; }
 
-    if(t === 'precios' || /precio|cu[aá]nto (cuesta|vale)|valor|tarifa/.test(t)){
-      chatAgregar('bot', `Estos son algunos de nuestros precios:\n\n${chatListaPrecios()}\n\n¿Quieres reservar alguno?`);
-      chatChips([
-        { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
-        { label:'Ver todos los servicios', accion: ()=>{ chatToggle(); document.getElementById('servicios')?.scrollIntoView({behavior:'smooth'}); } },
-        { label:'Otra pregunta', intent:'menu' }
-      ]);
-      return;
-    }
-
-    if(t === 'horario' || /horario|abren|cierran|atienden|abierto|cerrado/.test(t)){
-      chatAgregar('bot', `Atendemos Lunes a Viernes de ${horarioNegocio.horarioSemana}, y Sábado de ${horarioNegocio.horarioSabado}. Domingo: ${horarioNegocio.horarioDomingo}.`);
-      chatChips([
-        { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
-        { label:'Otra pregunta', intent:'menu' }
-      ]);
-      return;
-    }
-
-    if(/mi reserva|estado de mi|confirmad|pendiente/.test(t)){
-      const user = currentUser();
-      const ultima = chatUltimaReservaDe(user);
-      if(!ultima){
-        chatAgregar('bot','No encuentro reservas a tu nombre todavía. ¿Quieres agendar una ahora?');
-        chatChips([{ label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
-      } else if(ultima.decision === 'aprobada'){
-        chatAgregar('bot', `¡Tu hora ya está confirmada! ${ultima.svc} el ${ultima.slot}. Te esperamos.`);
-        chatChips([{ label:'Gracias', intent:'gracias' }]);
-      } else if(ultima.decision === 'rechazada'){
-        chatAgregar('bot', `Esa hora no se pudo tomar${ultima.reason ? ' (' + ultima.reason + ')' : ''}. ¿Buscamos otro horario?`);
-        chatChips([{ label:'Reservar otra hora', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
-      } else {
-        chatAgregar('bot', `Tu hora está pendiente de confirmación: ${ultima.svc} el ${ultima.slot}. Te avisamos apenas quede lista.`);
-        chatChips([{ label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp('Hola, quiero saber el estado de mi reserva.') }]);
-      }
-      return;
-    }
-
-    if(/reservar|agendar|sacar hora|una cita/.test(t)){
-      chatAgregar('bot', 'Con gusto. Te dejo abierta la reserva para que elijas servicio, barbero y horario — toma menos de un minuto.');
-      chatChips([{ label:'Ir a reservar →', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
-      return;
-    }
-
-    if(/direcci[oó]n|ubicaci[oó]n|d[oó]nde (est[aá]n|queda)/.test(t)){
-      chatAgregar('bot', `Estamos en ${horarioNegocio.direccion}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
-      chatChips([{ label:'Otra pregunta', intent:'menu' }]);
-      return;
-    }
-
-    if(t === 'gracias' || /gracias|listo|perfecto|chao|adios|adiós/.test(t)){
-      chatAgregar('bot', '¡De nada! Cualquier cosa, aquí estoy. 🙌');
-      chatChips([{ label:'Otra pregunta', intent:'menu' }]);
-      return;
-    }
-
-    if(/hola|buenas|buenos d[ií]as|buenas tardes/.test(t)){
-      chatAgregar('bot','¡Hola! ¿Te ayudo a reservar o tienes alguna duda?');
-      chatMenuPrincipal();
+    const coincidencias = CHAT_CATEGORIAS_RAPIDAS.filter((c) => c.test.test(t));
+    if(coincidencias.length === 1){
+      coincidencias[0].fn();
       return;
     }
 
