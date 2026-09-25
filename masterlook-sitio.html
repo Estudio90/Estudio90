@@ -6386,23 +6386,33 @@
     ]);
   }
 
-  /** Al abrir el chat, si el cliente tiene una hora pendiente se la recordamos primero — así lo animamos a confirmarla. */
+  /** Al abrir el chat, si el cliente tiene una hora pendiente se la recordamos primero — así lo animamos a confirmarla.
+   *  Este saludo se muestra SIEMPRE por regla fija (no le cuesta nada a Max) -- pero si no se registra en
+   *  chatHistorialIA, Max nunca se entera de que ya saludó, y si el primer mensaje real del visitante también
+   *  dice "hola" (ej. "hola, quiero reservar"), Max saluda una segunda vez por su cuenta. Se registra acá como
+   *  el primer turno del historial -- el backend (preguntarIACliente en functions/index.js) lo extrae de ahí y
+   *  se lo cuenta a la IA por separado como "SALUDO YA MOSTRADO" (nunca se lo manda a Anthropic como un mensaje
+   *  real: la API exige que la conversación empiece en el turno del usuario, no del asistente). */
   function chatSaludoInicial(){
     const user = currentUser();
     const nombre = user ? String(user.name || '').split(' ')[0] : '';
     const ultima = chatUltimaReservaDe(user);
 
+    let saludo;
     if(ultima && ultima.decision === 'pendiente'){
-      chatAgregar('bot', `¡Hola${nombre ? ' '+nombre : ''}! 👋🏻 Soy Max. Vi que tienes una hora pendiente por confirmar: ${ultima.svc} el ${ultima.slot} — normalmente se confirma en minutos. ¿Te ayudo con algo mientras tanto?`);
+      saludo = `¡Hola${nombre ? ' '+nombre : ''}! 👋🏻 Soy Max. Vi que tienes una hora pendiente por confirmar: ${ultima.svc} el ${ultima.slot} — normalmente se confirma en minutos. ¿Te ayudo con algo mientras tanto?`;
+      chatAgregar('bot', saludo);
       chatChips([
         { label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp(`Hola, quiero confirmar el estado de mi reserva (${ultima.svc}, ${ultima.slot}).`) },
         { label:'Ver mi cuenta', accion: ()=>{ chatToggle(); onAccountChipClick(); } },
         { label:'Otra pregunta', intent:'menu' }
       ]);
     } else {
-      chatAgregar('bot', `¡Hola${nombre ? ' '+nombre : ''}! 👋🏻 Soy Max. ¿Te ayudo a reservar tu hora, o tienes alguna consulta? 😊`);
+      saludo = `¡Hola${nombre ? ' '+nombre : ''}! 👋🏻 Soy Max. ¿Te ayudo a reservar tu hora, o tienes alguna consulta? 😊`;
+      chatAgregar('bot', saludo);
       chatMenuPrincipal();
     }
+    if(!chatHistorialIA.length) chatHistorialIA.push({ rol:'bot', texto: saludo });
   }
 
   /**
