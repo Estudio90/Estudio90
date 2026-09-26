@@ -896,13 +896,77 @@
     width:52px; height:52px; border-radius:50%; background:var(--oro); color:#12100A;
     display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-md); cursor:pointer; border:none;
   }
+  /* .chat-scrim: telón de fondo detrás del panel flotante, visible SOLO
+     mientras el chat está abierto (misma idea que .modal-overlay, que ya usa
+     este archivo para el modal de cuenta -- reutiliza ese mismo lenguaje
+     visual, no inventa uno nuevo). .chat-panel es una tarjeta flotante de
+     340px (no una vista de pantalla completa como #vistaReservas/#vistaTienda,
+     que usan .tienda-vista{inset:0}) -- por diseño deja ver la página real
+     alrededor. Sin este telón, CUALQUIER movimiento residual de la página
+     detrás (el paneo nativo de iOS al enfocar el campo, que es un
+     reacomodo del "visor" visible y no un scroll que se pueda bloquear con
+     overflow/position:fixed, o el rebote elástico del dedo) se nota
+     exactamente en esos márgenes -- que es la queja concreta del usuario
+     ("se siguen viendo partes de la página principal detrás del chat"). */
+  .chat-scrim{
+    position:fixed; inset:0; z-index:98; display:none;
+    background:rgba(20,19,17,0.5); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+  }
+  .chat-scrim.open{display:block;}
   .chat-panel{
     position:fixed; right:18px; bottom:154px; z-index:99;
     width:340px; max-width:calc(100vw - 32px); height:460px; max-height:70vh;
     background:var(--panel); border:1px solid var(--border); border-radius:16px;
     box-shadow:var(--shadow-md); display:none; flex-direction:column; overflow:hidden;
+    transition:height .18s ease, max-height .18s ease;
   }
   .chat-panel.open{display:flex;}
+  /* .chat-panel--teclado: estado activo SOLO mientras el campo de texto del
+     chat tiene el foco (lo agrega/quita directamente el focus/blur de
+     #chatInput -- ver chatEntrarModoTeclado/chatSalirModoTeclado en el JS).
+     En reposo (sin foco) el panel usa los valores de arriba sin cambios, así
+     que sin JS o con navegadores sin visualViewport el chat se ve exactamente
+     igual que siempre.
+
+     POR QUÉ `top` y no `bottom` (causa estructural del bug de la ronda
+     anterior): iOS Safari, al mostrar el teclado, no necesariamente deja
+     `window.innerHeight` fijo -- calcular la posición desde
+     `innerHeight - visualViewport.height` puede arrastrar un error si esa
+     suposición no se cumple en el dispositivo real (fue exactamente lo que
+     pasó: el panel terminaba con su borde superior fuera del área visible,
+     "perdiendo" el encabezado). En cambio `visualViewport.offsetTop` es
+     DIRECTAMENTE cuánto se corrió hacia abajo el borde superior del área
+     visible respecto del viewport de layout -- sea por el teclado, por el
+     paneo nativo de "llevar el campo enfocado a la vista", o por ambos a la
+     vez. Anclar el panel con `top: offsetTop + margen` en vez de intentar
+     deducir un `bottom` lo hace correcto sin importar SI o CUÁNTO paneó la
+     página, sin depender de que `innerHeight` se mantenga estable.
+
+     SIN transition acá a propósito (ver chatPosicionarPorTeclado en el JS):
+     esta clase recién se agrega cuando YA hay una medición real del
+     visualViewport (nunca con el primer valor leído en el evento 'focus',
+     que en iOS llega antes de que el teclado empiece a animarse y todavía
+     trae medidas "sin teclado") -- así que el primer salto a este estado ya
+     cae directo en el lugar correcto. Mientras el teclado sigue animándose
+     o cambia la barra de sugerencias, cada evento resize/scroll trae una
+     medida nueva y el panel la sigue 1:1 sin animar -- si se animara con
+     easing, el panel iría "persiguiendo" con retraso un valor que ya se
+     mueve en vivo, y el resultado se ve MÁS brusco, no menos. La transición
+     de height/max-height del bloque de arriba SÍ sigue aplicando al volver
+     al estado de reposo (le gana la cascada a esta regla en cuanto se quita
+     la clase), así que cerrar el teclado sí se ve suave. */
+  .chat-panel.chat-panel--teclado{
+    top: var(--chat-kb-top, 10px);
+    bottom: auto;
+    height: var(--chat-kb-height, 460px);
+    max-height: var(--chat-kb-height, 460px);
+    transition:none;
+  }
+  /* Con el teclado abierto las sugerencias rápidas compiten por el mismo
+     espacio que el historial de mensajes -- se ocultan (no se destruyen,
+     solo display:none) para que la conversación tenga todo el espacio
+     disponible; reaparecen solas al cerrar el teclado. */
+  .chat-panel.chat-panel--teclado .chat-chips{display:none;}
   .chat-head{position:relative; display:flex; align-items:center; padding:16px 52px 16px 18px; background:var(--negro); flex-shrink:0;}
   .chat-head-info{display:flex; align-items:center; gap:14px; min-width:0;}
   .chat-avatar{width:76px; height:76px; border-radius:50%; background:var(--oro); object-fit:cover; flex-shrink:0;}
@@ -915,7 +979,13 @@
     color:#1c1c1c; cursor:pointer; padding:0; font-size:17px; line-height:1;
     box-shadow:0 1px 3px rgba(20,20,25,.08);
   }
-  .chat-body{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--panel-2);}
+  /* overscroll-behavior:contain -- al llegar al tope/fondo del historial y
+     seguir arrastrando (rebote elástico de iOS), sin esto el gesto se
+     "encadena" hacia la página de fondo y la desplaza. Es un mecanismo
+     distinto del paneo del teclado (ese lo sigue --chat-kb-top) y distinto
+     del bloqueo general de scroll de la página (chatBloquearScrollPagina) --
+     corta el encadenamiento en la fuente, en el propio contenedor. */
+  .chat-body{flex:1; overflow-y:auto; overscroll-behavior:contain; padding:14px; display:flex; flex-direction:column; gap:10px; background:var(--panel-2);}
   .chat-msg{max-width:82%; padding:9px 12px; border-radius:14px; font-size:13.5px; line-height:1.45; white-space:pre-line;}
   .chat-msg.bot{align-self:flex-start; background:var(--panel); border:1px solid var(--border); border-bottom-left-radius:4px; color:var(--text-hi);}
   .chat-msg.bot.pensando{color:var(--gris-tenue); font-style:italic;}
@@ -924,7 +994,16 @@
   .chat-chip{background:var(--panel); border:1px solid var(--linea-fuerte); color:var(--text-hi); font-size:12px; padding:6px 11px; border-radius:99px; cursor:pointer; font-family:inherit;}
   .chat-chip:hover{border-color:var(--oro);}
   .chat-input-row{display:flex; gap:8px; padding:10px; border-top:1px solid var(--border); flex-shrink:0;}
-  .chat-input-row input{flex:1; border:1px solid var(--border); border-radius:99px; padding:9px 14px; font-family:inherit; font-size:13px; background:var(--bg); color:var(--text-hi); min-width:0;}
+  /* font-size:16px a propósito (no cosmético) -- por debajo de 16px, Safari
+     en iOS hace zoom automático de toda la página al enfocar el campo. Es
+     la única forma real de evitarlo sin desactivar el zoom de accesibilidad
+     del usuario (nunca tocar user-scalable/maximum-scale del viewport).
+     !important: hay una regla genérica input[type=text]... dentro de
+     @media(max-width:480px) más abajo en este archivo (para otros campos,
+     como el flujo de reserva) que, con la misma especificidad CSS, gana por
+     orden de aparición en pantallas de celular -- justo donde este fix
+     importa -- y baja el tamaño a ~13.9px si no se fuerza aquí. */
+  .chat-input-row input{flex:1; border:1px solid var(--border); border-radius:99px; padding:9px 14px; font-family:inherit; font-size:16px !important; background:var(--bg); color:var(--text-hi); min-width:0;}
   .chat-input-row button{width:36px; height:36px; border-radius:50%; background:var(--oro); border:none; color:#12100A; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   body{padding-bottom:88px;}
   @media (min-width:900px){
@@ -940,6 +1019,18 @@
     .chat-head span{font-size:12px;}
     .chat-close{top:8px; right:8px; width:40px; height:40px; font-size:18px;}
   }
+  /* Mientras el campo de texto del chat tiene el foco (teclado en pantalla),
+     el bottom-nav flotante y la burbuja de chat quedan sin sentido (tapados
+     por el teclado / compitiendo por el mismo espacio) y, si la página llegó
+     a paneear, pueden quedar mostrando contenido de fondo detrás del chat --
+     se ocultan solo en este estado puntual (chatEntrarModoTeclado agrega
+     'chat-kb-open' a <body>); en reposo quedan exactamente igual que
+     siempre. El bloqueo real de que la PÁGINA se desplace vive en JS
+     (chatBloquearScrollPagina fija <body> con position:fixed mientras el
+     chat está abierto -- ver el comentario de esa función; overflow:hidden
+     por sí solo no alcanza para bloquear el scroll/rebote táctil en iOS
+     Safari, a diferencia de Chromium). */
+  body.chat-kb-open .bottom-nav, body.chat-kb-open .chat-bubble{display:none;}
 
   /* ===== auth modal ===== */
   .modal-overlay{
@@ -4499,6 +4590,7 @@
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12c0 4.4-4 8-9 8a9.7 9.7 0 0 1-3.4-.6L3 21l1.4-4.2A7.8 7.8 0 0 1 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg>
 </button>
 
+<div class="chat-scrim" id="chatScrim"></div>
 <div class="chat-panel" id="chatPanel">
   <div class="chat-head">
     <div class="chat-head-info">
@@ -6303,9 +6395,236 @@
   let chatAbierto = false;
   let chatIniciado = false;
 
+  let chatScrollYGuardado = 0;
+
+  /** Bloquea/desbloquea el scroll de la PÁGINA mientras el panel del chat
+   *  está abierto. Se activa apenas se ABRE el chat (no recién al enfocar el
+   *  campo), para no depender de ganarle una carrera al comportamiento
+   *  nativo de iOS de "llevar el campo enfocado a la vista".
+   *
+   *  NO alcanza con `document.body.style.overflow='hidden'` (lo que usan los
+   *  otros modales de este archivo, tipo #vistaReservas/#vistaTienda) --
+   *  ellos son vistas de pantalla completa (`.tienda-vista{inset:0}`), así
+   *  que aunque overflow:hidden sea débil en iOS Safari para bloquear el
+   *  scroll/rebote iniciado por el dedo (comportamiento documentado de
+   *  WebKit, a diferencia de Chromium que sí lo respeta), da igual: no hay
+   *  ningún borde por donde se filtre la página real. .chat-panel es una
+   *  tarjeta flotante de 340px con espacio visible alrededor A PROPÓSITO
+   *  (así se ve Max, y no se debe cambiar) -- en ese espacio SÍ se nota
+   *  cualquier rebote/scroll que overflow:hidden no logre bloquear en un
+   *  iPhone real. Técnica que sí funciona en iOS: fijar <body> con
+   *  position:fixed guardando la posición de scroll actual, y restaurarla
+   *  tal cual al soltar (ver también .chat-scrim en el CSS, que además tapa
+   *  visualmente cualquier resto de paneo nativo que ni esto evita, como el
+   *  que corre visualViewport.offsetTop al enfocar el campo). */
+  function chatBloquearScrollPagina(){
+    chatScrollYGuardado = window.scrollY || window.pageYOffset || 0;
+    const b = document.body.style;
+    b.position = 'fixed';
+    b.top = (-chatScrollYGuardado) + 'px';
+    b.left = '0';
+    b.right = '0';
+    b.width = '100%';
+  }
+  function chatDesbloquearScrollPagina(){
+    const b = document.body.style;
+    b.position = '';
+    b.top = '';
+    b.left = '';
+    b.right = '';
+    b.width = '';
+    window.scrollTo(0, chatScrollYGuardado);
+  }
+
+  let chatModoTeclado = false;
+  // true una vez que, DESPUÉS de entrar en modo teclado, se vio al teclado
+  // realmente ocupando espacio -- distingue "todavía no terminó de abrirse"
+  // (donde vv.height puede seguir cerca de la altura completa por un
+  // instante, ver más abajo) de "ya se cerró sin pasar por 'blur'" -- sin
+  // esta distinción, el primer evento resize/scroll que llegara ANTES de
+  // que el teclado terminara de animarse podría interpretarse como "el
+  // teclado se cerró" y sacar al chat del modo teclado antes de haber
+  // entrado realmente.
+  let chatTecladoVistoAbierto = false;
+  // Altura de visualViewport SIN teclado, capturada en el momento del foco
+  // (antes de que el teclado empiece a animarse -- ahí SÍ es un valor
+  // confiable, a diferencia de leer el estado final de forma sincrónica).
+  // Sirve como referencia propia para decidir "¿el teclado está realmente
+  // ocupando espacio?" -- ver por qué no se usa window.innerHeight para esto
+  // en el comentario de chatPosicionarPorTeclado más abajo.
+  let chatAlturaSinTeclado = null;
+
+  /** Mide y aplica la posición/alto del panel mientras el campo de texto
+   *  tiene el foco, usando la Visual Viewport API (Safari 13+/Chrome móvil).
+   *  Se llama de nuevo en cada evento resize/scroll de visualViewport
+   *  mientras `chatModoTeclado` sigue activo, así que el panel se re-ajusta
+   *  en vivo si el teclado cambia de alto (p.ej. aparece/desaparece la barra
+   *  de sugerencias de autocompletar).
+   *
+   *  Ancla por `top` (no por `bottom`): `visualViewport.offsetTop` es
+   *  directamente cuánto se corrió hacia abajo el borde superior del área
+   *  visible respecto del viewport de layout -- sea por el teclado, por el
+   *  paneo nativo de iOS al enfocar un campo, o por ambos. Calcular en cambio
+   *  un `bottom` a partir de `innerHeight - visualViewport.height` depende de
+   *  que `innerHeight` se mantenga estable al abrirse el teclado, algo que no
+   *  está garantizado en todos los iOS/Safari -- y fue la causa real de que
+   *  el panel terminara con el encabezado fuera del área visible. Con `top`
+   *  el panel queda correctamente ubicado sin importar si la página paneó o
+   *  cuánto, y sin depender de esa suposición.
+   *
+   *  Por la MISMA razón, para decidir "¿el teclado está realmente ocupando
+   *  espacio?" tampoco se compara contra `window.innerHeight` -- se compara
+   *  `visualViewport.height` contra `chatAlturaSinTeclado` (la propia altura
+   *  de visualViewport capturada en el momento del foco, antes de que el
+   *  teclado empiece a animarse). Si `innerHeight` también se achica al
+   *  abrirse el teclado en vez de quedarse fijo (posible en iOS/Safari según
+   *  la versión y configuración), comparar contra él nunca detecta que el
+   *  teclado está abierto -- el chat se queda entero en su posición de
+   *  reposo mientras el teclado sube por su cuenta debajo, dejando un hueco
+   *  vacío entre el campo de texto y el teclado (justo el síntoma reportado:
+   *  "queda demasiado espacio vacío... tengo que desplazar la pantalla").
+   *  Comparar contra la propia medición anterior de visualViewport es
+   *  correcto sin importar cómo se comporte `innerHeight`.
+   *
+   *  IMPORTANTE: la clase `.chat-panel--teclado` (la que cambia el panel de
+   *  bottom-anclado a top-anclado) recién se agrega ACÁ, nunca en el momento
+   *  del foco -- en iOS Safari el evento 'focus' llega ANTES de que el
+   *  teclado empiece a animarse, así que visualViewport todavía trae
+   *  medidas "sin teclado" en ese instante; aplicarlas de una haría que el
+   *  panel se estire de más y después se corrija, un salto visible en cada
+   *  apertura. Esta función es la ÚNICA que aplica la clase, y solo corre
+   *  cuando ya hay una medición real (evento resize/scroll de
+   *  visualViewport) -- así el primer cambio ya cae directo en el lugar
+   *  correcto. */
+  function chatPosicionarPorTeclado(){
+    if(!chatModoTeclado) return;
+    const panel = document.getElementById('chatPanel');
+    const vv = window.visualViewport;
+    if(!panel || !vv || chatAlturaSinTeclado == null) return;
+    const ocupado = chatAlturaSinTeclado - vv.height;
+    if(ocupado > 100){
+      // El teclado (u otro elemento que achique visualViewport) está
+      // realmente ocupando espacio -- a partir de acá, si vuelve a bajar,
+      // se interpreta como "se cerró sin pasar por blur" (ver abajo).
+      chatTecladoVistoAbierto = true;
+    } else if(chatTecladoVistoAbierto){
+      // Autocorrección: el teclado SÍ llegó a estar abierto y ahora
+      // vv.height volvió a la altura completa, pero seguimos en modo
+      // teclado -- es que 'blur' no llegó a dispararse (pasa en iPad con el
+      // botón nativo de ocultar teclado, o con el gesto de deslizar el
+      // teclado hacia abajo para cerrarlo sin sacar el foco del campo). Sin
+      // este chequeo el panel quedaría anclado arriba (y chips/bottom-nav
+      // ocultos) de forma permanente, rompiendo "recuperar su posición
+      // original al cerrar el teclado".
+      chatSalirModoTeclado();
+      return;
+    } else {
+      // Todavía no hay evidencia de que el teclado haya llegado a abrirse
+      // (p.ej. el evento resize llegó por el colapso de la barra de Safari,
+      // o por un frame intermedio de la propia animación de apertura, antes
+      // de que el teclado ocupe su espacio final) -- no tocar nada todavía,
+      // el panel se queda en su posición de reposo hasta el próximo evento.
+      return;
+    }
+    panel.classList.add('chat-panel--teclado');
+    document.body.classList.add('chat-kb-open');
+    // Sin margen inferior: el panel llega EXACTO hasta el borde inferior de
+    // lo visible (offsetTop + height = donde empieza el teclado/la barra de
+    // Safari) -- cualquier margen artificial acá es justo el "espacio en
+    // blanco" que no se quiere. Arriba se deja un aire chico (margenSuperior)
+    // únicamente para que el encabezado no quede pegado al borde/notch.
+    const margenSuperior = 10;
+    const topPx = Math.round(vv.offsetTop + margenSuperior);
+    const bottomVisiblePx = Math.round(vv.offsetTop + vv.height); // borde real de lo visible
+    panel.style.setProperty('--chat-kb-top', topPx + 'px');
+    const alturaDisponible = Math.max(220, bottomVisiblePx - topPx);
+    panel.style.setProperty('--chat-kb-height', alturaDisponible + 'px');
+    // Al cambiar de alto, vuelve a pegar el scroll de mensajes abajo del
+    // todo SOLO si el usuario ya estaba cerca del fondo -- si subió a
+    // releer un mensaje anterior mientras sigue escribiendo, un reajuste
+    // del teclado (p.ej. la barra de sugerencias cambiando de alto) no debe
+    // arrastrarlo de vuelta al final de golpe.
+    const body = document.getElementById('chatBody');
+    if(body && (body.scrollHeight - body.scrollTop - body.clientHeight) < 80){
+      body.scrollTop = body.scrollHeight;
+    }
+  }
+
+  let chatSettleRafId = null;
+
+  /** El teclado de iOS no aparece de un salto -- se anima durante ~250-300ms,
+   *  y visualViewport puede disparar 'resize'/'scroll' varias veces durante
+   *  esa animación (o, según el dispositivo, muy pocas veces, dejando que
+   *  chatPosicionarPorTeclado() se quede con una medición todavía intermedia
+   *  si solo reacciona a esos eventos). Este bucle de corrección, en vez de
+   *  depender exclusivamente de que esos eventos lleguen en el momento justo,
+   *  vuelve a medir y aplicar en cada frame durante una ventana corta después
+   *  de enfocar el campo -- así el panel CONVERGE a la posición/alto real del
+   *  teclado ya asentado, en vez de quedar pegado a un valor de a mitad de
+   *  camino (esa es la causa más probable del hueco en blanco reportado: el
+   *  panel se calculó una vez con el teclado todavía animándose). Se corta
+   *  solo (no sigue corriendo indefinidamente) y no hace nada mientras el
+   *  teclado sigue cerrado (chatPosicionarPorTeclado ya se encarga de eso). */
+  function chatAsentarPorTeclado(frames){
+    if(!chatModoTeclado || frames <= 0){ chatSettleRafId = null; return; }
+    chatPosicionarPorTeclado();
+    chatSettleRafId = requestAnimationFrame(()=> chatAsentarPorTeclado(frames - 1));
+  }
+
+  function chatEntrarModoTeclado(){
+    // Sin Visual Viewport API no hay forma confiable de medir el teclado --
+    // se deja el comportamiento de siempre (el panel se queda en su posición
+    // de reposo; el navegador hace lo que pueda por su cuenta) en vez de
+    // arriesgar una posición calculada a ciegas. OJO: acá NO se posiciona el
+    // panel todavía (ver chatPosicionarPorTeclado) -- eso espera a la
+    // primera medición real vía resize/scroll de visualViewport (o al bucle
+    // de asentado de abajo).
+    if(!window.visualViewport || chatModoTeclado) return;
+    chatModoTeclado = true;
+    // Se captura ACÁ, antes de que el teclado empiece a animarse -- en este
+    // instante preciso visualViewport.height todavía es un valor confiable
+    // de "sin teclado" (a diferencia de leer el estado FINAL de forma
+    // sincrónica, que sí puede venir desactualizado).
+    chatAlturaSinTeclado = window.visualViewport.height;
+    // ~60 frames (~1s a 60fps) cubre de sobra la animación real del teclado
+    // (250-300ms) más el margen de los dispositivos más lentos.
+    if(chatSettleRafId) cancelAnimationFrame(chatSettleRafId);
+    chatSettleRafId = requestAnimationFrame(()=> chatAsentarPorTeclado(60));
+  }
+  function chatSalirModoTeclado(){
+    if(!chatModoTeclado) return;
+    chatModoTeclado = false;
+    chatTecladoVistoAbierto = false;
+    chatAlturaSinTeclado = null;
+    if(chatSettleRafId){ cancelAnimationFrame(chatSettleRafId); chatSettleRafId = null; }
+    const panel = document.getElementById('chatPanel');
+    panel.classList.remove('chat-panel--teclado');
+    panel.style.removeProperty('--chat-kb-top');
+    panel.style.removeProperty('--chat-kb-height');
+    document.body.classList.remove('chat-kb-open');
+    const body = document.getElementById('chatBody');
+    if(body) body.scrollTop = body.scrollHeight;
+  }
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', chatPosicionarPorTeclado);
+    window.visualViewport.addEventListener('scroll', chatPosicionarPorTeclado);
+  }
+
   function chatToggle(){
     chatAbierto = !chatAbierto;
     document.getElementById('chatPanel').classList.toggle('open', chatAbierto);
+    document.getElementById('chatScrim').classList.toggle('open', chatAbierto);
+    if(chatAbierto){
+      chatBloquearScrollPagina();
+    } else {
+      // Cerrar el panel (botón X o burbuja) mientras el campo tenía foco no
+      // dispara un blur "natural" a tiempo en todos los navegadores -- forzar
+      // blur acá suelta el teclado de una vez.
+      const input = document.getElementById('chatInput');
+      if(input) input.blur();
+      chatSalirModoTeclado();
+      chatDesbloquearScrollPagina();
+    }
 
     // El video del avatar de Max arranca desde el principio cada vez que se
     // abre el chat (no solo la primera vez) -- se pausa al cerrar para no
@@ -6707,12 +7026,25 @@
     input.value = '';
     document.getElementById('chatChips').innerHTML = '';
     setTimeout(()=> chatResponder(texto), 500);
+    // Mantener el foco (y con él el teclado abierto) para poder escribir y
+    // enviar varios mensajes seguidos sin que el teclado se cierre entre uno
+    // y otro -- en móvil, tocar el botón "Enviar" sacaría el foco del campo
+    // por sí solo si no se hace esto (ver el mousedown con preventDefault
+    // más abajo, que evita ese robo de foco antes de que llegue a ocurrir).
+    input.focus();
   }
 
   document.getElementById('chatBubble').addEventListener('click', chatToggle);
   document.getElementById('chatClose').addEventListener('click', chatToggle);
   document.getElementById('chatSend').addEventListener('click', chatEnviarDesdeInput);
+  // preventDefault en mousedown (no en click) evita que el botón "Enviar" le
+  // robe el foco al campo de texto antes de procesar el envío -- así el
+  // teclado no parpadea/cierra al mandar varios mensajes seguidos tocando el
+  // botón (con Enter del teclado esto no pasa, el foco nunca se mueve).
+  document.getElementById('chatSend').addEventListener('mousedown', e=> e.preventDefault());
   document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key === 'Enter') chatEnviarDesdeInput(); });
+  document.getElementById('chatInput').addEventListener('focus', chatEntrarModoTeclado);
+  document.getElementById('chatInput').addEventListener('blur', chatSalirModoTeclado);
 
   const STATUS_LABEL = {
     PENDING:'Por confirmar', CONFIRMED:'Confirmada', REJECTED:'Rechazada',
