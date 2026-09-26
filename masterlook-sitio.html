@@ -8578,6 +8578,18 @@
         // auto-login de arriba (el comprobante usa su propio canal
         // buyOrder+token, cero dependencia de sesión).
         if(p && p.estado === 'confirmado'){
+          // Se guarda el token de retorno (igual que ya se hace para Mercado
+          // Pago, ver mpComprobantePend más abajo) -- así, si el cliente
+          // recarga la pantalla del comprobante DESPUÉS de que la URL ya se
+          // reescribió a #comprobante=<orden> (sin el token, que solo sirve
+          // una vez en la barra de direcciones), la recarga en ESTA MISMA
+          // pestaña puede seguir usando el canal buyOrder+token -- sin
+          // sesión, sin depender de que la cuenta tenga el correo verificado
+          // y la reserva vinculada (ver causa raíz "Falla #2"). Es
+          // sessionStorage: por pestaña, se borra al cerrarla -- nunca
+          // concede acceso por sí solo, obtenerComprobantePago revalida el
+          // token contra el hash guardado en el servidor en cada consulta.
+          try{ sessionStorage.setItem('wpComprobantePend', JSON.stringify({ ref: orden, t: token })); }catch(_){}
           const tareas = [abrirComprobante(orden, true, token)];
           if(p.tipo === 'RESERVATION_DEPOSIT') tareas.push(renderAccount());
           await Promise.all(tareas);
@@ -8609,16 +8621,22 @@
     document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">' + txt + '</div>';
   }
 
-  /** ref + token de retorno del último comprobante Mercado Pago confirmado en
-   *  ESTA pestaña (sessionStorage: por-pestaña, se borra al cerrarla). Solo
-   *  sirve para volver a pedir el comprobante tras un refresco -- NO concede
-   *  acceso: obtenerComprobantePago revalida el token contra el hash guardado
-   *  server-side y exige estado 'confirmado'. */
+  /** ref + token de retorno del último comprobante confirmado en ESTA
+   *  pestaña -- Mercado Pago (`mpComprobantePend`) o Webpay
+   *  (`wpComprobantePend`, ver manejarRetornoWebpay), cada uno en su propia
+   *  clave de sessionStorage (por-pestaña, se borra al cerrarla). Solo sirve
+   *  para volver a pedir el MISMO comprobante tras un refresco -- NO
+   *  concede acceso por sí solo: obtenerComprobantePago revalida el token
+   *  contra el hash guardado server-side y exige estado 'confirmado' en
+   *  cada consulta, igual que la primera vez. */
   function tokenComprobanteGuardado(ref){
-    try{
-      const g = JSON.parse(sessionStorage.getItem('mpComprobantePend') || 'null');
-      return (g && g.ref === ref) ? g.t : undefined;
-    }catch(e){ return undefined; }
+    for (const key of ['mpComprobantePend', 'wpComprobantePend']) {
+      try{
+        const g = JSON.parse(sessionStorage.getItem(key) || 'null');
+        if(g && g.ref === ref) return g.t;
+      }catch(e){ /* sigue con la siguiente clave */ }
+    }
+    return undefined;
   }
 
   /** Retorno de Mercado Pago. NUNCA concede acceso ni afirma "aprobado" por
