@@ -3495,7 +3495,7 @@
     </div>
     <div class="gar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="6" width="19" height="12.5" rx="2"/><path d="M2.5 10.5h19"/></svg>
-      <b>Reserva segura</b><span>Seña para confirmar tu hora</span>
+      <b>Reserva segura</b><span>Anticipo para confirmar tu hora</span>
     </div>
     <div class="gar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 3l7.5 3.2v5.6c0 4.4-3.1 8-7.5 9.2-4.4-1.2-7.5-4.8-7.5-9.2V6.2z"/><path d="M9 12l2.2 2.2L15.4 10"/></svg>
@@ -6967,10 +6967,6 @@
       chatChips([{ label:'Avísame por WhatsApp', accion: ()=> chatAbrirWhatsApp('Hola, quiero saber el estado de mi reserva.') }]);
     }
   }
-  function chatRespReservar(){
-    chatAgregar('bot', 'Con gusto. Te dejo abierta la reserva para que elijas servicio, barbero y horario — toma menos de un minuto.');
-    chatChips([{ label:'Ir a reservar →', accion: ()=>{ chatToggle(); abrirReservas(); } }]);
-  }
   function chatRespDireccion(){
     chatAgregar('bot', `Estamos en ${horarioNegocio.direccion}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
     chatChips([{ label:'Otra pregunta', intent:'menu' }]);
@@ -6986,19 +6982,63 @@
 
   // Categorías de texto libre que disparan una respuesta rápida. IMPORTANTE:
   // solo se usan cuando el mensaje coincide con UNA sola categoría -- si
-  // coincide con más de una a la vez (p.ej. "Hola, quiero reservar" coincide
-  // con el saludo Y con "reservar"), es un pedido real y compuesto, y debe
-  // llegar completo a Max: antes, el primer `if` que coincidía se quedaba con
-  // el mensaje entero y Max nunca lo recibía (bug reportado 2026-09-24).
+  // coincide con más de una a la vez (p.ej. "cuánto cuesta y a qué hora
+  // cierran" coincide con precios Y horario), es un pedido real y compuesto,
+  // y debe llegar completo a Max: antes, el primer `if` que coincidía se
+  // quedaba con el mensaje entero y Max nunca lo recibía (bug reportado
+  // 2026-09-24). El saludo ("hola"/"buenas") NO vive en esta lista -- se
+  // evalúa aparte, ver chatEsSoloSaludo más abajo (bug reportado 2026-09-26:
+  // "Hola, quiero cancelar mi hora" solo coincidía con la categoría del
+  // saludo y Max nunca llegaba a verlo).
   const CHAT_CATEGORIAS_RAPIDAS = [
     { id:'precios', test: /precio|cu[aá]nto (cuesta|vale)|valor|tarifa/, fn: chatRespPrecios },
     { id:'horario', test: /horario|abren|cierran|atienden|abierto|cerrado/, fn: chatRespHorario },
     { id:'mireserva', test: /mi reserva|estado de mi|confirmad|pendiente/, fn: chatRespMiReserva },
-    { id:'reservar', test: /reservar|agendar|sacar hora|una cita/, fn: chatRespReservar },
+    // OJO: "reservar" NO tiene respuesta rápida propia a propósito -- a
+    // diferencia de precios/horario/dirección (donde una respuesta fija ya
+    // es una respuesta completa), "quiero reservar" es un pedido de ACCIÓN:
+    // la única forma de ayudar de verdad es preguntando qué servicio/día/
+    // barbero quiere, que es exactamente lo que ya hace Max por IA más abajo
+    // (chatPreguntarIA -> puede terminar la reserva completa dentro del
+    // mismo chat, ver chatMostrarPropuesta/chatConfirmarYPagarIA). Antes
+    // había un "chatRespReservar" que solo mandaba un link a que el cliente
+    // reservara solo, sin ayudar en nada -- se sacó (2026-09-25) para que
+    // cualquier mensaje de reserva, por simple que sea, llegue a la IA.
     { id:'direccion', test: /direcci[oó]n|ubicaci[oó]n|d[oó]nde (est[aá]n|queda)/, fn: chatRespDireccion },
     { id:'gracias', test: /gracias|listo|perfecto|chao|adios|adiós/, fn: chatRespGracias },
-    { id:'hola', test: /hola|buenas|buenos d[ií]as|buenas tardes/, fn: chatRespHola },
   ];
+
+  // Saludo simple ("Hola", "Buenas tardes!", "Hola 👋") -> respuesta rápida
+  // de bienvenida, gratis. Cubre errores de tipeo comunes (letras repetidas,
+  // "ola" sin h) y variantes -- pero SOLO cuenta como saludo "simple" si,
+  // después de quitarlo junto con emojis y signos de puntuación, no queda
+  // ningún otro texto. Si queda algo más (una consulta real), esta categoría
+  // NO debe dispararse -- el mensaje sigue evaluándose normalmente más abajo
+  // y, si no calza con ninguna otra respuesta fija, llega completo a Max.
+  // Dos regex (una sin 'g' para .test(), otra con 'g' para .replace() de
+  // TODAS las repeticiones) para no arrastrar el bug clásico de lastIndex
+  // que corrompe los resultados de un regex /g/ reutilizado con .test().
+  const SALUDO_PATRON = '\\b(h+o+l+a+|o+l+a+|holi+s?|buen[oa]s?(\\s+(d[ií]as?|tardes?|noches?))?|hey+|ey+|saludos)\\b';
+  const SALUDO_REGEX_TEST = new RegExp(SALUDO_PATRON);
+  const SALUDO_REGEX_GLOBAL = new RegExp(SALUDO_PATRON, 'g');
+  const EMOJI_SALUDO_REGEX = /[\u{1F44B}\u{1F642}\u{1F600}-\u{1F64F}\u{2600}-\u{27BF}]/gu;
+
+  function chatEsSoloSaludo(textoOriginal){
+    let t = textoOriginal.toLowerCase();
+    t = t.replace(EMOJI_SALUDO_REGEX, ' ');
+    t = t.replace(SALUDO_REGEX_GLOBAL, ' ');
+    t = t.replace(/[¡!¿?.,;:\-_"'…]/g, ' ');
+    t = t.replace(/\s+/g, ' ').trim();
+    return t.length === 0;
+  }
+
+  // Cuando el mensaje suena a una ACCIÓN sobre una reserva existente
+  // (cancelar/cambiar/mover) o a un problema/reclamo, la respuesta fija de
+  // "mireserva" (que solo informa si está confirmada/pendiente) no sirve --
+  // le daría al visitante el estado de su hora en vez de la política real de
+  // cancelación/cambio que solo Max sabe explicar bien. En ese caso se
+  // excluye esa categoría para que el mensaje completo llegue a Max.
+  const ACCION_O_PROBLEMA_REGEX = /\b(cancel\w*|cambi\w*|mov\w*|modific\w*|reagend\w*|problema|reclamo|queja|urgente)\b/;
 
   function chatResponder(textoOriginal){
     const t = textoOriginal.toLowerCase();
@@ -7009,7 +7049,15 @@
     if(t === 'horario'){ chatRespHorario(); return; }
     if(t === 'gracias'){ chatRespGracias(); return; }
 
-    const coincidencias = CHAT_CATEGORIAS_RAPIDAS.filter((c) => c.test.test(t));
+    if(SALUDO_REGEX_TEST.test(t) && chatEsSoloSaludo(textoOriginal)){
+      chatRespHola();
+      return;
+    }
+
+    const categorias = ACCION_O_PROBLEMA_REGEX.test(t)
+      ? CHAT_CATEGORIAS_RAPIDAS.filter((c) => c.id !== 'mireserva')
+      : CHAT_CATEGORIAS_RAPIDAS;
+    const coincidencias = categorias.filter((c) => c.test.test(t));
     if(coincidencias.length === 1){
       coincidencias[0].fn();
       return;
