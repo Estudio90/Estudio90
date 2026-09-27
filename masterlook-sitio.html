@@ -616,6 +616,12 @@
   .dp-pay-logo span{color:var(--accent);}
   .dp-pay-card b{font-size:.88rem; display:block; font-weight:700;}
   .dp-pay-card p{color:var(--text-mid); font-size:.78rem; margin-top:3px;}
+  .dp-policy-note{display:flex; align-items:flex-start; gap:8px; color:var(--text-low); font-size:.76rem; line-height:1.55; margin:0 0 26px;}
+  .dp-policy-note svg{flex:0 0 auto; margin-top:2px;}
+  .dp-policy-body{flex:1; min-width:0;}
+  .dp-policy-body p{margin:0;}
+  .dp-policy-link{display:inline-block; margin-top:6px; color:var(--text-hi); font-size:.76rem; text-decoration:underline; text-underline-offset:2px; cursor:pointer;}
+  .dp-policy-link:hover{color:var(--accent);}
   .dp-bar{display:flex; align-items:center; gap:12px;
     background:#17171B; border-radius:28px 22px 26px 20px / 20px 26px 22px 28px;
     padding:10px 12px 10px 16px; margin-top:6px; position:relative; overflow:hidden;
@@ -3694,7 +3700,9 @@
       <p><b>Datos de contacto.</b> Para confirmar una reserva debes entregar un nombre, teléfono y correo válidos, que usaremos para contactarte sobre tu hora.</p>
       <p><b>Cuenta de cliente.</b> Si creas una cuenta en el sitio, eres responsable de mantener tu contraseña en secreto y de la actividad que ocurra en ella.</p>
       <p><b>Tienda.</b> Los productos de la tienda están sujetos a stock disponible; una compra puede anularse si el producto se agota antes de confirmarse.</p>
-      <p><b>Cambios de hora y anticipo.</b> Si tu reserva tiene un anticipo, debes solicitar el cambio de tu hora con un mínimo de 4 horas de anticipación; si no lo haces dentro de ese plazo, el anticipo no será reembolsable. Esta condición se informa de forma clara y previa a la reserva, conforme a lo dispuesto en la Ley N° 19.496 sobre Protección de los Derechos de los Consumidores.</p>
+      <p><b>Cambios de hora.</b> Puedes modificar tu hora una sola vez por reserva, con un mínimo de 4 horas de anticipación, desde el enlace de tu correo de confirmación o desde tu perfil de cliente en Masterlook (Mi cuenta). Para cambios adicionales, o si ya no cumples ese plazo, contáctanos directamente.</p>
+      <p><b>Anticipo.</b> Si tu reserva tiene un anticipo, este puede perderse en caso de cancelación tardía, inasistencia, o si solicitas el cambio de tu hora sin cumplir el mínimo de 4 horas de anticipación. Esta condición se informa de forma clara y previa a la reserva, conforme a lo dispuesto en la Ley N° 19.496 sobre Protección de los Derechos de los Consumidores.</p>
+      <p><b>Derecho a retracto.</b> Los servicios de MASTERLOOK se reservan para una fecha y hora específicas elegidas por ti; conforme a la Ley N° 19.496, este tipo de servicios no está sujeto a derecho a retracto una vez confirmada la reserva.</p>
       <p><b>Marco legal.</b> Estos términos se rigen por las leyes de la República de Chile, en especial la Ley N° 19.496 sobre Protección de los Derechos de los Consumidores.</p>
     </div>
   </div>
@@ -4041,6 +4049,14 @@
                 <div>
                   <b>Pagarás el anticipo ahora con Webpay</b>
                   <p>Tus datos y pago están protegidos con encriptación SSL y Transbank.</p>
+                </div>
+              </div>
+
+              <div class="dp-policy-note">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9.25"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.6" r="0.9" fill="currentColor" stroke="none"/></svg>
+                <div class="dp-policy-body">
+                  <p>Tu horario queda reservado exclusivamente para ti. Puedes modificar tu hora hasta 4 horas antes. Las cancelaciones tardías, inasistencias o atrasos mayores a 15 minutos pueden implicar la pérdida del anticipo. Este servicio no contempla derecho a retracto.</p>
+                  <a href="#" class="dp-policy-link" onclick="event.preventDefault(); abrirModalLegal('terminosModal');">Ver políticas de reserva</a>
                 </div>
               </div>
 
