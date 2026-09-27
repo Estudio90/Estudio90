@@ -8405,10 +8405,23 @@
    *  `actualizarUrl` deja el buyOrder en el hash (sin el token, que ya
    *  cumplió su único uso) para poder recargar/volver a esta misma
    *  pantalla más tarde. */
-  async function abrirComprobante(buyOrder, actualizarUrl, token){
+  async function abrirComprobante(buyOrder, actualizarUrl, token, datosPrevios){
     cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true);
     document.getElementById('vistaComprobante').classList.add('open');
     document.body.style.overflow = 'hidden';
+
+    // Falla #3: si quien llama YA tiene el comprobante completo (ver
+    // manejarRetornoWebpay -- obtenerEstadoPago lo devuelve en la misma
+    // respuesta), pintarlo directo sin una segunda llamada de red redundante
+    // a obtenerComprobantePago. Mismo shape de datos, mismo pintarComprobante.
+    if(datosPrevios){
+      pintarComprobante(datosPrevios);
+      if(actualizarUrl !== false && hashActual() !== '#comprobante=' + buyOrder){
+        irHistorial('push', 'comprobante=' + buyOrder);
+      }
+      return;
+    }
+
     document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">Verificando tu pago…</div>';
 
     if(token){
@@ -8552,6 +8565,13 @@
     }
 
     if(resultado === 'confirmado' && orden){
+      // Falla #3 (2026-09-27): mostrar de inmediato un estado de carga --
+      // ANTES de la primera llamada de red -- así el cliente nunca ve la
+      // portada "vacía" mientras el servidor confirma el pago (en
+      // producción, esa sola verificación puede tomar unos segundos).
+      // manejarRetornoMercadoPago (más abajo) ya hace lo mismo con
+      // mostrarConfirmandoPago -- acá se replica el mismo patrón para Webpay.
+      mostrarConfirmandoPago('Verificando tu pago…');
       try{
         const resp = await fetch(FUNCTIONS_BASE + '/obtenerEstadoPago', {
           method:'POST', headers:{'Content-Type':'application/json'},
@@ -8590,7 +8610,13 @@
           // concede acceso por sí solo, obtenerComprobantePago revalida el
           // token contra el hash guardado en el servidor en cada consulta.
           try{ sessionStorage.setItem('wpComprobantePend', JSON.stringify({ ref: orden, t: token })); }catch(_){}
-          const tareas = [abrirComprobante(orden, true, token)];
+          // Falla #3 (2026-09-27): obtenerEstadoPago YA responde con el
+          // comprobante completo (mismo shape que obtenerComprobantePago) --
+          // pasarlo directo a abrirComprobante evita una SEGUNDA llamada de
+          // red redundante que en producción tomaba ~2-4s adicionales, con
+          // el cliente viendo la portada sin ningún indicio de que su
+          // comprobante ya venía en camino. Ver abrirComprobante más abajo.
+          const tareas = [abrirComprobante(orden, true, token, p.comprobante)];
           if(p.tipo === 'RESERVATION_DEPOSIT') tareas.push(renderAccount());
           await Promise.all(tareas);
         } else {
