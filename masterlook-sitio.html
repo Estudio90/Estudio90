@@ -667,32 +667,50 @@
     color:var(--text-mid); margin:16px 15px 0;}
   .dp-recap-meta b{color:var(--text-hi); font-weight:700;}
 
-  .dp-upsell-note{color:var(--text-mid); font-size:.8rem; margin:2px 0 12px;}
-  .dp-upsell-lista{display:flex; flex-direction:column; gap:10px; margin-bottom:18px;}
-  .dp-upsell-item{display:flex; align-items:center; gap:12px; background:#17171B;
-    border-radius:20px 26px 18px 24px / 18px 20px 18px 22px;
-    padding:9px 10px 9px 9px; position:relative; overflow:hidden;
+  .dp-upsell-note{color:var(--text-mid); font-size:.8rem; margin:2px 0 14px;}
+  /* Carril vertical fluido: altura fija para ~5 tarjetas completas: no se
+     despliega toda la lista de una -- el cliente desliza con el dedo y
+     el resto va entrando. Scroll nativo continuo (SIN scroll-snap): las
+     tarjetas no se detienen tarjeta por tarjeta, fluyen -- las que salen
+     por arriba se difuminan, las que entran por abajo aparecen, con
+     mask-image en los dos bordes del contenedor (no por tarjeta). Altura
+     fija: no crece con la cantidad de productos del catálogo (por eso
+     cargarUpsellProductos ahora trae hasta 8, para que sí haya más por
+     descubrir al bajar). */
+  .dp-upsell-lista{--dpu-h:74px; height:418px; margin:0 0 18px; position:relative;
+    display:flex; flex-direction:column; gap:12px;
+    overflow-y:auto; overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    mask-image:linear-gradient(to bottom, transparent 0, #000 6%, #000 94%, transparent 100%);
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 6%, #000 94%, transparent 100%);}
+  .dp-upsell-lista::-webkit-scrollbar{display:none;}
+  .dp-upsell-item{flex:0 0 var(--dpu-h); display:flex; align-items:center; gap:14px; background:#17171B;
+    border-radius:22px 28px 20px 26px / 20px 22px 20px 24px;
+    padding:12px 14px; position:relative; overflow:hidden;
     box-shadow:0 8px 22px rgba(0,0,0,.26), 0 2px 6px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.06);}
   .dp-upsell-item::before{content:''; position:absolute; inset:0; pointer-events:none;
     background:linear-gradient(128deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 30%, transparent 55%);}
-  .dp-upsell-item-thumb{flex:0 0 auto; width:34px; height:34px; border-radius:9px; background:#232326;
+  .dp-upsell-item-thumb{flex:0 0 auto; width:46px; height:46px; border-radius:12px; background:#232326;
     display:flex; align-items:center; justify-content:center; color:#8B8A91; overflow:hidden;
     position:relative; z-index:1;}
   .dp-upsell-item-thumb img{width:100%; height:100%; object-fit:cover;}
   .dp-upsell-item-txt{flex:1; min-width:0; position:relative; z-index:1;}
-  .dp-upsell-item-txt b{display:block; color:#fff; font-size:.78rem; font-weight:700;}
-  .dp-upsell-item-txt span{display:block; font-size:.72rem; margin-top:1px;}
-  .dp-upsell-item-tachado{color:#8B8A91; text-decoration:line-through; margin-right:5px;}
+  .dp-upsell-item-txt b{display:block; color:#fff; font-size:.9rem; font-weight:700;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .dp-upsell-item-txt span{display:block; font-size:.8rem; margin-top:3px;}
+  .dp-upsell-item-tachado{color:#8B8A91; text-decoration:line-through; margin-right:6px;}
   .dp-upsell-item-final{color:var(--oro-claro); font-weight:700;}
   .dp-upsell-item-btn{flex:0 0 auto; border:1px solid rgba(255,255,255,.3); background:none; color:#fff;
-    padding:7px 12px; border-radius:var(--radius-sm); font-size:.7rem; font-weight:700;
+    padding:9px 16px; border-radius:var(--radius-sm); font-size:.78rem; font-weight:700;
     position:relative; z-index:1; cursor:pointer; font-family:inherit;}
   .dp-upsell-item.agregado .dp-upsell-item-btn{background:#fff; color:#17171B; border-color:#fff;}
   @media (max-width:860px){
-    /* la barra fija #rvBarra flota encima del contenido -- este espacio
-       extra evita que tape la lista de productos, que es lo último visible
-       antes del fondo en el paso 4. */
-    #dpUpsellWrap{margin-bottom:160px;}
+    /* la barra fija #rvBarra (~73px) flota encima del contenido -- este
+       espacio extra evita que tape el carril de productos, que es lo
+       último visible antes del fondo en el paso 4 -- constante, no
+       depende de la altura del carril (418px): solo necesita cubrir lo
+       que mide la barra fija más un respiro chico. */
+    #dpUpsellWrap{margin-bottom:90px;}
     /* #rvBarra ya tiene su propio botón "Continuar" que hace exactamente
        lo mismo -- en mobile no hace falta repetirlo dentro del paso. */
     #toStep2, #toStep3, #toStep4{display:none;}
@@ -9702,10 +9720,12 @@
     state.upsellDescuentoPct = Number.isFinite(pct) ? pct : 10;
     document.getElementById('dpUpsellPct').textContent = state.upsellDescuentoPct;
 
-    // Mismo criterio que antes: los primeros 4 productos activos
-    // (productosSiteCache ya viene filtrado por active !== false).
+    // Primeros 8 productos activos (productosSiteCache ya viene filtrado
+    // por active !== false) -- suficientes para que el carril vertical
+    // tenga contenido real que descubrir al deslizar más allá de lo que
+    // ya se ve de entrada (antes eran 4, uno por vista casi completa).
     state.upsellCatalogo = (productosSiteCache || [])
-      .slice(0, 4)
+      .slice(0, 8)
       .map(p=> ({ id: p.id, name: p.name, price: Number(p.priceClp || 0), photoUrl: p.photoUrl || '' }));
 
     if(!state.upsellCatalogo.length){ wrap.style.display = 'none'; return; }
@@ -9715,6 +9735,12 @@
 
   function pintarUpsell(){
     const cont = document.getElementById('dpUpsellLista');
+    // Se guarda el scroll ANTES de tocar innerHTML -- reemplazar los hijos
+    // de un contenedor con scroll puede resetear su scrollTop a 0, y esto
+    // se llama en cada click de Agregar/Quitar (ver más abajo): sin esto,
+    // la rueda saltaría al primer producto cada vez que el cliente agrega
+    // o quita uno mientras navega el carrusel.
+    const scrollPrevio = cont.scrollTop;
     cont.innerHTML = state.upsellCatalogo.map(p=>{
       const agregado = (state.upsellSeleccion || []).some(s=> s.id === p.id);
       return `
@@ -9742,6 +9768,7 @@
         cargarAnticipoResumen();
       });
     });
+    cont.scrollTop = scrollPrevio;
   }
 
   /** Muestra el anticipo REAL que se va a cobrar (el mismo que calcula el
