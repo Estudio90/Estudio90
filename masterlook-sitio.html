@@ -9705,7 +9705,13 @@
    *  ese mismo % de Firestore al cobrar, nunca confía en lo que mande el
    *  navegador. */
   function precioConDescuentoUI(precio){
-    return Math.round(precio * (1 - (state.upsellDescuentoPct || 10) / 100));
+    // Bug real encontrado en auditoría de producción (2026-09-28): "|| 10"
+    // trata 0 como "no llegó" y lo pisa con el 10% por defecto -- pero 0 es
+    // un valor real y válido (el dueño puede desactivar el descuento a
+    // propósito). Mismo criterio Number.isFinite que ya usa
+    // cargarUpsellProductos() al fijar state.upsellDescuentoPct.
+    const pct = Number.isFinite(state.upsellDescuentoPct) ? state.upsellDescuentoPct : 10;
+    return Math.round(precio * (1 - pct / 100));
   }
   async function cargarUpsellProductos(){
     const wrap = document.getElementById('dpUpsellWrap');
@@ -9720,11 +9726,15 @@
     state.upsellDescuentoPct = Number.isFinite(pct) ? pct : 10;
     document.getElementById('dpUpsellPct').textContent = state.upsellDescuentoPct;
 
-    // Primeros 8 productos activos (productosSiteCache ya viene filtrado
-    // por active !== false) -- suficientes para que el carril vertical
-    // tenga contenido real que descubrir al deslizar más allá de lo que
-    // ya se ve de entrada (antes eran 4, uno por vista casi completa).
+    // Primeros 8 productos activos y CON STOCK (productosSiteCache ya viene
+    // filtrado por active !== false, pero no por soldOut -- bug real
+    // encontrado en auditoría de producción 2026-09-28: sin este filtro, un
+    // producto agotado podía aparecer en el carril y agregarse igual, algo
+    // que la Tienda principal sí bloquea con el botón "Agotado"/disabled).
+    // 8 alcanza para que el carril tenga contenido real que descubrir al
+    // deslizar más allá de lo que ya se ve de entrada (antes eran 4).
     state.upsellCatalogo = (productosSiteCache || [])
+      .filter(p=> !p.soldOut)
       .slice(0, 8)
       .map(p=> ({ id: p.id, name: p.name, price: Number(p.priceClp || 0), photoUrl: p.photoUrl || '' }));
 
