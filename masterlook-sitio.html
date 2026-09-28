@@ -4080,7 +4080,7 @@
 
               <div id="dpUpsellWrap" style="display:none;">
                 <div class="dp-section-title" style="margin-bottom:4px;">Agrega productos con descuento</div>
-                <p class="dp-upsell-note">Aprovecha un <span id="dpUpsellPct">10</span>% OFF agregándolos aquí mismo</p>
+                <p class="dp-upsell-note" id="dpUpsellNota">Aprovecha un <span id="dpUpsellPct">10</span>% OFF agregándolos aquí mismo</p>
                 <div id="dpUpsellLista" class="dp-upsell-lista"></div>
               </div>
 
@@ -5583,7 +5583,11 @@
     productosSiteCache = snap.docs.map(d=> d.data()).filter(p=> p.active !== false).map(p=>
       ({ id:p.id, kind:'PRODUCT', name:p.name, description:p.description || '',
          priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0, photoUrl:p.photoUrl || '', category:p.category || '',
-         photos:Array.isArray(p.photos) ? p.photos : [] }));
+         photos:Array.isArray(p.photos) ? p.photos : [],
+         // Descuento especial al reservar (Editar producto) -- SEPARADO de
+         // cualquier campo de descuento/comisión de la Tienda; solo lo lee
+         // descuentoEfectivoProductoUI() del carril de checkout de reservas.
+         descuentoReservaModo:p.descuentoReservaModo || 'general', descuentoReservaPct:p.descuentoReservaPct ?? null }));
     pintarTiendaHome();
     if(!cursosListos) return;
     cargarTienda();
@@ -9687,9 +9691,9 @@
         <div class="dp-recap-ic">${ICONO_BOLSA}</div>
         <div class="dp-recap-info">
           <b>${sel.name}</b>
-          <span>Producto agregado · ${state.upsellDescuentoPct}% OFF</span>
+          <span>Producto agregado · ${sel.pct}% OFF</span>
         </div>
-        <b class="dp-recap-price">${money(precioConDescuentoUI(sel.price))}</b>
+        <b class="dp-recap-price">${money(precioConDescuentoUI(sel.price, sel.pct))}</b>
       </div>`).join('');
 
     el.innerHTML = filas + filasProducto
@@ -9704,14 +9708,30 @@
    *  se muestra -- el servidor (calcularMonto en webpay.js) vuelve a leer
    *  ese mismo % de Firestore al cobrar, nunca confía en lo que mande el
    *  navegador. */
-  function precioConDescuentoUI(precio){
-    // Bug real encontrado en auditoría de producción (2026-09-28): "|| 10"
-    // trata 0 como "no llegó" y lo pisa con el 10% por defecto -- pero 0 es
-    // un valor real y válido (el dueño puede desactivar el descuento a
-    // propósito). Mismo criterio Number.isFinite que ya usa
-    // cargarUpsellProductos() al fijar state.upsellDescuentoPct.
-    const pct = Number.isFinite(state.upsellDescuentoPct) ? state.upsellDescuentoPct : 10;
-    return Math.round(precio * (1 - pct / 100));
+  /** Descuento EFECTIVO de reservas para un producto puntual -- réplica
+   *  exacta (mismos 3 modos, mismas reglas de "nunca se acumulan") de
+   *  descuentoEfectivoProducto() en webpay.js. Esto es SOLO para mostrar el
+   *  precio antes de pagar; el servidor vuelve a resolver esto mismo leyendo
+   *  Firestore fresco al cobrar, nunca confía en lo que calcule el
+   *  navegador. Trabaja en porcentaje entero (0-90), no fracción, para
+   *  calzar con como ya se usaba state.upsellDescuentoPct. */
+  function descuentoEfectivoProductoUI(p, general){
+    const modo = p.descuentoReservaModo || 'general';
+    if(modo === 'excluido') return 0;
+    if(modo === 'personalizado'){
+      const pct = Number(p.descuentoReservaPct);
+      return Number.isFinite(pct) && pct > 0 && pct <= 90 ? pct : 0;
+    }
+    return general.activo ? general.pct : 0;
+  }
+  function precioConDescuentoUI(precio, pct){
+    // pct llega por parámetro (el % efectivo YA resuelto de ese producto --
+    // ver descuentoEfectivoProductoUI). Fallback al global viejo por si
+    // algún caller no lo pasa (compatibilidad); Number.isFinite acá
+    // también, por el mismo motivo que antes: 0% es un valor real y válido,
+    // "|| 10" lo pisaría con el 10% por defecto de forma incorrecta.
+    const p = Number.isFinite(pct) ? pct : (Number.isFinite(state.upsellDescuentoPct) ? state.upsellDescuentoPct : 10);
+    return Math.round(precio * (1 - p / 100));
   }
   async function cargarUpsellProductos(){
     const wrap = document.getElementById('dpUpsellWrap');
@@ -9720,25 +9740,47 @@
     state.upsellCatalogo = [];
     // productosSiteCache y horarioNegocio ya están sincronizados en vivo
     // (onSnapshot de `products` y de `settings/negocio`, montados al cargar
-    // la página). Cero red acá. Fallbacks seguros: 10% si el descuento no
-    // llegó, y ocultar el bloque si todavía no hay productos en caché.
-    const pct = Number(horarioNegocio.descuentoProductoReserva);
-    state.upsellDescuentoPct = Number.isFinite(pct) ? pct : 10;
-    document.getElementById('dpUpsellPct').textContent = state.upsellDescuentoPct;
+    // la página). Cero red acá.
+    const pctGeneralNum = Number(horarioNegocio.descuentoProductoReserva);
+    const general = {
+      // Interruptor nuevo, aditivo -- si el doc todavía no lo tiene (nunca
+      // se guardó desde la tarjeta "Descuentos en reservas" del panel), se
+      // trata como activo para no romper ningún catálogo ya configurado.
+      activo: horarioNegocio.descuentoProductoReservaActivo === false ? false : true,
+      pct: Number.isFinite(pctGeneralNum) ? pctGeneralNum : 10,
+    };
+    state.upsellDescuentoPct = general.pct; // compat: lo sigue leyendo precioConDescuentoUI() como fallback
 
-    // Primeros 8 productos activos y CON STOCK (productosSiteCache ya viene
-    // filtrado por active !== false, pero no por soldOut -- bug real
-    // encontrado en auditoría de producción 2026-09-28: sin este filtro, un
-    // producto agotado podía aparecer en el carril y agregarse igual, algo
-    // que la Tienda principal sí bloquea con el botón "Agotado"/disabled).
-    // 8 alcanza para que el carril tenga contenido real que descubrir al
-    // deslizar más allá de lo que ya se ve de entrada (antes eran 4).
+    // Primeros 8 productos activos, CON STOCK, y con descuento EFECTIVO > 0%
+    // (elegibles) -- cada producto hereda el general (si está activo), usa
+    // su propio % individual, o queda excluido -- ver
+    // descuentoEfectivoProductoUI() más arriba. Si ninguno queda elegible
+    // (general apagado y sin excepciones individuales en ningún producto),
+    // el bloque entero se oculta más abajo -- no tiene sentido ofrecer
+    // "productos con descuento" sin ninguno con descuento real.
     state.upsellCatalogo = (productosSiteCache || [])
       .filter(p=> !p.soldOut)
-      .slice(0, 8)
-      .map(p=> ({ id: p.id, name: p.name, price: Number(p.priceClp || 0), photoUrl: p.photoUrl || '' }));
+      .map(p=> ({ id: p.id, name: p.name, price: Number(p.priceClp || 0), photoUrl: p.photoUrl || '',
+                  pct: descuentoEfectivoProductoUI(p, general) }))
+      .filter(p=> p.pct > 0)
+      .slice(0, 8);
 
     if(!state.upsellCatalogo.length){ wrap.style.display = 'none'; return; }
+
+    // Título del banner: si todos los elegibles comparten el mismo %, se
+    // anuncia ese número (igual que siempre); si hay porcentajes distintos
+    // entre productos (general + individuales mezclados), texto neutro --
+    // nunca debe prometer un % fijo que no aplica a todos.
+    const pctsDistintos = new Set(state.upsellCatalogo.map(p=> p.pct));
+    const nota = document.getElementById('dpUpsellNota');
+    if(nota){
+      if(pctsDistintos.size === 1){
+        nota.innerHTML = `Aprovecha un <span id="dpUpsellPct">${state.upsellCatalogo[0].pct}</span>% OFF agregándolos aquí mismo`;
+      } else {
+        nota.textContent = 'Productos con descuento especial agregándolos aquí mismo';
+      }
+    }
+
     pintarUpsell();
     wrap.style.display = 'block';
   }
@@ -9758,7 +9800,7 @@
           <div class="dp-upsell-item-thumb">${p.photoUrl ? `<img src="${p.photoUrl}" alt="" loading="lazy">` : ICONO_BOLSA}</div>
           <div class="dp-upsell-item-txt">
             <b>${p.name}</b>
-            <span><span class="dp-upsell-item-tachado">${money(p.price)}</span><span class="dp-upsell-item-final">${money(precioConDescuentoUI(p.price))}</span></span>
+            <span><span class="dp-upsell-item-tachado">${money(p.price)}</span><span class="dp-upsell-item-final">${money(precioConDescuentoUI(p.price, p.pct))}</span></span>
           </div>
           <button type="button" class="dp-upsell-item-btn">${agregado ? 'Quitar' : 'Agregar'}</button>
         </div>`;
@@ -9771,7 +9813,9 @@
           state.upsellSeleccion.splice(idx, 1);
         } else {
           const p = state.upsellCatalogo.find(x=> x.id === id);
-          state.upsellSeleccion.push({ id: p.id, name: p.name, price: p.price });
+          // pct queda congelado en la selección tal como se mostró -- el
+          // servidor igual vuelve a resolverlo fresco al cobrar.
+          state.upsellSeleccion.push({ id: p.id, name: p.name, price: p.price, pct: p.pct });
         }
         pintarUpsell();
         pintarRecap();
@@ -9810,7 +9854,7 @@
     // crear la transacción, esto solo lo muestra antes de pagar.
     let totalAhora = total;
     for(const sel of (state.upsellSeleccion || [])){
-      totalAhora += precioConDescuentoUI(sel.price);
+      totalAhora += precioConDescuentoUI(sel.price, sel.pct);
     }
     state.montoConProducto = totalAhora;
 

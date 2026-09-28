@@ -3815,6 +3815,43 @@
           <div class="pc-illus" id="pcIlustracion"></div>
         </div>
 
+        <!-- Descuentos en reservas -- SEPARADO por completo de la Tienda y
+             del código promocional (Comisiones y códigos / pcConfigGeneral):
+             este % solo se aplica a productos agregados en el carrito del
+             carrusel de checkout de reservas (paso 4), nunca al precio de
+             la Tienda. Mismo doc de siempre (settings/negocio,
+             descuentoProductoReserva) + el interruptor nuevo, aditivo,
+             descuentoProductoReservaActivo -- ver pcDrConfig/pcDrCargar/
+             pcDrGuardar más abajo. -->
+        <div class="pc-cat-card" id="pcDrCard" style="margin-top:18px;margin-bottom:18px;">
+          <div class="pc-cat-head">
+            <div class="pc-cat-head-l">
+              <div class="pc-add-icon" style="background:#8046CE;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="pc-cat-title">Descuentos en reservas</div>
+                <div class="pc-cat-sub">Descuento automático para productos agregados al reservar (no afecta la Tienda)</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;margin-top:16px;">
+            <label class="cu-tgl">
+              <span class="mg-sw"><input type="checkbox" id="pcDrActivo"><span class="mg-sw-track"></span></span>
+              Activar descuento general
+            </label>
+            <div class="cu-campo" style="max-width:140px;">
+              <label>Porcentaje</label>
+              <input type="number" id="pcDrPct" min="0" max="90" step="0.1" value="10" class="mono-in">
+            </div>
+            <button class="mg-btn solid" id="pcDrGuardar" style="flex:none;padding:10px 22px;">Guardar</button>
+          </div>
+          <p class="mg-note" style="margin:12px 0 0;">Se aplica automáticamente a todos los productos elegibles del catálogo en el checkout de reservas. Cada producto puede anular este valor desde su propio editor (lápiz → "Descuento especial al reservar").</p>
+        </div>
+
         <div class="pc-cat-card">
           <div class="pc-cat-head">
             <div class="pc-cat-head-l">
@@ -3929,6 +3966,25 @@
             <div class="cu-campo" style="margin-top:10px;">
               <label>Tope de descuento para este producto (%) — opcional</label>
               <input type="number" id="pcmDescuentoTope" min="0" max="100" step="0.1" placeholder="Usa el tope general" style="max-width:160px;">
+            </div>
+
+            <!-- Descuento especial al reservar -- SEPARADO del código
+                 promocional/comisiones de arriba (Tienda): campos propios
+                 descuentoReservaModo/descuentoReservaPct, nunca leídos ni
+                 escritos por ningún otro flujo. Prevalece sobre el general
+                 de reservas, nunca se suman. -->
+            <div class="cu-campo full" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+              <div class="cu-fila" style="justify-content:space-between;">
+                <label style="font-size:12.5px;color:var(--text-hi);font-weight:600;">Descuento especial al reservar</label>
+                <span class="pcm-ref" id="pcmReservaRef"></span>
+              </div>
+              <select id="pcmReservaModo" style="margin-top:8px;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;background:#fff;width:100%;max-width:320px;">
+                <option value="general">Usar el descuento general de reservas</option>
+                <option value="personalizado">Descuento individual para este producto</option>
+                <option value="excluido">Excluir del descuento de reservas</option>
+              </select>
+              <input type="number" id="pcmReservaPct" min="0" max="90" step="0.1" placeholder="%" style="margin-top:8px;max-width:130px;display:none;">
+              <p class="mg-note" style="margin:8px 0 0;">Prevalece sobre el descuento general de reservas -- nunca se suman. No afecta el precio de este producto en la Tienda.</p>
             </div>
           </div>
 
@@ -15251,7 +15307,7 @@
       document.getElementById('pvCatalogo').style.display = v === 'catalogo' ? '' : 'none';
       document.getElementById('pvComisionesPanel').style.display = v === 'comisiones' ? '' : 'none';
       document.getElementById('pvReferidosPanel').style.display = v === 'referidos' ? '' : 'none';
-      if(v === 'catalogo') pintarCatalogoProductos();
+      if(v === 'catalogo'){ pintarCatalogoProductos(); pcDrCargar(); }
       if(v === 'comisiones') pgCargar();
       if(v === 'referidos') rfCargar();
     }));
@@ -15535,6 +15591,63 @@
    *  el "Usando la general: X%" de referencia; no hace falta más fresca que
    *  eso, y así abrir el editor de un producto sigue sin generar lecturas
    *  nuevas a Firestore. */
+  /** "Descuentos en reservas" (Productos → Catálogo, tarjeta nueva) -- el %
+   *  general que se aplica automáticamente a los productos del carrusel de
+   *  checkout de reservas (paso 4). Mismo doc de siempre (settings/negocio,
+   *  descuentoProductoReserva) + el interruptor nuevo, aditivo
+   *  (descuentoProductoReservaActivo). Completamente SEPARADO de
+   *  settings/comisionesProductos (pcConfigGeneral, justo abajo) -- ese es
+   *  el sistema de código promocional/comisiones de la Tienda; este es
+   *  exclusivo de reservas, nunca se leen ni se escriben cruzados. */
+  let pcDrConfigCache = null;
+  async function pcDrConfig(forzarRelectura){
+    if(pcDrConfigCache && !forzarRelectura) return pcDrConfigCache;
+    try{
+      const snap = await db.collection('settings').doc('negocio').get();
+      const d = snap.exists ? snap.data() : {};
+      const pctNum = Number(d.descuentoProductoReserva);
+      pcDrConfigCache = {
+        pct: Number.isFinite(pctNum) && pctNum >= 0 && pctNum <= 90 ? pctNum : 10,
+        activo: d.descuentoProductoReservaActivo === false ? false : true,
+      };
+    }catch(e){ pcDrConfigCache = { pct:10, activo:true }; }
+    return pcDrConfigCache;
+  }
+
+  /** Pinta el toggle + porcentaje de la tarjeta con lo que hay guardado de
+   *  verdad en Firestore -- se llama cada vez que se entra a la pestaña
+   *  Catálogo (forzarRelectura=true), para que si alguien lo cambió desde
+   *  otra sesión, se vea el valor real, no uno cacheado. */
+  async function pcDrCargar(){
+    const cfg = await pcDrConfig(true);
+    const chk = document.getElementById('pcDrActivo');
+    const pctInput = document.getElementById('pcDrPct');
+    if(chk) chk.checked = cfg.activo;
+    if(pctInput) pctInput.value = cfg.pct;
+  }
+
+  document.getElementById('pcDrGuardar')?.addEventListener('click', async ()=>{
+    const activo = document.getElementById('pcDrActivo').checked;
+    const pctTxt = document.getElementById('pcDrPct').value.trim();
+    const pctNum = Number(pctTxt);
+    if(pctTxt !== '' && !Number.isFinite(pctNum)) return showToast('Porcentaje inválido');
+    const pct = Math.max(0, Math.min(90, Number.isFinite(pctNum) ? pctNum : 0));
+    const btn = document.getElementById('pcDrGuardar');
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Guardando...';
+    try{
+      // merge:true -- solo estos 2 campos; el resto de settings/negocio
+      // (horarios, portada, políticas, etc.) queda intacto.
+      await db.collection('settings').doc('negocio').set({
+        descuentoProductoReserva: pct,
+        descuentoProductoReservaActivo: activo,
+      }, { merge:true });
+      pcDrConfigCache = { pct, activo };
+      document.getElementById('pcDrPct').value = pct;
+      showToast('Descuento de reservas actualizado');
+    }catch(e){ showToast('No se pudo guardar: ' + (e.message || e)); }
+    btn.disabled = false; btn.textContent = original;
+  });
+
   let pcConfigGeneralCache = null;
   async function pcConfigGeneral(){
     if(pcConfigGeneralCache) return pcConfigGeneralCache;
@@ -15560,6 +15673,15 @@
   pcmWireModo('pcmDescuentoModo','pcmDescuentoPct');
   pcmWireModo('pcmComisionPresencialModo','pcmComisionPresencialPct');
   pcmWireModo('pcmComisionOnlineModo','pcmComisionOnlinePct');
+
+  /** El select "Descuento especial al reservar" (3 vías: general/
+   *  personalizado/excluido) muestra el campo de % solo cuando el modo es
+   *  'personalizado' -- mismo espíritu que pcmWireModo() de arriba, pero
+   *  para un <select> de 3 opciones en vez de un checkbox de 2. */
+  document.getElementById('pcmReservaModo').onchange = ()=>{
+    const esPersonalizado = document.getElementById('pcmReservaModo').value === 'personalizado';
+    document.getElementById('pcmReservaPct').style.display = esPersonalizado ? '' : 'none';
+  };
 
   /** Abre el editor para UN producto -- se llena leyendo productsCache (el
    *  mismo arreglo que ya pinta el catálogo, sin volver a preguntarle nada a
@@ -15603,6 +15725,18 @@
     personalizar('pcmComisionOnlineModo','pcmComisionOnlinePct','pcmComisionOnlineRef', p.comisionOnlineCodigoModo, p.comisionOnlineCodigoPct, cfg.comisionOnlineCodigoGeneral);
     document.getElementById('pcmDescuentoTope').value = p.descuentoMaximoPct ?? '';
 
+    // Descuento especial al reservar -- SEPARADO del código promocional de
+    // arriba (pcmDescuentoModo/Pct son de la Tienda); campos propios
+    // descuentoReservaModo/descuentoReservaPct, nunca leídos/escritos por
+    // ningún otro flujo.
+    const drCfg = await pcDrConfig();
+    const modoReserva = p.descuentoReservaModo || 'general';
+    document.getElementById('pcmReservaModo').value = modoReserva;
+    const pctReservaInput = document.getElementById('pcmReservaPct');
+    pctReservaInput.value = p.descuentoReservaPct ?? '';
+    pctReservaInput.style.display = modoReserva === 'personalizado' ? '' : 'none';
+    document.getElementById('pcmReservaRef').textContent = drCfg.activo ? `General activo: ${drCfg.pct}%` : 'General desactivado';
+
     abrirModal('modalPcEditarProducto');
   }
 
@@ -15641,6 +15775,17 @@
       comisionPresencialPct: modoDe('pcmComisionPresencialModo') === 'personalizado' ? pctOVacio('pcmComisionPresencialPct') : null,
       comisionOnlineCodigoModo: modoDe('pcmComisionOnlineModo'),
       comisionOnlineCodigoPct: modoDe('pcmComisionOnlineModo') === 'personalizado' ? pctOVacio('pcmComisionOnlinePct') : null,
+      // Descuento especial al reservar -- SEPARADO del código promocional
+      // (arriba) y de la comisión; campos propios, nunca cruzados. Tope 90%
+      // (no 100) para calzar con el mismo tope que ya exige el servidor.
+      descuentoReservaModo: document.getElementById('pcmReservaModo').value,
+      descuentoReservaPct: (()=>{
+        if(document.getElementById('pcmReservaModo').value !== 'personalizado') return null;
+        const txt = document.getElementById('pcmReservaPct').value.trim();
+        if(txt === '') return null;
+        const n = Number(txt);
+        return Number.isFinite(n) ? Math.max(0, Math.min(90, n)) : null;
+      })(),
     };
 
     const btn = document.getElementById('pcmGuardar');
