@@ -175,6 +175,85 @@
     color:#1c1c1c;
   }
 
+  /* Selector de sucursal -- pantalla nueva que se muestra antes de abrir
+     la reserva real (ver abrirReservas()/mostrarSelectorSucursal() en el
+     JS). Mismo criterio que #vistaReservas: paleta blanco/negro/gris fija,
+     sin importar el tema activo del resto del sitio. Autocontenida bajo
+     el prefijo .suc- -- no reutiliza ni modifica ninguna clase existente. */
+  #vistaSucursal{
+    --negro:#fcfcfc;
+    --carbon:#FFFFFF;
+    --grafito:#F5F5F7;
+    --humo:#EBEBEE;
+    --linea:rgba(20,20,25,.14);
+    --linea-fuerte:rgba(20,20,25,.22);
+
+    --hueso:#1c1c1c;
+    --gris:#5B5A62;
+    --gris-tenue:#8B8A91;
+
+    --oro:#adadad;
+    --oro-tenue:rgba(173,173,173,.13);
+
+    --glass:rgba(255,255,255,.86);
+    --glass-nav:rgba(255,255,255,.7);
+    --shadow-sm:0 1px 2px rgba(20,20,25,.06);
+    --shadow-md:0 14px 40px rgba(20,20,25,.10);
+    --shadow-hover:0 18px 46px rgba(20,20,25,.14);
+
+    --bg:#fcfcfc;
+    --panel:#FFFFFF;
+    --panel-2:#F5F5F7;
+    --border:rgba(20,20,25,.14);
+    --border-strong:rgba(20,20,25,.22);
+    --text-hi:#1c1c1c;
+    --text-mid:#5B5A62;
+    --text-low:#8B8A91;
+    --accent:#adadad;
+    --accent-tint:rgba(173,173,173,.13);
+
+    color:#1c1c1c;
+  }
+  .suc-title h1{margin-bottom:6px;}
+  .suc-title p{color:var(--text-mid); font-size:.95rem; margin-bottom:32px;}
+  .suc-grid{display:grid; grid-template-columns:1fr; gap:18px; max-width:820px; margin:0 auto; padding-bottom:50px;}
+  @media(min-width:720px){ .suc-grid{grid-template-columns:1fr 1fr;} }
+  .suc-card{
+    display:flex; flex-direction:column; align-items:stretch; text-align:left;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:34px 24px 22px; cursor:pointer; font-family:inherit; color:inherit;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+  }
+  .suc-card:hover{border-color:var(--border-strong); box-shadow:var(--shadow-sm); transform:translateY(-2px);}
+  .suc-card:focus-visible{outline:2px solid var(--text-hi); outline-offset:2px;}
+  .suc-logo{
+    flex:1; display:flex; align-items:center; justify-content:center; min-height:140px; padding:18px 0;
+    font-family:var(--font-primary); font-size:1.9rem; font-weight:700; letter-spacing:.04em; color:var(--text-hi);
+  }
+  .suc-logo sup{font-size:.5em;}
+  .suc-info{border-top:1px solid var(--border); padding-top:16px; margin-top:8px;}
+  .suc-info b{display:block; font-family:var(--font-primary); font-size:.96rem; font-weight:700; color:var(--text-hi); margin-bottom:6px; letter-spacing:normal; text-transform:none;}
+  .suc-info span{display:block; font-size:.85rem; color:var(--text-mid); line-height:1.45;}
+
+  /* Barra "Sucursal: X · Cambiar" -- vive DENTRO de la agenda real (Ñuñoa),
+     no en el selector. Discreta: mismo panel-2/border que el resto de
+     #vistaReservas, sin color nuevo. "Cambiar" reutiliza volverASeleccionSucursal(). */
+  .suc-status-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:13px 18px; margin-bottom:18px;
+  }
+  .suc-status-bar .suc-status-label{font-size:.9rem; color:var(--text-hi); font-family:var(--font-primary);}
+  .suc-status-bar .suc-status-label b{font-weight:700;}
+  .suc-status-bar .suc-status-link{
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:.9rem; color:var(--text-hi); text-decoration:underline;
+    text-underline-offset:3px; padding:2px 0; white-space:nowrap;
+    transition:color .15s ease;
+  }
+  .suc-status-bar .suc-status-link:hover{color:var(--text-mid);}
+  .suc-status-bar .suc-status-link:focus-visible{outline:2px solid var(--text-hi); outline-offset:2px;}
+
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth; font-size:106%;}
   body{background:var(--negro); color:var(--hueso);
@@ -2235,6 +2314,9 @@
     .tv-back{font-size:.74rem; padding:6px 8px;}
     .rv-paso{font-size:.65rem; padding:4px 9px;}
     .reservas-vista .wrap{padding:0 16px;}
+    .suc-status-bar{padding:11px 14px; margin-bottom:14px;}
+    .suc-status-bar .suc-status-label,
+    .suc-status-bar .suc-status-link{font-size:.82rem;}
   }
   @media (max-width:420px){
     .rv-paso{display:none;}
@@ -3911,6 +3993,11 @@
   <div class="tv-body reservas-vista">
     <div class="wrap">
 
+      <div class="suc-status-bar" id="sucStatusBar">
+        <span class="suc-status-label">Sucursal: <b>Ñuñoa</b></span>
+        <button class="suc-status-link" id="sucCambiarBtn" onclick="volverASeleccionSucursal()">Cambiar</button>
+      </div>
+
       <!-- pasos -->
       <div class="steps">
         <div class="step active" data-step="1"><span class="n">1</span> Servicio</div>
@@ -4173,6 +4260,40 @@
       <div class="mg-gal-desc-tit">Descripción</div>
       <p class="mg-gal-desc" id="galDesc"></p>
       <button class="mg-gal-comprar" id="galComprar">Agregar al carrito</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Selector de sucursal (vista completa) -- pantalla nueva, previa
+     a la reserva real. No reemplaza ni modifica #vistaReservas: solo se
+     antepone. Ver abrirReservas()/mostrarSelectorSucursal() en el JS. ===== -->
+<div id="vistaSucursal" class="tienda-vista">
+  <header class="tv-head">
+    <div class="tv-head-in">
+      <button class="tv-back" id="sucVolver">← Volver</button>
+      <div class="wordmark">MASTER LOOK<sup>®</sup></div>
+      <span></span>
+    </div>
+  </header>
+  <div class="tv-body">
+    <div class="wrap">
+      <div class="tv-title suc-title"><h1>Elige una sucursal</h1><p>Selecciona el local donde quieres reservar tu hora.</p></div>
+      <div class="suc-grid">
+        <button class="suc-card" id="sucCardProvidencia" onclick="elegirSucursalProvidencia()">
+          <div class="suc-logo">MASTER LOOK<sup>®</sup></div>
+          <div class="suc-info">
+            <b>MASTERLOOK | Providencia</b>
+            <span>Av. Nueva Providencia 1945, oficina 1408, Providencia.</span>
+          </div>
+        </button>
+        <button class="suc-card" id="sucCardNunoa" onclick="elegirSucursalNunoa()">
+          <div class="suc-logo">MASTER LOOK<sup>®</sup></div>
+          <div class="suc-info">
+            <b>MASTERLOOK | Ñuñoa</b>
+            <span>Av. Manuel Antonio Matta 067, local 101-C, 7750000 Ñuñoa, Región Metropolitana.</span>
+          </div>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -10565,10 +10686,69 @@
     try{ return location.hash; }catch(e){ return ''; }
   }
 
+  /* ---------- selector de sucursal (previo a la reserva real) ----------
+     Se muestra UNA vez por sesión de navegación (sessionStorage, se olvida
+     al cerrar la pestaña) antes de abrir la agenda real -- así el cliente
+     no tiene que elegir sucursal cada vez que hace click en "Reservar"
+     dentro de la misma visita. Providencia es 100% externa (AgendaPro,
+     nunca toca nuestra agenda/Firestore); Ñuñoa sigue siendo EXACTAMENTE
+     la misma agenda propia de siempre -- elegirSucursalNunoa() solo llama
+     a abrirReservas() ya elegida, sin duplicar ni un poco su lógica. */
+  const URL_AGENDAPRO_PROVIDENCIA = 'https://link.agendapro.com/cl/masterlook/313f6965';
+
+  function mostrarSelectorSucursal(){
+    document.getElementById('vistaSucursal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('vistaSucursal').scrollTop = 0;
+  }
+  function cerrarSelectorSucursal(){
+    document.getElementById('vistaSucursal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function elegirSucursalProvidencia(){
+    window.location.href = URL_AGENDAPRO_PROVIDENCIA;
+  }
+  // sucursalRecienConfirmada: flag puntual, SOLO para esta llamada -- no se
+  // guarda en sessionStorage ni en ningún otro lado. La próxima vez que se
+  // llame a abrirReservas() sin este flag (cualquier botón/enlace/chip de
+  // "Reservar" del sitio) vuelve a mostrar el selector, sin excepción --
+  // pedido explícito de la usuaria: nunca recordar la sucursal.
+  function elegirSucursalNunoa(){
+    cerrarSelectorSucursal();
+    abrirReservas(false, true);
+  }
+  document.getElementById('sucVolver')?.addEventListener('click', cerrarSelectorSucursal);
+
+  /** Botón "Cambiar sucursal", visible en cualquiera de los 4 pasos de la
+   *  reserva real -- cierra la reserva (sin tocar el historial de más,
+   *  igual que reiniciarModoReserva/irAInicio) y vuelve a mostrar las 2
+   *  tarjetas, sin recargar la página. No toca el estado ya elegido
+   *  (servicio/fecha/barbero) -- si el cliente vuelve a elegir Ñuñoa,
+   *  retoma exactamente donde estaba. */
+  function volverASeleccionSucursal(){
+    cerrarReservas(true);
+    mostrarSelectorSucursal();
+  }
+
   /* ---------- vista de reservas ---------- */
-  function abrirReservas(desdeHistorial){
+  function abrirReservas(desdeHistorial, sucursalRecienConfirmada){
+    // Cerrar las vistas hermanas SIEMPRE primero (igual que antes) -- si no,
+    // con el gate de sucursal más abajo, #vistaTienda/#vistaAcademia podrían
+    // quedar abiertas por debajo del selector y tapar sus tarjetas (mismo
+    // z-index:70, pero aparecen después en el DOM -- ver .tienda-vista).
     cerrarTienda(true);
     cerrarAcademia(true);
+    // Gate de sucursal -- ÚNICO punto de entrada real (los ~19 botones/
+    // enlaces/chips de "Reservar" del sitio, incluido el chat Max, llaman
+    // todos a esta misma función) -- así ninguno queda sin pasar por acá.
+    // SIN memoria de sesión (pedido explícito de la usuaria): el único
+    // caso que se salta el selector es la llamada puntual que hace
+    // elegirSucursalNunoa() al confirmar, o volver por historial/popstate
+    // (que solo ocurre si ya se pasó por acá en esta misma apertura).
+    if(!desdeHistorial && !sucursalRecienConfirmada){
+      mostrarSelectorSucursal();
+      return;
+    }
     document.getElementById('vistaReservas').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaReservas').scrollTop = 0;
