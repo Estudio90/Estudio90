@@ -1007,6 +1007,10 @@
      (p.ej. "Descartar cambios" sobre Nueva Reserva). Necesitan quedar arriba
      sin depender del orden en el DOM -- ver cerrarModales() en el JS. */
   #modalMgConfirm, #modalMgPrompt{ z-index:189; }
+  /* La galería de fotos del servicio se abre ENCIMA del modal "Configuración"
+     (mismo caso que mgConfirm/mgPrompt arriba) -- sin este z-index quedaría
+     tapada por "Configuración", que aparece después en el DOM. */
+  #modalSvcGaleria{ z-index:189; }
   .mg-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
   .mg-head h3{font-size:17px; font-weight:600;}
   .mg-close{background:#f1f1f4; border:none; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:#57565f;}
@@ -4202,6 +4206,22 @@
       </div>
     </div>
 
+    <!-- Galería de fotos adicionales de un servicio (además de la foto
+         principal, photoUrl) -- se muestran en la tarjeta de servicio de
+         la reserva pública, hasta 3 visibles en fila con scroll si hay
+         más. Mismo patrón que la galería de productos (pcm-galeria). -->
+    <div class="mg-modal" id="modalSvcGaleria">
+      <div class="mg-head">
+        <h3>Fotos del servicio</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="svcGalNombre" style="margin-bottom:6px;font-weight:600;color:var(--text,#1A1815);"></p>
+      <p class="mg-note" style="margin-bottom:14px;">Fotos adicionales para la reserva del cliente -- se ven hasta 3 en
+        fila (con desplazamiento si agregas más). No reemplazan la foto principal de arriba.</p>
+      <div class="pcm-galeria" id="svcGaleria"></div>
+      <button class="mg-btn full" data-close style="margin-top:18px;">Listo</button>
+    </div>
+
     <div id="vistaUsuarios" style="display:none;">
       <div class="cx-head">
         <div>
@@ -4724,9 +4744,9 @@
 
   <!-- Servicios -->
   <div class="mg-pane active" data-pane="servicios">
-    <div class="mg-list-head" style="display:grid;grid-template-columns:38px 1fr 92px 74px 84px auto;gap:8px;padding:0 10px 6px;
+    <div class="mg-list-head" style="display:grid;grid-template-columns:38px 1fr 92px 74px 84px 34px auto;gap:8px;padding:0 10px 6px;
       font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#87868f;">
-      <div></div><div></div><div>Precio</div><div>Duración</div><div>Anticipo</div><div></div>
+      <div></div><div></div><div>Precio</div><div>Duración</div><div>Anticipo</div><div></div><div></div>
     </div>
     <div class="mg-list" id="cfgServicios"></div>
     <datalist id="cfgCategoriasServicio">
@@ -8048,10 +8068,15 @@
     // ningún modal de fondo, el comportamiento es idéntico al de siempre.
     const modalConfirm = document.getElementById('modalMgConfirm');
     const modalPrompt = document.getElementById('modalMgPrompt');
-    const capaSuperiorAbierta = modalConfirm.classList.contains('open') || modalPrompt.classList.contains('open');
+    // La galería de fotos del servicio (modalSvcGaleria) se abre ENCIMA de
+    // "Configuración" -- mismo caso que mgConfirm/mgPrompt: cerrarla no debe
+    // descartar el modal de fondo.
+    const modalGaleria = document.getElementById('modalSvcGaleria');
+    const capaSuperiorAbierta = modalConfirm.classList.contains('open') || modalPrompt.classList.contains('open') || modalGaleria.classList.contains('open');
     if(capaSuperiorAbierta){
       modalConfirm.classList.remove('open');
       modalPrompt.classList.remove('open');
+      modalGaleria.classList.remove('open');
       const quedaOtroAbierto = Array.from(document.querySelectorAll('.mg-modal')).some(m=> m.classList.contains('open'));
       if(!quedaOtroAbierto) mgOverlay.classList.remove('open');
     } else {
@@ -10588,8 +10613,8 @@
   function pintarConfigServicios(){
     const cont = document.getElementById('cfgServicios');
     cont.innerHTML = cfgServicios.map(s=>`
-      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}" style="grid-template-columns:38px 1fr 92px 74px 84px auto;">
-        <div class="svc-thumb" data-foto="${s.id}" title="Subir foto del servicio"
+      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}" style="grid-template-columns:38px 1fr 92px 74px 84px 34px auto;">
+        <div class="svc-thumb" data-foto="${s.id}" title="Subir foto principal del servicio"
              style="width:36px;height:36px;border-radius:8px;cursor:pointer;background-color:#eee;
                background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:14px;
                ${s.photoUrl ? `background-image:url('${s.photoUrl}');` : ''}">${s.photoUrl ? '' : '📷'}</div>
@@ -10597,6 +10622,12 @@
         <input type="number" value="${s.priceClp}" data-f="priceClp" min="0" step="500" title="Precio">
         <input type="number" value="${s.minutes}" data-f="minutes" min="5" step="5" title="Duración (min)">
         <input type="number" value="${s.anticipo ?? 5000}" data-f="anticipo" min="0" step="500" title="Anticipo para reservar (Webpay)">
+        <button type="button" class="svc-galeria-btn" data-galeria="${s.id}"
+          title="Fotos adicionales para la reserva (además de la foto principal) -- hasta 3 en fila"
+          style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border-strong,#ccc);background:#fff;
+            cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:2px;padding:0;">
+          🖼️${Array.isArray(s.photos) && s.photos.length ? `<span style="font-size:10px;font-weight:700;">${s.photos.length}</span>` : ''}
+        </button>
         <button class="mg-del" title="Desactivar">✕</button>
         <div style="grid-column:1/-1;display:flex;gap:8px;">
           <input type="text" value="${s.cat || ''}" data-f="cat" list="cfgCategoriasServicio" placeholder="Categoría"
@@ -10610,7 +10641,101 @@
         inp.addEventListener('change', ()=> guardarServicio(row)));
       row.querySelector('.mg-del').addEventListener('click', ()=> desactivarServicio(row));
       row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoServicio(row.dataset.id));
+      row.querySelector('.svc-galeria-btn').addEventListener('click', ()=> abrirGaleriaServicio(row.dataset.id));
     });
+  }
+
+  /** Galería de fotos adicionales de un servicio (además de photoUrl) --
+   *  se guardan en services/{id}.photos y las lee la tarjeta de reserva
+   *  del sitio público (hasta 3 visibles en fila, con scroll si hay más).
+   *  svcGalFotos es el arreglo de trabajo mientras el modal está abierto;
+   *  cada acción (agregar/quitar/mover) se guarda de inmediato. */
+  let svcGalServicioId = null;
+  let svcGalFotos = [];
+
+  function abrirGaleriaServicio(servicioId){
+    const s = cfgServicios.find(x=> x.id === servicioId);
+    if(!s) return;
+    svcGalServicioId = servicioId;
+    svcGalFotos = Array.isArray(s.photos) ? s.photos.slice() : [];
+    const nombreEl = document.getElementById('svcGalNombre');
+    if(nombreEl) nombreEl.textContent = s.name || '';
+    pintarGaleriaServicio();
+    abrirModal('modalSvcGaleria');
+  }
+
+  function pintarGaleriaServicio(){
+    const cont = document.getElementById('svcGaleria');
+    if(!cont) return;
+    cont.innerHTML = svcGalFotos.map((url,i)=> `
+      <div class="pcm-gal-item">
+        <img src="${url}" alt="">
+        <button type="button" class="pcm-gal-del" data-svcgal-quitar="${i}" title="Quitar foto">✕</button>
+        <div class="pcm-gal-mover">
+          <button type="button" data-svcgal-mover="${i}:-1" ${i===0?'disabled':''} title="Mover antes">‹</button>
+          <button type="button" data-svcgal-mover="${i}:1" ${i===svcGalFotos.length-1?'disabled':''} title="Mover después">›</button>
+        </div>
+      </div>`).join('') + `<button type="button" class="pcm-gal-add" id="svcGalAgregar" title="Agregar foto">+</button>`;
+
+    cont.querySelectorAll('[data-svcgal-quitar]').forEach(b=>
+      b.addEventListener('click', async ()=>{
+        svcGalFotos.splice(Number(b.dataset.svcgalQuitar), 1);
+        pintarGaleriaServicio();
+        await guardarGaleriaServicio();
+      }));
+    cont.querySelectorAll('[data-svcgal-mover]').forEach(b=>
+      b.addEventListener('click', async ()=>{
+        const [i, dir] = b.dataset.svcgalMover.split(':').map(Number);
+        const j = i + dir;
+        if(j < 0 || j >= svcGalFotos.length) return;
+        [svcGalFotos[i], svcGalFotos[j]] = [svcGalFotos[j], svcGalFotos[i]];
+        pintarGaleriaServicio();
+        await guardarGaleriaServicio();
+      }));
+    document.getElementById('svcGalAgregar')?.addEventListener('click', agregarFotoGaleriaServicio);
+  }
+
+  /** Sube una foto nueva a la galería del servicio en edición (no toca la
+   *  foto principal, photoUrl) -- mismo mecanismo de subida que
+   *  subirFotoServicio (redimensionarImagen + Storage), agregando al
+   *  arreglo en vez de reemplazar. Se guarda de inmediato. */
+  function agregarFotoGaleriaServicio(){
+    if(!svcGalServicioId) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const btn = document.getElementById('svcGalAgregar');
+      if(btn){ btn.disabled = true; btn.textContent = '…'; }
+      try{
+        const blob = await redimensionarImagen(file, 800);
+        const ruta = `servicePhotos/${svcGalServicioId}/${Date.now()}.jpg`;
+        const ref = storage.ref(ruta);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        svcGalFotos.push(url);
+        pintarGaleriaServicio();
+        await guardarGaleriaServicio();
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pintarGaleriaServicio();
+      }
+    });
+    input.click();
+  }
+
+  async function guardarGaleriaServicio(){
+    const s = cfgServicios.find(x=> x.id === svcGalServicioId);
+    if(!s) return;
+    s.photos = svcGalFotos.slice();
+    try{
+      await db.collection('services').doc(svcGalServicioId).set(s);
+      pintarConfigServicios();
+    }catch(e){
+      showToast('No se pudo guardar la galería: ' + e.message);
+    }
   }
 
   /** Sube (o reemplaza) la foto de un servicio y la deja lista para el sitio público. */

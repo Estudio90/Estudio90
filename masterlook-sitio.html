@@ -2012,34 +2012,60 @@
   .rv-cat-toggle{font-size:1rem; font-weight:500; color:var(--text-mid); flex-shrink:0;}
   .rv-cat-body{padding:14px;}
   .rv-cat-seccion.cerrada .rv-cat-body{display:none;}
-  .svc-pick-grid{display:flex; flex-direction:column; gap:10px;}
+  .svc-pick-grid{display:flex; flex-direction:column; gap:12px;}
 
-  /* tarjetas de servicio: fila con foto a la izquierda, estilo catálogo de reservas */
-  .svc-opt{display:flex; align-items:flex-start; gap:13px; border:1px solid var(--border); border-radius:10px; padding:13px;
-    cursor:pointer; background:var(--panel); transition:border-color .18s, box-shadow .18s;}
-  .svc-opt:hover{border-color:var(--border-strong); box-shadow:var(--shadow-sm);}
-  .svc-opt.selected{border-color:var(--border-strong); box-shadow:0 0 0 1px var(--border-strong); background:var(--panel-2);}
-  .svc-foto-mini{width:72px; height:72px; border-radius:10px; background-color:var(--panel-2);
-    background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center;
-    flex-shrink:0; color:var(--text-low);}
-  .svc-foto-mini svg{width:26px; height:26px;}
-  .svc-info{flex:1; min-width:0;}
-  .svc-top{display:block;}
+  /* tarjetas de servicio -- diseño AgendaPro aprobado por la usuaria
+     (imagen de referencia + medidas exactas en px). Medidas en PX
+     LITERALES, no rem: html{font-size:106%} movería cualquier rem un 6%
+     de más y la usuaria pidió coincidencia exacta de píxeles. Orden
+     dentro de .svc-opt (columna): nombre / duración / precio / fotos
+     circulares / descripción / "Más información" / botón. */
+  .svc-opt{display:flex; flex-direction:column; width:100%; box-sizing:border-box;
+    background:#FFFFFF; border:1px solid #677781; border-radius:8px; padding:16px;
+    cursor:pointer; transition:border-color .18s, box-shadow .18s;}
+  .svc-opt:hover{border-color:var(--border-strong);}
+  .svc-opt.selected{border-color:var(--border-strong); background:var(--panel-2);}
+
   /* nombres con prefijo "svcr" (servicio-reserva): las tarjetas de la home
      ya usan .svc-nombre/.svc-desc/.svc-pie/.svc-precio con otro estilo
      (mayúsculas, alto fijo, precio en globo) -- nombres separados para
      que no se mezclen los dos componentes por compartir clase. */
-  .svcr-nombre{font-size:.875rem; font-weight:700; line-height:1.3; text-transform:none;}
-  .svc-chips{display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;}
-  .svc-chip{font-size:.74rem; color:var(--text-mid); background:none; padding:0; border:none; border-radius:0;
-    display:inline-flex; align-items:center; gap:3px;}
-  .svc-chip.reco{color:var(--oro); font-weight:700;}
-  .svcr-precio{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.86rem; font-weight:700;
-    color:var(--text-hi); white-space:nowrap; background:none; border:none; padding:0; margin-top:3px; border-radius:0;}
-  .svcr-desc{font-size:.79rem; color:var(--text-mid); line-height:1.5; margin-top:8px; height:auto;
-    max-height:0; overflow:hidden; display:block; transition:max-height .3s ease, margin .3s ease;}
-  .svc-opt.abierto .svcr-desc{max-height:220px;}
+  .svcr-nombre{font-size:14px; font-weight:500; line-height:19px; color:#2C3941; margin-bottom:8px; text-transform:none;}
+  .svcr-duracion{font-size:12px; font-weight:400; line-height:19px; color:#989DA0;}
+  .svcr-precio{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:12px; font-weight:700;
+    line-height:19px; color:#474747; margin-top:2px;}
+
+  /* Fotos circulares reales del servicio (photoUrl) -- fila horizontal,
+     máx. 3 visibles, con scroll/carrusel simple si hubiera más (hoy cada
+     servicio tiene como máximo 1 foto configurada -- no se inventan ni
+     duplican fotos para "rellenar" hasta 3). */
+  .svcr-fotos{display:flex; gap:12px; margin-top:13px; max-width:180px;
+    overflow-x:auto; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+  .svcr-fotos::-webkit-scrollbar{display:none;}
+  .svcr-foto{width:52px; height:52px; border-radius:50%; flex:0 0 52px; scroll-snap-align:start;
+    background-color:var(--panel-2); background-size:cover; background-position:center;}
+
+  /* Vista previa SIEMPRE visible (2 líneas con "…"), igual que la imagen de
+     referencia aprobada. Al abrir, .abierto quita el clamp y se ve el texto
+     completo, respetando los saltos de línea originales (white-space:pre-line)
+     sin cortar nada; "Más información"/"Ver menos" solo aparece cuando el
+     texto realmente no entra en 2 líneas (ver pintarListaServicios()). */
+  .svcr-desc{font-size:12px; line-height:18px; color:#697074; margin-top:13px; text-align:left; white-space:pre-line;
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;}
+  .svc-opt.abierto .svcr-desc{-webkit-line-clamp:unset; display:block; overflow:visible;}
   .svc-vacio{text-align:center; padding:36px 16px; color:var(--text-mid); font-size:.88rem;}
+
+  /* Computador -- en AgendaPro real, la tarjeta de servicio NUNCA se
+     estira a lo ancho de toda la pantalla: pasa a una grilla de 2
+     columnas (medido en su propia página de escritorio) y solo el
+     nombre crece a 16px -- duración/precio/fotos/descripción/botón
+     quedan exactamente iguales que en celular. Mismo breakpoint
+     (720px) que ya usa el selector de sucursal (.suc-grid) más arriba. */
+  @media (min-width:720px){
+    .svc-pick-grid{flex-direction:row; flex-wrap:wrap; gap:16px;}
+    .svc-opt{flex:1 1 calc(50% - 8px); min-width:280px;}
+    .svcr-nombre{font-size:16px;}
+  }
 
   /* reparto de citas entre barberos */
   .rv-plan{margin-top:20px; background:var(--panel-2); border:1px solid var(--border);
@@ -2083,21 +2109,23 @@
     font-weight:700; cursor:pointer; font-family:inherit;}
   .rv-el-go:hover{opacity:.88;}
 
-  .svc-botones{display:flex; flex-direction:column; gap:6px; align-items:stretch; flex-shrink:0; justify-content:center;}
+  .svc-botones{display:flex; align-items:center; justify-content:flex-end; margin-top:16px;}
   .svc-sumar{background:var(--panel); color:var(--text-hi); border:1px solid var(--border-strong);
     padding:6px 11px; border-radius:8px; font-size:.72rem; font-weight:700;
     cursor:pointer; font-family:inherit; white-space:nowrap;}
   .svc-sumar:hover{border-color:var(--text-hi);}
   .svc-opt.selected .svc-sumar{background:var(--text-hi); color:var(--bg); border-color:var(--text-hi);}
 
-  /* Stepper −/cantidad/+ de una tarjeta ya elegida -- reemplaza a
-     "Seleccionar"/"Sumar" en cuanto tiene al menos 1 unidad. */
-  .svc-stepper{display:flex; align-items:center; justify-content:center; gap:2px;
-    border:1px solid var(--border-strong); border-radius:8px; overflow:hidden;}
+  /* Stepper −/cantidad/+ de una tarjeta ya elegida -- reemplaza al botón
+     "Agendar servicio" en cuanto tiene al menos 1 unidad. Misma altura
+     (40px) que el botón para que no "salte" la fila al cambiar de uno a
+     otro. */
+  .svc-stepper{display:flex; align-items:center; justify-content:center; gap:2px; height:36px;
+    border:1px solid var(--border-strong); border-radius:6px; overflow:hidden;}
   .svc-qty-btn{background:var(--panel); color:var(--text-hi); border:none;
-    width:28px; height:28px; font-size:.9rem; line-height:1; cursor:pointer; font-family:inherit;}
+    width:34px; height:36px; font-size:1rem; line-height:1; cursor:pointer; font-family:inherit;}
   .svc-qty-btn:hover{background:var(--panel-2);}
-  .svc-qty-num{min-width:1.4em; text-align:center; font-size:.78rem; font-weight:700; color:var(--text-hi);
+  .svc-qty-num{min-width:1.6em; text-align:center; font-size:14px; font-weight:700; color:var(--text-hi);
     font-variant-numeric:tabular-nums;}
 
   #sumSvc div{margin-bottom:4px;}
@@ -2122,12 +2150,19 @@
     color:var(--text-mid); cursor:pointer; text-decoration:underline;}
   .rv-cambiar:hover{color:var(--text-hi);}
 
-  .svc-agendar{background:var(--oro); color:#12100A; border:1px solid var(--oro);
-    padding:6px 13px; border-radius:8px; font-size:.72rem; font-weight:700;
+  /* Botón "Agendar servicio" -- mismo texto y color gris pizarra que la
+     imagen de referencia aprobada. Conserva EXACTAMENTE la función del
+     botón "Seleccionar" anterior (mismo atributo data-agendar, mismo
+     manejador de clic en pintarListaServicios()) -- solo cambian el
+     texto y el estilo visual. */
+  .svc-agendar{padding:8px 14px; border-radius:6px;
+    background:#677781; color:#FFFFFF; border:1px solid #677781;
+    font-size:14px; font-weight:400; line-height:19px; text-align:center;
+    display:inline-flex; align-items:center; justify-content:center;
     cursor:pointer; font-family:inherit; white-space:nowrap;}
-  .svc-agendar:hover{opacity:.87;}
-  .svc-mas{display:block; background:none; border:none; padding:0; margin-top:8px; font-size:.72rem; font-weight:700;
-    color:var(--text-mid); cursor:pointer; font-family:inherit; text-decoration:underline;}
+  .svc-agendar:hover{opacity:.9;}
+  .svc-mas{display:inline-block; background:none; border:none; padding:0; margin:0 auto 0 0; font-size:12px; font-weight:400; line-height:19px;
+    color:rgba(26,26,26,.8); cursor:pointer; font-family:inherit; text-decoration:underline; text-align:left; width:fit-content; flex-shrink:0;}
   .svc-mas:hover{color:var(--text-hi);}
 
   /* acceso rápido al primer horario */
@@ -2723,14 +2758,6 @@
     .svc-pick{gap:8px;}
     .rv-cat-head{padding:11px 14px; font-size:.68rem;}
     .rv-cat-body{padding:10px;}
-    .svc-pick-grid{gap:8px;}
-    .svc-opt{padding:11px 12px; border-radius:10px; gap:10px;}
-    .svc-foto-mini{width:56px; height:56px; border-radius:8px;}
-    .svc-foto-mini svg{width:20px; height:20px;}
-    .svc-chips{gap:5px; margin-top:4px;}
-    .svc-chip{font-size:.68rem;}
-    .svcr-precio{font-size:.82rem;}
-    .svcr-desc{font-size:.74rem; margin-top:7px;}
 
     .rv-plan{margin-top:14px; padding:11px; border-radius:12px;}
     .rv-plan-head{margin-bottom:8px;}
@@ -2760,9 +2787,6 @@
 
     .rv-elegido{padding:9px 11px; font-size:.76rem; margin:9px 0 12px; border-radius:9px;}
     .rv-cambiar{font-size:.7rem;}
-
-    .svc-agendar{padding:5px 11px; font-size:.68rem;}
-    .svc-mas{font-size:.68rem;}
 
     .rv-pronto{padding:12px 13px; border-radius:12px; margin-bottom:14px; gap:9px;}
     .rv-pronto-ic{font-size:.98rem;}
@@ -9309,28 +9333,33 @@
           <button class="svc-qty-btn" data-mas-svc aria-label="Agregar otro">+</button>
         </div>`;
     }
-    return `<button class="svc-agendar" data-agendar>Seleccionar</button>`;
+    return `<button class="svc-agendar" data-agendar>Agendar servicio</button>`;
   }
 
   function tarjetaServicio(s){
-    const fotoEstilo = s.photoUrl ? `background-image:url('${s.photoUrl}');` : '';
     const item = (state.servicios || []).find(x=> x.id === s.id);
+    // Fotos reales del servicio: la principal (s.photoUrl) primero, y
+    // detrás las de la galería adicional (s.photos[], cargadas desde el
+    // panel) -- así la foto que ya tenían configurada sigue siendo la
+    // primera sin que haya que volver a subirla. Sin duplicados (si la
+    // principal ya está repetida dentro de la galería, no se cuenta dos
+    // veces). Nunca se inventan fotos para "completar" hasta 3.
+    const galeria = Array.isArray(s.photos) ? s.photos : [];
+    const fotos = s.photoUrl
+      ? [s.photoUrl, ...galeria.filter(u=> u !== s.photoUrl)]
+      : galeria;
     return `
       <div class="svc-opt ${item ? 'selected' : ''}"
            data-id="${s.id}" data-svc="${s.name}" data-price="${s.priceClp}" data-min="${s.minutes}">
-        <div class="svc-foto-mini" style="${fotoEstilo}">${s.photoUrl ? '' : iconoDeServicio(s)}</div>
-        <div class="svc-info">
-          <div class="svc-top">
-            <div class="svcr-nombre">${s.featured ? '★ ' : ''}${s.name}</div>
-            <div class="svc-chips">
-              <span class="svc-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${dur(s.minutes)}</span>
-            </div>
-            <div class="svcr-precio">${money(s.priceClp)}</div>
-          </div>
-          ${s.description ? `<div class="svcr-desc">${s.description}</div>` : ''}
-          ${s.description ? '<button class="svc-mas" data-mas>Más información ›</button>' : ''}
+        <div class="svcr-nombre">${s.featured ? '★ ' : ''}${s.name}</div>
+        <div class="svcr-duracion">${dur(s.minutes)}</div>
+        <div class="svcr-precio">${money(s.priceClp)}</div>
+        ${fotos.length ? `<div class="svcr-fotos">${fotos.map(url=> `<div class="svcr-foto" style="background-image:url('${url}')"></div>`).join('')}</div>` : ''}
+        ${s.description ? `<div class="svcr-desc">${s.description}</div>` : ''}
+        <div class="svc-botones">
+          ${s.description ? '<button class="svc-mas" data-mas>Más información</button>' : ''}
+          ${botonesServicioHTML(item?.qty || 0)}
         </div>
-        <div class="svc-botones">${botonesServicioHTML(item?.qty || 0)}</div>
       </div>`;
   }
 
@@ -9371,6 +9400,20 @@
           </div>
         </div>`;
     }).join('');
+
+    // "Más información" sólo tiene sentido si la descripción de verdad no
+    // entra en las 2 líneas de la vista previa -- si ya se ve completa, se
+    // quita el botón (nada que expandir). Sólo mide secciones abiertas.
+    // El botón vive dentro de .svc-botones (misma fila que "Agendar
+    // servicio"), ya no es hermano directo de .svcr-desc -- se busca
+    // dentro de la tarjeta completa.
+    cont.querySelectorAll('.rv-cat-seccion:not(.cerrada) .svc-opt').forEach(card=>{
+      const desc = card.querySelector('.svcr-desc');
+      const btn = card.querySelector('.svc-mas');
+      if(desc && btn && desc.scrollHeight <= desc.clientHeight + 1){
+        btn.remove();
+      }
+    });
 
     cont.querySelectorAll('[data-toggle-cat]').forEach(btn=>
       btn.addEventListener('click', ()=>{
@@ -10653,6 +10696,9 @@
               // re-leer el doc (el server lo recalcula igual en calcularMonto).
               anticipo: typeof x.anticipo === 'number' ? x.anticipo : null,
               photoUrl: x.photoUrl || '',
+              // galería adicional (subida desde el panel, "Fotos del servicio")
+              // -- la tarjeta de reserva la usa junto a photoUrl, ver tarjetaServicio().
+              photos: Array.isArray(x.photos) ? x.photos : [],
             };
           });
         }
