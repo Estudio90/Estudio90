@@ -5185,7 +5185,8 @@
     <label class="mg-label">Descripción corta (pie de página)</label>
     <input type="text" id="cfgDescNegocio" class="mg-input" placeholder="Ej: Barbería y grooming studio. Reservas simples, resultados de maestro.">
     <label class="mg-label">Dirección</label>
-    <input type="text" id="cfgDireccion" class="mg-input" placeholder="Ej: Santiago, Chile">
+    <div id="cfgDireccion" class="mg-input" style="background:#f5f4f0;cursor:default;min-height:20px;">Cargando…</div>
+    <p class="mg-note" style="margin-top:-8px;margin-bottom:14px;">Se administra por sucursal desde <a href="#" id="cfgIrALocales" style="text-decoration:underline;">Locales</a> -- ahí puedes editar la dirección, el horario y el mapa de cada local.</p>
     <label class="mg-label">Teléfono (WhatsApp)</label>
     <input type="text" id="cfgTelefono" class="mg-input" placeholder="Ej: +56 9 4912 4645">
     <label class="mg-label">Correo</label>
@@ -9989,7 +9990,6 @@
       pintarTiendaHeroThumb(d.tiendaHeroUrl || '');
       document.getElementById('cfgNombreNegocio').value = d.nombre || 'MASTERLOOK';
       document.getElementById('cfgDescNegocio').value = d.descripcion || 'Barbería y grooming studio. Reservas simples, resultados de maestro.';
-      document.getElementById('cfgDireccion').value = d.direccion || 'Santiago, Chile';
       document.getElementById('cfgTelefono').value = d.telefono || '+56 9 4912 4645';
       document.getElementById('cfgCorreo').value = d.correo || 'hola@masterlook.cl';
       document.getElementById('cfgInstagram').value = d.instagram || '@masterlook.cl';
@@ -9999,7 +9999,38 @@
       pintarMapaThumb(d.mapaImagenUrl || '');
       pintarBannerThumb(d.promoBannerFotoUrl || '');
     }catch(e){}
+    pintarDireccionesConfig();
   }
+
+  /** Dirección(es) mostradas en Configuración -- Bloque 1 del módulo "Locales"
+   *  (2026-09-29): fuente única de verdad, reemplaza la vieja lectura de
+   *  `settings/negocio.direccion`. Solo lectura acá (se edita desde Locales);
+   *  preparado para 1 o varias sucursales activas a la vez. */
+  async function pintarDireccionesConfig(){
+    const el = document.getElementById('cfgDireccion');
+    if(!el) return;
+    el.textContent = 'Cargando…';
+    try{
+      const snap = await db.collection('locales').where('active', '==', true).get();
+      const activos = snap.docs.map(d=> d.data());
+      el.textContent = '';
+      if(!activos.length){ el.textContent = 'Sin locales activos todavía -- créalo en Locales.'; return; }
+      activos.forEach((l, i)=>{
+        if(i > 0) el.appendChild(document.createElement('br'));
+        if(activos.length > 1 && l.nombre){
+          const strong = document.createElement('strong');
+          strong.textContent = l.nombre + ': ';
+          el.appendChild(strong);
+        }
+        el.appendChild(document.createTextNode(l.direccionCompleta || ''));
+      });
+    }catch(e){ el.textContent = 'No se pudo cargar.'; }
+  }
+  document.getElementById('cfgIrALocales')?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    cerrarModales();
+    mostrarVistaLocales();
+  });
 
   document.getElementById('cfgGuardarLocal').addEventListener('click', async ()=>{
     const horarioSemana = document.getElementById('cfgHorLV').value.trim();
@@ -10831,7 +10862,6 @@
   document.getElementById('cfgGuardarContacto').addEventListener('click', async ()=>{
     const nombre = document.getElementById('cfgNombreNegocio').value.trim();
     const descripcion = document.getElementById('cfgDescNegocio').value.trim();
-    const direccion = document.getElementById('cfgDireccion').value.trim();
     const telefono = document.getElementById('cfgTelefono').value.trim();
     const correo = document.getElementById('cfgCorreo').value.trim();
     const instagram = document.getElementById('cfgInstagram').value.trim();
@@ -10839,7 +10869,7 @@
     const notasCorreoReserva = document.getElementById('cfgNotasCorreo').value.trim();
     const politicasModificacionCorreo = document.getElementById('cfgPoliticasCorreo').value.trim();
     try{
-      await db.collection('settings').doc('negocio').set({ nombre, descripcion, direccion, telefono, correo, instagram, descuentoProductoReserva, notasCorreoReserva, politicasModificacionCorreo }, { merge:true });
+      await db.collection('settings').doc('negocio').set({ nombre, descripcion, telefono, correo, instagram, descuentoProductoReserva, notasCorreoReserva, politicasModificacionCorreo }, { merge:true });
       invalidarSettingsNegocio();
       showToast('Datos de contacto actualizados');
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }

@@ -3788,7 +3788,7 @@
       <div>
         <h4>Contacto</h4>
         <ul>
-          <li id="footDireccion">Santiago, Chile</li>
+          <li id="footDireccion"></li>
           <li id="footTelefono">+56 9 4912 4645</li>
           <li id="footCorreo">hola@masterlook.cl</li>
           <li><a id="footInstagram" href="https://instagram.com/masterlook.cl" target="_blank" rel="noopener">@masterlook.cl</a></li>
@@ -5459,11 +5459,13 @@
     if(correoReserva) db.collection('mail').add(correoReserva).catch(()=>{});
   }
 
-  /** Datos reales del negocio, editables desde el panel — mismo dato para el menú, el pie de página y el chat. */
+  /** Datos reales del negocio, editables desde el panel — mismo dato para el menú, el pie de página y el chat.
+   *  `direccion` YA NO vive acá -- ver `localesActivos`/`pintarDireccionesFooter()` más abajo (módulo Locales,
+   *  fuente única de verdad para sucursales desde el 2026-09-29). */
   let horarioNegocio = {
     horarioSemana:'11:00–21:00', horarioSabado:'10:00–19:00', horarioDomingo:'Cerrado',
     nombre:'MASTERLOOK', descripcion:'Barbería y grooming studio. Reservas simples, resultados de maestro.',
-    direccion:'Santiago, Chile', telefono:'+56 9 4912 4645', correo:'hola@masterlook.cl', instagram:'@masterlook.cl'
+    telefono:'+56 9 4912 4645', correo:'hola@masterlook.cl', instagram:'@masterlook.cl'
   };
   function pintarHorarioNegocio(){
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
@@ -5474,7 +5476,6 @@
     set('horDomFooter', horarioNegocio.horarioDomingo);
     set('footNombre', horarioNegocio.nombre);
     set('footDesc', horarioNegocio.descripcion);
-    set('footDireccion', horarioNegocio.direccion);
     set('footTelefono', horarioNegocio.telefono);
     set('footCorreo', horarioNegocio.correo);
     set('footInstagram', horarioNegocio.instagram);
@@ -5484,6 +5485,36 @@
     if(insta) insta.href = 'https://instagram.com/' + horarioNegocio.instagram.replace(/^@/,'');
   }
   pintarHorarioNegocio();
+  /** Sucursales activas (colección `locales`, Bloque 1 del módulo "Locales") --
+   *  fuente única de verdad para dirección de sucursal: reemplaza el viejo
+   *  `horarioNegocio.direccion` (que venía de `settings/negocio`, una sola
+   *  dirección fija de fábrica). Preparado para 1 o varias sucursales a la
+   *  vez -- agregar una segunda solo requiere marcarla `active:true` en el
+   *  panel, sin tocar este código. */
+  let localesActivos = [];
+  function pintarDireccionesFooter(){
+    const el = document.getElementById('footDireccion');
+    if(!el) return;
+    el.textContent = '';
+    if(!localesActivos.length) return;
+    if(localesActivos.length === 1){
+      el.textContent = localesActivos[0].direccionCompleta || '';
+      return;
+    }
+    localesActivos.forEach((l, i)=>{
+      if(i > 0) el.appendChild(document.createElement('br'));
+      if(l.nombre){
+        const strong = document.createElement('strong');
+        strong.textContent = l.nombre + ': ';
+        el.appendChild(strong);
+      }
+      el.appendChild(document.createTextNode(l.direccionCompleta || ''));
+    });
+  }
+  db.collection('locales').where('active', '==', true).onSnapshot(snap=>{
+    localesActivos = snap.docs.map(d=> d.data());
+    pintarDireccionesFooter();
+  });
   /**
    * Ventana real de reservas de un día, leída del horario del local
    * (editable desde el panel) en vez de horas fijas en el código. Así,
@@ -7151,7 +7182,14 @@
     }
   }
   function chatRespDireccion(){
-    chatAgregar('bot', `Estamos en ${horarioNegocio.direccion}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
+    if(!localesActivos.length){
+      chatAgregar('bot', `Escríbenos al ${horarioNegocio.telefono} y te confirmamos la dirección.`);
+    } else if(localesActivos.length === 1){
+      chatAgregar('bot', `Estamos en ${localesActivos[0].direccionCompleta}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
+    } else {
+      const lista = localesActivos.map(l => `${l.nombre}: ${l.direccionCompleta}`).join('. ');
+      chatAgregar('bot', `Tenemos ${localesActivos.length} sucursales. ${lista}. Escríbenos al ${horarioNegocio.telefono} si necesitas indicaciones.`);
+    }
     chatChips([{ label:'Otra pregunta', intent:'menu' }]);
   }
   function chatRespGracias(){
