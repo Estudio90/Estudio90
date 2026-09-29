@@ -1077,6 +1077,121 @@
   .mg-row .mg-unit{font-size:11px; color:#87868f; text-align:center;}
   .mg-del{background:none; border:none; cursor:pointer; color:#c0392b; font-size:15px; padding:4px 6px;}
 
+  /* Servicios agrupados por categoría (Bloque 1 del calco de AgendaPro --
+     categorías reales, ver serviceCategories). El header de cada grupo
+     reutiliza el mismo tono que el resto del editor de Configuración. */
+  .svc-cat-grupo{display:flex; flex-direction:column; gap:8px; margin-bottom:16px;}
+  .svc-cat-grupo:last-child{margin-bottom:0;}
+  .svc-cat-head{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:6px 2px; border-bottom:1px solid #e2e2e6;}
+  .svc-cat-nombre{font-size:13px; font-weight:700; color:var(--text-hi); text-transform:uppercase; letter-spacing:.03em;}
+  .svc-cat-acciones{display:flex; gap:4px; flex-shrink:0;}
+  .svc-cat-acciones button{background:none; border:1px solid #e2e2e6; color:#57565f; font-size:11px;
+    padding:4px 8px; border-radius:6px; cursor:pointer; font-family:inherit;}
+  .svc-cat-acciones button:hover{border-color:#4a5cf0; color:#4a5cf0;}
+  .svc-cat-acciones button.svc-cat-eliminar:hover{border-color:#c0392b; color:#c0392b;}
+  .svc-cat-vacia{font-size:12px; color:#87868f; padding:4px 2px 2px;}
+  .svc-cat-select{border:1px solid transparent; background:#f8f8fa; padding:7px 9px; border-radius:7px;
+    font-family:inherit; font-size:12.5px; width:100%; cursor:pointer;}
+  .svc-cat-select:focus{outline:none; border-color:#4a5cf0; background:#fff;}
+
+  /* Página completa "Servicios y precios" -- colores/tipografía medidos EN
+     VIVO contra app.agendapro.com/new_administration/services con
+     getComputedStyle (no aproximados): morado #8046CE, texto morado
+     #7440BB, borde #E0E4E4, texto #2C3941, encabezado de categoría #4C5559,
+     píldora verde #22C488, radio 6px, fuente Roboto (ya cargada en este
+     archivo por el bloque de Nueva Reserva). */
+  .sv-toolbar{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; font-family:'Roboto',sans-serif;}
+  .sv-btn{border-radius:6px; padding:8px 16px; font-size:14px; font-family:'Roboto',sans-serif;
+    cursor:pointer; border:1px solid transparent; line-height:1.2;}
+  .sv-btn-solid{background:#8046CE; color:#fff;}
+  .sv-btn-solid:hover{background:#6f37b3;}
+  .sv-btn-outline{background:#fff; border-color:#E0E4E4; color:#7440BB;}
+  .sv-btn-outline:hover{border-color:#8046CE;}
+
+  .sv-row{display:flex; align-items:center; gap:16px; padding:14px 16px; border:1px solid #E0E4E4;
+    border-radius:6px; margin-bottom:8px; flex-wrap:wrap; background:#fff; font-family:'Roboto',sans-serif;}
+  .sv-row.off{opacity:.5;}
+  .sv-row-info{flex:1 1 180px; min-width:120px;}
+  .sv-row-nombre{font-size:14px; font-weight:500; color:#2C3941;}
+  .sv-row-meta{font-size:13px; color:#2C3941; margin-top:2px;}
+  .sv-row-precio{font-family:'Roboto',sans-serif; font-variant-numeric:tabular-nums; font-size:14px;
+    font-weight:400; color:#2C3941; white-space:nowrap;}
+  .sv-pill{font-size:12px; font-weight:500; padding:4px 12px; border-radius:99px; white-space:nowrap;
+    font-family:'Roboto',sans-serif;}
+  .sv-pill.on{background:#22C488; color:#fff;}
+  .sv-pill.off{background:#E0E4E4; color:#4C5559;}
+  .sv-opciones-wrap{position:relative;}
+  .sv-opciones-menu{display:none; position:absolute; right:0; top:calc(100% + 4px); background:#fff;
+    border:1px solid #E0E4E4; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:6px;
+    min-width:170px; z-index:20;}
+  .sv-opciones-menu.open{display:flex; flex-direction:column;}
+  .sv-opciones-menu button{background:none; border:none; text-align:left; padding:8px 10px; border-radius:6px;
+    font-size:14px; cursor:pointer; font-family:'Roboto',sans-serif; color:#2C3941; width:100%;}
+  .sv-opciones-menu button:hover{background:#F4F4F6;}
+  .sv-opciones-menu button.danger{color:#c0392b;}
+  @media (max-width:700px){
+    .sv-row{gap:8px; padding:12px;}
+  }
+
+  /* Categorías -- mismos colores/tipografía reales (sin mayúsculas ni
+     letter-spacing: el texto de AgendaPro ya viene tal cual lo escribió la
+     dueña, el componente no lo transforma). */
+  .svc-cat-head{padding:8px 2px;}
+  .svc-cat-nombre{font-size:14px; font-weight:700; color:#4C5559; font-family:'Roboto',sans-serif;
+    text-transform:none; letter-spacing:normal;}
+  .svc-cat-acciones button{background:#fff; border:1px solid #E0E4E4; color:#7440BB; font-size:13px;
+    padding:6px 10px; border-radius:6px; cursor:pointer; font-family:'Roboto',sans-serif;}
+  .svc-cat-acciones button:hover{border-color:#8046CE; color:#7440BB;}
+  .svc-cat-acciones button.svc-cat-eliminar:hover{border-color:#c0392b; color:#c0392b;}
+  .svc-cat-vacia{font-size:13px; color:#4C5559; font-family:'Roboto',sans-serif;}
+  .svc-cat-select{border:1px solid transparent; background:#f8f8fa; padding:7px 9px; border-radius:6px;
+    font-family:'Roboto',sans-serif; font-size:13px; width:100%; cursor:pointer;}
+  .svc-cat-select:focus{outline:none; border-color:#8046CE; background:#fff;}
+
+  /* Pestañas superiores Servicios/Clases/Paquetes -- chip oscuro en la
+     activa (medido: fondo #1F2A30, texto blanco), texto gris en las
+     inactivas -- NO la píldora/segmented-control que usa el resto del
+     panel para otras cosas. */
+  .sv-toptab{background:none; border:none; padding:8px 14px; border-radius:6px; font-size:14px;
+    font-family:'Roboto',sans-serif; color:#4C5559; cursor:pointer;}
+  .sv-toptab.on{background:#1F2A30; color:#fff;}
+
+  /* Pestañas del editor de servicio -- subrayado morado (medido en
+     AgendaPro: texto #8046CE + borde inferior morado en la activa), NO la
+     píldora negra de .mg-tab -- además .mg-tab tiene un listener GLOBAL
+     (querySelectorAll sin acotar) que cruzaría clics con Configuración si
+     se reusara la misma clase acá. */
+  .mes-tabs{display:flex; gap:20px; border-bottom:1px solid #E0E4E4; margin:12px 0 18px;
+    font-family:'Roboto',sans-serif;}
+  .mes-tab{background:none; border:none; padding:0 0 12px; font-size:14px; font-weight:400; color:#4C5559;
+    cursor:pointer; font-family:'Roboto',sans-serif; border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .mes-tab.active{color:#8046CE; font-weight:500; border-bottom-color:#8046CE;}
+  .mes-pane{display:none;}
+  .mes-pane.active{display:block;}
+  .mes-fotos-row{display:flex; align-items:center; gap:12px; margin-top:6px;}
+
+  /* Página "Profesionales" -- reutiliza .sv-btn/.sv-row/.sv-pill/.sv-opciones-*
+     (mismos colores/tipografía de AgendaPro ya medidos para Servicios). Acá
+     solo lo específico: link "Ver horario", separador, y el checklist de
+     servicios agrupado por categoría dentro del editor. */
+  .sv-row-ver-horario{color:#7440BB; font-size:13px; font-family:'Roboto',sans-serif;
+    text-decoration:underline; background:none; border:none; cursor:pointer; white-space:nowrap;}
+  .sv-row-pipe{color:#E0E4E4; font-size:14px;}
+  .mpf-check-todo{display:flex; align-items:center; gap:8px; font-size:13px; color:#2C3941;
+    font-family:'Roboto',sans-serif; margin:10px 0 6px; cursor:pointer;}
+  .mpf-servicios-lista{max-height:260px; overflow-y:auto; border:1px solid #E0E4E4; border-radius:6px; padding:4px 12px;}
+  .mpf-cat-grupo{padding:8px 0; border-bottom:1px solid #f0f0f2;}
+  .mpf-cat-grupo:last-child{border-bottom:none;}
+  .mpf-cat-titulo{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#2C3941;
+    font-family:'Roboto',sans-serif; cursor:pointer; padding:4px 0;}
+  .mpf-cat-count{color:#87868f; font-weight:400;}
+  .mpf-servicio-item{display:flex; align-items:center; gap:8px; font-size:13px; color:#4C5559;
+    font-family:'Roboto',sans-serif; padding:5px 0 5px 24px;}
+
+  .mg-link{background:none; border:none; padding:0; color:#7440BB; font-size:13px; cursor:pointer;
+    font-family:'Roboto',sans-serif; text-decoration:underline;}
+
   /* ---------- Masterlook Intelligence ---------- */
   .mi-lista{display:flex;flex-direction:column;gap:2px;}
   .mi-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:13px;}
@@ -2285,7 +2400,7 @@
       <div class="nav-group" id="grupoEquipo" style="display:none;">
         <button class="nav-group-head" type="button">Equipo barberos</button>
         <div class="nav-group-items">
-          <button class="menu-panel-item" id="btnEquipoServicios">Servicios staff</button>
+          <button class="menu-panel-item" id="btnEquipoServicios">Profesionales</button>
         </div>
       </div>
 
@@ -3463,6 +3578,77 @@
       </div>
     </div>
 
+    <!-- ===== VISTA: SERVICIOS Y PRECIOS (página completa, calco de AgendaPro --
+         Bloque 1.5: corrige el Bloque 1, que vivía dentro del modal
+         Configuración). Reutiliza tal cual la lógica de categorías del
+         Bloque 1 (cfgCategorias, migrarCategoriasServicios, crear/renombrar/
+         mover/eliminarCategoriaServicio) -- acá solo cambia el contenedor. ===== -->
+    <!-- ===== VISTA: PROFESIONALES (página completa, calco de AgendaPro --
+         app.agendapro.com/new_administration/service_providers). Reutiliza
+         cfgBarberos + subirFotoBarbero tal cual existían; lo nuevo es el
+         contenedor de página completa, la fila con menú de Opciones, y el
+         editor en modal (Datos básicos con el checklist de servicios que
+         realiza + Horario + Perfil). La página "Horarios" NO se toca. ===== -->
+    <div id="vistaProfesionales" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Profesionales</h2>
+          <p class="cx-sub">Quiénes atienden, qué servicios realiza cada uno y su horario semanal.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="sv-toptab on" data-pvv="profesionales">Profesionales</button>
+          <button class="sv-toptab" data-pvv="grupos">Grupos personalizados</button>
+          <button class="ctrl-btn" id="pvVolver2">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div id="pvPanelProfesionales">
+        <div class="sv-toolbar">
+          <button class="sv-btn sv-btn-solid" id="cfgAddBarbero">+ Nuevo Profesional</button>
+        </div>
+        <div id="cfgBarberos"></div>
+      </div>
+
+      <!-- Grupos personalizados -- no existe hoy en Masterlook (bloque aparte si se pide). -->
+      <div id="pvPanelGrupos" style="display:none;">
+        <div class="cx-empty">Los "Grupos personalizados" todavía no están disponibles en el panel -- próximamente.</div>
+      </div>
+    </div>
+
+    <div id="vistaServicios" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Servicios y precios</h2>
+          <p class="cx-sub">Qué servicios ofreces, sus precios, categorías y fotos.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="sv-toptab on" data-svv="servicios">Servicios</button>
+          <button class="sv-toptab" data-svv="clases">Clases</button>
+          <button class="sv-toptab" data-svv="paquetes">Paquetes</button>
+          <button class="ctrl-btn" id="svVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <!-- Panel: Servicios -->
+      <div id="svPanelServicios">
+        <div class="sv-toolbar">
+          <button class="sv-btn sv-btn-outline" id="cfgAddCategoria">+ Nueva categoría</button>
+          <button class="sv-btn sv-btn-solid" id="cfgAddServicio">+ Nuevo servicio</button>
+        </div>
+        <div id="cfgServicios"></div>
+      </div>
+
+      <!-- Panel: Clases -- tipo de servicio todavía no construido (bloque aparte) -->
+      <div id="svPanelClases" style="display:none;">
+        <div class="cx-empty">Los servicios tipo "Clase" todavía no están disponibles en el panel -- próximamente.</div>
+      </div>
+
+      <!-- Panel: Paquetes -- tipo de servicio todavía no construido (bloque aparte) -->
+      <div id="svPanelPaquetes" style="display:none;">
+        <div class="cx-empty">Los "Paquetes" de servicios todavía no están disponibles en el panel -- próximamente.</div>
+      </div>
+    </div>
+
     <!-- ===== VISTA: HORARIOS (horario del local + horario semanal por barbero) ===== -->
     <div id="vistaHorarios" style="display:none;">
       <div class="cx-head">
@@ -4222,6 +4408,121 @@
       <button class="mg-btn full" data-close style="margin-top:18px;">Listo</button>
     </div>
 
+    <!-- Editor de servicio (Nuevo/Editar) -- página completa de Servicios y
+         precios, ver vistaServicios más abajo. Solo los campos que ya
+         existen hoy; profesionales/fotos con recorte/modalidad de pago
+         llegan en bloques aparte ya planeados. -->
+    <div class="mg-modal" id="modalEditarServicio">
+      <div class="mg-head">
+        <h3 id="mesTitulo">Nuevo servicio</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div class="mes-tabs">
+        <button type="button" class="mes-tab active" data-mestab="basicos">Datos básicos</button>
+        <button type="button" class="mes-tab" data-mestab="web">Sitio Web</button>
+      </div>
+
+      <div class="mes-pane active" data-mespane="basicos">
+        <label class="mg-label">Nombre del servicio *</label>
+        <input type="text" id="mesNombre" class="mg-input" placeholder="Ej: Corte de cabello">
+
+        <div class="mg-two" style="margin-top:12px;">
+          <div>
+            <label class="mg-label">Precio *</label>
+            <input type="number" id="mesPrecio" class="mg-input" min="0" step="500">
+          </div>
+          <div>
+            <label class="mg-label">Duración (min) *</label>
+            <input type="number" id="mesDuracion" class="mg-input" min="5" step="5">
+          </div>
+        </div>
+
+        <label class="mg-label" style="margin-top:12px;">Categoría</label>
+        <select id="mesCategoria" class="mg-input"></select>
+        <button type="button" class="mg-link" id="mesNuevaCategoria" style="margin-top:6px;">+ Nueva categoría</button>
+      </div>
+
+      <div class="mes-pane" data-mespane="web">
+        <label class="mg-label">Descripción</label>
+        <textarea id="mesDescripcion" class="mg-input" style="min-height:80px;"
+          placeholder="Qué incluye el servicio -- se muestra al cliente al reservar"></textarea>
+
+        <label class="mg-label" style="margin-top:12px;">Anticipo para reservar (Webpay)</label>
+        <input type="number" id="mesAnticipo" class="mg-input" min="0" step="500">
+
+        <label class="mg-label" style="margin-top:12px;">Fotos</label>
+        <div class="mes-fotos-row">
+          <div class="svc-thumb" id="mesFotoThumb" title="Subir foto principal del servicio"
+            style="width:56px;height:56px;border-radius:10px;cursor:pointer;background-color:#eee;
+              background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:18px;">📷</div>
+          <button type="button" class="mg-btn ghost" id="mesGaleriaBtn">Fotos adicionales (hasta 3)</button>
+        </div>
+      </div>
+
+      <div class="mg-actions">
+        <button class="mg-btn ghost" data-close>Cancelar</button>
+        <button class="mg-btn solid" id="mesGuardar">Guardar</button>
+      </div>
+    </div>
+
+    <!-- Editor de profesional (Nuevo/Editar) -- página completa de
+         Profesionales, ver vistaProfesionales más arriba. -->
+    <div class="mg-modal" id="modalEditarProfesional">
+      <div class="mg-head">
+        <h3 id="mpfTitulo">Nuevo profesional</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div class="mes-tabs">
+        <button type="button" class="mes-tab active" data-mpftab="basicos">Datos básicos</button>
+        <button type="button" class="mes-tab" data-mpftab="horario">Horario</button>
+        <button type="button" class="mes-tab" data-mpftab="perfil">Perfil</button>
+      </div>
+
+      <div class="mes-pane active" data-mpfpane="basicos">
+        <label class="mg-label">Nombre público *</label>
+        <input type="text" id="mpfNombre" class="mg-input" placeholder="Ej: Diego Colina">
+
+        <label class="cu-tgl" style="margin-top:12px;">
+          <span class="mg-sw"><input type="checkbox" id="mpfAcceptaOnline" checked><span class="mg-sw-track"></span></span>
+          Este profesional acepta reservas en línea
+        </label>
+
+        <p class="mg-note" style="margin-top:12px;">
+          Para crear un inicio de sesión propio para este profesional, o darle acceso a su agenda, usa
+          <button type="button" class="mg-link" id="mpfIrAUsuarios">Usuarios y permisos</button>.
+        </p>
+
+        <label class="mg-label" style="margin-top:16px;">Selecciona los servicios que realiza</label>
+        <label class="mpf-check-todo">
+          <input type="checkbox" id="mpfSeleccionarTodo"> Seleccionar todo
+        </label>
+        <div id="mpfServiciosLista" class="mpf-servicios-lista"></div>
+      </div>
+
+      <div class="mes-pane" data-mpfpane="horario">
+        <p class="mg-note" style="margin-bottom:10px;">Horas de trabajo de este profesional, para calcular los horarios disponibles al reservar.</p>
+        <div class="mg-week" id="mpfHorario"></div>
+      </div>
+
+      <div class="mes-pane" data-mpfpane="perfil">
+        <label class="mg-label">Biografía <span class="mg-opt">(opcional, máx. 600 caracteres)</span></label>
+        <textarea id="mpfBio" class="mg-input" maxlength="600" style="min-height:100px;"
+          placeholder="Una breve biografía del profesional -- se puede mostrar en el sitio."></textarea>
+
+        <label class="mg-label" style="margin-top:12px;">Foto del profesional</label>
+        <div class="mes-fotos-row">
+          <div class="svc-thumb" id="mpfFotoThumb" title="Subir foto del profesional"
+            style="width:56px;height:56px;border-radius:50%;cursor:pointer;background-color:#eee;
+              background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:18px;">📷</div>
+        </div>
+      </div>
+
+      <div class="mg-actions">
+        <button class="mg-btn ghost" data-close>Cancelar</button>
+        <button class="mg-btn solid" id="mpfGuardar">Guardar</button>
+      </div>
+    </div>
+
     <div id="vistaUsuarios" style="display:none;">
       <div class="cx-head">
         <div>
@@ -4736,32 +5037,8 @@
   </div>
 
   <div class="mg-tabs">
-    <button class="mg-tab active" data-tab="servicios">Servicios y precios</button>
-    <button class="mg-tab" data-tab="equipo">Equipo</button>
-    <button class="mg-tab" data-tab="local">Negocio y contacto</button>
+    <button class="mg-tab active" data-tab="local">Negocio y contacto</button>
     <button class="mg-tab" data-tab="portada">Portada del sitio</button>
-  </div>
-
-  <!-- Servicios -->
-  <div class="mg-pane active" data-pane="servicios">
-    <div class="mg-list-head" style="display:grid;grid-template-columns:38px 1fr 92px 74px 84px 34px auto;gap:8px;padding:0 10px 6px;
-      font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#87868f;">
-      <div></div><div></div><div>Precio</div><div>Duración</div><div>Anticipo</div><div></div><div></div>
-    </div>
-    <div class="mg-list" id="cfgServicios"></div>
-    <datalist id="cfgCategoriasServicio">
-      <option value="Cortes"><option value="Barba"><option value="Ondulación"><option value="Facial">
-    </datalist>
-    <button class="mg-btn ghost full" id="cfgAddServicio">+ Agregar servicio</button>
-  </div>
-
-  <!-- Equipo -->
-  <div class="mg-pane" data-pane="equipo">
-    <div class="mg-list" id="cfgBarberos"></div>
-    <div class="mg-two">
-      <input type="text" id="cfgNuevoBarbero" class="mg-input" placeholder="Nombre del nuevo barbero">
-      <button class="mg-btn solid" id="cfgAddBarbero">Agregar</button>
-    </div>
   </div>
 
   <!-- Negocio y contacto: lo que se ve en el pie de página del sitio (nombre, direccion, telefono, correo, instagram) y el horario de atencion -->
@@ -5683,8 +5960,8 @@
     'vistaAgenda', 'vistaBarbero', 'vistaAbonos', 'vistaAccesosCursos',
     'vistaArchivosMultimedia', 'vistaCampanas', 'vistaClientes', 'vistaColores',
     'vistaComisiones', 'vistaCursos', 'vistaHorarios', 'vistaIntelligence',
-    'vistaProductos', 'vistaPropinas', 'vistaResumenVentas', 'vistaSuscripciones',
-    'vistaTestimonios', 'vistaUsuarios', 'vistaVentas',
+    'vistaProductos', 'vistaProfesionales', 'vistaPropinas', 'vistaResumenVentas',
+    'vistaServicios', 'vistaSuscripciones', 'vistaTestimonios', 'vistaUsuarios', 'vistaVentas',
   ];
   /** Oculta TODAS las vistas de sección. Cada mostrarX() la llama y después
    *  muestra solo la suya (y ajusta lo suyo: kpiRow, tarjeta flotante, etc.). */
@@ -5884,8 +6161,16 @@
 
   // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
   document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
-  document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarHorariosPage);
-  document.getElementById('btnEquipoServicios').addEventListener('click', mostrarHorariosPage);
+  // Antes esta entrada del menú (bajo "Servicios" -> "Panel · catálogo")
+  // abría por error la página de Horarios (bug preexistente, no de este
+  // bloque -- "Horarios" se sigue alcanzando igual que siempre desde el
+  // menú de la cuenta, btnHorarios). Ahora abre la página real de
+  // Servicios y precios.
+  document.getElementById('btnServiciosCatalogo').addEventListener('click', mostrarVistaServicios);
+  // Igual que "Panel · catálogo" (Servicios): esta entrada abría por error
+  // la página de Horarios (bug preexistente). Ahora abre la página real de
+  // Profesionales.
+  document.getElementById('btnEquipoServicios').addEventListener('click', mostrarVistaProfesionales);
   document.getElementById('btnComProfesionales').addEventListener('click', ()=> mostrarComisiones('config'));
   document.getElementById('btnComBarberos').addEventListener('click', ()=> mostrarComisiones('reporte'));
   document.getElementById('btnComPropinas').addEventListener('click', mostrarPropinas);
@@ -7813,6 +8098,8 @@
   let currentDate = TiempoSantiago.fechaSantiago();
   let cfgServicios = [];
   let cfgBarberos = [];
+  let cfgCategorias = [];
+  let categoriasMigrando = false;
 
   /* ===== Catálogo (services + barbers) en vivo =====
      Antes cada `await cargarCatalogo()` hacía dos .get() (services + barbers)
@@ -7826,11 +8113,12 @@
      arranque, antes de que llegue el primer snapshot. */
   let unsubServices = null;
   let unsubBarbers = null;
-  let _svcListo = false, _barListo = false, _barPrimerSnap = true;
+  let unsubServiceCategories = null;
+  let _svcListo = false, _barListo = false, _catListo = false, _barPrimerSnap = true;
   let _catalogoListoResolve;
   let catalogoListo = new Promise(r=>{ _catalogoListoResolve = r; });
   function _marcarCatalogoListo(){
-    if(_svcListo && _barListo && _catalogoListoResolve){ _catalogoListoResolve(); _catalogoListoResolve = null; }
+    if(_svcListo && _barListo && _catListo && _catalogoListoResolve){ _catalogoListoResolve(); _catalogoListoResolve = null; }
   }
   const _agendaVisible = ()=>{
     const v = document.getElementById('vistaAgenda');
@@ -7859,7 +8147,7 @@
   /** Suscribe services+barbers una sola vez. Idempotente. */
   function suscribirCatalogo(){
     if(MODE === 'api'){                   // en modo api el catálogo viene del backend
-      _svcListo = _barListo = true; _marcarCatalogoListo();
+      _svcListo = _barListo = _catListo = true; _marcarCatalogoListo();
       return;
     }
     if(unsubServices || unsubBarbers) return;
@@ -7885,10 +8173,18 @@
       if(!_barPrimerSnap && _agendaVisible()){ pintarColumnas(); pintarSemana(); }
       _barPrimerSnap = false;
     }, ()=>{ _barListo = true; _marcarCatalogoListo(); });
+    // Categorías reales de servicios (Bloque 1 del calco de AgendaPro) --
+    // solo lectura acá; el CRUD vive en pintarConfigServicios() y sus
+    // funciones de apoyo, más abajo.
+    unsubServiceCategories = db.collection('serviceCategories').orderBy('orden').onSnapshot(snap=>{
+      cfgCategorias = snap.docs.map(d=> d.data());
+      if(hayServer(snap)){ _catListo = true; _marcarCatalogoListo(); }
+    }, ()=>{ _catListo = true; _marcarCatalogoListo(); });
   }
   function cortarCatalogo(){
     try{ if(unsubServices){ unsubServices(); unsubServices = null; } }catch(e){}
     try{ if(unsubBarbers){ unsubBarbers(); unsubBarbers = null; } }catch(e){}
+    try{ if(unsubServiceCategories){ unsubServiceCategories(); unsubServiceCategories = null; } }catch(e){}
   }
 
   /* En modo demo guardamos la agenda de cada día en memoria,
@@ -9854,6 +10150,79 @@
   document.getElementById('btnHorarios').addEventListener('click', mostrarHorariosPage);
   document.getElementById('hrVolver').addEventListener('click', hrVolverAgenda);
 
+  /* ---------- Servicios y precios: página completa (Bloque 1.5) ----------
+   * Antes vivía como pestaña dentro del modal Configuración; ahora es una
+   * vista de sección más, igual que Horarios/Productos/etc. Reutiliza
+   * cargarCatalogo() + pintarConfigServicios() (Bloque 1) sin cambios. */
+  async function mostrarVistaServicios(){
+    if(barberoBloqueado()) return;
+    ocultarVistasPanel();
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaServicios').style.display = '';
+    ocultarFlotante(true);
+    await cargarCatalogo();
+    pintarConfigServicios();
+  }
+
+  function svVolverAgenda(){
+    document.getElementById('vistaServicios').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  document.getElementById('svVolver').addEventListener('click', svVolverAgenda);
+
+  // Sub-pestañas Servicios / Clases / Paquetes -- Clases y Paquetes son
+  // tipos de servicio que todavía no existen en el modelo de datos (bloques
+  // aparte, ya planeados); acá solo se deja el andamiaje visual de AgendaPro
+  // con un estado vacío, para no prometer una función que no está.
+  document.querySelectorAll('#vistaServicios [data-svv]').forEach(btn=>
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#vistaServicios [data-svv]').forEach(b=> b.classList.toggle('on', b === btn));
+      document.getElementById('svPanelServicios').style.display = btn.dataset.svv === 'servicios' ? '' : 'none';
+      document.getElementById('svPanelClases').style.display = btn.dataset.svv === 'clases' ? '' : 'none';
+      document.getElementById('svPanelPaquetes').style.display = btn.dataset.svv === 'paquetes' ? '' : 'none';
+    }));
+
+  /* ---------- Profesionales: página completa (calco de AgendaPro) ----------
+   * Antes vivía como pestaña "Equipo" dentro del modal Configuración. */
+  async function mostrarVistaProfesionales(){
+    if(barberoBloqueado()) return;
+    ocultarVistasPanel();
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaProfesionales').style.display = '';
+    ocultarFlotante(true);
+    await cargarCatalogo();
+    pintarConfigEquipo();
+  }
+
+  function pvVolverAgenda2(){
+    document.getElementById('vistaProfesionales').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  document.getElementById('pvVolver2').addEventListener('click', pvVolverAgenda2);
+
+  // Sub-pestaña "Grupos personalizados" -- no existe hoy en Masterlook
+  // (andamiaje visual con estado vacío, igual que Clases/Paquetes en Servicios).
+  document.querySelectorAll('#vistaProfesionales [data-pvv]').forEach(btn=>
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#vistaProfesionales [data-pvv]').forEach(b=> b.classList.toggle('on', b === btn));
+      document.getElementById('pvPanelProfesionales').style.display = btn.dataset.pvv === 'profesionales' ? '' : 'none';
+      document.getElementById('pvPanelGrupos').style.display = btn.dataset.pvv === 'grupos' ? '' : 'none';
+    }));
+
+  document.getElementById('mpfIrAUsuarios').addEventListener('click', ()=>{
+    cerrarModales();
+    pvVolverAgenda2();
+    mostrarUsuarios();
+  });
+
   /* ---------- Masterlook Intelligence (Fase 1 de la IA: cifras reales + preguntas) ---------- */
   function mostrarIntelligence(){
     if(barberoBloqueado()) return;
@@ -10610,39 +10979,233 @@
         p.classList.toggle('active', p.dataset.pane === t.dataset.tab));
     }));
 
-  function pintarConfigServicios(){
-    const cont = document.getElementById('cfgServicios');
-    cont.innerHTML = cfgServicios.map(s=>`
-      <div class="mg-row ${s.active ? '' : 'off'}" data-id="${s.id}" style="grid-template-columns:38px 1fr 92px 74px 84px 34px auto;">
+  function filaServicioHTML(s){
+    const catNombre = s.categoryId ? (cfgCategorias.find(c=> c.id === s.categoryId)?.name || '') : '';
+    return `
+      <div class="sv-row ${s.active ? '' : 'off'}" data-id="${s.id}">
         <div class="svc-thumb" data-foto="${s.id}" title="Subir foto principal del servicio"
-             style="width:36px;height:36px;border-radius:8px;cursor:pointer;background-color:#eee;
-               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:14px;
+             style="width:48px;height:48px;border-radius:10px;cursor:pointer;background-color:#eee;flex-shrink:0;
+               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
                ${s.photoUrl ? `background-image:url('${s.photoUrl}');` : ''}">${s.photoUrl ? '' : '📷'}</div>
-        <input type="text" value="${s.name}" data-f="name" placeholder="Nombre">
-        <input type="number" value="${s.priceClp}" data-f="priceClp" min="0" step="500" title="Precio">
-        <input type="number" value="${s.minutes}" data-f="minutes" min="5" step="5" title="Duración (min)">
-        <input type="number" value="${s.anticipo ?? 5000}" data-f="anticipo" min="0" step="500" title="Anticipo para reservar (Webpay)">
+        <div class="sv-row-info">
+          <div class="sv-row-nombre">${s.name}</div>
+          <div class="sv-row-meta">${s.minutes} min${catNombre ? ' · ' + catNombre : ''}</div>
+        </div>
+        <div class="sv-row-precio">$${Number(s.priceClp || 0).toLocaleString('es-CL')}</div>
+        <span class="sv-pill ${s.active ? 'on' : 'off'}">${s.active ? 'Activo' : 'Inactivo'}</span>
         <button type="button" class="svc-galeria-btn" data-galeria="${s.id}"
           title="Fotos adicionales para la reserva (además de la foto principal) -- hasta 3 en fila"
           style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border-strong,#ccc);background:#fff;
-            cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:2px;padding:0;">
+            cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:2px;padding:0;flex-shrink:0;">
           🖼️${Array.isArray(s.photos) && s.photos.length ? `<span style="font-size:10px;font-weight:700;">${s.photos.length}</span>` : ''}
         </button>
-        <button class="mg-del" title="Desactivar">✕</button>
-        <div style="grid-column:1/-1;display:flex;gap:8px;">
-          <input type="text" value="${s.cat || ''}" data-f="cat" list="cfgCategoriasServicio" placeholder="Categoría"
-            title="Agrupa este servicio en la reserva del cliente (ej: Cortes, Barba, Ondulación)" style="flex:0 0 130px;">
-          <textarea data-f="description" placeholder="Descripción del servicio (qué incluye) -- se muestra al cliente al reservar" style="flex:1;">${s.description || ''}</textarea>
+        <div class="sv-opciones-wrap">
+          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${s.id}">Opciones</button>
+          <div class="sv-opciones-menu" data-opciones-menu="${s.id}">
+            <button type="button" data-op-toggle="${s.id}">${s.active ? 'Desactivar servicio' : 'Activar servicio'}</button>
+            <button type="button" class="danger" data-op-eliminar="${s.id}">Eliminar</button>
+          </div>
         </div>
+        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${s.id}">Editar</button>
+      </div>`;
+  }
+
+  /** Crea las categorías reales a partir de los valores "cat" (texto libre)
+   *  que ya tengan los servicios existentes -- una sola vez, la primera vez
+   *  que se abre la página de Servicios después de este bloque y todavía no
+   *  existe ninguna categoría real. "cat" NO se borra ni se toca: categoryId
+   *  es un campo nuevo y aparte, en sincronía. Idempotente por el guard de
+   *  categoriasMigrando + porque no vuelve a correr una vez cfgCategorias
+   *  deja de estar vacío. (Sin cambios respecto al Bloque 1.) */
+  async function migrarCategoriasServicios(){
+    if(categoriasMigrando) return;
+    categoriasMigrando = true;
+    try{
+      const nombres = [];
+      cfgServicios.forEach(s=>{
+        const nombre = (s.cat || '').trim();
+        if(nombre && !nombres.includes(nombre)) nombres.push(nombre);
+      });
+      if(!nombres.length) return;
+      const base = Date.now();
+      const idPorNombre = {};
+      const batch = db.batch();
+      nombres.forEach((nombre, i)=>{
+        const id = 'cat' + base + '_' + i;
+        idPorNombre[nombre] = id;
+        batch.set(db.collection('serviceCategories').doc(id), {
+          id, name: nombre, orden: i,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+      cfgServicios.forEach(s=>{
+        const nombre = (s.cat || '').trim();
+        if(nombre && idPorNombre[nombre]){
+          batch.update(db.collection('services').doc(s.id), { categoryId: idPorNombre[nombre] });
+        }
+      });
+      await batch.commit();
+    }catch(e){
+      console.error('migrarCategoriasServicios', e);
+      categoriasMigrando = false; // permitir reintentar si falló
+    }
+  }
+
+  function pintarConfigServicios(){
+    const cont = document.getElementById('cfgServicios');
+
+    // Primera vez que se abre la página de Servicios tras este bloque: si
+    // hay servicios con "cat" pero todavía ninguna categoría real, se migran
+    // solas antes de pintar nada. El batch dispara el listener de
+    // serviceCategories, que no repinta solo -- por eso se vuelve a llamar
+    // a pintarConfigServicios() al terminar.
+    if(!categoriasMigrando && !cfgCategorias.length && cfgServicios.some(s=> (s.cat || '').trim())){
+      cont.innerHTML = '<div class="cx-empty">Preparando categorías…</div>';
+      migrarCategoriasServicios().then(()=> pintarConfigServicios());
+      return;
+    }
+
+    const grupos = cfgCategorias.map(cat=> ({
+      cat, items: cfgServicios.filter(s=> s.categoryId === cat.id),
+    }));
+    const sinCategoria = cfgServicios.filter(s=> !s.categoryId);
+    if(sinCategoria.length || !cfgCategorias.length) grupos.push({ cat: null, items: sinCategoria });
+
+    cont.innerHTML = grupos.map(g=> `
+      <div class="svc-cat-grupo" data-cat="${g.cat ? g.cat.id : ''}">
+        ${g.cat ? `
+          <div class="svc-cat-head">
+            <span class="svc-cat-nombre">${g.cat.name}</span>
+            <span class="svc-cat-acciones">
+              <button type="button" data-cat-subir="${g.cat.id}" title="Subir categoría">↑</button>
+              <button type="button" data-cat-bajar="${g.cat.id}" title="Bajar categoría">↓</button>
+              <button type="button" data-cat-renombrar="${g.cat.id}" title="Renombrar categoría">Renombrar</button>
+              <button type="button" class="svc-cat-eliminar" data-cat-eliminar="${g.cat.id}" title="Eliminar categoría">Eliminar</button>
+            </span>
+          </div>` : (cfgCategorias.length ? `
+          <div class="svc-cat-head">
+            <span class="svc-cat-nombre">Sin categoría</span>
+          </div>` : '')}
+        ${g.items.map(s=> filaServicioHTML(s)).join('') || '<div class="svc-cat-vacia">Sin servicios en esta categoría.</div>'}
       </div>`).join('');
 
-    cont.querySelectorAll('.mg-row').forEach(row=>{
-      row.querySelectorAll('input, textarea').forEach(inp=>
-        inp.addEventListener('change', ()=> guardarServicio(row)));
-      row.querySelector('.mg-del').addEventListener('click', ()=> desactivarServicio(row));
-      row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoServicio(row.dataset.id));
-      row.querySelector('.svc-galeria-btn').addEventListener('click', ()=> abrirGaleriaServicio(row.dataset.id));
+    cont.querySelectorAll('.sv-row').forEach(row=>{
+      const id = row.dataset.id;
+      row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoServicio(id));
+      row.querySelector('.svc-galeria-btn').addEventListener('click', ()=> abrirGaleriaServicio(id));
+      row.querySelector('.sv-editar-btn').addEventListener('click', ()=> abrirEditorServicio(id));
+      const opBtn = row.querySelector('.sv-opciones-btn');
+      const opMenu = row.querySelector('.sv-opciones-menu');
+      opBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const abierto = opMenu.classList.contains('open');
+        document.querySelectorAll('.sv-opciones-menu.open').forEach(m=> m.classList.remove('open'));
+        if(!abierto) opMenu.classList.add('open');
+      });
+      opMenu.querySelector('[data-op-toggle]').addEventListener('click', ()=>{
+        opMenu.classList.remove('open');
+        const actual = cfgServicios.find(x=> x.id === id);
+        (actual && actual.active) ? desactivarServicio(id) : activarServicio(id);
+      });
+      opMenu.querySelector('[data-op-eliminar]').addEventListener('click', ()=>{
+        opMenu.classList.remove('open');
+        eliminarServicioReal(id);
+      });
     });
+    cont.querySelectorAll('[data-cat-subir]').forEach(b=>
+      b.addEventListener('click', ()=> moverCategoriaServicio(b.dataset.catSubir, -1)));
+    cont.querySelectorAll('[data-cat-bajar]').forEach(b=>
+      b.addEventListener('click', ()=> moverCategoriaServicio(b.dataset.catBajar, 1)));
+    cont.querySelectorAll('[data-cat-renombrar]').forEach(b=>
+      b.addEventListener('click', ()=> renombrarCategoriaServicio(b.dataset.catRenombrar)));
+    cont.querySelectorAll('[data-cat-eliminar]').forEach(b=>
+      b.addEventListener('click', ()=> eliminarCategoriaServicio(b.dataset.catEliminar)));
+  }
+
+  // Cierra cualquier menú de Opciones abierto al hacer clic fuera de él --
+  // un solo listener global (no uno por fila, para no acumularlos en cada
+  // repintado de pintarConfigServicios()).
+  document.addEventListener('click', ()=>
+    document.querySelectorAll('.sv-opciones-menu.open').forEach(m=> m.classList.remove('open')));
+
+  /** Crea una categoría nueva (nombre pedido por prompt propio) y devuelve su
+   *  id, o null si se canceló / ya existía. Compartida entre el botón "+
+   *  Nueva categoría" de la página y el link del mismo nombre dentro del
+   *  editor de servicio -- MISMA lógica del Bloque 1, solo extraída a una
+   *  función para poder llamarla desde los dos lugares. */
+  async function crearCategoriaServicio(){
+    const nombre = await mgPrompt('Nombre de la nueva categoría:');
+    if(!nombre || !nombre.trim()) return null;
+    const limpio = nombre.trim();
+    if(cfgCategorias.some(c=> c.name.toLowerCase() === limpio.toLowerCase())){
+      showToast('Ya existe una categoría con ese nombre');
+      return null;
+    }
+    const id = 'cat' + Date.now();
+    try{
+      await db.collection('serviceCategories').doc(id).set({
+        id, name: limpio, orden: cfgCategorias.length,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      showToast('Categoría creada');
+      return id;
+    }catch(e){ showToast('No se pudo crear la categoría: ' + e.message); return null; }
+  }
+
+  document.getElementById('cfgAddCategoria').addEventListener('click', async ()=>{
+    const id = await crearCategoriaServicio();
+    if(id) pintarConfigServicios();
+  });
+
+  async function renombrarCategoriaServicio(id){
+    const cat = cfgCategorias.find(c=> c.id === id);
+    if(!cat) return;
+    const nombre = await mgPrompt('Nuevo nombre para la categoría:', cat.name);
+    if(!nombre || !nombre.trim() || nombre.trim() === cat.name) return;
+    const limpio = nombre.trim();
+    try{
+      const batch = db.batch();
+      batch.update(db.collection('serviceCategories').doc(id), { name: limpio });
+      // "cat" (texto libre) se mantiene en sincronía con el nombre real de
+      // la categoría -- el sitio público sigue agrupando por ese texto.
+      cfgServicios.filter(s=> s.categoryId === id).forEach(s=>
+        batch.update(db.collection('services').doc(s.id), { cat: limpio }));
+      await batch.commit();
+      showToast('Categoría renombrada');
+      pintarConfigServicios();
+    }catch(e){ showToast('No se pudo renombrar: ' + e.message); }
+  }
+
+  async function moverCategoriaServicio(id, dir){
+    const i = cfgCategorias.findIndex(c=> c.id === id);
+    const j = i + dir;
+    if(i < 0 || j < 0 || j >= cfgCategorias.length) return;
+    const a = cfgCategorias[i], b = cfgCategorias[j];
+    try{
+      const batch = db.batch();
+      batch.update(db.collection('serviceCategories').doc(a.id), { orden: b.orden });
+      batch.update(db.collection('serviceCategories').doc(b.id), { orden: a.orden });
+      await batch.commit();
+      pintarConfigServicios();
+    }catch(e){ showToast('No se pudo reordenar: ' + e.message); }
+  }
+
+  async function eliminarCategoriaServicio(id){
+    const cat = cfgCategorias.find(c=> c.id === id);
+    if(!cat) return;
+    const enUso = cfgServicios.filter(s=> s.categoryId === id);
+    const mensaje = enUso.length
+      ? `"${cat.name}" tiene ${enUso.length} servicio(s) asignado(s). Si la eliminas, esos servicios quedarán sin categoría. ¿Eliminar de todas formas?`
+      : `¿Eliminar la categoría "${cat.name}"?`;
+    if(!(await mgConfirm(mensaje))) return;
+    try{
+      const batch = db.batch();
+      enUso.forEach(s=> batch.update(db.collection('services').doc(s.id), { categoryId: null, cat: '' }));
+      batch.delete(db.collection('serviceCategories').doc(id));
+      await batch.commit();
+      showToast('Categoría eliminada');
+      pintarConfigServicios();
+    }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
   }
 
   /** Galería de fotos adicionales de un servicio (además de photoUrl) --
@@ -10738,7 +11301,10 @@
     }
   }
 
-  /** Sube (o reemplaza) la foto de un servicio y la deja lista para el sitio público. */
+  /** Sube (o reemplaza) la foto principal de un servicio. Actualiza CUALQUIER
+   *  thumb visible con ese data-foto -- la fila de la lista y, si está
+   *  abierto, el thumb del editor (mesFotoThumb) comparten el mismo
+   *  mecanismo (antes solo existía la fila). */
   function subirFotoServicio(servicioId){
     const input = document.createElement('input');
     input.type = 'file';
@@ -10746,8 +11312,8 @@
     input.addEventListener('change', async ()=>{
       const file = input.files[0];
       if(!file) return;
-      const thumb = document.querySelector(`.svc-thumb[data-foto="${servicioId}"]`);
-      if(thumb) thumb.textContent = '…';
+      const thumbs = document.querySelectorAll(`.svc-thumb[data-foto="${servicioId}"]`);
+      thumbs.forEach(t=> t.textContent = '…');
       try{
         const blob = await redimensionarImagen(file, 800);
         const ruta = `servicePhotos/${servicioId}/${Date.now()}.jpg`;
@@ -10761,129 +11327,235 @@
         }
         showToast('Foto del servicio actualizada');
         pintarConfigServicios();
+        thumbs.forEach(t=>{ t.style.backgroundImage = `url('${url}')`; t.textContent = ''; });
       }catch(e){
         showToast('No se pudo subir la foto: ' + e.message);
-        if(thumb) thumb.textContent = '📷';
+        thumbs.forEach(t=> t.textContent = '📷');
       }
     });
     input.click();
   }
 
-  async function guardarServicio(row){
-    const id = row.dataset.id;
-    const body = {};
-    row.querySelectorAll('input').forEach(i=>{
-      body[i.dataset.f] = i.type === 'number' ? Number(i.value) : i.value.trim();
-    });
-
+  /** Escribe cambios de campos de un servicio ya existente -- reemplaza al
+   *  guardarServicio(row) del Bloque 1 (que leía inputs de la fila; ahora la
+   *  fila es de solo lectura y el editor en modal es quien junta los
+   *  valores). Misma escritura de siempre (set() completo del doc, o PATCH
+   *  en el modo api heredado). */
+  async function actualizarServicio(id, cambios){
     if(MODE === 'api'){
-      try{
-        await api('/manage/services/' + id, { method:'PATCH', body: JSON.stringify(body) });
-        showToast('Servicio actualizado');
-      }catch(e){ showToast(e.message); }
+      await api('/manage/services/' + id, { method:'PATCH', body: JSON.stringify(cambios) });
+      const s = cfgServicios.find(x=> x.id === id);
+      if(s) Object.assign(s, cambios);
       return;
     }
     const s = cfgServicios.find(x=> x.id === id);
-    Object.assign(s, body);
-    try{
-      await db.collection('services').doc(id).set(s);
-      showToast('Guardado');
-    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+    if(!s) return;
+    Object.assign(s, cambios);
+    await db.collection('services').doc(id).set(s);
   }
 
-  async function desactivarServicio(row){
-    const id = row.dataset.id;
-    const nombre = row.querySelector('[data-f=name]').value;
-    if(!(await mgConfirm(`¿Desactivar "${nombre}"?\n\nDeja de aparecer en el sitio, pero las reservas antiguas se conservan.`))) return;
-
+  async function desactivarServicio(id){
+    const s = cfgServicios.find(x=> x.id === id);
+    if(!s) return;
+    if(!(await mgConfirm(`¿Desactivar "${s.name}"?\n\nDeja de aparecer en el sitio, pero las reservas antiguas se conservan.`))) return;
     if(MODE === 'api'){
       try{ await api('/manage/services/' + id, { method:'DELETE' }); }
       catch(e){ return showToast(e.message); }
     }
-    const s = cfgServicios.find(x=> x.id === id);
-    if(s) s.active = false;
-    row.classList.add('off');
-    if(MODE !== 'api'){
-      try{ await db.collection('services').doc(id).set(s); }catch(e){}
-    }
-    showToast('Servicio desactivado');
+    try{
+      await actualizarServicio(id, { active:false });
+      showToast('Servicio desactivado');
+      pintarConfigServicios();
+    }catch(e){ showToast('No se pudo desactivar: ' + e.message); }
   }
 
-  document.getElementById('cfgAddServicio').addEventListener('click', async ()=>{
-    const nombre = await mgPrompt('Nombre del nuevo servicio:');
-    if(!nombre) return;
-    const precio = Number(await mgPrompt('Precio en pesos (solo números):', '15000'));
-    const mins = Number(await mgPrompt('Duración en minutos:', '45'));
-    if(!precio || !mins) return showToast('Precio y duración son obligatorios');
+  /** Reactivar un servicio desactivado -- no existía ninguna forma de hacer
+   *  esto antes del menú de Opciones (solo se podía desactivar). */
+  async function activarServicio(id){
+    try{
+      await actualizarServicio(id, { active:true });
+      showToast('Servicio activado');
+      pintarConfigServicios();
+    }catch(e){ showToast('No se pudo activar: ' + e.message); }
+  }
 
-    if(MODE === 'api'){
-      try{
-        const r = await api('/manage/services', {
-          method:'POST',
-          body: JSON.stringify({ name:nombre, priceClp:precio, minutes:mins, featured:false, active:true })
-        });
-        cfgServicios.push({ ...r.service, barberIds:[] });
-      }catch(e){ return showToast(e.message); }
-    } else {
-      const nuevo = { id:'d'+Date.now(), name:nombre, priceClp:precio, minutes:mins, active:true, featured:false, anticipo:5000 };
-      cfgServicios.push(nuevo);
-      try{ await db.collection('services').doc(nuevo.id).set(nuevo); }catch(e){}
-    }
-    pintarConfigServicios();
-    showToast('Servicio agregado');
+  /** Eliminar un servicio de verdad (no solo desactivarlo) -- el "Eliminar"
+   *  del menú de Opciones de AgendaPro, además de "Desactivar servicio".
+   *  Irreversible a propósito: se avisa con más fuerza que al desactivar. */
+  async function eliminarServicioReal(id){
+    const s = cfgServicios.find(x=> x.id === id);
+    if(!s) return;
+    const ok = await mgConfirm(
+      `¿Eliminar "${s.name}" definitivamente?\n\nEsta acción no se puede deshacer. Si el servicio tiene reservas históricas, es más seguro Desactivarlo en vez de Eliminarlo.`);
+    if(!ok) return;
+    try{
+      await db.collection('services').doc(id).delete();
+      cfgServicios = cfgServicios.filter(x=> x.id !== id);
+      showToast('Servicio eliminado');
+      pintarConfigServicios();
+    }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+  }
+
+  /* ==========================================================
+     EDITOR DE SERVICIO (Nuevo / Editar) -- modal con las pestañas de
+     AgendaPro (Datos básicos / Sitio Web), solo con los campos que
+     Masterlook ya tiene hoy. Profesionales (falta el Bloque de barberIds),
+     fotos con recorte y modalidad de pago quedan para los bloques ya
+     planeados aparte -- acá no se inventa nada de eso.
+     ========================================================== */
+  let mesEditandoId = null;
+
+  function mesPoblarCategorias(selectedId){
+    const sel = document.getElementById('mesCategoria');
+    sel.innerHTML = '<option value="">Sin categoría</option>' +
+      cfgCategorias.map(c=> `<option value="${c.id}" ${selectedId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+  }
+
+  function mesHabilitarFotos(id){
+    const thumb = document.getElementById('mesFotoThumb');
+    const galBtn = document.getElementById('mesGaleriaBtn');
+    thumb.dataset.foto = id || '';
+    thumb.style.cursor = id ? 'pointer' : 'not-allowed';
+    thumb.style.opacity = id ? '1' : '.5';
+    galBtn.disabled = !id;
+    galBtn.style.opacity = id ? '1' : '.5';
+  }
+
+  function abrirEditorServicio(id){
+    mesEditandoId = id;
+    const s = id ? cfgServicios.find(x=> x.id === id) : null;
+    document.getElementById('mesTitulo').textContent = s ? `Editando "${s.name}"` : 'Nuevo servicio';
+    document.getElementById('mesNombre').value = s?.name || '';
+    document.getElementById('mesPrecio').value = s?.priceClp ?? '';
+    document.getElementById('mesDuracion').value = s?.minutes ?? '';
+    mesPoblarCategorias(s?.categoryId || '');
+    document.getElementById('mesDescripcion').value = s?.description || '';
+    document.getElementById('mesAnticipo').value = s?.anticipo ?? 5000;
+    const thumb = document.getElementById('mesFotoThumb');
+    thumb.style.backgroundImage = s?.photoUrl ? `url('${s.photoUrl}')` : '';
+    thumb.textContent = s?.photoUrl ? '' : '📷';
+    document.getElementById('mesGaleriaBtn').textContent =
+      'Fotos adicionales (hasta 3)' + (Array.isArray(s?.photos) && s.photos.length ? ` · ${s.photos.length}` : '');
+    mesHabilitarFotos(id);
+    document.querySelectorAll('.mes-tab').forEach((t,i)=> t.classList.toggle('active', i===0));
+    document.querySelectorAll('.mes-pane').forEach((p,i)=> p.classList.toggle('active', i===0));
+    abrirModal('modalEditarServicio');
+  }
+
+  document.querySelectorAll('.mes-tab').forEach(t=>
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.mes-tab').forEach(x=> x.classList.toggle('active', x===t));
+      document.querySelectorAll('.mes-pane').forEach(p=>
+        p.classList.toggle('active', p.dataset.mespane === t.dataset.mestab));
+    }));
+
+  document.getElementById('mesFotoThumb').addEventListener('click', ()=>{
+    if(mesEditandoId) subirFotoServicio(mesEditandoId);
   });
+  document.getElementById('mesGaleriaBtn').addEventListener('click', ()=>{
+    if(mesEditandoId) abrirGaleriaServicio(mesEditandoId);
+  });
+  document.getElementById('mesNuevaCategoria').addEventListener('click', async (e)=>{
+    e.preventDefault();
+    const id = await crearCategoriaServicio();
+    if(id) mesPoblarCategorias(id);
+  });
+
+  document.getElementById('mesGuardar').addEventListener('click', async ()=>{
+    const nombre = document.getElementById('mesNombre').value.trim();
+    const precio = Number(document.getElementById('mesPrecio').value);
+    const minutos = Number(document.getElementById('mesDuracion').value);
+    if(!nombre) return showToast('Ponle un nombre al servicio');
+    if(!precio || !minutos) return showToast('Precio y duración son obligatorios');
+    const categoryId = document.getElementById('mesCategoria').value || null;
+    const cat = categoryId ? (cfgCategorias.find(c=> c.id === categoryId)?.name || '') : '';
+    const cuerpo = {
+      name: nombre, priceClp: precio, minutes: minutos, categoryId, cat,
+      description: document.getElementById('mesDescripcion').value.trim(),
+      anticipo: Number(document.getElementById('mesAnticipo').value) || 0,
+    };
+    try{
+      if(mesEditandoId){
+        await actualizarServicio(mesEditandoId, cuerpo);
+        showToast('Servicio actualizado');
+        cerrarModales();
+        pintarConfigServicios();
+      }else{
+        let nuevoId;
+        if(MODE === 'api'){
+          const r = await api('/manage/services', {
+            method:'POST',
+            body: JSON.stringify({ ...cuerpo, featured:false, active:true }),
+          });
+          cfgServicios.push({ ...r.service });
+          nuevoId = r.service.id;
+        }else{
+          const nuevo = { id:'d'+Date.now(), active:true, featured:false, photos:[], ...cuerpo };
+          cfgServicios.push(nuevo);
+          await db.collection('services').doc(nuevo.id).set(nuevo);
+          nuevoId = nuevo.id;
+        }
+        showToast('Servicio creado');
+        // No se cierra el modal -- se pasa a modo "editando" el servicio
+        // recién creado para poder agregarle fotos de inmediato (antes
+        // necesitan un id que no existía hasta este punto).
+        mesEditandoId = nuevoId;
+        document.getElementById('mesTitulo').textContent = `Editando "${nombre}"`;
+        mesHabilitarFotos(nuevoId);
+        pintarConfigServicios();
+      }
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  document.getElementById('cfgAddServicio').addEventListener('click', ()=> abrirEditorServicio(null));
 
   function pintarConfigEquipo(){
     const cont = document.getElementById('cfgBarberos');
-    cont.innerHTML = cfgBarberos.map(b=>`
-      <div class="mg-row ${b.active ? '' : 'off'}" data-id="${b.id}" style="grid-template-columns:38px 1fr auto;">
+    cont.innerHTML = cfgBarberos.map(b=> `
+      <div class="sv-row ${b.active ? '' : 'off'}" data-id="${b.id}">
         <div class="svc-thumb" data-fotobarbero="${b.id}" title="Subir foto del profesional"
-             style="width:36px;height:36px;border-radius:50%;cursor:pointer;background-color:#eee;
-               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:14px;
+             style="width:48px;height:48px;border-radius:50%;cursor:pointer;background-color:#eee;flex-shrink:0;
+               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
                ${b.photoUrl ? `background-image:url('${b.photoUrl}');` : ''}">${b.photoUrl ? '' : '📷'}</div>
-        <input type="text" value="${b.name}" data-f="name">
-        <button class="mg-del" title="${b.active ? 'Desactivar' : 'Activar'}">${b.active ? '✕' : '↺'}</button>
+        <div class="sv-row-info">
+          <div class="sv-row-nombre">${b.name}</div>
+        </div>
+        <button type="button" class="sv-row-ver-horario" data-verhorario="${b.id}">Ver horario</button>
+        <span class="sv-row-pipe">|</span>
+        <span class="sv-pill ${b.active ? 'on' : 'off'}">${b.active ? 'Activo' : 'Inactivo'}</span>
+        <div class="sv-opciones-wrap">
+          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${b.id}">Opciones</button>
+          <div class="sv-opciones-menu" data-opciones-menu="${b.id}">
+            <button type="button" data-op-toggle="${b.id}">${b.active ? 'Desactivar profesional' : 'Activar profesional'}</button>
+          </div>
+        </div>
+        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${b.id}">Editar</button>
       </div>`).join('');
 
-    cont.querySelectorAll('.mg-row').forEach(row=>{
-      row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoBarbero(row.dataset.id));
-      row.querySelector('.mg-del').addEventListener('click', async ()=>{
-        const b = cfgBarberos.find(x=> x.id === row.dataset.id);
-
-        // si tiene citas ese día, avisamos antes
-        const suyas = appointments.filter(a=> a.barber === b.name).length;
-        if(b.active && suyas && !(await mgConfirm(
-          `${b.name} tiene ${suyas} cita(s) en la agenda de este día.\n\n` +
-          `Al quitarlo dejará de aparecer y no se le podrán asignar reservas nuevas. ¿Continuar?`
-        ))) return;
-
-        if(MODE === 'api'){
-          try{
-            await api('/manage/barbers/' + b.id, { method:'PATCH', body: JSON.stringify({ active: !b.active }) });
-          }catch(e){ return showToast(e.message); }
-        }
-
-        b.active = !b.active;
-        if(MODE !== 'api'){
-          try{ await db.collection('barbers').doc(b.id).set(b); }catch(e){}
-        }
-
-        // reflejamos el cambio en el calendario
-        const enCal = barbers.find(x=> x.id === b.calId);
-        if(enCal){
-          enCal.active = b.active;
-          pintarColumnas();
-          pintarBarberFilterOptions();
-          if(typeof irADia === 'function') irADia(currentDate);
-        }
-
-        pintarConfigEquipo();
-        showToast(b.active ? `${b.name} vuelve a aparecer` : `${b.name} ya no aparece en la agenda`);
+    cont.querySelectorAll('.sv-row').forEach(row=>{
+      const id = row.dataset.id;
+      row.querySelector('.svc-thumb').addEventListener('click', ()=> subirFotoBarbero(id));
+      row.querySelector('.sv-editar-btn').addEventListener('click', ()=> abrirEditorProfesional(id));
+      row.querySelector('[data-verhorario]').addEventListener('click', ()=> abrirEditorProfesional(id, 'horario'));
+      const opBtn = row.querySelector('.sv-opciones-btn');
+      const opMenu = row.querySelector('.sv-opciones-menu');
+      opBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const abierto = opMenu.classList.contains('open');
+        document.querySelectorAll('.sv-opciones-menu.open').forEach(m=> m.classList.remove('open'));
+        if(!abierto) opMenu.classList.add('open');
+      });
+      opMenu.querySelector('[data-op-toggle]').addEventListener('click', ()=>{
+        opMenu.classList.remove('open');
+        const actual = cfgBarberos.find(x=> x.id === id);
+        (actual && actual.active) ? desactivarBarbero(id) : activarBarbero(id);
       });
     });
   }
 
-  /** Sube (o reemplaza) la foto de un profesional y la deja lista para el sitio público. */
+  /** Sube (o reemplaza) la foto de un profesional. Actualiza CUALQUIER thumb
+   *  visible con ese data-fotobarbero -- la fila de la lista y, si está
+   *  abierto, el thumb del editor (mpfFotoThumb). */
   function subirFotoBarbero(barberoId){
     const input = document.createElement('input');
     input.type = 'file';
@@ -10891,8 +11563,8 @@
     input.addEventListener('change', async ()=>{
       const file = input.files[0];
       if(!file) return;
-      const thumb = document.querySelector(`.svc-thumb[data-fotobarbero="${barberoId}"]`);
-      if(thumb) thumb.textContent = '…';
+      const thumbs = document.querySelectorAll(`.svc-thumb[data-fotobarbero="${barberoId}"]`);
+      thumbs.forEach(t=> t.textContent = '…');
       try{
         const blob = await redimensionarImagen(file, 500);
         const ruta = `barberPhotos/${barberoId}/${Date.now()}.jpg`;
@@ -10906,41 +11578,234 @@
         }
         showToast('Foto del profesional actualizada');
         pintarConfigEquipo();
+        thumbs.forEach(t=>{ t.style.backgroundImage = `url('${url}')`; t.textContent = ''; });
       }catch(e){
         console.error('subirFotoBarbero:', e);
         showToast('No se pudo subir la foto: ' + e.message);
-        if(thumb) thumb.textContent = '📷';
+        thumbs.forEach(t=> t.textContent = '📷');
       }
     });
     input.click();
   }
 
-  document.getElementById('cfgAddBarbero').addEventListener('click', async ()=>{
-    const input = document.getElementById('cfgNuevoBarbero');
-    const nombre = input.value.trim();
-    if(!nombre) return;
+  /** Desactivar/activar un profesional -- extraído del handler único que
+   *  antes vivía en la fila (Bloque "Equipo"), ahora invocado desde el menú
+   *  de Opciones. Misma lógica exacta: aviso si tiene citas hoy antes de
+   *  desactivar, refleja el cambio en las columnas del calendario. */
+  async function desactivarBarbero(id){
+    const b = cfgBarberos.find(x=> x.id === id);
+    if(!b) return;
+    const suyas = appointments.filter(a=> a.barber === b.name).length;
+    if(suyas && !(await mgConfirm(
+      `${b.name} tiene ${suyas} cita(s) en la agenda de este día.\n\n` +
+      `Al quitarlo dejará de aparecer y no se le podrán asignar reservas nuevas. ¿Continuar?`
+    ))) return;
+    await _guardarEstadoBarbero(b, false);
+  }
 
+  async function activarBarbero(id){
+    const b = cfgBarberos.find(x=> x.id === id);
+    if(!b) return;
+    await _guardarEstadoBarbero(b, true);
+  }
+
+  async function _guardarEstadoBarbero(b, activo){
     if(MODE === 'api'){
       try{
-        const r = await api('/manage/barbers', { method:'POST', body: JSON.stringify({ name:nombre, active:true }) });
-        cfgBarberos.push(r.barber);
+        await api('/manage/barbers/' + b.id, { method:'PATCH', body: JSON.stringify({ active: activo }) });
       }catch(e){ return showToast(e.message); }
-    } else {
-      const nuevoId = Math.max(0, ...barbers.map(b=> b.id)) + 1;
-      const ini = nombre.split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
-      const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:nombre, initials:ini, active:true, schedules:[] };
-      barbers.push({ id:nuevoId, name:nombre, initials:ini, count:0, active:true });
-      BARBER_COL[nombre] = nuevoId;
-      cfgBarberos.push(nuevo);
-      try{ await db.collection('barbers').doc(nuevo.id).set(nuevo); }catch(e){}
-      crearColumna(nuevoId);
+    }
+    b.active = activo;
+    if(MODE !== 'api'){
+      try{ await db.collection('barbers').doc(b.id).set(b); }catch(e){}
+    }
+    const enCal = barbers.find(x=> x.id === b.calId);
+    if(enCal){
+      enCal.active = b.active;
       pintarColumnas();
       pintarBarberFilterOptions();
-      renderBlocks();
+      if(typeof irADia === 'function') irADia(currentDate);
     }
-    input.value = '';
     pintarConfigEquipo();
-    showToast('Barbero agregado con horario estándar');
+    showToast(activo ? `${b.name} vuelve a aparecer` : `${b.name} ya no aparece en la agenda`);
+  }
+
+  document.getElementById('cfgAddBarbero').addEventListener('click', ()=> abrirEditorProfesional(null));
+
+  /* ==========================================================
+     EDITOR DE PROFESIONAL (Nuevo / Editar) -- modal con las pestañas de
+     AgendaPro: Datos básicos (nombre + acepta reservas en línea + checklist
+     de servicios que realiza, agrupado por categoría) + Horario (semana
+     completa, MISMO formato que ya usa la página Horarios, pero en su
+     propia copia con ids propios) + Perfil (biografía + foto).
+     ========================================================== */
+  let mpfEditandoId = null;
+
+  function mpfPintarChecklist(barberId){
+    const cont = document.getElementById('mpfServiciosLista');
+    const asignados = new Set(
+      cfgServicios.filter(s=> Array.isArray(s.barberIds) && s.barberIds.includes(barberId)).map(s=> s.id));
+    const esNuevo = !barberId;
+    const grupos = cfgCategorias.map(cat=> ({
+      cat, items: cfgServicios.filter(s=> s.categoryId === cat.id),
+    }));
+    const sinCategoria = cfgServicios.filter(s=> !s.categoryId);
+    if(sinCategoria.length) grupos.push({ cat:null, items: sinCategoria });
+
+    cont.innerHTML = grupos.filter(g=> g.items.length).map(g=> `
+      <div class="mpf-cat-grupo">
+        <div class="mpf-cat-titulo">${g.cat ? g.cat.name : 'Sin categoría'} <span class="mpf-cat-count">(${g.items.length})</span></div>
+        ${g.items.map(s=> `
+          <label class="mpf-servicio-item">
+            <input type="checkbox" data-mpf-svc="${s.id}" ${esNuevo || asignados.has(s.id) ? 'checked' : ''}> ${s.name}
+          </label>`).join('')}
+      </div>`).join('') || '<div class="cx-empty">Todavía no hay servicios creados.</div>';
+
+    const todo = document.getElementById('mpfSeleccionarTodo');
+    const cajas = () => Array.from(cont.querySelectorAll('[data-mpf-svc]'));
+    todo.checked = cajas().length > 0 && cajas().every(c=> c.checked);
+    todo.onchange = ()=>{ cajas().forEach(c=> c.checked = todo.checked); };
+    cajas().forEach(c=> c.addEventListener('change', ()=>{
+      todo.checked = cajas().every(x=> x.checked);
+    }));
+  }
+
+  /** Misma lógica de pintarHorarioSemanal()/cfgGuardarHorario (página
+   *  Horarios), en una copia propia con ids del editor -- esa página no se
+   *  toca, sigue funcionando exactamente igual. */
+  function mpfPintarHorario(barberId){
+    const b = cfgBarberos.find(x=> x.id === barberId);
+    const cont = document.getElementById('mpfHorario');
+    const bloques = b?.schedules || [];
+    cont.innerHTML = [1,2,3,4,5,6,0].map(wd=>{
+      const blk = bloques.find(s=> s.weekday === wd);
+      const on = !!blk;
+      const hhmm = (m)=> String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+      return `
+        <div class="mg-wrow ${on ? '' : 'off'}" data-wd="${wd}">
+          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${NOMBRES_DIA[wd]}</label>
+          <input type="time" value="${on ? hhmm(blk.startMin) : '10:00'}" data-start>
+          <input type="time" value="${on ? hhmm(blk.endMin) : '20:00'}" data-end>
+        </div>`;
+    }).join('');
+    cont.querySelectorAll('[data-on]').forEach(chk=>
+      chk.addEventListener('change', ()=> chk.closest('.mg-wrow').classList.toggle('off', !chk.checked)));
+  }
+
+  function abrirEditorProfesional(id, pestanaInicial){
+    mpfEditandoId = id;
+    const b = id ? cfgBarberos.find(x=> x.id === id) : null;
+    document.getElementById('mpfTitulo').textContent = b ? `Editando "${b.name}"` : 'Nuevo profesional';
+    document.getElementById('mpfNombre').value = b?.name || '';
+    document.getElementById('mpfAcceptaOnline').checked = b ? (b.acceptsOnline !== false) : true;
+    document.getElementById('mpfBio').value = b?.bio || '';
+    const thumb = document.getElementById('mpfFotoThumb');
+    thumb.dataset.fotobarbero = id || '';
+    thumb.style.backgroundImage = b?.photoUrl ? `url('${b.photoUrl}')` : '';
+    thumb.textContent = b?.photoUrl ? '' : '📷';
+    thumb.style.cursor = id ? 'pointer' : 'not-allowed';
+    thumb.style.opacity = id ? '1' : '.5';
+    mpfPintarChecklist(id);
+    mpfPintarHorario(id);
+    const tabs = document.querySelectorAll('#modalEditarProfesional .mes-tab');
+    const panes = document.querySelectorAll('#modalEditarProfesional .mes-pane');
+    const activa = pestanaInicial || 'basicos';
+    tabs.forEach(t=> t.classList.toggle('active', t.dataset.mpftab === activa));
+    panes.forEach(p=> p.classList.toggle('active', p.dataset.mpfpane === activa));
+    abrirModal('modalEditarProfesional');
+  }
+
+  document.querySelectorAll('#modalEditarProfesional .mes-tab').forEach(t=>
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('#modalEditarProfesional .mes-tab').forEach(x=> x.classList.toggle('active', x===t));
+      document.querySelectorAll('#modalEditarProfesional .mes-pane').forEach(p=>
+        p.classList.toggle('active', p.dataset.mpfpane === t.dataset.mpftab));
+    }));
+
+  document.getElementById('mpfFotoThumb').addEventListener('click', ()=>{
+    if(mpfEditandoId) subirFotoBarbero(mpfEditandoId);
+  });
+
+  document.getElementById('mpfGuardar').addEventListener('click', async ()=>{
+    const nombre = document.getElementById('mpfNombre').value.trim();
+    if(!nombre) return showToast('Ponle un nombre al profesional');
+    const acceptsOnline = document.getElementById('mpfAcceptaOnline').checked;
+    const bio = document.getElementById('mpfBio').value.trim();
+
+    // Horario semanal (mismo formato que la página Horarios).
+    const blocks = [];
+    let errorHorario = null;
+    document.querySelectorAll('#mpfHorario .mg-wrow').forEach(row=>{
+      if(!row.querySelector('[data-on]').checked) return;
+      const toMin = (v)=> Number(v.slice(0,2))*60 + Number(v.slice(3));
+      const startMin = toMin(row.querySelector('[data-start]').value);
+      const endMin = toMin(row.querySelector('[data-end]').value);
+      if(endMin <= startMin) errorHorario = `En ${NOMBRES_DIA[row.dataset.wd]}, la hora de término debe ser posterior`;
+      blocks.push({ weekday: Number(row.dataset.wd), startMin, endMin });
+    });
+    if(errorHorario) return showToast(errorHorario);
+
+    const serviciosSeleccionados = new Set(
+      Array.from(document.querySelectorAll('#mpfServiciosLista [data-mpf-svc]'))
+        .filter(c=> c.checked).map(c=> c.dataset.mpfSvc));
+
+    try{
+      let barberId = mpfEditandoId;
+      if(barberId){
+        const b = cfgBarberos.find(x=> x.id === barberId);
+        Object.assign(b, { name:nombre, acceptsOnline, bio, schedules:blocks });
+        if(MODE === 'api'){
+          await api('/manage/barbers/' + barberId, { method:'PATCH', body: JSON.stringify({ name:nombre, acceptsOnline, bio }) });
+          await api(`/manage/barbers/${barberId}/schedule`, { method:'PUT', body: JSON.stringify({ blocks }) });
+        }else{
+          await db.collection('barbers').doc(barberId).set(b);
+        }
+        // el filtro de barbero en la agenda usa "name" -- si cambió, se refleja.
+        const enCal = barbers.find(x=> x.id === b.calId);
+        if(enCal){ enCal.name = nombre; BARBER_COL[nombre] = b.calId; pintarColumnas(); pintarBarberFilterOptions(); }
+      }else{
+        if(MODE === 'api'){
+          const r = await api('/manage/barbers', { method:'POST', body: JSON.stringify({ name:nombre, active:true, acceptsOnline, bio }) });
+          barberId = r.barber.id;
+          cfgBarberos.push(r.barber);
+        }else{
+          const nuevoId = Math.max(0, ...barbers.map(x=> x.id)) + 1;
+          const ini = nombre.split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
+          const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:nombre, initials:ini, active:true, acceptsOnline, bio, schedules:blocks };
+          barberId = nuevo.id;
+          barbers.push({ id:nuevoId, name:nombre, initials:ini, count:0, active:true });
+          BARBER_COL[nombre] = nuevoId;
+          cfgBarberos.push(nuevo);
+          await db.collection('barbers').doc(nuevo.id).set(nuevo);
+          crearColumna(nuevoId);
+          pintarColumnas();
+          pintarBarberFilterOptions();
+          renderBlocks();
+        }
+      }
+
+      // Servicios que realiza -- se escribe del lado de services.barberIds[]
+      // (services/reservas.js ya lee por ahí). Solo se tocan los servicios
+      // cuyo estado realmente cambió, en un solo batch.
+      const batch = db.batch();
+      let huboServicios = false;
+      cfgServicios.forEach(s=>{
+        const antes = Array.isArray(s.barberIds) && s.barberIds.includes(barberId);
+        const ahora = serviciosSeleccionados.has(s.id);
+        if(antes === ahora) return;
+        huboServicios = true;
+        const nuevos = ahora
+          ? [...new Set([...(s.barberIds || []), barberId])]
+          : (s.barberIds || []).filter(x=> x !== barberId);
+        s.barberIds = nuevos;
+        batch.update(db.collection('services').doc(s.id), { barberIds: nuevos });
+      });
+      if(huboServicios) await batch.commit();
+
+      showToast(mpfEditandoId ? 'Profesional actualizado' : 'Profesional creado');
+      cerrarModales();
+      pintarConfigEquipo();
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
   const NOMBRES_DIA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
