@@ -7885,14 +7885,30 @@
     if(typeof pintarBarberFilterOptions === 'function') pintarBarberFilterOptions();
   }
 
-  const DIRECCION_NEGOCIO = 'Av. Nueva Providencia 1945, oficina 1408';
+  /** Sucursales activas (colección `locales`, Bloque 1 del módulo "Locales") --
+   *  fuente única de verdad para dirección de sucursal: reemplaza la vieja
+   *  constante `DIRECCION_NEGOCIO` (hardcodeada en el código, con la dirección
+   *  VIEJA de Providencia -- ni siquiera leía Firestore). Suscripción propia,
+   *  independiente de `cfgLocales` (que solo se carga bajo demanda al abrir la
+   *  sección Locales) para que el recordatorio de WhatsApp tenga el dato listo
+   *  aunque el admin nunca haya entrado a esa sección. Preparado para 1 o
+   *  varias sucursales a la vez. */
+  let localesActivosPanel = [];
+  db.collection('locales').where('active', '==', true).onSnapshot(snap=>{
+    localesActivosPanel = snap.docs.map(d=> d.data());
+  });
+  function direccionParaWhatsApp(){
+    if(!localesActivosPanel.length) return '';
+    if(localesActivosPanel.length === 1) return localesActivosPanel[0].direccionCompleta || '';
+    return localesActivosPanel.map(l=> `${l.nombre}: ${l.direccionCompleta}`).join(' / ');
+  }
 
   /** Mensaje de recordatorio/condiciones para WhatsApp, con los datos reales de la reserva. */
   function construirMensajeWhatsApp(a){
     const hora = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
     const [y,m,d] = (a.fecha || currentDate).split('-');
     const fechaCorta = `${d}-${m}-${y.slice(2)}`;
-    return `Hola ${a.client}!\n\nTe queremos recordar tu cita de ${a.service.toUpperCase()} en MASTER LOOK\n\n⏰¿Cuándo?: ${fechaCorta} a las ${hora}\n📌¿Dónde?: ${DIRECCION_NEGOCIO}\n👱🏼‍♀️¿Con quién?: ${a.barber}\n\n🚨 RECUERDA! SOLO ESPERAMOS 15 MINUTOS POR CLIENTE\nDE LO CONTRARIO TU HORA SERIA CANCELADA Y PERDERIAS TU ABONO😢\n\n🚨TEN PRESENTE QUE SOMOS UN ESTUDIO DE BELLEZA UBICADO EN UNA OFICINA POR LO CUAL SOLO ACEPTAMOS (1) ACOMPAÑANTE🙏\n\n¡Te esperamos!`;
+    return `Hola ${a.client}!\n\nTe queremos recordar tu cita de ${a.service.toUpperCase()} en MASTER LOOK\n\n⏰¿Cuándo?: ${fechaCorta} a las ${hora}\n📌¿Dónde?: ${direccionParaWhatsApp()}\n👱🏼‍♀️¿Con quién?: ${a.barber}\n\n🚨 RECUERDA! SOLO ESPERAMOS 15 MINUTOS POR CLIENTE\nDE LO CONTRARIO TU HORA SERIA CANCELADA Y PERDERIAS TU ABONO😢\n\n🚨TEN PRESENTE QUE SOMOS UN ESTUDIO DE BELLEZA UBICADO EN UNA OFICINA POR LO CUAL SOLO ACEPTAMOS (1) ACOMPAÑANTE🙏\n\n¡Te esperamos!`;
   }
 
   /** Aviso flotante con un botón para mandar el WhatsApp de una reserva nueva, sin tener que buscarla. */
