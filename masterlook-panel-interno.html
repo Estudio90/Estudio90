@@ -1011,6 +1011,9 @@
      (mismo caso que mgConfirm/mgPrompt arriba) -- sin este z-index quedaría
      tapada por "Configuración", que aparece después en el DOM. */
   #modalSvcGaleria{ z-index:189; }
+  /* Mismo caso que la galeria de Servicios de arriba: la galeria de fotos
+     de un local se abre ENCIMA de su editor (modalEditarLocal). */
+  #modalLocGaleria{ z-index:189; }
   .mg-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
   .mg-head h3{font-size:17px; font-weight:600;}
   .mg-close{background:#f1f1f4; border:none; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; color:#57565f;}
@@ -2370,6 +2373,8 @@
       <button class="menu-panel-item" id="btnMensajeriaWhatsapp">Mensajería WhatsApp</button>
 
 
+      <button class="menu-panel-item" id="btnLocales">Locales</button>
+
       <div class="nav-group" id="grupoServicios" style="display:none;">
         <button class="nav-group-head" type="button">Servicios</button>
         <div class="nav-group-items">
@@ -3589,6 +3594,30 @@
          contenedor de página completa, la fila con menú de Opciones, y el
          editor en modal (Datos básicos con el checklist de servicios que
          realiza + Horario + Perfil). La página "Horarios" NO se toca. ===== -->
+    <!-- ===== VISTA: LOCALES (pagina completa, calco de AgendaPro --
+         app.agendapro.com/new_administration/locations). Administra la
+         coleccion nueva `locales` -- nombre, direccion estructurada,
+         contacto, horario informativo, fotos, e imagen/link del mapa que
+         usan los correos de reserva (Bloque 4, aparte). No se conecta
+         todavia a bookings, barbers, el sitio publico ni los correos --
+         eso son los Bloques 2/3/4, cada uno con su propia autorizacion. ===== -->
+    <div id="vistaLocales" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Locales</h2>
+          <p class="cx-sub">Direccion, contacto, horario y fotos de cada sucursal.</p>
+        </div>
+        <div class="cx-nav">
+          <button class="ctrl-btn" id="lvVolver">← Volver a la agenda</button>
+        </div>
+      </div>
+
+      <div class="sv-toolbar">
+        <button class="sv-btn sv-btn-solid" id="cfgAddLocal">+ Nuevo local</button>
+      </div>
+      <div id="cfgLocales"></div>
+    </div>
+
     <div id="vistaProfesionales" style="display:none;">
       <div class="cx-head">
         <div>
@@ -4523,6 +4552,113 @@
       </div>
     </div>
 
+    <!-- Galeria de fotos de un local -- mismo patron que la galeria de
+         fotos de un servicio (modalSvcGaleria), reusa las mismas clases
+         .pcm-gal-*. -->
+    <div class="mg-modal" id="modalLocGaleria">
+      <div class="mg-head">
+        <h3>Fotos del local</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <p class="mg-note" id="locGalNombre" style="margin-bottom:14px;font-weight:600;color:var(--text,#1A1815);"></p>
+      <div class="pcm-galeria" id="locGaleria"></div>
+      <button class="mg-btn full" data-close style="margin-top:18px;">Listo</button>
+    </div>
+
+    <!-- Editor de local (Nuevo/Editar) -- pagina completa de Locales, ver
+         vistaLocales mas arriba. El mapa de esta pestana ("Sitio Web") es
+         el mismo mecanismo que ya usa el correo de reserva hoy (imagen
+         estatica subida a mano + link real pegado a mano) -- no hay mapa
+         interactivo, aclaracion explicita de la usuaria. -->
+    <div class="mg-modal" id="modalEditarLocal">
+      <div class="mg-head">
+        <h3 id="mlTitulo">Nuevo local</h3>
+        <button class="mg-close" data-close>✕</button>
+      </div>
+      <div class="mes-tabs">
+        <button type="button" class="mes-tab active" data-mltab="basicos">Datos básicos</button>
+        <button type="button" class="mes-tab" data-mltab="web">Sitio Web</button>
+      </div>
+
+      <div class="mes-pane active" data-mlpane="basicos">
+        <label class="mg-label">Nombre del local *</label>
+        <input type="text" id="mlNombre" class="mg-input" placeholder="Ej: MASTER LOOK Ñuñoa">
+
+        <label class="mg-label" style="margin-top:12px;">Dirección (calle y número) *</label>
+        <input type="text" id="mlCalle" class="mg-input" placeholder="Ej: Av. Manuel Antonio Matta 067">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+          <div>
+            <label class="mg-label">Oficina / local</label>
+            <input type="text" id="mlOficina" class="mg-input" placeholder="Ej: local 101-C">
+          </div>
+          <div>
+            <label class="mg-label">Piso</label>
+            <input type="text" id="mlPiso" class="mg-input" placeholder="Opcional">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;">
+          <div>
+            <label class="mg-label">Comuna *</label>
+            <input type="text" id="mlComuna" class="mg-input" placeholder="Ej: Ñuñoa">
+          </div>
+          <div>
+            <label class="mg-label">Ciudad *</label>
+            <input type="text" id="mlCiudad" class="mg-input" placeholder="Ej: Santiago">
+          </div>
+          <div>
+            <label class="mg-label">Región *</label>
+            <input type="text" id="mlRegion" class="mg-input" placeholder="Ej: Región Metropolitana">
+          </div>
+        </div>
+
+        <div class="mg-two" style="margin-top:12px;">
+          <div>
+            <label class="mg-label">Teléfono *</label>
+            <input type="text" id="mlTelefono" class="mg-input" placeholder="Ej: +56 9 4912 4645">
+          </div>
+          <div>
+            <label class="mg-label">WhatsApp <span class="mg-opt">(si es distinto al teléfono)</span></label>
+            <input type="text" id="mlWhatsapp" class="mg-input" placeholder="Ej: +56 9 4912 4645">
+          </div>
+        </div>
+
+        <label class="mg-label" style="margin-top:12px;">Correo *</label>
+        <input type="text" id="mlCorreo" class="mg-input" placeholder="Ej: hola@masterlook.cl">
+
+        <label class="mg-label" style="margin-top:16px;">Horario de atención</label>
+        <p class="mg-note" style="margin-bottom:10px;">Este horario es informativo para tus clientes (sitio, correo, chat) -- no cambia la disponibilidad real de tus profesionales, que se sigue configurando en cada Profesional.</p>
+        <div class="mg-week" id="mlHorario"></div>
+      </div>
+
+      <div class="mes-pane" data-mlpane="web">
+        <label class="mg-label">Descripción</label>
+        <textarea id="mlDescripcion" class="mg-input" style="min-height:80px;"
+          placeholder="Una breve descripción de este local"></textarea>
+
+        <label class="mg-label" style="margin-top:12px;">Fotos</label>
+        <div class="mes-fotos-row">
+          <button type="button" class="mg-btn ghost" id="mlGaleriaBtn">Fotos del local</button>
+        </div>
+
+        <label class="mg-label" style="margin-top:16px;">Mapa del correo de reserva</label>
+        <p class="mg-note" style="margin-bottom:10px;">Misma imagen y link que hoy se usan en el correo de confirmación/recordatorio -- sin mapa interactivo, se sube una imagen (ej. una captura de Google Maps ya centrada en el local) y se pega el link real de Google Maps.</p>
+        <div class="mes-fotos-row">
+          <div class="svc-thumb" id="mlMapaThumb" title="Subir imagen del mapa para el correo"
+            style="width:56px;height:56px;border-radius:10px;cursor:pointer;background-color:#eee;
+              background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:18px;">📷</div>
+        </div>
+        <label class="mg-label" style="margin-top:12px;">Link de Google Maps</label>
+        <input type="text" id="mlGoogleMapsUrl" class="mg-input" placeholder="Pega el link real de Google Maps de este local">
+      </div>
+
+      <div class="mg-actions">
+        <button class="mg-btn ghost" data-close>Cancelar</button>
+        <button class="mg-btn solid" id="mlGuardar">Guardar</button>
+      </div>
+    </div>
+
     <div id="vistaUsuarios" style="display:none;">
       <div class="cx-head">
         <div>
@@ -4909,7 +5045,7 @@
       <input type="text" id="nr2NotaInterna" class="mg-input" placeholder="Solo la ve el equipo -- nunca el cliente">
 
       <label class="mg-check">
-        <input type="checkbox" id="nrAvisar"> Enviarle confirmación por WhatsApp y correo
+        <input type="checkbox" id="nrAvisar" checked> Enviar confirmación por correo
       </label>
     </div>
    </div>
@@ -5960,7 +6096,7 @@
     'vistaAgenda', 'vistaBarbero', 'vistaAbonos', 'vistaAccesosCursos',
     'vistaArchivosMultimedia', 'vistaCampanas', 'vistaClientes', 'vistaColores',
     'vistaComisiones', 'vistaCursos', 'vistaHorarios', 'vistaIntelligence',
-    'vistaProductos', 'vistaProfesionales', 'vistaPropinas', 'vistaResumenVentas',
+    'vistaLocales', 'vistaProductos', 'vistaProfesionales', 'vistaPropinas', 'vistaResumenVentas',
     'vistaServicios', 'vistaSuscripciones', 'vistaTestimonios', 'vistaUsuarios', 'vistaVentas',
   ];
   /** Oculta TODAS las vistas de sección. Cada mostrarX() la llama y después
@@ -8368,11 +8504,13 @@
     // "Configuración" -- mismo caso que mgConfirm/mgPrompt: cerrarla no debe
     // descartar el modal de fondo.
     const modalGaleria = document.getElementById('modalSvcGaleria');
-    const capaSuperiorAbierta = modalConfirm.classList.contains('open') || modalPrompt.classList.contains('open') || modalGaleria.classList.contains('open');
+    const modalGaleriaLocal = document.getElementById('modalLocGaleria');
+    const capaSuperiorAbierta = modalConfirm.classList.contains('open') || modalPrompt.classList.contains('open') || modalGaleria.classList.contains('open') || modalGaleriaLocal.classList.contains('open');
     if(capaSuperiorAbierta){
       modalConfirm.classList.remove('open');
       modalPrompt.classList.remove('open');
       modalGaleria.classList.remove('open');
+      modalGaleriaLocal.classList.remove('open');
       const quedaOtroAbierto = Array.from(document.querySelectorAll('.mg-modal')).some(m=> m.classList.contains('open'));
       if(!quedaOtroAbierto) mgOverlay.classList.remove('open');
     } else {
@@ -8676,6 +8814,7 @@
     nr2InicializarMenuEstado();
     nr2PintarEstado('reservado');
     document.getElementById('nrGuardar').disabled = true;
+    document.getElementById('nrAvisar').checked = true; // default: avisar SI, por cada reserva nueva
     abrirModal('modalReserva');
   });
 
@@ -9353,12 +9492,21 @@
     const notaInterna = document.getElementById('nr2NotaInterna').value.trim() || 'Reserva tomada en el local';
     const notaCliente = document.getElementById('nr2NotaCliente').value.trim();
 
+    // "Enviar confirmación por correo": marcado (default) = el cliente
+    // recibe el correo de "reserva confirmada" apenas se crea, igual que
+    // si hubiera reservado online -- desmarcado = la reserva se crea
+    // exactamente igual, solo que sin avisar por correo (p.ej. reservas de
+    // prueba, o cuando el staff ya avisó por otro medio). WhatsApp NO
+    // forma parte de esto todavia -- el texto viejo prometia algo que el
+    // codigo nunca hizo.
+    const avisarCliente = document.getElementById('nrAvisar').checked;
+
     try{
       await functions.httpsCallable('crearReservaLocal')({
         fecha, client: nombre, phone: nrSeleccion.clienteTelefono, email: nrSeleccion.clienteEmail,
         pay: 'Efectivo en local', notaAdmin: notaInterna, notaCliente,
         clienteId: nrSeleccion.clienteId, etiqueta: nrSeleccion.estado,
-        forzar: false,
+        forzar: false, avisarCliente,
         citas: [{
           serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
           barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
@@ -11805,6 +11953,370 @@
       showToast(mpfEditandoId ? 'Profesional actualizado' : 'Profesional creado');
       cerrarModales();
       pintarConfigEquipo();
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
+
+  /* ==========================================================
+     MODULO "LOCALES" (Bloque 1) -- calco de AgendaPro
+     (app.agendapro.com/new_administration/locations). Colección nueva
+     `locales`, cero relación todavía con bookings/barbers (eso es el
+     Bloque 2, con su propia compuerta de conteo+respaldo+reversión antes
+     de escribir nada) ni con el sitio público/correos (Bloques 3 y 4).
+     El "mapa" de este editor es el mismo mecanismo que ya usa hoy el
+     correo de reserva -- imagen estática subida a mano + link real pegado
+     a mano -- nunca un mapa interactivo (aclaración explícita de la
+     usuaria). Reutiliza tal cual: .sv-row/.sv-pill/.sv-opciones-* (mismos
+     estilos AgendaPro ya medidos para Servicios/Profesionales), .mg-week/
+     .mg-wrow (mismo formato de horario que ya usan los profesionales),
+     .pcm-gal-* (misma galería que ya usan los servicios), y
+     redimensionarImagen()+Storage (mismo patrón que subirFotoServicio/
+     subirFotoBarbero).
+     ========================================================== */
+  let cfgLocales = [];
+
+  async function cargarLocales(){
+    try{
+      const snap = await db.collection('locales').get();
+      cfgLocales = snap.docs.map(d=> d.data());
+    }catch(e){
+      console.error('cargarLocales:', e);
+      showToast('No se pudieron cargar los locales: ' + e.message);
+      cfgLocales = [];
+    }
+  }
+
+  async function mostrarVistaLocales(){
+    if(barberoBloqueado()) return;
+    ocultarVistasPanel();
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaLocales').style.display = '';
+    ocultarFlotante(true);
+    await cargarLocales();
+    pintarConfigLocales();
+  }
+
+  function lvVolverAgenda(){
+    document.getElementById('vistaLocales').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  }
+
+  document.getElementById('lvVolver').addEventListener('click', lvVolverAgenda);
+  document.getElementById('btnLocales').addEventListener('click', mostrarVistaLocales);
+
+  function mlDireccionCompleta(l){
+    const partes = [];
+    if(l.direccionCalle) partes.push(l.direccionCalle);
+    if(l.oficina) partes.push(l.oficina);
+    if(l.piso) partes.push('piso ' + l.piso);
+    const cola = [l.comuna, l.ciudad, l.region].filter(Boolean).join(', ');
+    let texto = partes.join(', ');
+    if(cola) texto = texto ? (texto + ', ' + cola) : cola;
+    return texto;
+  }
+
+  function pintarConfigLocales(){
+    const cont = document.getElementById('cfgLocales');
+    cont.innerHTML = cfgLocales.map(l=> `
+      <div class="sv-row ${l.active ? '' : 'off'}" data-id="${l.id}">
+        <div class="svc-thumb" data-fotolocal="${l.id}" title="Local"
+             style="width:48px;height:48px;border-radius:10px;cursor:default;background-color:#eee;flex-shrink:0;
+               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
+               ${l.fotos && l.fotos[0] ? `background-image:url('${l.fotos[0]}');` : ''}">${l.fotos && l.fotos[0] ? '' : '🏠'}</div>
+        <div class="sv-row-info">
+          <div class="sv-row-nombre">${l.nombre}</div>
+          <div class="sv-row-meta">${mlDireccionCompleta(l) || 'Sin dirección todavía'}</div>
+        </div>
+        <span class="sv-pill ${l.active ? 'on' : 'off'}">${l.active ? 'Activo' : 'Inactivo'}</span>
+        <div class="sv-opciones-wrap">
+          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${l.id}">Opciones</button>
+          <div class="sv-opciones-menu" data-opciones-menu="${l.id}">
+            <button type="button" data-op-toggle="${l.id}">${l.active ? 'Desactivar local' : 'Activar local'}</button>
+          </div>
+        </div>
+        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${l.id}">Editar</button>
+      </div>`).join('') || '<div class="cx-empty">Todavía no hay ningún local creado.</div>';
+
+    cont.querySelectorAll('.sv-row').forEach(row=>{
+      const id = row.dataset.id;
+      row.querySelector('.sv-editar-btn').addEventListener('click', ()=> abrirEditorLocal(id));
+      const opBtn = row.querySelector('.sv-opciones-btn');
+      const opMenu = row.querySelector('.sv-opciones-menu');
+      opBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const abierto = opMenu.classList.contains('open');
+        document.querySelectorAll('.sv-opciones-menu.open').forEach(m=> m.classList.remove('open'));
+        if(!abierto) opMenu.classList.add('open');
+      });
+      opMenu.querySelector('[data-op-toggle]').addEventListener('click', ()=>{
+        opMenu.classList.remove('open');
+        const actual = cfgLocales.find(x=> x.id === id);
+        (actual && actual.active) ? desactivarLocal(id) : activarLocal(id);
+      });
+    });
+  }
+
+  async function _guardarEstadoLocal(l, activo){
+    l.active = activo;
+    try{ await db.collection('locales').doc(l.id).set(l); }catch(e){ return showToast('No se pudo guardar: ' + e.message); }
+    pintarConfigLocales();
+    showToast(activo ? `${l.nombre} activado` : `${l.nombre} desactivado`);
+  }
+  async function desactivarLocal(id){
+    const l = cfgLocales.find(x=> x.id === id);
+    if(!l) return;
+    if(!(await mgConfirm(`¿Desactivar "${l.nombre}"?\n\nDeja de mostrarse como local activo.`))) return;
+    await _guardarEstadoLocal(l, false);
+  }
+  async function activarLocal(id){
+    const l = cfgLocales.find(x=> x.id === id);
+    if(l) await _guardarEstadoLocal(l, true);
+  }
+
+  document.getElementById('cfgAddLocal').addEventListener('click', ()=> abrirEditorLocal(null));
+
+  function mlPintarHorario(local){
+    const cont = document.getElementById('mlHorario');
+    const bloques = local?.horario || [];
+    cont.innerHTML = [1,2,3,4,5,6,0].map(wd=>{
+      const blk = bloques.find(s=> s.weekday === wd);
+      const on = !!blk;
+      const hhmm = (m)=> String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+      return `
+        <div class="mg-wrow ${on ? '' : 'off'}" data-wd="${wd}">
+          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${NOMBRES_DIA[wd]}</label>
+          <input type="time" value="${on ? hhmm(blk.startMin) : '11:00'}" data-start>
+          <input type="time" value="${on ? hhmm(blk.endMin) : '21:00'}" data-end>
+        </div>`;
+    }).join('');
+    cont.querySelectorAll('[data-on]').forEach(chk=>
+      chk.addEventListener('change', ()=> chk.closest('.mg-wrow').classList.toggle('off', !chk.checked)));
+  }
+
+  let mlEditandoId = null;
+
+  function abrirEditorLocal(id){
+    mlEditandoId = id;
+    const l = id ? cfgLocales.find(x=> x.id === id) : null;
+    document.getElementById('mlTitulo').textContent = l ? `Editando "${l.nombre}"` : 'Nuevo local';
+    document.getElementById('mlNombre').value = l?.nombre || '';
+    document.getElementById('mlCalle').value = l?.direccionCalle || '';
+    document.getElementById('mlOficina').value = l?.oficina || '';
+    document.getElementById('mlPiso').value = l?.piso || '';
+    document.getElementById('mlComuna').value = l?.comuna || '';
+    document.getElementById('mlCiudad').value = l?.ciudad || '';
+    document.getElementById('mlRegion').value = l?.region || '';
+    document.getElementById('mlTelefono').value = l?.telefono || '';
+    document.getElementById('mlWhatsapp').value = l?.whatsapp || '';
+    document.getElementById('mlCorreo').value = l?.correo || '';
+    document.getElementById('mlDescripcion').value = l?.descripcion || '';
+    document.getElementById('mlGoogleMapsUrl').value = l?.googleMapsUrl || '';
+    const mapaThumb = document.getElementById('mlMapaThumb');
+    mapaThumb.dataset.mapalocal = id || '';
+    mapaThumb.style.backgroundImage = l?.mapaImagenUrl ? `url('${l.mapaImagenUrl}')` : '';
+    mapaThumb.textContent = l?.mapaImagenUrl ? '' : '📷';
+    document.getElementById('mlGaleriaBtn').textContent =
+      'Fotos del local' + (Array.isArray(l?.fotos) && l.fotos.length ? ` · ${l.fotos.length}` : '');
+    mlPintarHorario(l);
+    document.querySelectorAll('#modalEditarLocal .mes-tab').forEach((t,i)=> t.classList.toggle('active', i===0));
+    document.querySelectorAll('#modalEditarLocal .mes-pane').forEach((p,i)=> p.classList.toggle('active', i===0));
+    abrirModal('modalEditarLocal');
+  }
+
+  document.querySelectorAll('#modalEditarLocal .mes-tab').forEach(t=>
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('#modalEditarLocal .mes-tab').forEach(x=> x.classList.toggle('active', x===t));
+      document.querySelectorAll('#modalEditarLocal .mes-pane').forEach(p=>
+        p.classList.toggle('active', p.dataset.mlpane === t.dataset.mltab));
+    }));
+
+  function mlSubirImagenMapa(localId){
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const thumb = document.getElementById('mlMapaThumb');
+      thumb.textContent = '…';
+      try{
+        const blob = await redimensionarImagen(file, 800);
+        const ruta = `localPhotos/${localId}/mapa-${Date.now()}.jpg`;
+        const ref = storage.ref(ruta);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        const l = cfgLocales.find(x=> x.id === localId);
+        if(l){ l.mapaImagenUrl = url; await db.collection('locales').doc(localId).set(l); }
+        thumb.style.backgroundImage = `url('${url}')`;
+        thumb.textContent = '';
+        showToast('Imagen del mapa actualizada');
+        pintarConfigLocales();
+      }catch(e){
+        showToast('No se pudo subir la imagen: ' + e.message);
+        thumb.textContent = '📷';
+      }
+    });
+    input.click();
+  }
+  document.getElementById('mlMapaThumb').addEventListener('click', ()=>{
+    if(mlEditandoId) mlSubirImagenMapa(mlEditandoId);
+    else showToast('Guarda el local primero para poder subirle fotos');
+  });
+
+  let locGalLocalId = null;
+  let locGalFotos = [];
+
+  function abrirGaleriaLocal(localId){
+    const l = cfgLocales.find(x=> x.id === localId);
+    if(!l) return;
+    locGalLocalId = localId;
+    locGalFotos = Array.isArray(l.fotos) ? l.fotos.slice() : [];
+    const nombreEl = document.getElementById('locGalNombre');
+    if(nombreEl) nombreEl.textContent = l.nombre || '';
+    pintarGaleriaLocal();
+    abrirModal('modalLocGaleria');
+  }
+
+  function pintarGaleriaLocal(){
+    const cont = document.getElementById('locGaleria');
+    if(!cont) return;
+    cont.innerHTML = locGalFotos.map((url,i)=> `
+      <div class="pcm-gal-item">
+        <img src="${url}" alt="">
+        <button type="button" class="pcm-gal-del" data-locgal-quitar="${i}" title="Quitar foto">✕</button>
+        <div class="pcm-gal-mover">
+          <button type="button" data-locgal-mover="${i}:-1" ${i===0?'disabled':''} title="Mover antes">‹</button>
+          <button type="button" data-locgal-mover="${i}:1" ${i===locGalFotos.length-1?'disabled':''} title="Mover después">›</button>
+        </div>
+      </div>`).join('') + `<button type="button" class="pcm-gal-add" id="locGalAgregar" title="Agregar foto">+</button>`;
+
+    cont.querySelectorAll('[data-locgal-quitar]').forEach(b=>
+      b.addEventListener('click', async ()=>{
+        locGalFotos.splice(Number(b.dataset.locgalQuitar), 1);
+        pintarGaleriaLocal();
+        await guardarGaleriaLocal();
+      }));
+    cont.querySelectorAll('[data-locgal-mover]').forEach(b=>
+      b.addEventListener('click', async ()=>{
+        const [i, dir] = b.dataset.locgalMover.split(':').map(Number);
+        const j = i + dir;
+        if(j < 0 || j >= locGalFotos.length) return;
+        [locGalFotos[i], locGalFotos[j]] = [locGalFotos[j], locGalFotos[i]];
+        pintarGaleriaLocal();
+        await guardarGaleriaLocal();
+      }));
+    document.getElementById('locGalAgregar')?.addEventListener('click', agregarFotoGaleriaLocal);
+  }
+
+  function agregarFotoGaleriaLocal(){
+    if(!locGalLocalId) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', async ()=>{
+      const file = input.files[0];
+      if(!file) return;
+      const btn = document.getElementById('locGalAgregar');
+      if(btn){ btn.disabled = true; btn.textContent = '…'; }
+      try{
+        const blob = await redimensionarImagen(file, 1000);
+        const ruta = `localPhotos/${locGalLocalId}/${Date.now()}.jpg`;
+        const ref = storage.ref(ruta);
+        await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+        const url = await ref.getDownloadURL();
+        locGalFotos.push(url);
+        pintarGaleriaLocal();
+        await guardarGaleriaLocal();
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + e.message);
+        pintarGaleriaLocal();
+      }
+    });
+    input.click();
+  }
+
+  async function guardarGaleriaLocal(){
+    const l = cfgLocales.find(x=> x.id === locGalLocalId);
+    if(!l) return;
+    l.fotos = locGalFotos.slice();
+    try{
+      await db.collection('locales').doc(locGalLocalId).set(l);
+      pintarConfigLocales();
+      const btn = document.getElementById('mlGaleriaBtn');
+      if(btn) btn.textContent = 'Fotos del local' + (l.fotos.length ? ` · ${l.fotos.length}` : '');
+    }catch(e){
+      showToast('No se pudo guardar la galería: ' + e.message);
+    }
+  }
+
+  document.getElementById('mlGaleriaBtn').addEventListener('click', ()=>{
+    if(mlEditandoId) abrirGaleriaLocal(mlEditandoId);
+    else showToast('Guarda el local primero para poder subirle fotos');
+  });
+
+  document.getElementById('mlGuardar').addEventListener('click', async ()=>{
+    const nombre = document.getElementById('mlNombre').value.trim();
+    const direccionCalle = document.getElementById('mlCalle').value.trim();
+    const comuna = document.getElementById('mlComuna').value.trim();
+    const ciudad = document.getElementById('mlCiudad').value.trim();
+    const region = document.getElementById('mlRegion').value.trim();
+    const telefono = document.getElementById('mlTelefono').value.trim();
+    const correo = document.getElementById('mlCorreo').value.trim();
+    if(!nombre) return showToast('Ponle un nombre al local');
+    if(!direccionCalle) return showToast('Falta la dirección');
+    if(!comuna || !ciudad || !region) return showToast('Falta comuna, ciudad o región');
+    if(!telefono) return showToast('Falta el teléfono');
+    if(!correo) return showToast('Falta el correo');
+
+    const horario = [];
+    let errorHorario = null;
+    document.querySelectorAll('#mlHorario .mg-wrow').forEach(row=>{
+      if(!row.querySelector('[data-on]').checked) return;
+      const toMin = (v)=> Number(v.slice(0,2))*60 + Number(v.slice(3));
+      const startMin = toMin(row.querySelector('[data-start]').value);
+      const endMin = toMin(row.querySelector('[data-end]').value);
+      if(endMin <= startMin) errorHorario = `En ${NOMBRES_DIA[row.dataset.wd]}, la hora de término debe ser posterior`;
+      horario.push({ weekday: Number(row.dataset.wd), startMin, endMin });
+    });
+    if(errorHorario) return showToast(errorHorario);
+
+    const cuerpo = {
+      nombre, direccionCalle,
+      oficina: document.getElementById('mlOficina').value.trim(),
+      piso: document.getElementById('mlPiso').value.trim(),
+      comuna, ciudad, region,
+      telefono,
+      whatsapp: document.getElementById('mlWhatsapp').value.trim(),
+      correo,
+      descripcion: document.getElementById('mlDescripcion').value.trim(),
+      googleMapsUrl: document.getElementById('mlGoogleMapsUrl').value.trim(),
+      horario,
+    };
+    cuerpo.direccionCompleta = mlDireccionCompleta(cuerpo);
+
+    try{
+      if(mlEditandoId){
+        const l = cfgLocales.find(x=> x.id === mlEditandoId);
+        Object.assign(l, cuerpo);
+        await db.collection('locales').doc(mlEditandoId).set(l);
+        showToast('Local actualizado');
+        cerrarModales();
+        pintarConfigLocales();
+      }else{
+        const nuevoId = 'loc' + Date.now();
+        const nuevo = { id: nuevoId, active: true, fotos: [], mapaImagenUrl: '', createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...cuerpo };
+        cfgLocales.push(nuevo);
+        await db.collection('locales').doc(nuevoId).set(nuevo);
+        showToast('Local creado');
+        // No se cierra el modal -- se pasa a modo "editando" para poder
+        // subirle fotos/mapa de inmediato (antes necesitan un id que no
+        // existía hasta este punto). Mismo patrón que Servicios.
+        mlEditandoId = nuevoId;
+        document.getElementById('mlTitulo').textContent = `Editando "${nombre}"`;
+        pintarConfigLocales();
+      }
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
@@ -19371,6 +19883,7 @@
     nr2InicializarMenuEstado();
     nr2PintarEstado('reservado');
     document.getElementById('nrGuardar').disabled = true;
+    document.getElementById('nrAvisar').checked = true; // default: avisar SI, por cada reserva nueva
 
     const barbero = cfgBarberos.find(b=> b.calId === barberoCalId);
     if(barbero) document.getElementById('nrBarbero').value = barbero.id;
