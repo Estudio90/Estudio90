@@ -5175,6 +5175,10 @@
   <div class="mg-tabs">
     <button class="mg-tab active" data-tab="local">Negocio y contacto</button>
     <button class="mg-tab" data-tab="portada">Portada del sitio</button>
+    <!-- Solo ADMIN -- ver mostrarControlesAdmin(). La escritura real ya
+         queda protegida aparte por Firestore Rules (settings/{doc} ->
+         allow write: if isAdmin()), esto además oculta el control mismo. -->
+    <button class="mg-tab" data-tab="reservaspagos" id="btnTabReservasPagos">Reservas y pagos</button>
   </div>
 
   <!-- Negocio y contacto: lo que se ve en el pie de página del sitio (nombre, direccion, telefono, correo, instagram) y el horario de atencion -->
@@ -5287,6 +5291,51 @@
          style="width:100%;height:150px;border-radius:12px;cursor:pointer;background-color:#eee;
            background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:26px;">📷</div>
     <button class="mg-btn ghost full" id="cfgQuitarTiendaHero" style="margin-top:10px;">Quitar foto de la tienda (volver a usar la del primer producto)</button>
+  </div>
+
+  <!-- Reservas y pagos: los 2 interruptores de modalidad de reserva pública
+       (settings/negocio.reservasConAnticipoWebpay / reservasSinAnticipo).
+       Independientes entre sí -- ver crearReservaTransaccional
+       (database/functions/reservas.js) para el chequeo server-side real,
+       nunca solo confiado a esto. Solo ADMIN ve esta pestaña (ver
+       mostrarControlesAdmin) -- la escritura además ya está protegida por
+       Firestore Rules (settings/{doc} -> allow write: if isAdmin()). -->
+  <div class="mg-pane" data-pane="reservaspagos">
+    <p class="mg-note">Controlan cómo el cliente puede completar una reserva pública desde el sitio. Si ambos quedan desactivados, el sitio deja de ofrecer reservas nuevas hasta que actives al menos uno.</p>
+
+    <div class="pc-cat-card" style="margin-top:4px;">
+      <div class="pc-cat-head">
+        <div class="pc-cat-head-l">
+          <div>
+            <div class="pc-cat-title">Reservas con anticipo Webpay</div>
+            <div class="pc-cat-sub">El cliente paga el anticipo por Webpay para confirmar su reserva (comportamiento de siempre).</div>
+          </div>
+        </div>
+      </div>
+      <label class="cu-tgl" style="margin-top:12px;">
+        <span class="mg-sw"><input type="checkbox" id="cfgAnticipoWebpayActivo"><span class="mg-sw-track"></span></span>
+        Activar
+      </label>
+    </div>
+
+    <div class="pc-cat-card" style="margin-top:16px;">
+      <div class="pc-cat-head">
+        <div class="pc-cat-head-l">
+          <div>
+            <div class="pc-cat-title">Reservas sin anticipo</div>
+            <div class="pc-cat-sub">El cliente puede reservar sin pagar nada por adelantado. Si agrega productos, esos sí se cobran por Webpay, por separado del anticipo.</div>
+          </div>
+        </div>
+      </div>
+      <label class="cu-tgl" style="margin-top:12px;">
+        <span class="mg-sw"><input type="checkbox" id="cfgSinAnticipoActivo"><span class="mg-sw-track"></span></span>
+        Activar
+      </label>
+    </div>
+
+    <p class="mg-note" id="cfgReservasPagosAmbasOff" style="display:none;margin-top:14px;color:#B23;font-weight:600;">Con ambos desactivados, el sitio no podrá ofrecer reservas nuevas hasta que actives al menos uno.</p>
+
+    <button class="mg-btn solid full" id="cfgGuardarReservasPagos" style="margin-top:18px;">Guardar</button>
   </div>
 </div>
 
@@ -7651,7 +7700,8 @@
     // Servicios staff, Mi equipo, y el grupo "Más".
     ['btnAcademyPanel','btnVentasAcademy','btnProductos','btnVentasTienda',
      'btnEquipoServicios','btnEquipoVer','btnEquipoNuevo','btnOrdenarMenu',
-     'btnPromos','btnColores','btnIntelligence','btnSuscripciones'].forEach(id=>{
+     'btnPromos','btnColores','btnIntelligence','btnSuscripciones',
+     'btnTabReservasPagos'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
     // El separador de "Mi equipo" en el menú de cuenta solo tiene sentido si
@@ -9983,7 +10033,44 @@
     pintarConfigServicios();
     pintarConfigEquipo();
     cargarHorarioLocal();
+    if(userRole === 'ADMIN') cargarReservasPagosConfig();
     abrirModal('modalConfig');
+  });
+
+  /** "Reservas y pagos" (pestaña del modal Configuración, solo ADMIN) --
+   *  los 2 interruptores de modalidad de reserva pública. Default seguro
+   *  si el campo no existe en settings/negocio: reservasConAnticipoWebpay
+   *  ausente => true (preserva el comportamiento de siempre);
+   *  reservasSinAnticipo ausente => false (la modalidad no existía antes
+   *  de esto) -- MISMO default que ya aplica crearReservaTransaccional
+   *  server-side (database/functions/reservas.js), nunca solo acá. */
+  async function cargarReservasPagosConfig(){
+    try{
+      const doc = await leerSettingsNegocio(true);
+      const d = doc.exists ? doc.data() : {};
+      document.getElementById('cfgAnticipoWebpayActivo').checked = d.reservasConAnticipoWebpay !== false;
+      document.getElementById('cfgSinAnticipoActivo').checked = d.reservasSinAnticipo === true;
+    }catch(e){
+      document.getElementById('cfgAnticipoWebpayActivo').checked = true;
+      document.getElementById('cfgSinAnticipoActivo').checked = false;
+    }
+    actualizarAvisoReservasPagosAmbasOff();
+  }
+  function actualizarAvisoReservasPagosAmbasOff(){
+    const anticipo = document.getElementById('cfgAnticipoWebpayActivo').checked;
+    const sinAnticipo = document.getElementById('cfgSinAnticipoActivo').checked;
+    document.getElementById('cfgReservasPagosAmbasOff').style.display = (!anticipo && !sinAnticipo) ? '' : 'none';
+  }
+  document.getElementById('cfgAnticipoWebpayActivo')?.addEventListener('change', actualizarAvisoReservasPagosAmbasOff);
+  document.getElementById('cfgSinAnticipoActivo')?.addEventListener('change', actualizarAvisoReservasPagosAmbasOff);
+  document.getElementById('cfgGuardarReservasPagos')?.addEventListener('click', async ()=>{
+    const reservasConAnticipoWebpay = document.getElementById('cfgAnticipoWebpayActivo').checked;
+    const reservasSinAnticipo = document.getElementById('cfgSinAnticipoActivo').checked;
+    try{
+      await db.collection('settings').doc('negocio').set({ reservasConAnticipoWebpay, reservasSinAnticipo }, { merge:true });
+      invalidarSettingsNegocio();
+      showToast('Configuración de reservas y pagos actualizada');
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   });
 
   /* ---------- Horario del local (atención al público) ---------- */
