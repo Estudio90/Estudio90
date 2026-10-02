@@ -5930,28 +5930,57 @@
   });
 
   /* Guard de doble/triple clic. `pagoEnCurso` ignora cualquier clic extra
-     mientras se crea el hold + la transacción y hasta el redirect. El único
-     cambio visual es el texto del propio botón -- sin overlay, sin bloquear
-     la pantalla. NO toca la lógica del pago: la idempotencia real la sigue
-     dando adquirirIntentoPago en el servidor. */
+     mientras se crea el hold + la transacción (o la reserva sin anticipo)
+     y hasta el redirect. El único cambio visual es el texto del propio
+     botón -- sin overlay, sin bloquear la pantalla. NO toca la lógica del
+     pago: la idempotencia real la sigue dando adquirirIntentoPago en el
+     servidor (y, para sin-anticipo, el slotLock reclamado dentro de la
+     misma transacción que crea la reserva, ver crearReservaTransaccional).
+
+     `reservaConfirmadaFinal`: corrección real (no cosmética) de un bug
+     reportado 2026-10-02 -- antes, al confirmar una reserva sin anticipo
+     sin productos, `pagoEnCurso` volvía a `false` y los botones (incluida
+     la barra flotante #rvBarra, el único control realmente visible)
+     quedaban de nuevo habilitados y con el mismo `state` de la reserva ya
+     creada -- un segundo toque volvía a enviar la MISMA reserva, chocaba
+     contra su propio slotLock ya reclamado, y el servidor (correctamente)
+     respondía "Ese horario ya no está disponible" -- un falso conflicto
+     causado por el propio checkout, no por otro cliente. Una vez `true`,
+     ningún control de pago vuelve a quedar disponible pase lo que pase
+     (incluida una repintada externa de la barra, ver actualizarBarra) --
+     solo `reiniciarModoReserva()` ("Hacer otra reserva") lo vuelve a
+     poner en `false`, a propósito. */
   let pagoEnCurso = false;
-  const TXT_BTN_PAGAR_SVC = 'Pagar y agendar';
+  let reservaConfirmadaFinal = false;
+  /* Texto del botón mientras la reserva/pago está en curso -- depende del
+     modo REAL, nunca hardcodeado a "Redirigiendo a Webpay…": en modo
+     sin_anticipo sin productos no se llama a Webpay en ningún momento
+     (crearReservaSinAnticipo no lo toca), así que el botón jamás debe
+     mencionarlo -- otro bug real reportado el mismo día. */
+  function textoEnCursoCheckout(){
+    if(state.modoReserva === 'sin_anticipo' && !(state.upsellSeleccion || []).length) return 'Reservando…';
+    return 'Redirigiendo a Webpay…';
+  }
   /* El usuario puede tocar el botón del form (#confirmBtn) o el de la barra
      fija móvil (#rvBarraBtn) -- los dos disparan el mismo pago, así que el
-     estado "Redirigiendo a Webpay…" se pone/saca en ambos. Cambia en el
-     primer frame tras el clic. */
+     estado "en curso" se pone/saca en ambos. Al desactivarlo, se repinta
+     con actualizarBarra() (nunca un texto fijo) para que el botón vuelva
+     exactamente al texto correcto del modo real -- "Reservar sin
+     anticipo", "Pagar productos y reservar" o "Pagar y agendar", según
+     corresponda, nunca uno genérico. */
   function pagoServicioRedirigiendo(activo){
     ['confirmBtn','rvBarraBtn'].forEach(id=>{
       const b = document.getElementById(id);
       if(!b) return;
       b.disabled = activo;
-      b.textContent = activo ? 'Redirigiendo a Webpay…' : TXT_BTN_PAGAR_SVC;
+      if(activo) b.textContent = textoEnCursoCheckout();
     });
+    if(!activo) actualizarBarra();
   }
 
   document.getElementById('confirmBtn').addEventListener('click', async ()=>{
     if(llevarAlDatoFaltante()) return;
-    if(pagoEnCurso) return;
+    if(pagoEnCurso || reservaConfirmadaFinal) return;
     // Defensa extra: si por alguna razón se llega acá con los 2
     // interruptores desactivados (nunca debería pasar -- #rvBarraBtn ya
     // queda disabled, ver actualizarBarra), no se intenta nada.
@@ -6121,11 +6150,9 @@
           }
 
           // Sin productos agregados: la reserva ya está confirmada, sin
-          // ningún paso de Webpay -- se muestra la confirmación acá mismo.
-          pagoEnCurso = false;
-          pagoServicioRedirigiendo(false);
-          document.getElementById('formZone').style.display = 'none';
-          document.getElementById('confirmMsg').classList.add('show');
+          // ningún paso de Webpay -- se muestra la confirmación acá mismo
+          // y el checkout queda finalizado de verdad (ver finalizarCheckout).
+          finalizarCheckout();
         }catch(e){
           pagoEnCurso = false;
           pagoServicioRedirigiendo(false);
@@ -6135,6 +6162,31 @@
       }
     }
   });
+
+  /** Cierra el checkout DE VERDAD tras una reserva sin anticipo confirmada
+   *  con éxito (sin productos, así que sin ningún paso de Webpay) -- no es
+   *  un cambio visual suelto (display:none por fuera, dejando el estado
+   *  vivo por dentro): marca `reservaConfirmadaFinal`, con lo que
+   *  actualizarBarra() deja de repintar la barra flotante pase lo que
+   *  pase (incluido un cambio en vivo de settings/negocio mientras el
+   *  cliente sigue en esta pantalla), y deshabilita+desconecta ambos
+   *  botones de pago explícitamente -- ningún control queda capaz de
+   *  reenviar la misma reserva. Solo "Hacer otra reserva"
+   *  (reiniciarModoReserva) puede volver a abrir un checkout nuevo. */
+  function finalizarCheckout(){
+    reservaConfirmadaFinal = true;
+    pagoEnCurso = false;
+    const barra = document.getElementById('rvBarra');
+    if(barra) barra.style.display = 'none';
+    ['confirmBtn','rvBarraBtn'].forEach(id=>{
+      const b = document.getElementById(id);
+      if(!b) return;
+      b.disabled = true;
+      b.onclick = null;
+    });
+    document.getElementById('formZone').style.display = 'none';
+    document.getElementById('confirmMsg').classList.add('show');
+  }
 
   /** Transbank exige que el token viaje por POST en un formulario. */
   function redirectToWebpay(url, token){
@@ -6150,6 +6202,9 @@
     form.submit();
   }
   function reiniciarModoReserva(){
+    // Único lugar que reabre el checkout después de finalizarCheckout() --
+    // a propósito, "Hacer otra reserva" es la única salida de ese estado.
+    reservaConfirmadaFinal = false;
     state.svc=null; state.price=0; state.barber=null; state.slot=null; state.slotLabel=null;
     state.anticipoReal=null; state.anticipoPct=null; state.montoConProducto=null;
     state.servicios=[]; state.barberId=null; state.duracion=null; state.plan=[];
@@ -10274,6 +10329,13 @@
 
   /* ---------- barra fija en móvil ---------- */
   function actualizarBarra(){
+    const barraPrecheck = document.getElementById('rvBarra');
+    // Checkout ya finalizado (ver finalizarCheckout) -- la barra queda
+    // oculta pase lo que pase, sin importar quién llame a esta función
+    // (navegación de paso, listener en vivo de settings/negocio, etc.).
+    // Única salida: reiniciarModoReserva() ("Hacer otra reserva").
+    if(reservaConfirmadaFinal){ if(barraPrecheck) barraPrecheck.style.display = 'none'; return; }
+
     const paso = Number(document.querySelector('.step.active')?.dataset.step || 1);
     const svcTxt = document.getElementById('rvBarraSvc');
     const total = document.getElementById('rvBarraTotal');
