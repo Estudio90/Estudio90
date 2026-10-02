@@ -17997,7 +17997,17 @@
       </label>`).join('');
 
     usPintarPermisos(u);
-    document.getElementById('usRol').onchange = ()=> usPintarPermisos(usEditando, true);
+    // soloRefrescar:true (conserva lo marcado a mano) solo tiene sentido
+    // editando a alguien que YA existe -- para un usuario nuevo (usEditando
+    // null) no hay ninguna personalización previa que conservar, así que
+    // cambiar de rol debe repintar limpio (solo los permisos base del rol
+    // nuevo). Antes esto siempre usaba soloRefrescar:true -- como el <select>
+    // abre en 'ADMIN' (todos los permisos marcados) por ser la primera
+    // opción, elegir cualquier otro rol para un usuario nuevo dejaba
+    // marcados (sin estar deshabilitados, así que se guardaban igual) todos
+    // los permisos de ADMIN que no pertenecían al rol elegido -- hallazgo
+    // real al probar la conversión cliente→barbero (2026-10-02).
+    document.getElementById('usRol').onchange = ()=> usPintarPermisos(usEditando, !!usEditando);
 
     // Si el rol es barbero y no está enlazado, sugerimos crearlo
     document.getElementById('usRol').addEventListener('change', usSugerirBarbero);
@@ -18130,17 +18140,59 @@
         Object.assign(usEditando, actualizado);
         showToast('Acceso actualizado');
       } else {
-        btn.textContent = 'Creando cuenta de acceso...';
-        const cuenta = await crearCuentaDeAcceso(datos.email);
-        if(!cuenta.ok){
+        // Firebase Auth tiene un solo pool de cuentas por proyecto,
+        // compartido entre clientes del sitio y staff del panel -- antes de
+        // intentar crear una cuenta nueva a ciegas (y chocar con
+        // auth/email-already-in-use si ese correo ya es cliente), se
+        // resuelve primero con privilegios de Admin SDK si ese correo ya
+        // tiene dueño. Ver database/functions/staffCuentas.js.
+        btn.textContent = 'Verificando correo...';
+        let resolucion;
+        try{
+          resolucion = (await functions.httpsCallable('resolverCuentaParaNuevoStaff')({ email: datos.email })).data;
+        }catch(e){
           btn.disabled = false; btn.textContent = 'Guardar';
-          return showToast(cuenta.error);
+          return showToast('No se pudo verificar el correo: ' + (e.message || 'Intenta de nuevo.'));
         }
-        const nuevo = { id: cuenta.uid, ...datos, active:true, barber };
-        try{ await db.collection('staff').doc(cuenta.uid).set(nuevo); }
-        catch(e){ btn.disabled = false; btn.textContent = 'Guardar'; return showToast('Cuenta creada, pero no se pudo guardar la ficha: ' + e.message); }
+
+        if(resolucion.existe && resolucion.yaEsStaff){
+          btn.disabled = false; btn.textContent = 'Guardar';
+          return showToast('Este usuario ya está registrado como profesional.');
+        }
+
+        let uid, esReutilizada = false;
+        if(resolucion.existe){
+          // Cuenta real ya existente (típicamente un cliente) sin ficha de
+          // staff todavía -- se reutiliza el MISMO uid, nunca una cuenta
+          // nueva, y nunca se toca su contraseña actual (sin
+          // crearCuentaDeAcceso, sin correo de restablecimiento).
+          const mensaje = resolucion.esCliente
+            ? 'Este correo ya pertenece a un cliente registrado. ¿Deseas agregarlo también como profesional de Masterlook?'
+            : 'Este correo ya tiene una cuenta registrada en el sistema. ¿Deseas agregarlo también como profesional de Masterlook?';
+          const confirmar = await mgConfirm(mensaje, { titulo: 'Cuenta existente', textoConfirmar: 'Agregar como profesional' });
+          if(!confirmar){
+            btn.disabled = false; btn.textContent = 'Guardar';
+            return;
+          }
+          uid = resolucion.uid;
+          esReutilizada = true;
+        } else {
+          btn.textContent = 'Creando cuenta de acceso...';
+          const cuenta = await crearCuentaDeAcceso(datos.email);
+          if(!cuenta.ok){
+            btn.disabled = false; btn.textContent = 'Guardar';
+            return showToast(cuenta.error);
+          }
+          uid = cuenta.uid;
+        }
+
+        const nuevo = { id: uid, ...datos, active:true, barber };
+        try{ await db.collection('staff').doc(uid).set(nuevo); }
+        catch(e){ btn.disabled = false; btn.textContent = 'Guardar'; return showToast('Cuenta ' + (esReutilizada ? 'vinculada' : 'creada') + ', pero no se pudo guardar la ficha: ' + e.message); }
         usLista.push(nuevo);
-        showToast(`Acceso creado · le llegó un correo a ${datos.email} para que defina su contraseña`);
+        showToast(esReutilizada
+          ? `${datos.name} ahora también es profesional -- conserva su cuenta y contraseña actuales`
+          : `Acceso creado · le llegó un correo a ${datos.email} para que defina su contraseña`);
       }
       usPintar();
     }
