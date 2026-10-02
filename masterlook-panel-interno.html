@@ -5372,6 +5372,13 @@
   </div>
   <label class="mg-label">Unidades disponibles</label>
   <input type="number" min="0" id="stkCantidad" class="mg-input">
+
+  <label class="cu-tgl" style="margin-top:14px;">
+    <span class="mg-sw"><input type="checkbox" id="stkAgotadoManual"><span class="mg-sw-track"></span></span>
+    Marcar como agotado manualmente
+  </label>
+  <p class="mg-note">El producto sigue visible en la tienda con la etiqueta "AGOTADO" y sin poder comprarse, sin importar el stock. Desmárcalo cuando vuelva a estar disponible.</p>
+
   <div class="mg-actions">
     <button class="mg-btn ghost" data-close>Cancelar</button>
     <button class="mg-btn solid" id="stkGuardar">Guardar</button>
@@ -7311,12 +7318,14 @@
     stkEditando = id;
     document.getElementById('stkNombre').textContent = p.name;
     document.getElementById('stkCantidad').value = p.stock ?? 0;
+    document.getElementById('stkAgotadoManual').checked = p.agotadoManual === true;
     abrirModal('modalStock');
   }
   document.getElementById('stkGuardar').addEventListener('click', async ()=>{
     const val = parseInt(document.getElementById('stkCantidad').value, 10);
     if(isNaN(val) || val < 0) return showToast('Ingresa una cantidad válida');
-    try{ await db.collection('products').doc(stkEditando).update({ stock: val }); }
+    const agotadoManual = document.getElementById('stkAgotadoManual').checked;
+    try{ await db.collection('products').doc(stkEditando).update({ stock: val, agotadoManual }); }
     catch(e){ return showToast('No se pudo guardar: ' + e.message); }
     showToast('Stock actualizado');
     cerrarModales();
@@ -17128,7 +17137,10 @@
         </div>
       </td>
       <td data-label="Precio: "><div class="pc-price">${cxClp(p.price)}</div></td>
-      <td data-label="Stock: "><span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}">${p.stock ?? 0}</span></td>
+      <td data-label="Stock: ">
+        <span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}" data-pc-editar-stock="${p.id}" title="Ajustar stock / marcar agotado" style="cursor:pointer;">${p.stock ?? 0}</span>
+        ${p.agotadoManual === true ? '<span class="pc-stock-pill low" style="margin-left:4px;">AGOTADO</span>' : ''}
+      </td>
       <td><div class="pc-desc">${escapeHTML(p.description || '')}</div></td>
       <td><div class="pc-actions"><button class="pc-ib" data-pc-editar="${p.id}" title="Editar">${PC_ICONO_LAPIZ}</button>${accionEliminar}</div></td>
     </tr>`;
@@ -17185,6 +17197,8 @@
   document.getElementById('pcLista').addEventListener('click', (e)=>{
     const btn = e.target.closest('[data-pc-editar]');
     if(btn) pcAbrirEditor(btn.dataset.pcEditar);
+    const btnStock = e.target.closest('[data-pc-editar-stock]');
+    if(btnStock) abrirEditarStock(btnStock.dataset.pcEditarStock);
   });
 
   /** Sube (o reemplaza) la foto de un producto y la deja lista para la tienda del sitio. */
@@ -17203,13 +17217,16 @@
         const ref = storage.ref(ruta);
         await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
         const url = await ref.getDownloadURL();
+        // Solo photoUrl -- nunca el objeto cacheado completo: productsCache
+        // puede llevar un rato sin refrescarse (el selector de archivo del
+        // navegador queda abierto esperando al usuario), y mientras tanto
+        // otro cambio real (stock, agotadoManual, precio) pudo haber
+        // llegado por otra sesión. set(p,{merge:true}) con el objeto viejo
+        // completo los pisaría de vuelta sin querer -- un update() acotado
+        // nunca puede hacer eso.
+        await db.collection('products').doc(productoId).update({ photoUrl: url });
         const p = productsCache.find(x=> x.id === productoId);
-        if(p){
-          p.photoUrl = url;
-          // merge:true -- nunca pisar campos que esta sesión no tocó (p.ej.
-          // la configuración de comisión/código de este producto).
-          await db.collection('products').doc(productoId).set(p, { merge:true });
-        }
+        if(p) p.photoUrl = url;
         showToast('Foto del producto actualizada');
         pintarCatalogoProductos();
       }catch(e){
@@ -17461,10 +17478,16 @@
   async function alternarActivoProducto(id){
     const p = productsCache.find(x=> x.id === id);
     if(!p) return;
-    p.active = p.active === false ? true : false;
+    const nuevoActive = p.active === false ? true : false;
     try{
-      await db.collection('products').doc(id).set(p, { merge:true });
-      showToast(p.active ? 'Producto reactivado' : 'Producto desactivado');
+      // Solo el campo que cambia -- nunca el objeto cacheado completo
+      // (productsCache puede estar desactualizado frente a un cambio
+      // concurrente de otra pestaña/sesión, ej. stock/agotadoManual recién
+      // tocados desde "Ajustar stock"; un .set(p,{merge:true}) con el
+      // objeto viejo completo los pisaría de vuelta sin querer).
+      await db.collection('products').doc(id).update({ active: nuevoActive });
+      p.active = nuevoActive;
+      showToast(nuevoActive ? 'Producto reactivado' : 'Producto desactivado');
       pintarCatalogoProductos();
     }catch(e){ showToast('No se pudo guardar: ' + e.message); }
   }
@@ -18084,7 +18107,19 @@
       email: document.getElementById('usCorreo').value.trim().toLowerCase(),
       phone: document.getElementById('usFono').value.trim(),
       role: document.getElementById('usRol').value,
-      permissions: [...document.querySelectorAll('#usPermisos input:checked:not([disabled])')].map(i=> i.value),
+      // 2026-10-02 (cierre de inconsistencia RECEPTION/Colación): antes se
+      // excluían los checkbox deshabilitados (los "del rol", ej. AGENDA_EDITAR
+      // para RECEPTION) -- se veían marcados en el formulario pero NUNCA se
+      // guardaban en `staff/{uid}.permissions`. Como las reglas de Firestore
+      // (hasPermission()) solo miran ese array guardado -- nunca el rol ni
+      // PERMISOS_ROL, que son puramente de UI -- cualquier acción gateada por
+      // un permiso "del rol" (colación/blocks, Tienda, Clientes, aprobar
+      // reservas) terminaba en permission-denied real para cualquier cuenta
+      // RECEPTION/BARBER recién creada o reeditada, aunque el panel mostrara
+      // el control como disponible. Ahora se guarda TODO lo marcado, del rol
+      // o no -- el array queda como la fuente de verdad real, coherente con
+      // lo que el propio formulario ya muestra.
+      permissions: [...document.querySelectorAll('#usPermisos input:checked')].map(i=> i.value),
       managedBarberIds: [...document.querySelectorAll('#usAgendaLista input:checked')].map(i=> i.value),
       barberId: document.getElementById('usBarbero').value || null,
     };

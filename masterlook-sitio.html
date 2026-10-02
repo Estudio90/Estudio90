@@ -499,6 +499,7 @@
   .svc-badge{position:relative; z-index:2; align-self:flex-start;
     font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
     color:#1A150A; background:var(--oro); padding:5px 11px; border-radius:99px;}
+  .svc-badge.agotado{color:#fff; background:#2a2a2a;}
   .svc-inicial{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--oro); opacity:.62; pointer-events:none;}
   .svc-inicial svg{width:36%; height:36%; max-width:72px; max-height:72px;}
@@ -1655,6 +1656,7 @@
   .st-card-photo .ph{font-size:2rem;opacity:.25;}
   .st-card-tag{position:absolute;top:10px;left:10px;background:var(--bg);color:var(--text-hi);
     font-size:.62rem;font-weight:800;letter-spacing:.03em;padding:4px 9px;border-radius:99px;border:1px solid var(--border);}
+  .st-card-tag.agotado{background:#2a2a2a;color:#fff;border-color:#2a2a2a;}
   .st-card h4{font-size:.86rem;font-weight:800;margin-bottom:3px;}
   .st-card .st-card-desc{color:var(--text-mid);font-size:.76rem;line-height:1.4;margin-bottom:10px;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -5794,7 +5796,7 @@
   db.collection('products').onSnapshot(snap=>{
     productosSiteCache = snap.docs.map(d=> d.data()).filter(p=> p.active !== false).map(p=>
       ({ id:p.id, kind:'PRODUCT', name:p.name, description:p.description || '',
-         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0, photoUrl:p.photoUrl || '', category:p.category || '',
+         priceClp:p.price, featured:false, soldOut:(p.stock ?? 0) <= 0 || p.agotadoManual === true, photoUrl:p.photoUrl || '', category:p.category || '',
          photos:Array.isArray(p.photos) ? p.photos : [],
          // Descuento especial al reservar (Editar producto) -- SEPARADO de
          // cualquier campo de descuento/comisión de la Tienda; solo lo lee
@@ -10802,7 +10804,7 @@
           ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center;`
           : `background:linear-gradient(158deg,${tonos[i % tonos.length]},#0C0C0D);`}">
           ${p.photoUrl ? '' : '<div class="svc-inicial"><span style="font-size:2rem;">🧴</span></div>'}
-          <span></span>
+          ${p.soldOut ? '<span class="svc-badge agotado">Agotado</span>' : '<span></span>'}
         </div>
         <div class="svc-body">
           <div class="svc-nombre">${escapeHTML(p.name)}</div>
@@ -12182,7 +12184,7 @@
       <div class="st-card">
         <div class="st-card-photo" data-foto-producto="${p.id}" title="Ver fotos" style="cursor:pointer;">
           ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${escapeHTML(p.name)}" loading="lazy">` : '<span class="ph">🧴</span>'}
-          ${p.featured ? '<span class="st-card-tag">Bestseller</span>' : ''}
+          ${p.soldOut ? '<span class="st-card-tag agotado">Agotado</span>' : (p.featured ? '<span class="st-card-tag">Bestseller</span>' : '')}
         </div>
         <h4>${escapeHTML(p.name)}</h4>
         <div class="st-card-desc">${escapeHTML(p.description || '')}</div>
