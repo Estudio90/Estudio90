@@ -4449,6 +4449,7 @@
       <div class="mes-tabs">
         <button type="button" class="mes-tab active" data-mestab="basicos">Datos básicos</button>
         <button type="button" class="mes-tab" data-mestab="web">Sitio Web</button>
+        <button type="button" class="mes-tab" data-mestab="profesionales">Profesionales</button>
       </div>
 
       <div class="mes-pane active" data-mespane="basicos">
@@ -4486,6 +4487,15 @@
               background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:18px;">📷</div>
           <button type="button" class="mg-btn ghost" id="mesGaleriaBtn">Fotos adicionales (hasta 3)</button>
         </div>
+      </div>
+
+      <div class="mes-pane" data-mespane="profesionales">
+        <p class="mg-note" style="margin-bottom:10px;">Quién puede realizar este servicio -- solo estos profesionales
+          se ofrecen como opción al reservar, tanto en el sitio público como al agendar manualmente desde el panel.</p>
+        <label class="mpf-check-todo">
+          <input type="checkbox" id="mesSeleccionarTodo"> Seleccionar todo
+        </label>
+        <div id="mesProfesionalesLista" class="mpf-servicios-lista"></div>
       </div>
 
       <div class="mg-actions">
@@ -11730,9 +11740,40 @@
     document.getElementById('mesGaleriaBtn').textContent =
       'Fotos adicionales (hasta 3)' + (Array.isArray(s?.photos) && s.photos.length ? ` · ${s.photos.length}` : '');
     mesHabilitarFotos(id);
+    mesPintarProfesionales(s?.barberIds);
     document.querySelectorAll('.mes-tab').forEach((t,i)=> t.classList.toggle('active', i===0));
     document.querySelectorAll('.mes-pane').forEach((p,i)=> p.classList.toggle('active', i===0));
     abrirModal('modalEditarServicio');
+  }
+
+  // Checklist de "quién realiza este servicio" -- inverso exacto de
+  // mpfPintarChecklist() (Profesionales > editor > "servicios que realiza"),
+  // que ya escribe/lee services.barberIds[] del otro lado. Mismo contrato:
+  // solo profesionales ACTIVOS (active !== false -- deja afuera a fichas
+  // inactivas/duplicadas, p.ej. las antiguas de Carlos), sin agrupar por
+  // categoría (acá no aplica). Un servicio NUEVO arranca con todos marcados
+  // (mismo criterio que un profesional nuevo arranca con todos los
+  // servicios marcados) -- se desmarca a mano el que no corresponda.
+  function mesPintarProfesionales(barberIdsActuales){
+    const cont = document.getElementById('mesProfesionalesLista');
+    const asignados = new Set(Array.isArray(barberIdsActuales) ? barberIdsActuales : []);
+    const esNuevo = !mesEditandoId;
+    const activos = cfgBarberos.filter(b=> b.active !== false);
+
+    cont.innerHTML = activos.length
+      ? activos.map(b=> `
+        <label class="mpf-servicio-item">
+          <input type="checkbox" data-mes-barbero="${b.id}" ${esNuevo || asignados.has(b.id) ? 'checked' : ''}> ${escapeHTML(b.name)}
+        </label>`).join('')
+      : '<div class="cx-empty">Todavía no hay profesionales activos creados.</div>';
+
+    const todo = document.getElementById('mesSeleccionarTodo');
+    const cajas = () => Array.from(cont.querySelectorAll('[data-mes-barbero]'));
+    todo.checked = cajas().length > 0 && cajas().every(c=> c.checked);
+    todo.onchange = ()=>{ cajas().forEach(c=> c.checked = todo.checked); };
+    cajas().forEach(c=> c.addEventListener('change', ()=>{
+      todo.checked = cajas().every(x=> x.checked);
+    }));
   }
 
   document.querySelectorAll('.mes-tab').forEach(t=>
@@ -11762,10 +11803,17 @@
     if(!precio || !minutos) return showToast('Precio y duración son obligatorios');
     const categoryId = document.getElementById('mesCategoria').value || null;
     const cat = categoryId ? (cfgCategorias.find(c=> c.id === categoryId)?.name || '') : '';
+    // barberIds: mismo campo que ya lee/exige crearReservaTransaccional()
+    // del lado del servidor (reservas.js) y que ya filtra paintBarbers() en
+    // el sitio público -- acá se arma de las casillas marcadas, nunca a
+    // mano con IDs.
+    const barberIds = Array.from(document.querySelectorAll('#mesProfesionalesLista [data-mes-barbero]'))
+      .filter(c=> c.checked).map(c=> c.dataset.mesBarbero);
     const cuerpo = {
       name: nombre, priceClp: precio, minutes: minutos, categoryId, cat,
       description: document.getElementById('mesDescripcion').value.trim(),
       anticipo: Number(document.getElementById('mesAnticipo').value) || 0,
+      barberIds,
     };
     try{
       if(mesEditandoId){
