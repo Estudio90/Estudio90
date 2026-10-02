@@ -104,7 +104,7 @@
 <script>
 (function(){
   'use strict';
-  var FN_BASE = location.hostname === 'estudio90.github.io'
+  var FN_BASE = ['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname)
     ? 'https://us-central1-estudio90.cloudfunctions.net'
     : 'https://us-central1-estudio90-dev.cloudfunctions.net';
   var URL_BAJA = FN_BASE + '/emailBaja';

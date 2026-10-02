@@ -963,8 +963,9 @@
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   // Entorno: mismo criterio que la selección de proyecto Firebase de esta
-  // página (ver ES_STAGING más abajo). 'estudio90.github.io' = producción.
-  const EM_ES_PROD = location.hostname === 'estudio90.github.io';
+  // página (ver ES_STAGING más abajo). 'estudio90.github.io' y
+  // masterlook.cl/www.masterlook.cl = producción.
+  const EM_ES_PROD = ['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname);
   // El aviso "entorno de pruebas" SOLO se muestra fuera de producción.
   if (!EM_ES_PROD) { const _av = document.getElementById('avisoEntorno'); if (_av) _av.style.display = ''; }
 
@@ -2905,7 +2906,7 @@ ${contenido}
 <script>
 (function(){
   'use strict';
-  const ES_STAGING = location.hostname !== 'estudio90.github.io';
+  const ES_STAGING = !['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname);
   const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",

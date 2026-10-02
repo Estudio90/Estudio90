@@ -38,7 +38,7 @@
      .hero-bg más abajo. -->
 <!-- Bunny Stream (librería pública): preconnect al pull zone del ENTORNO -- prod
      o dev, nunca hardcodeado. estudio90.github.io = prod; cualquier otro host = dev. -->
-<script>(function(){var h=location.hostname==='estudio90.github.io'?'vz-3106d8eb-0d1.b-cdn.net':'vz-d80b701c-61b.b-cdn.net';['preconnect','dns-prefetch'].forEach(function(r){var l=document.createElement('link');l.rel=r;l.href='https://'+h;if(r==='preconnect')l.crossOrigin='';document.head.appendChild(l);});}())</script>
+<script>(function(){var h=['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname)?'vz-3106d8eb-0d1.b-cdn.net':'vz-d80b701c-61b.b-cdn.net';['preconnect','dns-prefetch'].forEach(function(r){var l=document.createElement('link');l.rel=r;l.href='https://'+h;if(r==='preconnect')l.crossOrigin='';document.head.appendChild(l);});}())</script>
 <!-- fotos de catálogo (Firebase Storage) y datos en vivo (Firestore): abrir
      DNS+TLS desde ya para que la primera imagen/consulta no espere el
      handshake (~100-300 ms en móvil). -->
@@ -47,7 +47,7 @@
 <!-- Cloud Functions (buscar horarios, crear el hold, pago): abrir DNS+TLS al
      host real -- staging o producción según el hostname -- para que la
      primera llamada no pague el handshake (~100-250 ms en móvil). -->
-<script>(function(){var h='https://us-central1-'+(location.hostname==='estudio90.github.io'?'estudio90':'estudio90-dev')+'.cloudfunctions.net';var l=document.createElement('link');l.rel='preconnect';l.href=h;l.crossOrigin='';document.head.appendChild(l);}())</script>
+<script>(function(){var h='https://us-central1-'+(['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname)?'estudio90':'estudio90-dev')+'.cloudfunctions.net';var l=document.createElement('link');l.rel='preconnect';l.href=h;l.crossOrigin='';document.head.appendChild(l);}())</script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -5016,7 +5016,7 @@
    *  quitar el src, para no tener que descargarlo de nuevo) al salir. */
   /** Hostname del CDN de la librería pública de Bunny Stream -- portadas de
    *  curso, muestra, hero y video de Academy (todo lo público, sin firma). */
-  const BUNNY_CDN_PUBLIC = location.hostname === 'estudio90.github.io'
+  const BUNNY_CDN_PUBLIC = ['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname)
     ? 'vz-3106d8eb-0d1.b-cdn.net'   // Bunny PROD (library pública 732402)
     : 'vz-d80b701c-61b.b-cdn.net';  // Bunny DEV (library pública 743683) -- aislado de prod
   function bunnyPlaylistUrl(streamVideoId){
@@ -5335,12 +5335,15 @@
   }
 
   // ===== puente hacia el panel del administrador, vía Firestore =====
-  // Producción: estudio90.github.io (GitHub Pages). Cualquier otro host
-  // (el dominio de Firebase Hosting de staging, o localhost en pruebas)
-  // usa el proyecto de staging -- así este mismo archivo sirve a los dos
-  // entornos sin duplicarse, y nunca hay forma de que abrir el sitio desde
-  // un dominio de pruebas toque el Firebase real por accidente.
-  const ES_STAGING = location.hostname !== 'estudio90.github.io';
+  // Producción: estudio90.github.io (GitHub Pages) O masterlook.cl/
+  // www.masterlook.cl (dominio propio, mismo contenido, conectado en
+  // paralelo durante la transición -- ver docs/MASTERLOOK-CONTINUIDAD-TECNICA.md
+  // §38). Cualquier otro host (el dominio de Firebase Hosting de staging,
+  // o localhost en pruebas) usa el proyecto de staging -- así este mismo
+  // archivo sirve a los dos entornos sin duplicarse, y nunca hay forma de
+  // que abrir el sitio desde un dominio de pruebas toque el Firebase real
+  // por accidente.
+  const ES_STAGING = !['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname);
   const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",

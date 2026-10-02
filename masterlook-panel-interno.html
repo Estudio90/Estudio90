@@ -5890,10 +5890,13 @@
      La clave nunca se guarda ni se compara en este archivo: Firebase
      la valida en su servidor y solo nos avisa si la sesión es válida.
      ========================================================== */
-  // Producción: estudio90.github.io (GitHub Pages). Cualquier otro host
-  // (el dominio de Firebase Hosting de staging, o localhost en pruebas)
-  // usa el proyecto de staging -- mismo criterio que masterlook-sitio.html.
-  const ES_STAGING = location.hostname !== 'estudio90.github.io';
+  // Producción: estudio90.github.io (GitHub Pages) O masterlook.cl/
+  // www.masterlook.cl (dominio propio, conectado en paralelo durante la
+  // transición -- ver docs/MASTERLOOK-CONTINUIDAD-TECNICA.md §38).
+  // Cualquier otro host (el dominio de Firebase Hosting de staging, o
+  // localhost en pruebas) usa el proyecto de staging -- mismo criterio
+  // que masterlook-sitio.html.
+  const ES_STAGING = !['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname);
   const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",
