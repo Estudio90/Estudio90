@@ -2091,6 +2091,7 @@
   .rv-plan-pie{font-size:.75rem; color:var(--text-low); margin-top:10px; text-align:center;}
   .rv-barbero-aviso{background:#fdf3ea; border:1px solid #e3c6a1; color:#8a562a; border-radius:12px;
     padding:12px 14px; font-size:.82rem; line-height:1.5; margin-top:14px;}
+  .barbers > .rv-barbero-aviso{grid-column:1 / -1; margin-top:0;}
 
   /* servicios elegidos */
   .rv-elegidos{background:var(--panel-2); border:1px solid var(--border); border-radius:14px;
@@ -9686,30 +9687,63 @@
      acá solo mostramos qué profesionales están REALMENTE libres a esa
      hora exacta (nunca se puede elegir uno ocupado) y recalculamos el
      reparto con planificarCitas() para las reservas de varios servicios. */
-  function paintBarbers(){
+  /** ¿Este barbero realiza TODOS los servicios ya elegidos? Un servicio sin
+   *  `barberIds` configurado (vacío/ausente) no restringe a nadie -- ver
+   *  nota en la carga de catalog.services. */
+  function realizaServiciosElegidos(barberId){
+    return (state.servicios || []).every(s=>
+      !Array.isArray(s.barberIds) || !s.barberIds.length || s.barberIds.includes(barberId));
+  }
+
+  /** Lista de profesionales filtrada -- NUNCA deshabilitada/gris: un
+   *  profesional sin disponibilidad real para la fecha/hora/duración ya
+   *  elegidas, o que no realiza alguno de los servicios del carrito, ni
+   *  siquiera aparece en la ficha (misma fuente de verdad que el backend:
+   *  ocupacionDelDia vía obtenerOcupacionDia, nunca un cálculo propio). */
+  function barberosDisponiblesAhora(){
     const lista = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
-    const row = document.getElementById('barberPick');
     const ocupacion = state.fecha ? ocupacionDelDia(state.fecha) : {};
     const durTotal = state.duracion || 45;
+    return lista.filter(b=>{
+      if(!realizaServiciosElegidos(b.id)) return false;
+      if(!state.fecha || state.startMin == null) return true;
+      return estaLibre(ocupacion[b.name], state.startMin, state.startMin + durTotal);
+    });
+  }
 
-    const opciones = [
-      { id:'any', name:'Cualquiera', initials:'★', nota:'El primero libre', libre:true },
-      ...lista.map(b=>{
-        const libre = !state.fecha || state.startMin == null
-          || estaLibre(ocupacion[b.name], state.startMin, state.startMin + durTotal);
-        return { ...b, nota: libre ? 'Disponible' : 'No disponible a esta hora', libre };
-      }),
-    ];
+  function paintBarbers(){
+    const row = document.getElementById('barberPick');
+    const disponibles = barberosDisponiblesAhora();
+
+    // "Cualquiera" solo se ofrece si de verdad queda al menos un
+    // profesional real disponible -- nunca una opción fantasma.
+    const opciones = disponibles.length
+      ? [{ id:'any', name:'Cualquiera', initials:'★', nota:'El primero libre' }, ...disponibles]
+      : disponibles;
+
+    // Una selección previa (de un paso atrás, con otra fecha/hora/servicio)
+    // puede haber dejado de ser válida -- ej. ese profesional puntual ya no
+    // está libre, o "Cualquiera" quedó sin nadie detrás. Se limpia acá,
+    // nunca se deja un state.barberId fantasma habilitando "Continuar"
+    // sobre una selección que ya no existe en la ficha.
+    if(state.barberId && !opciones.some(o=> o.id === state.barberId)){
+      state.barberId = null; state.barber = null;
+    }
+
+    if(!opciones.length){
+      row.innerHTML = '<div class="rv-barbero-aviso">No hay profesionales disponibles para este horario. Vuelve atrás y elige otra hora.</div>';
+      return;
+    }
 
     row.innerHTML = opciones.map(o=>`
-      <div class="barber-opt ${state.barberId === o.id ? 'selected' : ''} ${o.libre ? '' : 'no-disponible'}"
+      <div class="barber-opt ${state.barberId === o.id ? 'selected' : ''}"
            data-id="${o.id}" data-b="${o.name}">
         <div class="b-foto" style="${o.photoUrl ? `background-image:url('${o.photoUrl}');` : ''}">${o.photoUrl ? '' : (o.initials || o.name.slice(0,2).toUpperCase())}</div>
         <div class="b-name">${o.name}</div>
-        <div class="b-libre">${o.nota}</div>
+        <div class="b-libre">${o.id === 'any' ? o.nota : 'Disponible'}</div>
       </div>`).join('');
 
-    row.querySelectorAll('.barber-opt:not(.no-disponible)').forEach(o=>
+    row.querySelectorAll('.barber-opt').forEach(o=>
       o.addEventListener('click', ()=>{
         state.barber = o.dataset.b;
         state.barberId = o.dataset.id;
