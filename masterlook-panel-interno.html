@@ -8364,10 +8364,22 @@
       if(prev && [...sel.options].some(o=> o.value === prev)) sel.value = prev;
     };
     reFill('nrServicio', svc, svcLabel);
-    reFill('nrBarbero', bar, b=> b.name);
     reFill('editServicio', svc, svcLabel);
-    reFill('editBarbero', bar, b=> b.name);
     reFill('cfgBarberoHorario', bar, b=> b.name);
+    // nrBarbero/editBarbero: NUNCA la lista completa sin filtrar -- se
+    // repueblan según el servicio que YA esté elegido en cada modal en este
+    // instante, preservando la selección solo si sigue siendo elegible (ver
+    // pfRepoblarBarbero). "Editar cita" conserva el profesional actual aunque
+    // ya no califique (es el estado real de la reserva, no una elección
+    // nueva); "Nueva reserva" no.
+    const nrBarberoEl = document.getElementById('nrBarbero');
+    if(nrBarberoEl && nrBarberoEl.getClientRects().length){
+      pfRepoblarBarbero(nrBarberoEl, document.getElementById('nrServicio').value, nrBarberoEl.value, false);
+    }
+    const editBarberoEl = document.getElementById('editBarbero');
+    if(editBarberoEl && editBarberoEl.getClientRects().length){
+      pfRepoblarBarbero(editBarberoEl, document.getElementById('editServicio').value, editBarberoEl.value, true);
+    }
   }
   /** Suscribe services+barbers una sola vez. Idempotente. */
   function suscribirCatalogo(){
@@ -8707,6 +8719,48 @@
     sel.innerHTML = items.map(i=> `<option value="${i[valueKey]}">${labelFn(i)}</option>`).join('');
   }
 
+  /** ÚNICA regla de elegibilidad servicio <-> profesional del panel -- mismo
+   *  criterio exacto que ya usa el sitio público (barberoElegiblePara() en
+   *  masterlook-sitio.html) y que crearReservaTransaccional/reagendarTransaccional
+   *  ya validan como autoridad final en el backend: barberIds vacío/ausente
+   *  en el servicio = sin restricción, nunca "nadie puede". No comparte
+   *  código real con el sitio (archivos HTML separados, sin build step),
+   *  pero es la MISMA regla, escrita una sola vez acá para todo el panel. */
+  function barberoElegiblePara(barberId, servicios){
+    return (servicios || []).every(s=>
+      !Array.isArray(s.barberIds) || !s.barberIds.length || s.barberIds.includes(barberId));
+  }
+  function filtrarPorElegibilidad(barberos, servicios){
+    return (barberos || []).filter(b=> barberoElegiblePara(b.id, servicios));
+  }
+
+  /** Repuebla un <select> de profesional con SOLO los activos y autorizados
+   *  para el servicio dado -- nunca un filtro solo visual: si el valor que
+   *  tenía antes ya no es elegible, el <select> queda SIN selección
+   *  (placeholder), nunca con un barberId "oculto pero conservado" de forma
+   *  invisible. `conservarSiNoCalza` (true SOLO al abrir una cita YA
+   *  EXISTENTE con su servicio/profesional ya cargados, nunca cuando el
+   *  staff cambia el servicio a mano) agrega el profesional actual como una
+   *  opción aparte y marcada en vez de borrarlo en silencio -- muestra la
+   *  realidad de la reserva, no decide por el staff; la próxima vez que
+   *  cambie el servicio sí se limpia de verdad. Devuelve true si quedó una
+   *  selección válida (o no había ninguna que perder). */
+  function pfRepoblarBarbero(selEl, servicioId, valorPrevio, conservarSiNoCalza){
+    if(!selEl) return true;
+    const servicio = servicioId ? cfgServicios.find(s=> s.id === servicioId) : null;
+    const elegibles = filtrarPorElegibilidad(cfgBarberos.filter(b=> b.active), servicio ? [servicio] : []);
+    const previoCalza = !!(valorPrevio && elegibles.some(b=> b.id === valorPrevio));
+    let opcionesHTML = elegibles.map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    if(conservarSiNoCalza && valorPrevio && !previoCalza){
+      const previo = cfgBarberos.find(b=> b.id === valorPrevio);
+      if(previo) opcionesHTML += `<option value="${previo.id}">${escapeHTML(previo.name)} (ya no autorizado para este servicio)</option>`;
+    }
+    selEl.innerHTML = '<option value="">Selecciona un profesional…</option>' + opcionesHTML;
+    if(previoCalza || (conservarSiNoCalza && valorPrevio)) selEl.value = valorPrevio;
+    else selEl.value = '';
+    return previoCalza || !valorPrevio;
+  }
+
   /* ---------- Nueva reserva desde el local ---------- */
   // nrSeleccion.clienteId / .clienteNombre / .clienteTelefono / .clienteEmail
   // -- el cliente real elegido en el buscador (o recién creado inline).
@@ -8883,7 +8937,9 @@
     await cargarCatalogo();
     llenarSelect(document.getElementById('nrServicio'), cfgServicios.filter(s=> s.active), 'id',
       s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
-    llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
+    // Profesionales: solo los autorizados para el servicio que quedó
+    // preseleccionado (el primero de la lista) -- nunca todos sin filtrar.
+    pfRepoblarBarbero(document.getElementById('nrBarbero'), document.getElementById('nrServicio').value, null, false);
     document.getElementById('nrFecha').value = currentDate;
     // TiempoSantiago.fechaSantiago() -- NUNCA toISOString() (día UTC): con
     // el bug, entre ~20:00 y medianoche hora Chile el propio día de hoy
@@ -8921,7 +8977,14 @@
     validarNuevaReserva();
   });
   document.getElementById('nr2HoraFin').addEventListener('input', validarNuevaReserva);
-  document.getElementById('nrServicio').addEventListener('change', ()=>{ nr2ActualizarHoraFin(); validarNuevaReserva(); });
+  document.getElementById('nrServicio').addEventListener('change', (e)=>{
+    // El servicio cambió a mano -- SIEMPRE revalida el profesional contra el
+    // nuevo barberIds (conservarSiNoCalza=false): si el que estaba elegido
+    // ya no realiza este servicio, se limpia de verdad, nunca queda oculto.
+    const nrBarberoEl = document.getElementById('nrBarbero');
+    pfRepoblarBarbero(nrBarberoEl, e.target.value, nrBarberoEl.value, false);
+    nr2ActualizarHoraFin(); validarNuevaReserva();
+  });
   document.getElementById('nrBarbero').addEventListener('change', validarNuevaReserva);
 
   /** Hora fin = hora inicio + duración del servicio elegido (igual a
@@ -9084,8 +9147,13 @@
   }
 
   function validarNuevaReserva(){
+    // nrBarbero sin valor (placeholder) = o no se eligió todavía, o
+    // pfRepoblarBarbero lo limpió porque dejó de ser elegible para el
+    // servicio actual -- en ambos casos, Guardar debe quedar bloqueado;
+    // nunca se crea una reserva con el "primero de la lista" por defecto.
+    const barberoOk = !!document.getElementById('nrBarbero').value;
     document.getElementById('nrGuardar').disabled =
-      !(nrSeleccion.clienteId && nrSeleccion.startsAt);
+      !(nrSeleccion.clienteId && nrSeleccion.startsAt && barberoOk);
   }
 
   /* ═══ Búsqueda de clientes server-side (compartida por la vista Clientes
@@ -9564,11 +9632,17 @@
   document.getElementById('nr2Cancelar').addEventListener('click', nr2IntentarCerrar);
 
   document.getElementById('nrGuardar').addEventListener('click', async ()=>{
+    const servicio = cfgServicios.find(s=> s.id === document.getElementById('nrServicio').value);
+    const barbero = cfgBarberos.find(b=> b.id === document.getElementById('nrBarbero').value);
+    // Defensa en profundidad (igual que editGuardar más abajo): aunque
+    // validarNuevaReserva() ya debería tener el botón deshabilitado sin un
+    // profesional elegido, nunca se arma el payload sin uno real -- nunca
+    // "el primero de la lista" por defecto.
+    if(!servicio || !barbero){ showToast('Selecciona un servicio y un profesional autorizado para ese servicio'); return; }
+
     const btn = document.getElementById('nrGuardar');
     btn.disabled = true; btn.textContent = 'Agendando...';
 
-    const servicio = cfgServicios.find(s=> s.id === document.getElementById('nrServicio').value);
-    const barbero = cfgBarberos.find(b=> b.id === document.getElementById('nrBarbero').value);
     const nombre = nrSeleccion.clienteNombre || '';
 
     // Pasa por la MISMA función atómica que ya protege las reservas web
@@ -18942,12 +19016,16 @@
     await cargarCatalogo();
     llenarSelect(document.getElementById('editServicio'), cfgServicios.filter(s=> s.active), 'id',
       s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
-    llenarSelect(document.getElementById('editBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
 
     const svcActual = cfgServicios.find(s=> s.name === a.service);
     if(svcActual) document.getElementById('editServicio').value = svcActual.id;
     const barberoActual = cfgBarberos.find(b=> b.name === a.barber);
-    if(barberoActual) document.getElementById('editBarbero').value = barberoActual.id;
+    // Profesionales: solo los autorizados para el servicio actual de la
+    // reserva -- pero conservando (conservarSiNoCalza=true) al profesional
+    // que la reserva YA tiene, aunque ya no califique hoy, marcado aparte:
+    // abrir para editar no debe alterar en silencio una reserva real. Si la
+    // admin cambia el servicio a mano, el listener de abajo sí lo limpia.
+    pfRepoblarBarbero(document.getElementById('editBarbero'), svcActual?.id || null, barberoActual?.id || null, true);
     document.getElementById('editHora').value =
       String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
     document.getElementById('editFecha').value = a.fecha || currentDate;
@@ -18959,6 +19037,15 @@
   document.getElementById('editBack').addEventListener('click', ()=>{
     editView.classList.remove('open');
     detailView.classList.add('open');
+  });
+
+  // El servicio cambió a mano mientras se edita la cita -- SIEMPRE revalida
+  // el profesional (conservarSiNoCalza=false, a diferencia de cuando se abre
+  // el editor): si el que estaba elegido ya no realiza el nuevo servicio,
+  // se limpia de verdad, nunca queda oculto.
+  document.getElementById('editServicio').addEventListener('change', (e)=>{
+    const editBarberoEl = document.getElementById('editBarbero');
+    pfRepoblarBarbero(editBarberoEl, e.target.value, editBarberoEl.value, false);
   });
 
   /* ---------------- Editar precio (SOLO ADMIN) ----------------
@@ -20133,7 +20220,14 @@
     await cargarCatalogo();
     llenarSelect(document.getElementById('nrServicio'), cfgServicios.filter(s=> s.active), 'id',
       s=> `${s.name} — $${s.priceClp.toLocaleString('es-CL')} (${s.minutes} min)`);
-    llenarSelect(document.getElementById('nrBarbero'), cfgBarberos.filter(b=> b.active), 'id', b=> b.name);
+    // Profesionales: solo los autorizados para el servicio preseleccionado.
+    // El barbero de la columna donde se hizo clic (abajo, `barbero`) se pasa
+    // como valor a preservar -- si ese profesional no realiza el servicio
+    // por defecto, pfRepoblarBarbero lo descarta (nunca lo deja "oculto pero
+    // conservado"), y la admin debe elegir uno autorizado o cambiar el
+    // servicio.
+    const barberoClic = cfgBarberos.find(b=> b.calId === barberoCalId);
+    pfRepoblarBarbero(document.getElementById('nrBarbero'), document.getElementById('nrServicio').value, barberoClic?.id || null, false);
     document.getElementById('nrFecha').value = currentDate;
     // TiempoSantiago.fechaSantiago() -- NUNCA toISOString() (día UTC): con
     // el bug, entre ~20:00 y medianoche hora Chile el propio día de hoy
@@ -20155,9 +20249,9 @@
     nr2PintarEstado('reservado');
     document.getElementById('nrGuardar').disabled = true;
     document.getElementById('nrAvisar').checked = true; // default: avisar SI, por cada reserva nueva
-
-    const barbero = cfgBarberos.find(b=> b.calId === barberoCalId);
-    if(barbero) document.getElementById('nrBarbero').value = barbero.id;
+    // (el profesional de la columna donde se hizo clic ya quedó
+    // preseleccionado más arriba, vía pfRepoblarBarbero -- solo si está
+    // autorizado para el servicio por defecto)
 
     abrirModal('modalReserva');
 

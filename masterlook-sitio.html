@@ -5164,7 +5164,14 @@
     state.servicios = state.servicios || [];
     const lista = catalog.services.length ? catalog.services : SVC_DEMO;
     const svc = lista.find(x=> x.id === id);
+    // Spread completo del servicio normalizado (barberIds, photos, etc. --
+    // ver normalizarServicio()) en vez de listar campos a mano: así un
+    // campo nuevo en Firestore llega solo hasta acá, sin tener que
+    // acordarse de agregarlo cada vez. id/name/price/minutes se
+    // sobreescriben con lo que mandó el llamador (texto/precio ya
+    // formateados desde el HTML).
     const item = {
+      ...(svc || {}),
       id, name,
       price: parseInt(String(priceStr).replace(/\./g,'')),
       minutes: minutes || svc?.minutes || 45,
@@ -6083,7 +6090,13 @@
               comentarioCliente: document.getElementById('cNota')?.value.trim() || '',
               citas: citas.map(c=> ({
                 serviceId: c.servicioId, servicio: c.servicio, price: c.precio,
-                barberName: c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
+                // barberName: null si eligió "Cualquiera" -- el backend
+                // resuelve "cualquiera disponible" dentro de la misma
+                // transacción que reclama el slotLock, nunca a partir del
+                // barbero resuelto solo para la vista previa (planificarCitas),
+                // que puede dejar de estar libre entre ver la propuesta y
+                // confirmarla.
+                barberName: state.barberId === 'any' ? null : c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
               })),
               datos: {
                 productos: (state.upsellSeleccion || []).map(s=> ({ id: s.id, qty: 1 })),
@@ -6122,7 +6135,9 @@
               comentarioCliente: document.getElementById('cNota')?.value.trim() || '',
               citas: citas.map(c=> ({
                 serviceId: c.servicioId, servicio: c.servicio, price: c.precio,
-                barberName: c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
+                // barberName: null si eligió "Cualquiera" -- mismo motivo que
+                // en el flujo con anticipo, ver el comentario de ahí.
+                barberName: state.barberId === 'any' ? null : c.barbero, startMin: c.min, minutes: c.minutos, label: c.label,
               })),
             }),
           });
@@ -7993,6 +8008,15 @@
     const limite = Date.now() + 4 * 3600 * 1000;
     const inicioGrilla = Math.ceil(real.horario.abre / 60) * 60;
     const dur = reserva.duracion || 45;
+    // Elegibilidad servicio <-> profesional (barberoElegiblePara) -- mismo
+    // criterio que el Paso 2 del sitio: solo profesionales autorizados para
+    // el servicio de ESTA reserva, calculado una sola vez fuera del loop.
+    const servicioReserva = reserva.serviceId
+      ? (catalog.services || []).find(s=> s.id === reserva.serviceId) : null;
+    const barberosElegibles = filtrarPorElegibilidad(
+      (catalog.barbers && catalog.barbers.length ? catalog.barbers : BARB_DEMO),
+      [{ barberIds: servicioReserva?.barberIds }]
+    );
     const opciones = [];
     for(let min = inicioGrilla; min + dur <= real.horario.cierra; min += 60){
       // TiempoSantiago.instanteSantiagoMs() -- NUNCA new Date(fecha+'T00:00:00')
@@ -8018,7 +8042,7 @@
       // el cliente veía "No hay horarios disponibles ese día con 4 horas de
       // anticipación" aunque sí los hubiera. Bug real encontrado en vivo
       // (2026-09-22), sin relación con la regla de las 4 horas en sí.
-      const nombresBarberos = (catalog.barbers && catalog.barbers.length ? catalog.barbers : BARB_DEMO).map((b)=> b.name);
+      const nombresBarberos = barberosElegibles.map((b)=> b.name);
       const libres = nombresBarberos.filter(nombreBarbero=>{
         if(fecha === reserva.fecha && nombreBarbero === reserva.barber){
           const ocupadoSinPropia = (real.ocupacion[nombreBarbero]||[]).filter(([ini,fin])=>
@@ -9687,12 +9711,23 @@
      acá solo mostramos qué profesionales están REALMENTE libres a esa
      hora exacta (nunca se puede elegir uno ocupado) y recalculamos el
      reparto con planificarCitas() para las reservas de varios servicios. */
-  /** ¿Este barbero realiza TODOS los servicios ya elegidos? Un servicio sin
-   *  `barberIds` configurado (vacío/ausente) no restringe a nadie -- ver
-   *  nota en la carga de catalog.services. */
-  function realizaServiciosElegidos(barberId){
-    return (state.servicios || []).every(s=>
+  /** Regla de elegibilidad servicio <-> profesional, única y reusable:
+   *  barberIds vacío/ausente en el servicio = sin restricción, nunca
+   *  "nadie puede". Pura -- recibe la lista de servicios explícita en vez
+   *  de leer state global, para poder reusarla en Paso 2, reagendamiento y
+   *  el reparto multi-servicio sin acoplarse al carrito actual. */
+  function barberoElegiblePara(barberId, servicios){
+    return (servicios || []).every(s=>
       !Array.isArray(s.barberIds) || !s.barberIds.length || s.barberIds.includes(barberId));
+  }
+  function filtrarPorElegibilidad(barberos, servicios){
+    return (barberos || []).filter(b=> barberoElegiblePara(b.id, servicios));
+  }
+
+  /** ¿Este barbero realiza TODOS los servicios ya elegidos? Azúcar sobre
+   *  barberoElegiblePara() para el carrito actual (state.servicios). */
+  function realizaServiciosElegidos(barberId){
+    return barberoElegiblePara(barberId, state.servicios);
   }
 
   /** Lista de profesionales filtrada -- NUNCA deshabilitada/gris: un
@@ -9767,7 +9802,12 @@
 
   /** Entra al paso 3 (profesional): ya con fecha/hora fijas, arma la lista según disponibilidad real. */
   function avanzarAProfesional(){
-    if(!state.barberId){ state.barber = 'Cualquiera'; state.barberId = 'any'; }
+    // Nunca defaultear a "Cualquiera" si en los hechos no queda ni un
+    // profesional real disponible -- si no, el botón "Continuar" quedaba
+    // habilitado sobre una selección fantasma (ver barberosDisponiblesAhora()).
+    if(!state.barberId && barberosDisponiblesAhora().length){
+      state.barber = 'Cualquiera'; state.barberId = 'any';
+    }
     paintBarbers();
     state.plan = planificarCitas(state.fecha, state.startMin);
     pintarPlan(state.plan, state.fecha);
@@ -10000,7 +10040,9 @@
     // seguir -- planificarCitas()/pintarPlan() para esta misma fecha
     // corren siempre después de esto, así que ya la encuentran cacheada.
     await asegurarOcupacion(fecha);
-    const barberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO);
+    // Mismo filtro de elegibilidad que el Paso 3 (barberoElegiblePara)
+    const barberos = filtrarPorElegibilidad(
+      (catalog.barbers.length ? catalog.barbers : BARB_DEMO), state.servicios);
     const ocupacion = ocupacionDelDia(fecha);
 
     // cuántas citas necesita esta reserva a la vez
@@ -10628,15 +10670,17 @@
 
     for(const u of unidades){
       let colocada = false;
+      // cada servicio del carrito puede tener su propio barberIds
+      const ordenElegible = orden.filter(b=> barberoElegiblePara(b.id, [u]));
 
       // buscamos desde la hora elegida hacia adelante
       for(let min = minInicial; min + u.minutes <= cierre && !colocada; min += 60){
-        for(const b of orden){
+        for(const b of ordenElegible){
           if(estaLibre(usado[b.name], min, min + u.minutes)){
             usado[b.name].push([min, min + u.minutes]);
             plan.push({
               servicio: u.name, servicioId: u.id, precio: u.price, minutos: u.minutes,
-              barbero: b.name, barberoId: b.id, min,
+              barbero: b.name, barberoId: b.id, min, barberIds: u.barberIds,
               label: String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0'),
             });
             colocada = true;
@@ -10695,8 +10739,10 @@
             .map(x=> x.barberoId);
 
           const opciones = barberos.filter(b=>
-            b.id === p.barberoId ||
-            (estaLibre(ocupacion[b.name], p.min, p.min + p.minutos) && !usadosAhora.includes(b.id))
+            barberoElegiblePara(b.id, [{ barberIds: p.barberIds }]) && (
+              b.id === p.barberoId ||
+              (estaLibre(ocupacion[b.name], p.min, p.min + p.minutos) && !usadosAhora.includes(b.id))
+            )
           );
 
           return `<div class="rv-plan-item">
@@ -11015,6 +11061,38 @@
   document.getElementById('menuOverlay')?.addEventListener('click', cerrarMenu);
 
   /* ---------- catálogo (servicios y barberos) ---------- */
+  /** Única forma de convertir un documento crudo de services/ (Firestore) en
+   *  el objeto "Servicio" que usa el resto del sitio -- SIEMPRE hace spread
+   *  completo (`...x`) en vez de listar campos a mano, para que un campo
+   *  nuevo en Firestore (como pasó con `barberIds`) llegue automáticamente
+   *  a todos lados sin tener que acordarse de tocar código acá. Encima del
+   *  spread, solo se normalizan los pocos campos que necesitan un fallback
+   *  explícito (descripción del catálogo demo, tipos). Único punto de
+   *  entrada del catálogo: usarla en vez de reconstruir el objeto a mano. */
+  function normalizarServicio(x, baseDemo){
+    const base = baseDemo !== undefined ? baseDemo : SVC_DEMO.find(d=> d.name === x.name);
+    return {
+      ...x,
+      // si el panel no guardó descripción, usamos la del catálogo base
+      description: x.description || base?.description || '',
+      featured: x.featured ?? base?.featured ?? false,
+      cat: x.cat || base?.cat,
+      // anticipo: para mostrar el monto ANTES de ir a Webpay sin
+      // re-leer el doc (el server lo recalcula igual en calcularMonto).
+      anticipo: typeof x.anticipo === 'number' ? x.anticipo : null,
+      photoUrl: x.photoUrl || '',
+      // galería adicional (subida desde el panel, "Fotos del servicio")
+      // -- la tarjeta de reserva la usa junto a photoUrl, ver tarjetaServicio().
+      photos: Array.isArray(x.photos) ? x.photos : [],
+      // Lista de barbero.id que realizan este servicio (panel ->
+      // Profesionales -> checklist de servicios). Vacío/ausente =
+      // sin restricción configurada todavía (servicios viejos,
+      // anteriores a esa casilla) -- se trata como "lo hace
+      // cualquiera", nunca como "nadie lo hace".
+      barberIds: Array.isArray(x.barberIds) ? x.barberIds : [],
+    };
+  }
+
   async function loadCatalog(){
     if(MODE === 'api'){
       try{
@@ -11030,30 +11108,7 @@
           db.collection('barbers').get()
         ]);
         if(!svcSnap.empty){
-          catalog.services = svcSnap.docs.map(d=> d.data()).filter(x=> x.active !== false).map(x=>{
-            // si el panel no guardó descripción, usamos la del catálogo base
-            const base = SVC_DEMO.find(d=> d.name === x.name);
-            return {
-              id:x.id, name:x.name,
-              description: x.description || base?.description || '',
-              priceClp:x.priceClp, minutes:x.minutes,
-              featured: x.featured ?? base?.featured ?? false,
-              cat: x.cat || base?.cat,
-              // anticipo: para mostrar el monto ANTES de ir a Webpay sin
-              // re-leer el doc (el server lo recalcula igual en calcularMonto).
-              anticipo: typeof x.anticipo === 'number' ? x.anticipo : null,
-              photoUrl: x.photoUrl || '',
-              // galería adicional (subida desde el panel, "Fotos del servicio")
-              // -- la tarjeta de reserva la usa junto a photoUrl, ver tarjetaServicio().
-              photos: Array.isArray(x.photos) ? x.photos : [],
-              // Lista de barbero.id que realizan este servicio (panel ->
-              // Profesionales -> checklist de servicios). Vacío/ausente =
-              // sin restricción configurada todavía (servicios viejos,
-              // anteriores a esa casilla) -- se trata como "lo hace
-              // cualquiera", nunca como "nadie lo hace".
-              barberIds: Array.isArray(x.barberIds) ? x.barberIds : [],
-            };
-          });
+          catalog.services = svcSnap.docs.map(d=> d.data()).filter(x=> x.active !== false).map(x=> normalizarServicio(x));
         }
         if(!barSnap.empty){
           catalog.barbers = barSnap.docs.map(d=> d.data()).filter(x=> x.active !== false);
