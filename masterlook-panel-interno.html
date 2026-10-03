@@ -7257,6 +7257,64 @@
   timeCol.style.height=totalHeight+'px';
   function timeToTop(hh,mm){ return ((hh-START_HOUR)+mm/60)*SLOT_H; }
 
+  /** Calcula los tramos "fuera de turno" (horario individual real del
+   *  profesional, cfgBarberos[].schedules) para UNA columna -- blindado
+   *  numéricamente: cualquier bloque mal formado (startMin/endMin no
+   *  finitos, o endMin<=startMin) se trata igual que "sin horario ese
+   *  día" (profesional no disponible el día completo), nunca produce un
+   *  overlay fuera del alto real de la columna. Devuelve [] si el
+   *  profesional trabaja la ventana completa ese día. */
+  function calcularOverlaysFueraDeTurno(schedules, weekday, altoTotal){
+    const bloque = (schedules || []).find(s=> s.weekday === weekday);
+    const valido = bloque && Number.isFinite(bloque.startMin) && Number.isFinite(bloque.endMin)
+      && bloque.endMin > bloque.startMin;
+    if(!valido) return [{ top: 0, height: altoTotal }];
+    const overlays = [];
+    if(bloque.startMin > START_HOUR*60){
+      const h = Math.floor(bloque.startMin/60), m = bloque.startMin%60;
+      const top = Math.max(0, Math.min(timeToTop(h,m), altoTotal));
+      if(top > 0) overlays.push({ top: 0, height: top });
+    }
+    if(bloque.endMin < END_HOUR*60){
+      const h = Math.floor(bloque.endMin/60), m = bloque.endMin%60;
+      const top = Math.max(0, Math.min(timeToTop(h,m), altoTotal));
+      if(top < altoTotal) overlays.push({ top, height: altoTotal - top });
+    }
+    return overlays;
+  }
+
+  /** Pinta, para cada profesional activo, los tramos del día actual en que
+   *  NO trabaja (fuera de su horario individual real, barbers/{id}.schedules
+   *  -- la misma fuente que ya usa Horario por barbero, sin duplicar nada).
+   *  Mismo lenguaje visual que renderBlocks() (clase block-overlay) a
+   *  propósito -- reusa su exclusión ya existente del clic-para-reservar
+   *  (ver el click de cada columna, más abajo: ignora cualquier clic
+   *  dentro de .block-overlay), así que nunca se puede crear una reserva
+   *  manual sobre un tramo fuera de turno. Se limpia y repinta completo
+   *  cada vez que se llama -- mismo criterio que renderBlocks(), que la
+   *  llama al final. */
+  function renderScheduleOverlays(){
+    document.querySelectorAll('.schedule-overlay').forEach(el=> el.remove());
+    const weekday = new Date(currentDate+'T12:00:00').getDay();
+    barbers.filter(b=> b.active !== false).forEach(b=>{
+      const col = document.getElementById('col'+b.id);
+      if(!col) return;
+      // Por id (mismo criterio que arma `barbers` en
+      // sincronizarBarberosDesdeFirestore: calId si existe, si no el id
+      // real del documento), nunca por nombre -- dos profesionales podrían
+      // compartir nombre y antes esto le aplicaba a uno el horario del otro.
+      const cb = cfgBarberos.find(x=> (x.calId != null ? x.calId : x.id) === b.id);
+      calcularOverlaysFueraDeTurno(cb?.schedules, weekday, totalHeight).forEach(({top,height})=>{
+        const el = document.createElement('div');
+        el.className = 'block-overlay schedule-overlay';
+        el.style.top = top+'px';
+        el.style.height = height+'px';
+        el.innerHTML = '<div class="bo-label">Fuera de turno</div>';
+        col.prepend(el);
+      });
+    });
+  }
+
   const appointments = [];
 
   /* ---------------- Productos, stock y propina ---------------- */
@@ -8452,9 +8510,14 @@
       sincronizarBarberosDesdeFirestore();   // reconstruye barbers/BARBER_COL/columnas
       refrescarSelectsCatalogo();
       // en cambios reales (no el primer snapshot del arranque) repinta la
-      // agenda si está a la vista, para que agregar/quitar un barbero se
-      // refleje en las columnas sin recargar.
-      if(!_barPrimerSnap && _agendaVisible()){ pintarColumnas(); pintarSemana(); }
+      // agenda si está a la vista, para que agregar/quitar un barbero, o
+      // cambiar su horario laboral (barbers/{id}.schedules -- ver
+      // renderScheduleOverlays), se refleje sin recargar. Antes esto solo
+      // repintaba columnas/semana: si alguien editaba el horario de un
+      // profesional desde Horarios mientras la agenda ya estaba abierta
+      // (en esa misma pestaña u otra), el tramo "Fuera de turno" quedaba
+      // desactualizado hasta el próximo cambio de día o de bloqueos.
+      if(!_barPrimerSnap && _agendaVisible()){ pintarColumnas(); pintarSemana(); renderBlocks(); }
       _barPrimerSnap = false;
     }, ()=>{ _barListo = true; _marcarCatalogoListo(); });
     // Categorías reales de servicios (Bloque 1 del calco de AgendaPro) --
@@ -9850,6 +9913,11 @@
         col.prepend(el);
       });
     });
+    // El clear de arriba (.block-overlay) también borra los overlays de
+    // "fuera de turno" (comparten clase a propósito, ver comentario en
+    // renderScheduleOverlays) -- se repintan siempre acá, al final, para
+    // que nunca queden desaparecidos después de que cambien los bloqueos.
+    renderScheduleOverlays();
   }
 
   async function quitarBloqueo(id){
@@ -10616,6 +10684,13 @@
     document.getElementById('vistaAgenda').style.display = '';
     document.getElementById('kpiRow').style.display = '';
     ocultarFlotante(false);
+    // Si se guardó un horario nuevo mientras la agenda estaba oculta, el
+    // listener en vivo de barbers ya actualizó cfgBarberos en memoria,
+    // pero no repintó la grilla (no estaba a la vista -- ver
+    // _agendaVisible() en el listener de barbers). Al volver, siempre se
+    // repinta una vez más con lo que ya está en memoria, así el cambio se
+    // ve de inmediato sin recargar.
+    renderBlocks();
   }
 
   document.getElementById('btnHorarios').addEventListener('click', mostrarHorariosPage);
