@@ -11046,6 +11046,12 @@
               // galería adicional (subida desde el panel, "Fotos del servicio")
               // -- la tarjeta de reserva la usa junto a photoUrl, ver tarjetaServicio().
               photos: Array.isArray(x.photos) ? x.photos : [],
+              // Lista de barbero.id que realizan este servicio (panel ->
+              // Profesionales -> checklist de servicios). Vacío/ausente =
+              // sin restricción configurada todavía (servicios viejos,
+              // anteriores a esa casilla) -- se trata como "lo hace
+              // cualquiera", nunca como "nadie lo hace".
+              barberIds: Array.isArray(x.barberIds) ? x.barberIds : [],
             };
           });
         }
