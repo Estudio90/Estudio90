@@ -1036,6 +1036,10 @@
   .nr-sug-nombre{font-weight:600; color:#1A1815; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .nr-sug-detalle{font-size:11.5px; color:#87868f; flex:0 0 auto;}
   .mg-two{display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end;}
+  /* Un <input type=time/date> nativo tiene un ancho mínimo propio que
+     ignora width:100% -- sin min-width:0 el grid no lo deja encoger y las
+     2 columnas pueden desbordar/pegarse en vez de repartirse 1fr 1fr. */
+  .mg-two > *{min-width:0;}
   .mg-slots{display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:4px;}
   .mg-slot{
     padding:8px 4px; border:1px solid #e2e2e6; border-radius:8px; text-align:center;
@@ -1223,11 +1227,69 @@
   .mg-wrow input[type=time]{padding:7px 9px; border:1px solid #e2e2e6; border-radius:7px; font-family:inherit; font-size:12.5px; width:100%;}
   .mg-wrow.off input[type=time]{opacity:.35; pointer-events:none;}
 
+  .clc-fila-chips{display:flex; flex-wrap:wrap; align-items:center; margin:3px 0;}
+  .clc-chip-mini{display:inline-flex; align-items:center; justify-content:center; min-width:19px; height:19px; padding:0 4px; border-radius:5px; font-size:9px; font-weight:700; margin-right:3px; background:#eef2ee; color:#a9b3a9; white-space:nowrap;}
+  .clc-chip-mini.on{background:#e3f3e8; color:#2f8a52;}
+  .clc-fila-hora{font-size:11.5px; color:#57565f; font-variant-numeric:tabular-nums;}
+  .clc-fila-resumen.vacio{font-size:11.5px; color:#a3a2ab; font-style:italic; margin-top:3px;}
+
+  /* Grid de 7 columnas (en vez de flex+wrap): cada día ocupa exactamente
+     1/7 del ancho interno del modal, SIEMPRE -- nunca puede desbordar ni
+     apretarse, a cualquier ancho de pantalla (ver min-width:0 más abajo,
+     el mismo fix que .mg-two). */
+  .clc-dias-sel{display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin:8px 0 16px;}
+  .clc-chip-dia{
+    min-width:0; width:100%; height:46px; border-radius:9px; border:1px solid #e2e2e6; background:#fff;
+    cursor:pointer; font-family:inherit; padding:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    transition:background .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .clc-chip-dia .clc-chip-letra{font-size:13px; font-weight:700; color:#57565f;}
+  .clc-chip-dia .clc-chip-num{font-size:9px; color:#a3a2ab; font-variant-numeric:tabular-nums;}
+  .clc-chip-dia.on{background:var(--accent-tint); border-color:var(--accent);}
+  .clc-chip-dia.on .clc-chip-letra, .clc-chip-dia.on .clc-chip-num{color:var(--accent);}
+
+  .clc-grupo-fila{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #eee; font-size:12.5px; flex-wrap:wrap;}
+  .clc-grupo-fila:last-child{border-bottom:none;}
+  .clc-grupo-dias{display:flex; gap:3px; flex-wrap:wrap; flex-shrink:0;}
+  .clc-grupo-hora{font-variant-numeric:tabular-nums; color:var(--text-hi); font-weight:600; flex-shrink:0; white-space:nowrap;}
+  .clc-grupo-motivo{flex:1; min-width:60px; color:#87868f; font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .clc-grupo-acciones{display:flex; gap:10px; flex-shrink:0; margin-left:auto;}
+  .clc-grupo-acciones button{background:none; border:none; padding:0; cursor:pointer; font-size:11.5px; font-weight:600; font-family:inherit;}
+  .clc-grupo-acciones button.clc-editar{color:var(--accent);}
+  .clc-grupo-acciones button.clc-eliminar{color:#c0392b;}
+
+  /* Cabecera de "Colaciones" en Horarios: título + nav de semana + botón,
+     en una sola fila que se reparte y envuelve con gracia en pantallas
+     angostas -- nunca saca nada fuera del panel. */
+  .clc-panel-head{display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap; margin-bottom:4px;}
+  .clc-panel-head > h3{flex-shrink:0;}
+  .clc-panel-head > .mg-btn{margin-left:auto;}
+
+  /* Selector de semana, reusado en la lista y en el modal. */
+  .clc-semana-nav{display:flex; align-items:center; gap:8px; min-width:0;}
+  .clc-semana-sep{color:#c7c6cd; font-weight:700;}
+  .clc-semana-btn{
+    width:26px; height:26px; border-radius:50%; border:1px solid #e2e2e6; background:#fff;
+    font-size:14px; line-height:1; color:#57565f; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-family:inherit;
+  }
+  .clc-semana-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .clc-semana-label{font-size:12.5px; font-weight:600; color:var(--text-hi); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  #modalColacion .clc-semana-nav{justify-content:center; margin:6px 0 2px;}
+  #modalColacion .clc-semana-label{flex:1; min-width:0; text-align:center;}
+
+  /* Desde/Hasta del modal de Colación: más aire entre los dos campos que
+     el .mg-two genérico (10px), para que nunca se vean "pegados". */
+  #modalColacion .mg-two{gap:20px;}
+
   @media (max-width: 700px){
     .mg-row{grid-template-columns:1fr auto;}
     .mg-row .mg-unit{display:none;}
     .mg-list-head{display:none !important;}
     .mg-two{grid-template-columns:1fr;}
+    .clc-chip-dia{height:50px;}
+    .clc-panel-head > .mg-btn{margin-left:0; width:100%;}
   }
 
   /* ---------- Accesos a cursos: tabla responsive ----------
@@ -1358,6 +1420,12 @@
   .block-overlay .bo-label{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-mid);}
   .block-overlay .bo-label svg{width:12px;height:12px;flex:0 0 auto;color:var(--text-low);}
   .block-overlay .bo-reason{font-size:10px;color:var(--text-low);margin-top:2px;}
+  /* Colación -- mismo lenguaje visual que .block-overlay, tinte ámbar en
+     vez de gris para distinguirla de un bloqueo genérico de un vistazo. */
+  .block-overlay.colacion{background:repeating-linear-gradient(135deg, rgba(180,83,9,0.09) 0 6px, rgba(180,83,9,0.15) 6px 12px);}
+  .block-overlay.colacion:hover{background:repeating-linear-gradient(135deg, rgba(180,83,9,0.14) 0 6px, rgba(180,83,9,0.20) 6px 12px);}
+  .block-overlay.colacion .bo-label{color:#b45309;}
+  .block-overlay.colacion .bo-label svg{color:#d97706;}
   .bl-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #eee;}
   .bl-item:last-child{border-bottom:none;}
   .bl-item button{background:none;border:none;color:#b4483a;cursor:pointer;font-size:12px;padding:2px 6px;}
@@ -3724,12 +3792,30 @@
         <label class="mg-label">Barbero</label>
         <select id="cfgBarberoHorario" class="mg-input"></select>
         <div class="mg-week" id="cfgHorario"></div>
+
+        <p class="mg-note" style="margin-top:16px;">La colación de cada profesional se configura en <b>Horarios → Colaciones</b>, más abajo.</p>
+
         <button class="mg-btn solid full" id="cfgGuardarHorario">Guardar horario</button>
       </div>
 
       <div class="cx-panel" style="margin-top:16px;">
+        <div class="clc-panel-head">
+          <h3 style="font-size:14px;margin:0;">Colaciones</h3>
+          <div class="clc-semana-nav" id="clcListaSemanaNav">
+            <span class="clc-semana-sep">·</span>
+            <button type="button" class="clc-semana-btn" id="clcListaSemanaPrev" aria-label="Semana anterior">‹</button>
+            <span class="clc-semana-label" id="clcListaSemanaLabel">Semana —</span>
+            <button type="button" class="clc-semana-btn" id="clcListaSemanaNext" aria-label="Semana siguiente">›</button>
+          </div>
+          <button class="mg-btn solid" id="clcNuevaBtn" style="width:auto; flex:none; padding:8px 16px; font-size:12px;">+ Nueva colación</button>
+        </div>
+        <p class="mg-note">La colación de cada profesional, semana por semana -- puede cambiar de una semana a otra, nunca se repite sola.</p>
+        <div id="hrColacionesLista"></div>
+      </div>
+
+      <div class="cx-panel" style="margin-top:16px;">
         <h3 style="font-size:14px;margin:0 0 4px;">Bloqueos</h3>
-        <p class="mg-note">Horarios bloqueados manualmente desde la agenda (ausencias, permisos, cierres puntuales) -- de cualquier profesional.</p>
+        <p class="mg-note">Horarios bloqueados manualmente desde la agenda (ausencias, permisos, cierres puntuales) -- de cualquier profesional. La colación de cada profesional se configura arriba, en "Colaciones".</p>
         <div id="hrBloqueosLista" style="font-size:12.5px; color:#57565f;"></div>
       </div>
     </div>
@@ -4547,6 +4633,8 @@
       <div class="mes-pane" data-mpfpane="horario">
         <p class="mg-note" style="margin-bottom:10px;">Horas de trabajo de este profesional, para calcular los horarios disponibles al reservar.</p>
         <div class="mg-week" id="mpfHorario"></div>
+
+        <p class="mg-note" style="margin-top:16px;">La colación de este profesional se configura en <b>Horarios → Colaciones</b>.</p>
       </div>
 
       <div class="mes-pane" data-mpfpane="perfil">
@@ -5158,6 +5246,90 @@
   <div class="mg-actions">
     <button class="mg-btn ghost" data-close>Cancelar</button>
     <button class="mg-btn solid" id="blGuardar">Bloquear</button>
+  </div>
+</div>
+
+<!-- Colación de un profesional: uno o más horarios ("grupos" de días con la
+     misma hora), agregados/editados/eliminados en memoria y recién
+     persistidos todos juntos al presionar "Guardar cambios". -->
+<div class="mg-modal" id="modalColacion">
+  <div class="mg-head">
+    <h3 id="clcModalTitulo">Colación</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note">Define uno o más horarios de colación para este profesional. Es solo para la semana seleccionada -- no se repite sola la semana siguiente.</p>
+
+  <label class="mg-label">Semana</label>
+  <div class="clc-semana-nav" id="clcModalSemanaNav">
+    <button type="button" class="clc-semana-btn" id="clcModalSemanaPrev" aria-label="Semana anterior">‹</button>
+    <span class="clc-semana-label" id="clcModalSemanaLabel">Semana —</span>
+    <button type="button" class="clc-semana-btn" id="clcModalSemanaNext" aria-label="Semana siguiente">›</button>
+  </div>
+
+  <label class="mg-label">Días de la semana</label>
+  <div class="clc-dias-sel" id="clcDiasSel"></div>
+
+  <div class="mg-two">
+    <div>
+      <label class="mg-label">Desde</label>
+      <input type="time" id="clcDesde" class="mg-input" value="14:00">
+    </div>
+    <div>
+      <label class="mg-label">Hasta</label>
+      <input type="time" id="clcHasta" class="mg-input" value="15:00">
+    </div>
+  </div>
+
+  <label class="mg-label">Motivo <span class="mg-opt">(opcional)</span></label>
+  <input type="text" id="clcMotivo" class="mg-input" placeholder="Ej: Colación">
+
+  <div class="mg-warn" id="clcError"></div>
+
+  <button class="mg-btn solid full" id="clcAgregarBtn">Agregar este horario</button>
+
+  <div id="clcGruposWrap" style="display:none;">
+    <label class="mg-label" style="margin-top:18px;">Horarios configurados</label>
+    <div id="clcGruposLista"></div>
+  </div>
+
+  <div class="mg-actions">
+    <button class="mg-btn ghost" data-close>Cancelar</button>
+    <button class="mg-btn solid" id="clcGuardarBtn">Guardar cambios</button>
+  </div>
+</div>
+
+<!-- Edición rápida de UNA colación puntual desde la Agenda (diaria o
+     semanal) -- afecta EXCLUSIVAMENTE ese documento/fecha, nunca las demás
+     colaciones del mismo profesional aunque compartan horario (acá no
+     existe el concepto de "grupo" de Horarios -> Colaciones, es edición
+     directa de un solo doc `blocks`). Solo ADMIN/RECEPTION -- ver
+     abrirSlotPopoverColacion(). -->
+<div class="mg-modal" id="modalColacionRapida">
+  <div class="mg-head">
+    <h3>Editar colación</h3>
+    <button class="mg-close" data-close>✕</button>
+  </div>
+  <p class="mg-note" id="clrSub"></p>
+
+  <div class="mg-two">
+    <div>
+      <label class="mg-label">Desde</label>
+      <input type="time" id="clrDesde" class="mg-input">
+    </div>
+    <div>
+      <label class="mg-label">Hasta</label>
+      <input type="time" id="clrHasta" class="mg-input">
+    </div>
+  </div>
+
+  <label class="mg-label">Motivo <span class="mg-opt">(opcional)</span></label>
+  <input type="text" id="clrMotivo" class="mg-input" placeholder="Ej: Colación">
+
+  <div class="mg-warn" id="clrError"></div>
+
+  <div class="mg-actions">
+    <button class="mg-btn ghost" data-close>Cancelar</button>
+    <button class="mg-btn solid" id="clrGuardar">Guardar cambios</button>
   </div>
 </div>
 
@@ -8509,6 +8681,10 @@
       if(hayServer(snap)){ _barListo = true; _marcarCatalogoListo(); }
       sincronizarBarberosDesdeFirestore();   // reconstruye barbers/BARBER_COL/columnas
       refrescarSelectsCatalogo();
+      // Si cambia el horario laboral de un profesional mientras la grilla
+      // de "Colaciones" está abierta (misma pestaña u otra), el indicador
+      // "No trabaja este día" de cada celda debe reflejarlo sin recargar.
+      if(typeof renderColacionesLista === 'function') renderColacionesLista();
       // en cambios reales (no el primer snapshot del arranque) repinta la
       // agenda si está a la vista, para que agregar/quitar un barbero, o
       // cambiar su horario laboral (barbers/{id}.schedules -- ver
@@ -9833,6 +10009,7 @@
     demoBlocks = Array.from(porId.values());
     renderBlocks();
     renderBlockList();
+    if(typeof renderColacionesLista === 'function') renderColacionesLista();
   }
   function suscribirBlocks(){
     if(unsubBlocksAll){ try{ unsubBlocksAll(); }catch(e){} unsubBlocksAll = null; }
@@ -9888,6 +10065,28 @@
     });
   }
 
+  /** Etiqueta + clase de un bloqueo según su tipo -- compartida entre la
+   *  vista diaria (renderBlocks) y la semanal (sbPintarSemana) para que
+   *  nunca queden desincronizadas. Una colación (type:'colacion') se
+   *  distingue de un bloqueo genérico con su propio color/ícono, nunca
+   *  emoji (ver CLAUDE.md -- siempre SVG de un trazo). */
+  function etiquetaBloqueo(bl){
+    const esColacion = bl.type === 'colacion';
+    const clase = 'block-overlay' + (esColacion ? ' colacion' : '');
+    const icono = esColacion
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8h11a1 1 0 0 1 1 1v3a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1Z"/><path d="M18 10h1a2 2 0 0 1 0 4h-1"/><path d="M8 3v2M11 3v2M14 3v2"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>';
+    const texto = esColacion ? 'Colación' : ('Bloqueado' + (bl.recurring ? ' · fijo' : ''));
+    // El motivo de una colación es editable desde el modal de Colaciones
+    // (antes era siempre 'Colación' fijo) -- se muestra como subtítulo
+    // solo cuando el admin puso algo distinto al genérico, para no repetir
+    // "Colación" dos veces.
+    const motivoExtra = bl.reason && bl.reason !== 'Colación';
+    const html = `<div class="bo-label">${icono}${texto}</div>` +
+      (motivoExtra ? `<div class="bo-reason">${escapeHTML(bl.reason)}</div>` : '');
+    return { clase, html };
+  }
+
   function renderBlocks(){
     document.querySelectorAll('.block-overlay').forEach(el=> el.remove());
     demoBlocks.forEach(bl=>{
@@ -9897,19 +10096,32 @@
         if(!col) return;
         const top = bl.allDay ? 0 : timeToTop(...bl.start.split(':').map(Number));
         const bottom = bl.allDay ? (END_HOUR-START_HOUR)*SLOT_H : timeToTop(...bl.end.split(':').map(Number));
+        const { clase, html } = etiquetaBloqueo(bl);
         const el = document.createElement('div');
-        el.className = 'block-overlay';
+        el.className = clase;
         el.style.top = top+'px';
         el.style.height = Math.max(bottom-top, 20)+'px';
-        el.innerHTML = `<div class="bo-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>Bloqueado${bl.recurring ? ' · fijo' : ''}</div>` +
-          (bl.reason ? `<div class="bo-reason">${bl.reason}</div>` : '');
-        // Clic abre Editar/Quitar en vez de pedir confirmación directa --
-        // ver abrirSlotPopoverBloqueo(), más abajo.
-        el.title = 'Clic para editar o quitar este bloqueo';
-        el.addEventListener('click', (e)=>{
-          e.stopPropagation();
-          abrirSlotPopoverBloqueo(e.clientX, e.clientY, bl.id);
-        });
+        el.innerHTML = html;
+        // Horarios -> Colaciones sigue siendo la administración principal
+        // (por semana), pero ADMIN/RECEPTION también pueden editar/quitar
+        // rápido una colación puntual con un clic acá -- mismo mecanismo
+        // de popover que un bloqueo manual, con sus propias opciones (ver
+        // abrirSlotPopoverColacion). BARBER nunca llega a este código (la
+        // sección completa de Agenda ya está oculta para ese rol), pero el
+        // chequeo de rol se deja explícito también acá, a propósito.
+        if(bl.type !== 'colacion'){
+          el.title = 'Clic para editar o quitar este bloqueo';
+          el.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            abrirSlotPopoverBloqueo(e.clientX, e.clientY, bl.id);
+          });
+        } else if(userRole === 'ADMIN' || userRole === 'RECEPTION'){
+          el.title = 'Clic para editar o eliminar esta colación';
+          el.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            abrirSlotPopoverColacion(e.clientX, e.clientY, bl.id);
+          });
+        }
         col.prepend(el);
       });
     });
@@ -9926,6 +10138,51 @@
       await db.collection('blocks').doc(id).delete();
       showToast('Bloqueo eliminado');
     }catch(e){ showToast('No se pudo quitar: ' + e.message); }
+  }
+
+  // Usado también por la vista semanal de un barbero (sbPintarSemana).
+  const DIAS_CORTOS = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+
+  /** Lista de "Bloqueos" de Horarios -- SOLO bloqueos manuales (un día
+   *  puntual, con hora desde/hasta), de cualquier profesional. La colación
+   *  (type:'colacion', por fecha específica) se gestiona exclusivamente
+   *  desde "Horarios -> Colaciones" (ver clcGuardarSemana) y nunca debe
+   *  aparecer ni editarse acá, aunque viva en la misma colección `blocks`
+   *  -- en la agenda sigue pintándose igual (renderBlocks() no filtra por
+   *  tipo, solo deja de hacerla clickeable). */
+  function renderBlockList(){
+    const cont = document.getElementById('hrBloqueosLista');
+    if(!cont) return;
+    const lista = demoBlocks.filter(bl=> bl.type !== 'colacion');
+    if(!lista.length){
+      cont.innerHTML = '<div class="bl-empty">No hay bloqueos creados.</div>';
+      return;
+    }
+    cont.innerHTML = lista.map(bl=>{
+      const quien = bl.scope === 'all' ? 'Todos los barberos' : bl.barberName;
+      // Bloqueos recurrentes/de día completo son de ANTES de este modal
+      // simplificado (que ya no tiene esos controles) -- se siguen
+      // mostrando con su significado real, nunca como si fueran un rango
+      // puntual de una sola vez (ver también editarBloqueo: esos no se
+      // pueden editar acá, solo quitar, para no reescribirlos sin querer
+      // como un bloqueo simple).
+      const cuando = bl.recurring
+        ? (!bl.days || bl.days.length === 7 ? 'Todos los días' : 'Todas las semanas: ' + bl.days.map(d=> DIAS_CORTOS[d]).join(', '))
+        : (bl.date ? fmtFecha(bl.date).split(',')[0] + ' ' + bl.date.slice(8,10)+'/'+bl.date.slice(5,7) : '—');
+      const hora = bl.allDay ? 'Día completo' : `${bl.start}–${bl.end}`;
+      const editable = !bl.recurring && !bl.allDay;
+      return `<div class="bl-item">
+        <span>${quien} · ${cuando} · ${hora}${bl.reason ? ' · '+bl.reason : ''}</span>
+        <span style="display:flex;gap:8px;flex:0 0 auto;">
+          ${editable ? `<button data-editar="${bl.id}" style="color:var(--accent);">Editar</button>` : ''}
+          <button data-quitar="${bl.id}">Quitar</button>
+        </span>
+      </div>`;
+    }).join('');
+    cont.querySelectorAll('[data-quitar]').forEach(btn=>
+      btn.addEventListener('click', ()=> quitarBloqueo(btn.dataset.quitar)));
+    cont.querySelectorAll('[data-editar]').forEach(btn=>
+      btn.addEventListener('click', ()=> editarBloqueo(btn.dataset.editar)));
   }
 
   /** Fecha dentro de la semana ya suscrita en vivo (firestoreBookings) --
@@ -9965,44 +10222,6 @@
       return s < hastaMin && e > desdeMin;
     });
   }
-
-  /** Lista de "Bloqueos" de Horarios -- SOLO bloqueos manuales (un día
-   *  puntual, con hora desde/hasta), de cualquier profesional. Un bloqueo
-   *  recurrente o de día completo (de antes de este modal simplificado --
-   *  ya existen en producción) se sigue mostrando con su significado real,
-   *  pero sin botón "Editar": este modal ya no tiene esos controles, así
-   *  que editarlo acá lo reescribiría como un bloqueo simple de un solo
-   *  día apenas se guardara. Solo se puede quitar. */
-  function renderBlockList(){
-    const cont = document.getElementById('hrBloqueosLista');
-    if(!cont) return;
-    const lista = demoBlocks.filter(bl=> bl.type !== 'colacion');
-    if(!lista.length){
-      cont.innerHTML = '<div class="bl-empty">No hay bloqueos creados.</div>';
-      return;
-    }
-    cont.innerHTML = lista.map(bl=>{
-      const quien = bl.scope === 'all' ? 'Todos los barberos' : bl.barberName;
-      const cuando = bl.recurring
-        ? (!bl.days || bl.days.length === 7 ? 'Todos los días' : 'Todas las semanas: ' + bl.days.map(d=> DIAS_CORTOS[d]).join(', '))
-        : fmtFecha(bl.date).split(',')[0] + ' ' + bl.date.slice(8,10)+'/'+bl.date.slice(5,7);
-      const hora = bl.allDay ? 'Día completo' : `${bl.start}–${bl.end}`;
-      const editable = !bl.recurring && !bl.allDay;
-      return `<div class="bl-item">
-        <span>${quien} · ${cuando} · ${hora}${bl.reason ? ' · '+bl.reason : ''}</span>
-        <span style="display:flex;gap:8px;flex:0 0 auto;">
-          ${editable ? `<button data-editar="${bl.id}" style="color:var(--accent);">Editar</button>` : ''}
-          <button data-quitar="${bl.id}">Quitar</button>
-        </span>
-      </div>`;
-    }).join('');
-    cont.querySelectorAll('[data-quitar]').forEach(btn=>
-      btn.addEventListener('click', ()=> quitarBloqueo(btn.dataset.quitar)));
-    cont.querySelectorAll('[data-editar]').forEach(btn=>
-      btn.addEventListener('click', ()=> editarBloqueo(btn.dataset.editar)));
-  }
-
-  const DIAS_CORTOS = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
 
   let bloqueoEditando = null;
 
@@ -10140,15 +10359,15 @@
     if(document.getElementById('vistaProductos').style.display !== 'none') pvCargar();
   });
 
-  /** Abre el modal para editar un bloqueo manual ya existente. Nunca para
-   *  uno de colación (no existe en este sitio, pero se deja el guard por
-   *  si alguna vez se usa la misma colección para eso). Tampoco para uno
+  /** Abre el modal para editar un bloqueo manual ya existente (nunca uno de
+   *  colación -- esos se filtran antes de llegar a la lista, ver
+   *  renderBlockList, y se editan solo desde Horarios). Tampoco uno
    *  recurrente o de día completo -- este modal ya no tiene esos
-   *  controles (se eliminaron a propósito), así que abrirlo acá lo
-   *  reescribiría como un bloqueo simple de un solo día apenas se
-   *  guardara, aunque la admin no haya tocado nada. Esos bloqueos ya
-   *  existen en producción y deben quedar intactos: solo se pueden
-   *  quitar, nunca editar desde acá (ver también renderBlockList). */
+   *  controles (se eliminaron a propósito), así que abrirlo acá
+   *  reescribiría ese bloqueo como uno simple de un solo día apenas se
+   *  guardara, aunque la admin no haya tocado nada. Esos bloqueos vienen
+   *  de antes de este cambio (p.ej. ya existen en producción) y deben
+   *  quedar intactos: solo se pueden quitar, nunca editar desde acá. */
   async function editarBloqueo(id){
     const bl = demoBlocks.find(b=> b.id === id);
     if(!bl || bl.type === 'colacion') return;
@@ -10176,7 +10395,9 @@
    *  AgendaPro: Profesional/Fecha/Hora desde ya vienen tomados del clic en
    *  la celda (ver abrirModalBloqueoNuevo), acá solo se elige Hora hasta y,
    *  si se quiere, un motivo. Repetir/Todo el día se eliminaron de este
-   *  flujo a propósito.
+   *  flujo a propósito -- la colación (que es por fecha específica y por
+   *  profesional) vive exclusivamente en Horarios -> Colaciones
+   *  (clcGuardarSemana).
    *  Antes de guardar, SIEMPRE se valida contra reservas reales del rango:
    *  un bloqueo jamás puede ocultar ni invalidar una reserva de un cliente
    *  ya existente -- si hay alguna, se impide guardar y se avisa (el admin
@@ -10212,12 +10433,12 @@
         });
         if(res.affectedBookings?.length){
           const aviso = document.getElementById('blAviso');
-          aviso.innerHTML = `<b>Atención:</b> hay ${res.affectedBookings.length} reserva(s) en ese horario:<br>` +
+          aviso.innerHTML = `<b>No se pudo bloquear:</b> hay ${res.affectedBookings.length} reserva(s) real(es) en ese horario:<br>` +
             res.affectedBookings.map(b=> `• ${escapeHTML(b.clientName)} (${escapeHTML(b.code)})`).join('<br>') +
-            '<br>Contáctalos para reagendar.';
+            '<br>Para bloquear esta franja primero reagenda esa reserva a otro profesional/horario, o cambia el servicio.';
           aviso.classList.add('show');
           btn.disabled = false; btn.textContent = 'Bloquear';
-          showToast('Bloqueo creado, pero revisa las reservas afectadas');
+          showToast('No se pudo bloquear: hay una reserva real en ese horario');
           return;
         }
         cerrarModales();
@@ -10677,6 +10898,7 @@
     cargarHorarioLocal();
     cfgCargarEspeciales();
     renderBlockList();
+    renderColacionesLista();
   }
 
   function hrVolverAgenda(){
@@ -10684,11 +10906,12 @@
     document.getElementById('vistaAgenda').style.display = '';
     document.getElementById('kpiRow').style.display = '';
     ocultarFlotante(false);
-    // Si se guardó un horario nuevo mientras la agenda estaba oculta, el
-    // listener en vivo de barbers ya actualizó cfgBarberos en memoria,
-    // pero no repintó la grilla (no estaba a la vista -- ver
-    // _agendaVisible() en el listener de barbers). Al volver, siempre se
-    // repinta una vez más con lo que ya está en memoria, así el cambio se
+    // Si se guardó un horario/bloqueo nuevo mientras la agenda estaba
+    // oculta, el listener en vivo de barbers/blocks ya actualizó
+    // cfgBarberos/demoBlocks en memoria, pero no repintó la grilla (no
+    // estaba a la vista -- ver _agendaVisible() en el listener de
+    // barbers). Al volver, siempre se repinta una vez más con lo que ya
+    // está en memoria, así el cambio se
     // ve de inmediato sin recargar.
     renderBlocks();
   }
@@ -11160,36 +11383,53 @@
       col.style.backgroundSize = `100% ${SLOT_H}px`;
       gridBody.appendChild(col);
 
-      // horas fuera del turno de este barbero ese día
-      const bloque = (cb?.schedules || []).find(s=> s.weekday === weekday);
-      if(!bloque){
+      // Horas fuera del turno de este barbero ese día -- mismo helper
+      // blindado que usa la agenda diaria (calcularOverlaysFueraDeTurno,
+      // ver más arriba). Antes este cálculo vivía duplicado acá mismo, sin
+      // ningún blindaje numérico: un startMin/endMin en 0 producía
+      // top:-350px/height:770px -- el "bloque gigante vacío" reportado.
+      calcularOverlaysFueraDeTurno(cb?.schedules, weekday, totalHeight).forEach(({top,height})=>{
         const el = document.createElement('div');
         el.className = 'block-overlay';
-        el.style.top = '0px';
-        el.style.height = totalHeight + 'px';
+        el.style.top = top + 'px';
+        el.style.height = height + 'px';
         el.innerHTML = '<div class="bo-label">Profesional no disponible</div>';
         col.appendChild(el);
-      }else{
-        if(bloque.startMin > START_HOUR*60){
-          const h = Math.floor(bloque.startMin/60), m = bloque.startMin%60;
-          const el = document.createElement('div');
-          el.className = 'block-overlay';
-          el.style.top = '0px';
-          el.style.height = timeToTop(h,m) + 'px';
-          el.innerHTML = '<div class="bo-label">Profesional no disponible</div>';
-          col.appendChild(el);
+      });
+
+      // Bloqueos manuales (incluida la colación) de este barbero ese día --
+      // misma colección y mismos campos que ya pinta renderBlocks() en la
+      // vista diaria (nunca existió acá antes: esta vista solo mostraba el
+      // horario semanal + las citas, dejando invisibles los bloqueos).
+      demoBlocks.forEach(bl=>{
+        const aplica = bl.recurring ? (!bl.days || bl.days.includes(weekday)) : bl.date === iso;
+        if(!aplica) return;
+        if(bl.scope !== 'all' && bl.calId !== b.id) return;
+        const top = bl.allDay ? 0 : timeToTop(...bl.start.split(':').map(Number));
+        const bottom = bl.allDay ? totalHeight : timeToTop(...bl.end.split(':').map(Number));
+        const { clase, html } = etiquetaBloqueo(bl);
+        const el = document.createElement('div');
+        el.className = clase;
+        el.style.top = Math.max(0, top) + 'px';
+        el.style.height = Math.max(bottom-top, 20) + 'px';
+        el.innerHTML = html;
+        // Igual que en la vista diaria (renderBlocks): una colación abre
+        // el menú de Editar/Eliminar colación (ver abrirSlotPopoverColacion),
+        // nunca el quitarBloqueo() directo que sí usa un bloqueo manual.
+        if(bl.type === 'colacion'){
+          if(userRole === 'ADMIN' || userRole === 'RECEPTION'){
+            el.title = 'Clic para editar o eliminar esta colación';
+            el.addEventListener('click', (e)=>{
+              e.stopPropagation();
+              abrirSlotPopoverColacion(e.clientX, e.clientY, bl.id);
+            });
+          }
+        } else {
+          el.title = 'Clic para quitar este bloqueo';
+          el.addEventListener('click', ()=> quitarBloqueo(bl.id));
         }
-        if(bloque.endMin < END_HOUR*60){
-          const h = Math.floor(bloque.endMin/60), m = bloque.endMin%60;
-          const top = timeToTop(h,m);
-          const el = document.createElement('div');
-          el.className = 'block-overlay';
-          el.style.top = top + 'px';
-          el.style.height = (totalHeight - top) + 'px';
-          el.innerHTML = '<div class="bo-label">Profesional no disponible</div>';
-          col.appendChild(el);
-        }
-      }
+        col.appendChild(el);
+      });
 
       // citas reales de ese día
       sbCitasDelDia(iso, b.name).forEach(r=>{
@@ -12253,6 +12493,596 @@
     }));
   }
 
+  /** Único punto que queda del viejo modelo recurrente de colación
+   *  ("todos los lunes para siempre", vía clcPintarGrid/clcLeerGrid/
+   *  clcGuardar/clcConflictosFuturos/clcConfirmarConflictos/
+   *  clcFueraDeHorarioLaboral/clcValidarDentroDeHorario) -- ESOS 7 se
+   *  retiraron junto con sus 2 controles de interfaz ("Colación de este
+   *  barbero" en Horario por barbero, y "Colación" en el editor de
+   *  Profesional): ya no existe forma de crear/editar/eliminar una
+   *  colación recurrente desde el panel. clcFormatoHora es la única
+   *  función de utilidad que seguía usando la sección nueva (abajo), por
+   *  eso es la única que se conservó acá. Los documentos `blocks` viejos
+   *  que ya existieran en Firestore con recurring:true NO se tocaron ni
+   *  se migraron -- si hay alguno, seguiría mostrándose en la Agenda
+   *  igual que siempre (renderBlocks() no distingue el origen), pero ya
+   *  no es editable desde ningún lado del panel; para quitarlo hay que
+   *  hacerlo a mano o pedir una limpieza aparte. */
+  function clcFormatoHora(min){
+    return String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0');
+  }
+
+  /* ==========================================================
+     Sección independiente "Colaciones" (Horarios) -- ÚNICA fuente de
+     verdad para crear/editar/eliminar colaciones en todo el panel. Lista
+     compacta + modal por profesional, por SEMANA ESPECÍFICA (no
+     recurrente): cada colación es un doc `blocks` de un día puntual
+     (recurring:false, date:'YYYY-MM-DD'), exactamente la misma forma que
+     ya usa un bloqueo manual de un solo día -- por eso no hace falta
+     tocar renderBlocks(), sbPintarSemana() ni disponibilidad.js (Cloud
+     Function), todos ya entienden recurring/date genéricamente.
+     Configurar L/X/V de una semana NUNCA repite la colación la semana
+     siguiente -- hay que volver a configurarla semana por semana, a
+     propósito.
+     El viejo control recurrente ("todos los lunes para siempre") que
+     vivía duplicado en "Horario por barbero" y en el editor de
+     Profesional fue RETIRADO de la interfaz -- ver el comentario arriba
+     de clcFormatoHora, justo antes de este bloque, y el historial de
+     cambios para el detalle completo.
+     Dentro del modal, un "grupo" ({dates:[...], start, end, reason}) es
+     puramente de UI -- junta varios días de la semana seleccionada con el
+     mismo horario para no repetir campos. Al guardar se aplana a un doc
+     por fecha vía clcGuardarSemana. ========================================================== */
+  const CLC_LETRA = ['L','M','X','J','V','S','D'];        // índice 0 = lunes de la semana seleccionada
+  const CLC_CORTO3 = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']; // mismo índice
+
+  let clcSemanaLunes = null;        // lunes ISO de la semana mostrada en la LISTA
+  let clcModalSemanaLunes = null;   // lunes ISO de la semana que se está editando en el MODAL (independiente)
+  let clcModalBarberoId = null;
+  let clcGruposPendientes = [];
+  let clcGrupoEditandoId = null;
+  let clcDiasSeleccionados = new Set();   // Set de fechas ISO (no de weekday) de la semana del modal
+
+  /** Las 7 fechas ISO de la semana que empieza en `lunes`, lunes a
+   *  domingo (índice 0 = lunes) -- aritmética de calendario pura, nunca
+   *  zona horaria local (TiempoSantiago, igual que el resto del panel). */
+  function clcFechasSemana(lunes){
+    const out = [];
+    for(let i=0;i<7;i++) out.push(TiempoSantiago.sumarDiasSantiago(lunes, i));
+    return out;
+  }
+
+  /** "5 – 11 octubre 2026" / "29 sep – 5 oct 2026" si cruza de mes. */
+  function clcFormatoRangoSemana(lunes){
+    const domingo = TiempoSantiago.sumarDiasSantiago(lunes, 6);
+    const d1 = new Date(lunes+'T12:00:00'), d2 = new Date(domingo+'T12:00:00');
+    const mes1 = d1.toLocaleDateString('es-CL',{month:'long'});
+    const mes2 = d2.toLocaleDateString('es-CL',{month:'long'});
+    if(d1.getMonth() === d2.getMonth()){
+      return `${d1.getDate()} – ${d2.getDate()} ${mes1} ${d1.getFullYear()}`;
+    }
+    return `${d1.getDate()} ${mes1} – ${d2.getDate()} ${mes2} ${d2.getFullYear()}`;
+  }
+
+  /** "Lun 5" -- etiqueta corta de una fecha puntual, para mensajes. */
+  function clcEtiquetaFecha(iso){
+    const wd = TiempoSantiago.diaSemanaNumero(iso);     // 0=domingo..6=sábado
+    const idx = (wd + 6) % 7;                            // reindexa a 0=lunes..6=domingo
+    return `${CLC_CORTO3[idx]} ${Number(iso.slice(8,10))}`;
+  }
+
+  /** "Lun 5" / "Mié 7 y Vie 9" / "Lun 5, Mié 7 y Vie 9" -- lista natural. */
+  function clcListaFechas(dates){
+    const nombres = dates.map(clcEtiquetaFecha);
+    if(nombres.length === 1) return nombres[0];
+    if(nombres.length === 2) return nombres.join(' y ');
+    return nombres.slice(0,-1).join(', ') + ' y ' + nombres[nombres.length-1];
+  }
+
+  /** Colación (date-based, no recurrente) de un profesional dentro de UNA
+   *  semana específica -- la fuente de verdad de la nueva sección. */
+  function clcBloquesDeSemana(calId, lunes){
+    const fechas = new Set(clcFechasSemana(lunes));
+    return demoBlocks.filter(b=> b.type === 'colacion' && b.calId === calId && !b.recurring && fechas.has(b.date));
+  }
+
+  /** Agrupa los docs sueltos (uno por fecha) en "grupos" visuales por
+   *  horario+motivo idénticos -- así 3 días con la misma hora se
+   *  muestran y editan como UNO solo. */
+  function clcAgruparBloques(bloques){
+    const grupos = [];
+    bloques.forEach(bl=>{
+      let g = grupos.find(x=> x.start===bl.start && x.end===bl.end && (x.reason||'Colación')===(bl.reason||'Colación'));
+      if(!g){ g = { tempId:'g'+Math.random().toString(36).slice(2), dates:[], start:bl.start, end:bl.end, reason:bl.reason||'Colación' }; grupos.push(g); }
+      g.dates.push(bl.date);
+    });
+    grupos.forEach(g=> g.dates.sort());
+    grupos.sort((a,b)=> (a.dates[0]||'').localeCompare(b.dates[0]||''));
+    return grupos;
+  }
+
+  /** Reservas que caen dentro del horario de colación que se intenta
+   *  guardar, por FECHA EXACTA -- ya no "cualquier lunes futuro": ahora
+   *  cada día de colación tiene su propia fecha real, así que el chequeo
+   *  es puntual. Nunca borra, mueve ni sobrescribe nada -- solo informa. */
+  async function clcConflictosEnFechas(barberId, dias){
+    if(!dias.length) return [];
+    // Sin barberId no hay forma de verificar -- FAIL-CLOSED: nunca se
+    // interpreta como "sin reservas", se bloquea el guardado (ver los
+    // llamadores, que ya abortan si esta función lanza una excepción).
+    if(!barberId) throw new Error('Falta el id del profesional para verificar reservas');
+    const toMin = (hhmm)=> Number(hhmm.slice(0,2))*60 + Number(hhmm.slice(3));
+    const ahoraMs = Date.now();
+    let snap;
+    try{
+      snap = await db.collection('bookings').where('barberId','==', barberId).get();
+    }catch(e){
+      // FAIL-CLOSED a propósito: antes esto devolvía [] (= "sin conflictos")
+      // ante cualquier error de la consulta (permiso denegado, red, índice
+      // faltante, etc.), dejando guardar la colación sin haber verificado
+      // de verdad. Ahora se relanza -- todos los llamadores (clcAgregarBtn,
+      // clcGuardarBtn, abrirEditorColacionRapido) ya abortan el guardado si
+      // esta función lanza, así que un fallo de verificación bloquea el
+      // guardado en vez de dejarlo pasar.
+      console.error('clcConflictosEnFechas:', e);
+      throw e;
+    }
+    const conflictos = [];
+    snap.docs.forEach(d=>{
+      const r = d.data();
+      if(r.decision === 'rechazada') return;
+      if(r.decision === 'pendiente_pago'){
+        const expiraMs = r.expiraEn?.toMillis ? r.expiraEn.toMillis() : (r.expiraEn ? new Date(r.expiraEn).getTime() : 0);
+        if(expiraMs && expiraMs < ahoraMs) return;
+      }
+      if(!r.fecha || typeof r.startMin !== 'number') return;
+      const dia = dias.find(x=> x.date === r.fecha);
+      if(!dia) return;
+      const s = r.startMin, e = r.startMin + (r.duracion || 45);
+      const ci = toMin(dia.start), cf = toMin(dia.end);
+      if(s < cf && e > ci){
+        conflictos.push({ fecha: r.fecha, client: r.client || 'Cliente', svc: r.svc || '', start: r.startMin });
+      }
+    });
+    conflictos.sort((a,b)=> a.fecha.localeCompare(b.fecha) || a.start-b.start);
+    return conflictos;
+  }
+
+  /** Días de colación que quedan fuera del horario laboral del
+   *  profesional ESE día de la semana (el horario laboral sigue siendo
+   *  recurrente/semanal -- solo la colación pasó a ser por fecha). */
+  function clcFueraDeHorarioLaboralFecha(schedules, dias){
+    const toMin = (hhmm)=> Number(hhmm.slice(0,2))*60 + Number(hhmm.slice(3));
+    const problemas = [];
+    dias.forEach(d=>{
+      const wd = TiempoSantiago.diaSemanaNumero(d.date);  // 0=domingo..6=sábado, igual que schedules[].weekday
+      const turno = (schedules||[]).find(s=> s.weekday === wd);
+      if(!turno){ problemas.push({ date: d.date, motivo:'no trabaja ese día' }); return; }
+      const ci = toMin(d.start), cf = toMin(d.end);
+      if(ci < turno.startMin || cf > turno.endMin){
+        problemas.push({ date: d.date, motivo:`turno ${clcFormatoHora(turno.startMin)}–${clcFormatoHora(turno.endMin)}` });
+      }
+    });
+    return problemas;
+  }
+
+  /** Reconcilia en Firestore los docs `blocks` tipo 'colacion' de un
+   *  profesional DENTRO DE UNA SEMANA contra el estado deseado (`dias`,
+   *  uno por fecha) -- crea/actualiza/borra solo lo que cambió DENTRO de
+   *  esa semana, nunca toca otras semanas ni bloqueos de otro tipo. */
+  async function clcGuardarSemana(calId, barberName, lunes, dias){
+    const existentes = clcBloquesDeSemana(calId, lunes);
+    const batch = db.batch();
+    let huboCambios = false;
+
+    existentes.forEach(bl=>{
+      const sigue = dias.find(d=> d.date === bl.date);
+      if(!sigue){
+        batch.delete(db.collection('blocks').doc(bl.id));
+        huboCambios = true;
+      } else {
+        const reason = sigue.reason || 'Colación';
+        if(sigue.start !== bl.start || sigue.end !== bl.end || reason !== (bl.reason || 'Colación')){
+          batch.set(db.collection('blocks').doc(bl.id), { ...bl, start: sigue.start, end: sigue.end, reason });
+          huboCambios = true;
+        }
+      }
+    });
+
+    dias.forEach(d=>{
+      const ya = existentes.find(bl=> bl.date === d.date);
+      if(ya) return;
+      const ref = db.collection('blocks').doc();
+      batch.set(ref, {
+        type: 'colacion', scope:'barber', calId, barberName,
+        recurring:false, days:null, allDay:false,
+        date: d.date, start: d.start, end: d.end, reason: d.reason || 'Colación',
+      });
+      huboCambios = true;
+    });
+
+    if(huboCambios) await batch.commit();
+    return huboCambios;
+  }
+
+  function clcPintarSemanaNav(){
+    document.getElementById('clcListaSemanaLabel').textContent = 'Semana ' + clcFormatoRangoSemana(clcSemanaLunes);
+  }
+
+  function renderColacionesLista(){
+    const cont = document.getElementById('hrColacionesLista');
+    if(!cont) return;
+    if(!clcSemanaLunes) clcSemanaLunes = lunesISO(currentDate);
+    clcPintarSemanaNav();
+    const activos = (cfgBarberos || []).filter(b=> b.active !== false);
+    if(!activos.length){
+      cont.innerHTML = '<div class="cx-empty">No hay profesionales activos.</div>';
+      return;
+    }
+    cont.innerHTML = activos.map(b=>{
+      const calId = b.calId != null ? b.calId : b.id;
+      const grupos = clcAgruparBloques(clcBloquesDeSemana(calId, clcSemanaLunes));
+      const todasLasFechas = [...new Set(grupos.flatMap(g=> g.dates))].sort();
+      const chips = todasLasFechas.map(f=> `<span class="clc-chip-mini on">${clcEtiquetaFecha(f).slice(0,3)}</span>`).join('');
+      const horaTxt = grupos.length === 1 ? `${grupos[0].start}–${grupos[0].end}`
+        : (grupos.length > 1 ? 'Varios horarios' : '');
+      return `<div class="cx-pro">
+        <div class="cx-av">${b.initials || (b.name||'').slice(0,2).toUpperCase()}</div>
+        <div class="cx-info">
+          <div class="cx-name">${escapeHTML(b.name)}</div>
+          ${grupos.length
+            ? `<div class="clc-fila-chips">${chips}</div><div class="clc-fila-hora">${horaTxt}</div>`
+            : `<div class="clc-fila-resumen vacio">Sin colación esta semana</div>`}
+        </div>
+        <div class="cx-btns">
+          <button class="cx-b edit" data-colacion-de="${b.id}">${grupos.length ? '✎ Editar' : '+ Configurar'}</button>
+        </div>
+      </div>`;
+    }).join('');
+    cont.querySelectorAll('[data-colacion-de]').forEach(btn=>
+      btn.addEventListener('click', ()=> abrirModalColacion(btn.dataset.colacionDe)));
+  }
+
+  document.getElementById('clcListaSemanaPrev').addEventListener('click', ()=>{
+    clcSemanaLunes = TiempoSantiago.sumarDiasSantiago(clcSemanaLunes || lunesISO(currentDate), -7);
+    renderColacionesLista();
+  });
+  document.getElementById('clcListaSemanaNext').addEventListener('click', ()=>{
+    clcSemanaLunes = TiempoSantiago.sumarDiasSantiago(clcSemanaLunes || lunesISO(currentDate), 7);
+    renderColacionesLista();
+  });
+
+  function clcPintarDiasSelector(){
+    const cont = document.getElementById('clcDiasSel');
+    const fechas = clcFechasSemana(clcModalSemanaLunes);
+    cont.innerHTML = fechas.map((iso,i)=>
+      `<button type="button" class="clc-chip-dia ${clcDiasSeleccionados.has(iso)?'on':''}" data-fecha="${iso}">
+        <span class="clc-chip-letra">${CLC_LETRA[i]}</span><span class="clc-chip-num">${Number(iso.slice(8,10))}</span>
+      </button>`
+    ).join('');
+    cont.querySelectorAll('[data-fecha]').forEach(btn=>
+      btn.addEventListener('click', ()=>{
+        const iso = btn.dataset.fecha;
+        if(clcDiasSeleccionados.has(iso)) clcDiasSeleccionados.delete(iso); else clcDiasSeleccionados.add(iso);
+        btn.classList.toggle('on');
+      }));
+  }
+
+  function clcMostrarError(html){
+    const el = document.getElementById('clcError');
+    el.innerHTML = html;
+    el.classList.add('show');
+  }
+  function clcOcultarError(){
+    document.getElementById('clcError').classList.remove('show');
+  }
+
+  function clcResetFormulario(){
+    clcGrupoEditandoId = null;
+    clcDiasSeleccionados = new Set();
+    document.getElementById('clcDesde').value = '14:00';
+    document.getElementById('clcHasta').value = '15:00';
+    document.getElementById('clcMotivo').value = '';
+    document.getElementById('clcAgregarBtn').textContent = 'Agregar este horario';
+    clcPintarDiasSelector();
+  }
+
+  function clcPintarGruposPendientes(){
+    const wrap = document.getElementById('clcGruposWrap');
+    const cont = document.getElementById('clcGruposLista');
+    if(!clcGruposPendientes.length){ wrap.style.display = 'none'; cont.innerHTML = ''; return; }
+    wrap.style.display = '';
+    cont.innerHTML = clcGruposPendientes.map(g=> `
+      <div class="clc-grupo-fila">
+        <div class="clc-grupo-dias">${g.dates.map(f=> `<span class="clc-chip-mini on">${clcEtiquetaFecha(f)}</span>`).join('')}</div>
+        <div class="clc-grupo-hora">${g.start}–${g.end}</div>
+        <div class="clc-grupo-motivo">${escapeHTML(g.reason || 'Colación')}</div>
+        <div class="clc-grupo-acciones">
+          <button type="button" class="clc-editar" data-editar-grupo="${g.tempId}">Editar</button>
+          <button type="button" class="clc-eliminar" data-eliminar-grupo="${g.tempId}">Eliminar</button>
+        </div>
+      </div>`).join('');
+    cont.querySelectorAll('[data-editar-grupo]').forEach(btn=>
+      btn.addEventListener('click', ()=> clcEditarGrupo(btn.dataset.editarGrupo)));
+    cont.querySelectorAll('[data-eliminar-grupo]').forEach(btn=>
+      btn.addEventListener('click', ()=> clcEliminarGrupo(btn.dataset.eliminarGrupo)));
+  }
+
+  function clcEditarGrupo(tempId){
+    const g = clcGruposPendientes.find(x=> x.tempId === tempId);
+    if(!g) return;
+    clcGrupoEditandoId = tempId;
+    clcDiasSeleccionados = new Set(g.dates);
+    document.getElementById('clcDesde').value = g.start;
+    document.getElementById('clcHasta').value = g.end;
+    document.getElementById('clcMotivo').value = (g.reason && g.reason !== 'Colación') ? g.reason : '';
+    document.getElementById('clcAgregarBtn').textContent = 'Guardar este horario';
+    clcPintarDiasSelector();
+    clcOcultarError();
+  }
+
+  async function clcEliminarGrupo(tempId){
+    if(!(await mgConfirm('¿Eliminar este horario de colación? (Recuerda presionar "Guardar cambios" para que se aplique.)'))) return;
+    clcGruposPendientes = clcGruposPendientes.filter(x=> x.tempId !== tempId);
+    if(clcGrupoEditandoId === tempId) clcResetFormulario();
+    clcPintarGruposPendientes();
+  }
+
+  /** Recarga el modal para la semana actual de clcModalSemanaLunes --
+   *  descarta cualquier grupo sin guardar de la semana anterior (misma
+   *  regla que cerrar y volver a abrir el modal). */
+  function clcCargarSemanaModal(){
+    const b = cfgBarberos.find(x=> x.id === clcModalBarberoId);
+    if(!b) return;
+    document.getElementById('clcModalSemanaLabel').textContent = 'Semana ' + clcFormatoRangoSemana(clcModalSemanaLunes);
+    clcGruposPendientes = clcAgruparBloques(clcBloquesDeSemana(b.calId != null ? b.calId : b.id, clcModalSemanaLunes));
+    clcResetFormulario();
+    clcOcultarError();
+    clcPintarGruposPendientes();
+  }
+
+  document.getElementById('clcModalSemanaPrev').addEventListener('click', ()=>{
+    clcModalSemanaLunes = TiempoSantiago.sumarDiasSantiago(clcModalSemanaLunes, -7);
+    clcCargarSemanaModal();
+  });
+  document.getElementById('clcModalSemanaNext').addEventListener('click', ()=>{
+    clcModalSemanaLunes = TiempoSantiago.sumarDiasSantiago(clcModalSemanaLunes, 7);
+    clcCargarSemanaModal();
+  });
+
+  function abrirModalColacion(barberId){
+    const b = cfgBarberos.find(x=> x.id === barberId);
+    if(!b) return;
+    clcModalBarberoId = barberId;
+    clcModalSemanaLunes = clcSemanaLunes || lunesISO(currentDate);
+    document.getElementById('clcModalTitulo').textContent = 'Colación de ' + b.name;
+    clcCargarSemanaModal();
+    abrirModal('modalColacion');
+  }
+
+  document.getElementById('clcNuevaBtn').addEventListener('click', ()=>{
+    const activos = (cfgBarberos || []).filter(b=> b.active !== false);
+    if(!activos.length) return showToast('No hay profesionales activos');
+    const semana = clcSemanaLunes || lunesISO(currentDate);
+    const sinColacion = activos.find(b=> !clcBloquesDeSemana(b.calId != null ? b.calId : b.id, semana).length);
+    abrirModalColacion((sinColacion || activos[0]).id);
+  });
+
+  document.getElementById('clcAgregarBtn').addEventListener('click', async ()=>{
+    clcOcultarError();
+    const fechas = Array.from(clcDiasSeleccionados).sort();
+    const desde = document.getElementById('clcDesde').value;
+    const hasta = document.getElementById('clcHasta').value;
+    const motivo = document.getElementById('clcMotivo').value.trim() || 'Colación';
+
+    if(!fechas.length) return showToast('Selecciona al menos un día');
+    if(!desde || !hasta || hasta <= desde) return showToast('La hora de término debe ser posterior a la de inicio');
+
+    // Un día no puede pertenecer a 2 grupos a la vez -- si ya está en otro
+    // grupo de la lista (no el que se está editando), se avisa y se pide
+    // resolverlo ahí primero, en vez de dejarlo en un estado ambiguo.
+    const otros = clcGruposPendientes.filter(g=> g.tempId !== clcGrupoEditandoId);
+    const chocaFechas = fechas.filter(f=> otros.some(g=> g.dates.includes(f)));
+    if(chocaFechas.length){
+      return clcMostrarError(`Ya tienes otro horario configurado para ${clcListaFechas(chocaFechas)}. Edita o elimina ese horario primero.`);
+    }
+
+    const b = cfgBarberos.find(x=> x.id === clcModalBarberoId);
+    if(!b) return;
+    const diasObj = fechas.map(f=> ({ date: f, start: desde, end: hasta }));
+
+    const fuera = clcFueraDeHorarioLaboralFecha(b.schedules, diasObj);
+    if(fuera.length){
+      return clcMostrarError(`Este horario queda fuera del horario laboral de ${escapeHTML(b.name)}: ` +
+        fuera.map(f=> `${clcEtiquetaFecha(f.date)} (${f.motivo})`).join(', ') + '.');
+    }
+
+    const btn = document.getElementById('clcAgregarBtn');
+    btn.disabled = true;
+    let conflictos;
+    try{
+      conflictos = await clcConflictosEnFechas(b.id, diasObj);
+    }catch(e){
+      // FAIL-CLOSED: si no se pudo verificar si hay reservas en conflicto
+      // (permiso, red, etc.), NUNCA se interpreta como "sin conflictos" --
+      // se bloquea el guardado y se avisa explícitamente.
+      btn.disabled = false;
+      return clcMostrarError('No fue posible verificar si existen reservas en conflicto (problema de conexión o permisos). Este horario no se guardó -- intenta de nuevo.');
+    }
+    btn.disabled = false;
+    if(conflictos.length){
+      return clcMostrarError(
+        `<b>No se puede guardar esta colación:</b> existe${conflictos.length>1?'n':''} ${conflictos.length} reserva(s) de cliente para este profesional:<br>` +
+        conflictos.slice(0,6).map(c=> `• ${clcEtiquetaFecha(c.fecha)}, ${clcFormatoHora(c.start)}${c.svc ? ' ('+escapeHTML(c.svc)+')' : ''}`).join('<br>') +
+        (conflictos.length>6 ? `<br>… y ${conflictos.length-6} más.` : '') +
+        '<br>Esta reserva no se modifica ni se elimina. Cambia el horario de la colación o reagenda la reserva manualmente.'
+      );
+    }
+
+    if(clcGrupoEditandoId){
+      const g = clcGruposPendientes.find(x=> x.tempId === clcGrupoEditandoId);
+      Object.assign(g, { dates: fechas, start: desde, end: hasta, reason: motivo });
+    } else {
+      clcGruposPendientes.push({ tempId:'g'+Math.random().toString(36).slice(2), dates: fechas, start: desde, end: hasta, reason: motivo });
+    }
+    clcResetFormulario();
+    clcPintarGruposPendientes();
+    showToast('Horario agregado -- recuerda presionar "Guardar cambios"');
+  });
+
+  document.getElementById('clcGuardarBtn').addEventListener('click', async ()=>{
+    const b = cfgBarberos.find(x=> x.id === clcModalBarberoId);
+    if(!b) return;
+    const dias = [];
+    clcGruposPendientes.forEach(g=> g.dates.forEach(f=> dias.push({ date: f, start: g.start, end: g.end, reason: g.reason })));
+
+    const btn = document.getElementById('clcGuardarBtn');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+
+    // Última verificación por seguridad: pudo pasar tiempo desde que se
+    // agregó cada horario individualmente y el horario laboral del
+    // profesional podría haber cambiado mientras tanto (otra pestaña/otro
+    // admin) -- antes esto solo se revalidaba al agregar cada horario
+    // (clcAgregarBtn), nunca acá, dejando una ventana real entre agregar un
+    // horario y presionar "Guardar cambios".
+    const fueraAlGuardar = clcFueraDeHorarioLaboralFecha(b.schedules, dias);
+    if(fueraAlGuardar.length){
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      return clcMostrarError(`<b>No se puede guardar:</b> algo cambió -- este horario queda fuera del horario laboral de ${escapeHTML(b.name)}: ` +
+        fueraAlGuardar.map(f=> `${clcEtiquetaFecha(f.date)} (${f.motivo})`).join(', ') + '. Revisa los horarios configurados.');
+    }
+
+    // Misma idea para reservas: pudo aparecer una reserva nueva mientras
+    // tanto -- nunca se guarda si choca con una reserva real. FAIL-CLOSED:
+    // si la verificación en sí falla (permiso, red, etc.), se bloquea el
+    // guardado -- nunca se interpreta como "sin conflictos".
+    let conflictos;
+    try{
+      conflictos = await clcConflictosEnFechas(b.id, dias);
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      return clcMostrarError('No fue posible verificar si existen reservas en conflicto (problema de conexión o permisos). No se guardó nada -- intenta de nuevo.');
+    }
+    if(conflictos.length){
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      return clcMostrarError('<b>No se puede guardar:</b> algo cambió -- ahora hay reservas que chocan con uno de estos horarios. Revisa los horarios configurados.');
+    }
+
+    try{
+      await clcGuardarSemana(b.calId != null ? b.calId : b.id, b.name, clcModalSemanaLunes, dias);
+      cerrarModales();
+      showToast('Colación guardada');
+    }catch(e){
+      showToast('No se pudo guardar: ' + e.message);
+    }
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+  });
+
+  /* ==========================================================
+     Edición/eliminación RÁPIDA de una colación puntual desde la Agenda
+     (diaria o semanal, ver abrirSlotPopoverColacion más abajo) -- atajo
+     para ADMIN/RECEPTION que opera directamente sobre UN SOLO doc `blocks`
+     por su id, nunca sobre el resto de colaciones del mismo profesional
+     aunque compartan horario (ahí no existe el concepto de "grupo" de
+     Horarios -> Colaciones: es edición de un doc individual). Reusa las
+     mismas validaciones (horario laboral + choque con reservas,
+     fail-closed) que el flujo principal. ========================================================== */
+
+  let clrBloqueoId = null;
+
+  /** Abre el editor rápido para UNA colación ya existente. Defensivo por
+   *  rol -- ver el mismo criterio en abrirSlotPopoverColacion(). */
+  function abrirEditorColacionRapido(bloqueoId){
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')) return;
+    const bl = demoBlocks.find(b=> b.id === bloqueoId);
+    if(!bl || bl.type !== 'colacion') return;
+    clrBloqueoId = bloqueoId;
+    document.getElementById('clrSub').textContent = `${bl.barberName || ''} · ${clcEtiquetaFecha(bl.date)}`;
+    document.getElementById('clrDesde').value = bl.start;
+    document.getElementById('clrHasta').value = bl.end;
+    document.getElementById('clrMotivo').value = (bl.reason && bl.reason !== 'Colación') ? bl.reason : '';
+    document.getElementById('clrError').classList.remove('show');
+    abrirModal('modalColacionRapida');
+  }
+
+  document.getElementById('clrGuardar').addEventListener('click', async ()=>{
+    const bl = demoBlocks.find(b=> b.id === clrBloqueoId);
+    if(!bl) return;
+    const errorEl = document.getElementById('clrError');
+    errorEl.classList.remove('show');
+
+    const desde = document.getElementById('clrDesde').value;
+    const hasta = document.getElementById('clrHasta').value;
+    const motivo = document.getElementById('clrMotivo').value.trim() || 'Colación';
+    if(!desde || !hasta || hasta <= desde) return showToast('La hora de término debe ser posterior a la de inicio');
+
+    const b = cfgBarberos.find(x=> (x.calId != null ? x.calId : x.id) === bl.calId);
+    const diaObj = [{ date: bl.date, start: desde, end: hasta }];
+
+    const fuera = clcFueraDeHorarioLaboralFecha(b?.schedules, diaObj);
+    if(fuera.length){
+      errorEl.innerHTML = `Este horario queda fuera del horario laboral de ${escapeHTML(bl.barberName || '')}: ${fuera.map(f=> f.motivo).join(', ')}.`;
+      errorEl.classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('clrGuardar');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+
+    // FAIL-CLOSED: si no se pudo verificar reservas en conflicto, se
+    // bloquea el guardado -- nunca se interpreta como "sin conflictos"
+    // (mismo criterio que clcAgregarBtn/clcGuardarBtn, ver clcConflictosEnFechas).
+    let conflictos;
+    try{
+      conflictos = await clcConflictosEnFechas(b?.id, diaObj);
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      errorEl.innerHTML = 'No fue posible verificar si existen reservas en conflicto (problema de conexión o permisos). No se guardó nada -- intenta de nuevo.';
+      errorEl.classList.add('show');
+      return;
+    }
+    if(conflictos.length){
+      btn.disabled = false; btn.textContent = 'Guardar cambios';
+      errorEl.innerHTML =
+        `<b>No se puede guardar:</b> existe${conflictos.length>1?'n':''} ${conflictos.length} reserva(s) de cliente en ese horario:<br>` +
+        conflictos.slice(0,6).map(c=> `• ${clcFormatoHora(c.start)}${c.svc ? ' ('+escapeHTML(c.svc)+')' : ''}`).join('<br>') +
+        (conflictos.length>6 ? `<br>… y ${conflictos.length-6} más.` : '') +
+        '<br>Esta reserva no se modifica ni se elimina. Cambia el horario o reagenda la reserva manualmente.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    // Escribe SOLO este documento -- nunca toca otros días de colación del
+    // mismo profesional, aunque compartan horario y se muestren agrupados
+    // en Horarios -> Colaciones.
+    try{
+      await db.collection('blocks').doc(clrBloqueoId).set({ ...bl, start: desde, end: hasta, reason: motivo });
+      cerrarModales();
+      showToast('Colación actualizada');
+    }catch(e){
+      showToast('No se pudo guardar: ' + e.message);
+    }
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+  });
+
+  /** Elimina UNA colación puntual desde la Agenda -- borra únicamente ese
+   *  documento por id, nunca el resto de colaciones del profesional.
+   *  Defensivo por rol -- ver el mismo criterio en abrirSlotPopoverColacion(). */
+  async function eliminarColacionRapida(bloqueoId){
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')) return;
+    const bl = demoBlocks.find(b=> b.id === bloqueoId);
+    if(!bl || bl.type !== 'colacion') return;
+    const ok = await mgConfirm(
+      `¿Eliminar la colación de ${bl.barberName || 'este profesional'} del ${clcEtiquetaFecha(bl.date)}? Esto no afecta otras colaciones ni reservas.`,
+      { titulo:'Eliminar colación', textoConfirmar:'Eliminar' }
+    );
+    if(!ok) return;
+    try{
+      await db.collection('blocks').doc(bloqueoId).delete();
+      showToast('Colación eliminada');
+    }catch(e){ showToast('No se pudo eliminar: ' + e.message); }
+  }
+
   /** Misma lógica de pintarHorarioSemanal()/cfgGuardarHorario (página
    *  Horarios), en una copia propia con ids del editor -- esa página no se
    *  toca, sigue funcionando exactamente igual. */
@@ -12810,6 +13640,7 @@
 
     const b = cfgBarberos.find(x=> x.id === barberoId);
     if(!b) return;
+
     b.schedules = blocks;
     try{
       await db.collection('barbers').doc(barberoId).set(b);
@@ -20474,10 +21305,10 @@
   }
 
   /** Clic sobre un bloqueo manual ya existente -- nunca se llama para
-   *  colación (ver renderBlocks). Un bloqueo recurrente o de día completo
-   *  (de antes de este modal simplificado -- ya existen en producción)
-   *  tampoco ofrece "Editar" acá, solo "Quitar": ver el mismo criterio en
-   *  editarBloqueo(). */
+   *  colación (ver abrirSlotPopoverColacion, abajo, que tiene sus propias
+   *  opciones). Un bloqueo recurrente o de día completo (de antes de este
+   *  modal simplificado -- puede ya existir en producción) tampoco ofrece
+   *  "Editar" acá, solo "Quitar": ver el mismo criterio en editarBloqueo(). */
   function abrirSlotPopoverBloqueo(x, y, bloqueoId){
     slotPendiente = null;
     bloqueoPendiente = bloqueoId;
@@ -20486,6 +21317,22 @@
     slotPopover.innerHTML =
       (editable ? `<div class="payment-menu-item" data-accion="editar-bloqueo">${ICONO_EDITAR}Editar bloqueo</div>` : '') +
       `<div class="payment-menu-item" data-accion="quitar-bloqueo">${ICONO_QUITAR}Quitar bloqueo</div>`;
+    abrirSlotPopoverEn(x, y);
+  }
+
+  /** Clic sobre una colación puntual ya existente (vista diaria o semanal)
+   *  -- menú corto para editar/eliminar SOLO esa fecha, sin pasar por
+   *  Horarios -> Colaciones. Defensivo por rol (ADMIN/RECEPTION): BARBER
+   *  nunca llega acá porque toda la Agenda ya está oculta para ese rol,
+   *  pero el chequeo se deja explícito de todas formas (mismo criterio que
+   *  el resto del archivo: "ocultar no es la única protección"). */
+  function abrirSlotPopoverColacion(x, y, bloqueoId){
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')) return;
+    slotPendiente = null;
+    bloqueoPendiente = bloqueoId;
+    slotPopover.innerHTML =
+      `<div class="payment-menu-item" data-accion="editar-colacion">${ICONO_EDITAR}Editar colación</div>` +
+      `<div class="payment-menu-item" data-accion="eliminar-colacion">${ICONO_QUITAR}Eliminar colación</div>`;
     abrirSlotPopoverEn(x, y);
   }
 
@@ -20513,6 +21360,14 @@
       const id = bloqueoPendiente;
       cerrarSlotPopover();
       if(accion === 'editar-bloqueo') editarBloqueo(id); else quitarBloqueo(id);
+      return;
+    }
+
+    if(accion === 'editar-colacion' || accion === 'eliminar-colacion'){
+      if(!bloqueoPendiente) return;
+      const id = bloqueoPendiente;
+      cerrarSlotPopover();
+      if(accion === 'editar-colacion') abrirEditorColacionRapido(id); else eliminarColacionRapida(id);
     }
   });
 
