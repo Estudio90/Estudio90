@@ -2632,16 +2632,19 @@
       <div class="rv-bottom-card rv-fade-in" id="rvResumenInferior" style="animation-delay:260ms;"></div>
     </div>
 
-    <!-- ===== VISTA: ABONOS -- SOLO anticipos de reserva ya APROBADOS por
-         Webpay (dinero efectivamente recibido). Nunca rechazados,
-         abandonados, vencidos ni iniciados -- esos quedan solo en el
-         historial de actividad de cada cliente, nunca acá. Proyección de
-         solo lectura de `reservationDeposits` -- solo ADMIN. ===== -->
+    <!-- ===== VISTA: ABONOS -- todos los abonos de servicio REALES y ya
+         aprobados (dinero efectivamente recibido), sin importar si llegaron
+         por Webpay o se registraron presencial desde el panel. Nunca
+         rechazados, abandonados, vencidos ni iniciados -- esos quedan solo
+         en el historial de actividad de cada cliente, nunca acá. Lee
+         `paymentMovements` vía la Cloud Function obtenerAbonosReales
+         (única fuente de verdad, nunca `reservationDeposits` directo) --
+         solo ADMIN (mismo criterio que Resumen de Ventas). ===== -->
     <div id="vistaAbonos" style="display:none;">
       <div class="cx-head">
         <div>
           <h2 class="cx-title">Abonos</h2>
-          <p class="cx-sub">Anticipos de reserva recibidos por la página vía Webpay.</p>
+          <p class="cx-sub">Todos los abonos reales de reserva -- recibidos por Webpay o registrados presencial.</p>
         </div>
         <button class="ctrl-btn" id="abVolver">← Volver a la agenda</button>
       </div>
@@ -2692,8 +2695,8 @@
         <table class="cx-table">
           <thead>
             <tr>
-              <th>ID</th><th>Fecha de abono</th><th>Local</th><th>Nº de abono</th>
-              <th>Cliente</th><th>Detalle</th><th class="r">Monto total</th><th class="r">Monto abonado</th>
+              <th>ID</th><th>Fecha de abono</th><th>Origen</th>
+              <th>Cliente</th><th>Servicio</th><th>Profesional</th><th class="r">Monto total</th><th class="r">Monto abonado</th>
               <th class="r">% abonado</th><th>Opciones</th>
             </tr>
           </thead>
@@ -5197,6 +5200,7 @@
 
   <label class="mg-label">Método de pago</label>
   <select id="vpMetodoPago" class="mg-input">
+    <option value="" selected>Elige un método…</option>
     <option value="cash">Efectivo</option>
     <option value="debit">Tarjeta de débito</option>
     <option value="credit">Tarjeta de crédito</option>
@@ -6542,12 +6546,15 @@
   document.getElementById('btnComAbonos').addEventListener('click', mostrarAbonos);
 
   /**
-   * Módulo Abonos -- SOLO anticipos de reserva ya APROBADOS por Webpay
-   * (dinero efectivamente recibido). Nunca rechazados/abandonados/
-   * vencidos/iniciados -- esos quedan solo en el historial de actividad
-   * de cada cliente (clientes/{id}/actividad), nunca acá. Proyección de
-   * solo lectura de `reservationDeposits` (ver database/functions/abonos.js);
-   * este archivo nunca escribe en esa colección, solo la consulta.
+   * Módulo Abonos -- TODOS los abonos reales de reserva, sin importar si
+   * llegaron por Webpay o se registraron presencial desde el panel (antes
+   * esta pantalla solo mostraba los de Webpay, vía `reservationDeposits`
+   * -- un abono tomado en el mostrador nunca aparecía acá, aunque sí
+   * estuviera bien contado en Resumen de Ventas, lo que se sentía como que
+   * "no se reflejaba"). Ahora consulta `obtenerAbonosReales` (Cloud
+   * Function, única fuente: paymentMovements, concepto:'servicio',
+   * tipo:'anticipo') -- sin leer `reservationDeposits` directo y sin
+   * crear ninguna fuente de verdad nueva.
    */
   function mostrarAbonos(){
     if(barberoBloqueado()) return;
@@ -6573,64 +6580,61 @@
 
     const desde = document.getElementById('abDesde').value;
     const hasta = document.getElementById('abHasta').value;
-    const busqueda = (document.getElementById('abBuscarCliente').value || '').trim().toLowerCase();
+    const busqueda = (document.getElementById('abBuscarCliente').value || '').trim();
 
     try{
-      let q = db.collection('reservationDeposits').orderBy('fecha','desc').limit(200);
-      if(desde) q = q.where('fecha','>=', desde);
-      if(hasta) q = q.where('fecha','<=', hasta + 'T23:59:59.999Z');
-      const snap = await q.get();
-      let filas = snap.docs.map(d=> d.data());
-      if(busqueda) filas = filas.filter(r=> (r.clienteNombre||'').toLowerCase().includes(busqueda));
+      const r = await functions.httpsCallable('obtenerAbonosReales')({ desde, hasta, busqueda });
+      const filas = r.data.abonos || [];
       abFilasActuales = filas;
 
       if(!filas.length){
         tbody.innerHTML = '<tr><td colspan="10">No hay abonos en el rango seleccionado.</td></tr>';
         return;
       }
-      tbody.innerHTML = filas.map(r=>{
-        const detalle = (r.citas||[]).map(c=> `${c.servicio} — ${c.profesional}`).join(', ') || '—';
-        return `
+      tbody.innerHTML = filas.map(r=> `
         <tr>
-          <td class="mono">${r.idCorto||''}</td>
+          <td class="mono">${escapeHTML(abIdCorto(r.id))}</td>
           <td>${abFmtFecha(r.fecha)}</td>
-          <td>MASTERLOOK</td>
-          <td class="mono">${r.numeroAbono||''}</td>
-          <td>${r.clienteNombre||'—'}</td>
-          <td>${detalle}</td>
-          <td class="r">${money(r.montoServicioTotal||0)}</td>
-          <td class="r">${money(r.montoAbonadoTotal||0)}</td>
-          <td class="r">${r.porcentajeAbonado||0}%</td>
-          <td><button class="ctrl-btn ab-ver" data-buyorder="${r.buyOrder}">Ver</button></td>
-        </tr>`;
-      }).join('');
+          <td>${r.origen === 'webpay' ? 'Webpay' : 'Presencial'}</td>
+          <td>${escapeHTML(r.cliente||'—')}</td>
+          <td>${escapeHTML(r.servicio||'—')}</td>
+          <td>${escapeHTML(r.profesional||'—')}</td>
+          <td class="r">${r.montoServicio==null ? '—' : money(r.montoServicio)}</td>
+          <td class="r">${money(r.montoAbonado||0)}</td>
+          <td class="r">${r.porcentajeAbonado==null ? '—' : escapeHTML(String(r.porcentajeAbonado))+'%'}</td>
+          <td><button class="ctrl-btn ab-ver" data-id="${escapeHTML(r.id)}">Ver</button></td>
+        </tr>`).join('');
 
       tbody.querySelectorAll('.ab-ver').forEach(btn=>
-        btn.addEventListener('click', ()=> abVerDetalle(btn.dataset.buyorder)));
+        btn.addEventListener('click', ()=> abVerDetalle(btn.dataset.id)));
     }catch(e){
       console.error('abCargar', e);
-      tbody.innerHTML = '<tr><td colspan="10">No se pudo cargar. ' + (e.message||'') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10">No se pudo cargar. ' + escapeHTML(e.message||'') + '</td></tr>';
     }
   }
 
-  function abFmtFecha(iso){
-    if(!iso) return '—';
-    try{ return new Date(iso).toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'}); }
-    catch(e){ return iso; }
+  function abFmtFecha(ms){
+    if(!ms) return '—';
+    try{ return new Date(ms).toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+    catch(e){ return '—'; }
   }
 
-  function abVerDetalle(buyOrder){
-    const r = abFilasActuales.find(x=> x.buyOrder === buyOrder);
+  // Identificador corto de display -- deriva del id real del movimiento
+  // (operationId+índice), nunca un contador propio: mismo movimiento
+  // siempre da el mismo id corto, sin escritura ni estado extra.
+  function abIdCorto(id){
+    return (id||'').slice(-8).toUpperCase();
+  }
+
+  function abVerDetalle(id){
+    const r = abFilasActuales.find(x=> x.id === id);
     if(!r) return;
-    const detalle = (r.citas||[]).map(c=>
-      `• ${c.servicio} con ${c.profesional} — total ${money(c.montoServicio)}, abonado ${money(c.montoAbonado)}`
-    ).join('\n');
-    // Detalle administrativo -- el buyOrder completo (identificador
-    // técnico real) solo se ve acá, nunca en la tabla principal.
     document.getElementById('abDetalleBody').textContent =
-      `Nº de abono: ${r.numeroAbono}\nCliente: ${r.clienteNombre}\nFecha: ${abFmtFecha(r.fecha)}\n` +
-      `Grupo de reserva: ${r.grupo}\nOrden Webpay (buyOrder): ${r.buyOrder}\n\n${detalle}\n\n` +
-      `Monto total: ${money(r.montoServicioTotal||0)}\nMonto abonado: ${money(r.montoAbonadoTotal||0)}\n% abonado: ${r.porcentajeAbonado||0}%`;
+      `ID: ${abIdCorto(r.id)}\nOrigen: ${r.origen === 'webpay' ? 'Webpay' : 'Presencial'}\n` +
+      `Cliente: ${r.cliente}\nFecha: ${abFmtFecha(r.fecha)}\n` +
+      `Servicio: ${r.servicio} con ${r.profesional}\nMétodo de pago: ${r.metodo}\n\n` +
+      `Monto total del servicio: ${r.montoServicio==null ? 'Reserva ya no existe' : money(r.montoServicio)}\nMonto abonado: ${money(r.montoAbonado||0)}\n% abonado: ${r.porcentajeAbonado==null ? '—' : r.porcentajeAbonado+'%'}` +
+      (r.bookingId ? `\n\nReserva: ${r.bookingId}` : '');
     abrirModal('modalAbonoDetalle');
   }
 
@@ -6639,16 +6643,24 @@
 
   function abDescargar(){
     const filas = [
-      ['ID','Fecha de abono','Local','Nº de abono','Cliente','Detalle','Monto total','Monto abonado','% abonado'],
+      ['ID','Fecha de abono','Origen','Cliente','Servicio','Profesional','Monto total','Monto abonado','% abonado','Método de pago'],
     ];
     abFilasActuales.forEach(r=>{
-      const detalle = (r.citas||[]).map(c=> `${c.servicio} — ${c.profesional}`).join(' | ');
       filas.push([
-        r.idCorto||'', abFmtFecha(r.fecha), 'MASTERLOOK', r.numeroAbono||'', r.clienteNombre||'',
-        detalle, r.montoServicioTotal||0, r.montoAbonadoTotal||0, (r.porcentajeAbonado||0)+'%',
+        abIdCorto(r.id), abFmtFecha(r.fecha), r.origen === 'webpay' ? 'Webpay' : 'Presencial',
+        r.cliente||'', r.servicio||'', r.profesional||'',
+        r.montoServicio==null ? '' : r.montoServicio, r.montoAbonado||0, r.porcentajeAbonado==null ? '' : r.porcentajeAbonado+'%', r.metodo||'',
       ]);
     });
-    const csv = '﻿' + filas.map(f=> f.map(cell=> `"${String(cell ?? '')}"`).join(';')).join('\n');
+    // Celdas con texto de la reserva (cliente/servicio/profesional) vienen de un
+    // formulario público: se duplican las comillas y se neutraliza el prefijo de
+    // fórmula (=, +, -, @) para que Excel nunca lo ejecute.
+    const celdaCsv = cell=>{
+      let t = String(cell ?? '').replace(/"/g, '""');
+      if(/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+      return `"${t}"`;
+    };
+    const csv = '﻿' + filas.map(f=> f.map(celdaCsv).join(';')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
     const a = document.createElement('a');
     const desde = document.getElementById('abDesde').value;
@@ -8353,7 +8365,6 @@
       barber: barberName,
       phone: r.phone || '',
       email: r.email || '',
-      notes: 'Reserva online' + (r.pay ? ' · Pago: ' + r.pay : ''),
       fromWeb: true,
       abono: r.abono ? '$' + Number(r.abono).toLocaleString('es-CL') : undefined,
       abonoMetodo: r.abonoMetodo, abonoFecha: r.abonoFecha,
@@ -10291,6 +10302,10 @@
     selBarbero.innerHTML = '<option value="">Sin asignar</option>' +
       cfgBarberos.filter(b=> b.active !== false).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
     document.getElementById('vpCantidad').value = 1;
+    // Nunca un método preseleccionado (antes quedaba "Efectivo", el primero
+    // de la lista) -- la venta no se puede confirmar hasta elegir uno a
+    // propósito (ver vpPintarCarrito).
+    document.getElementById('vpMetodoPago').value = '';
     vpPintarCarrito();
     abrirModal('modalVentaProducto');
   });
@@ -10315,8 +10330,9 @@
     cont.querySelectorAll('[data-quitar]').forEach(btn=>
       btn.addEventListener('click', ()=>{ delete vpCarrito[btn.dataset.quitar]; vpPintarCarrito(); }));
     document.getElementById('vpTotal').textContent = '$' + total.toLocaleString('es-CL');
-    document.getElementById('vpConfirmar').disabled = !ids.length;
+    document.getElementById('vpConfirmar').disabled = !ids.length || !document.getElementById('vpMetodoPago').value;
   }
+  document.getElementById('vpMetodoPago').addEventListener('change', vpPintarCarrito);
 
   document.getElementById('vpAgregar').addEventListener('click', ()=>{
     const id = document.getElementById('vpProducto').value;
@@ -10337,6 +10353,7 @@
       return s + (p ? Number(p.price||0) * it.qty : 0);
     }, 0);
     const metodo = document.getElementById('vpMetodoPago').value;
+    if(!metodo) return showToast('Elige un método de pago');
     const barberId = document.getElementById('vpBarbero').value || null;
     const operationId = 'venta-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
 
@@ -19836,6 +19853,72 @@
   const paymentBtn = document.getElementById('paymentBtn');
   let currentAppt = null;
 
+  /** Línea de estado de pago de la ficha de la reserva (dNotes) -- nunca un
+   *  texto fijo de creación (el viejo `r.pay`/"Efectivo en local" quedaba
+   *  congelado para siempre, sin importar cómo se cobrara después). `pagado`/
+   *  `depositoPagado` ya vienen en la propia reserva (sincrónico); el/los
+   *  método(s) real(es) viven solo en paymentMovements, así que se cargan
+   *  aparte y la línea se actualiza sola cuando llegan. */
+  function pintarEstadoPagoDrawer(a){
+    const el = document.getElementById('dNotes');
+    if(!a.pagado && !a.depositoPagado){
+      el.textContent = 'Sin pagos registrados';
+      return;
+    }
+    // Mismo guard que usa el resto del archivo antes de llamar al backend de
+    // pagos (cargarHistorialPagos, goToPayView, etc.) -- hoy toda cita real
+    // siempre trae fromWeb+webId (ver appointmentDesdeBooking), pero esto
+    // evita llamar la Cloud Function con bookingId:undefined si algún día
+    // aparece un tipo de tarjeta que no pase por ahí.
+    if(!a.fromWeb || !a.webId){
+      el.textContent = 'Pago registrado';
+      return;
+    }
+    if(!(userRole === 'ADMIN' || userRole === 'RECEPTION')){
+      // BARBER no tiene permiso para consultar el ledger (verificarRolFinanciero) --
+      // ni se intenta, para no spamear un toast de error en cada clic.
+      el.textContent = 'Pago registrado';
+      return;
+    }
+    el.textContent = 'Cargando método de pago…';
+    // Token de petición -- si la MISMA reserva se reabre (doble clic en la
+    // misma tarjeta) antes de que esta llamada responda, `currentAppt === a`
+    // sigue siendo cierto (mismo objeto), así que comparar solo `currentAppt`
+    // no alcanza para descartar una respuesta vieja pisando una más nueva.
+    const miPeticion = (a._pagoReqId = (a._pagoReqId || 0) + 1);
+    functions.httpsCallable('obtenerHistorialPagosReserva')({ bookingId: a.webId })
+      .then(r=>{
+        if(currentAppt !== a || a._pagoReqId !== miPeticion) return; // reserva cambiada, o esta misma reabierta de nuevo mientras cargaba
+        a._saldoServicio = r.data.saldoPendiente;
+        a._historialPagos = r.data.movimientos || [];
+        const resumen = resumenMetodoPago(a._historialPagos, r.data.anticipoWebpayEnVerificacionMonto);
+        // Reserva marcada como pagada pero SIN ningún movimiento en el ledger
+        // (pagos anteriores al ledger): nunca "Sin pagos registrados" -- el
+        // botón dice "$ Pagado" -- ni se inventa un método.
+        el.textContent = (resumen === 'Sin pagos registrados' && a.pagado) ? 'Pago registrado (sin detalle en el ledger)' : resumen;
+      })
+      .catch(()=>{
+        if(currentAppt !== a || a._pagoReqId !== miPeticion) return;
+        el.textContent = 'Pago registrado'; // fallback silencioso -- esto no lo disparó un clic de la admin
+      });
+  }
+
+  /** Arma "Pago: X ($monto)" por cada método distinto realmente usado --
+   *  nunca inventa un único método si hubo varios (p.ej. un abono en POS
+   *  seguido de un cobro final en Efectivo). */
+  function resumenMetodoPago(movimientos, anticipoEnVerificacion){
+    const servicio = (movimientos||[]).filter(m=> m.concepto === 'servicio');
+    const porMetodo = {};
+    servicio.forEach(m=> { porMetodo[m.metodo] = (porMetodo[m.metodo]||0) + Number(m.monto||0); });
+    const partes = Object.entries(porMetodo).map(([metodo,monto])=> `${metodo} (${formatCLP(monto)})`);
+    // Anticipo Webpay ya cobrado por Transbank pero cuyo movimiento todavía no
+    // aterriza en el ledger (segundos, o minutos si Fase 1 reintenta): se
+    // muestra igual como un pago más -- el saldo ya lo descuenta.
+    if(Number(anticipoEnVerificacion) > 0) partes.push(`Webpay (${formatCLP(Number(anticipoEnVerificacion))}, en verificación)`);
+    if(!partes.length) return 'Sin pagos registrados';
+    return 'Pago: ' + partes.join(' + ');
+  }
+
   async function openDrawer(a){
     currentAppt = a;
     document.getElementById('dClient').textContent = a.client;
@@ -19863,7 +19946,7 @@
     const faltaCargar = a.fromWeb && !a.contactoCargado;
     document.getElementById('dPhone').textContent = !verContacto ? 'No visible para tu cuenta' : (faltaCargar ? 'Cargando...' : (a.phone || '—'));
     document.getElementById('dEmail').textContent = !verContacto ? 'No visible para tu cuenta' : (faltaCargar ? 'Cargando...' : (a.email || '—'));
-    document.getElementById('dNotes').textContent = a.notes || 'Sin información';
+    pintarEstadoPagoDrawer(a);
 
     // Nota del cliente (comentarioCliente) -- solo lectura, visible para
     // ADMIN/RECEPTION (mismo gate que el resto del contacto); nunca para
@@ -19922,6 +20005,13 @@
 
     paymentMenu.classList.remove('open');
     payView.classList.remove('open');
+    // El drawer es un único DOM reusado entre reservas: un abono a medio
+    // llenar (método + monto) de la reserva anterior nunca debe quedar
+    // abierto ni aplicarse a esta -- abonoGuardar usa currentAppt.
+    abonoView.classList.remove('open');
+    document.getElementById('abonoMetodo').value = '';
+    document.getElementById('abonoMonto').value = '';
+    actualizarAbonoGuardarDisabled();
     detailView.classList.add('open');
 
     overlay.classList.add('open');
@@ -20979,13 +21069,35 @@
     abonoView.classList.remove('open');
     payView.classList.add('open');
     document.getElementById('paySeccionProductos').style.display = userRole === 'BARBER' ? 'none' : '';
-    document.getElementById('payContinue').disabled = true;
+
+    // Reinicio completo de la selección de método -- el drawer de pago es
+    // un único DOM reusado para cada reserva que se abre; sin esto, el
+    // método elegido para el cliente anterior quedaba marcado (visual y en
+    // la variable) al abrir el cobro del siguiente cliente.
+    metodoPagoSeleccionado = null;
+    document.querySelectorAll('.pay-method').forEach(x=> x.classList.remove('selected'));
+    multiPagoActivo = false;
+    document.getElementById('multiPagoPanel').style.display = 'none';
+    document.getElementById('multiPagoChevron').textContent = '›';
+    document.getElementById('payMethods').style.opacity = '';
+    document.getElementById('payMethods').style.pointerEvents = '';
+
+    const btn = document.getElementById('payContinue');
+    btn.dataset.cargando = '1';
+    actualizarPayContinueDisabled();
     updateTotals();
     await cargarHistorialPagos();
-    document.getElementById('payContinue').disabled = false;
+    btn.dataset.cargando = '0';
+    actualizarPayContinueDisabled();
     updateTotals();
   }
   document.getElementById('menuComplete').addEventListener('click', goToPayView);
+
+  function actualizarAbonoGuardarDisabled(){
+    const btn = document.getElementById('abonoGuardar');
+    if(btn.dataset.cargando === '1'){ btn.disabled = true; return; }
+    btn.disabled = !document.getElementById('abonoMetodo').value;
+  }
 
   function pintarAbonoView(){
     const est = document.getElementById('abonoEstado');
@@ -20993,9 +21105,11 @@
     est.textContent = hist.length
       ? hist.map(m=> `${formatCLP(m.monto)} · ${m.metodo} (${m.tipo})`).join(' — ') + ` · Saldo: ${formatCLP(currentAppt._saldoServicio ?? 0)}`
       : 'Sin pagos registrados';
-    llenarSelect(document.getElementById('abonoMetodo'),
-      Object.entries(METODOS_PAGO).map(([id,name])=> ({id,name})), 'id', m=> m.name);
+    // Nunca un método preseleccionado -- antes quedaba en "POS" (el primer
+    // valor de METODOS_PAGO) sin que nadie lo hubiera elegido a propósito.
+    llenarSelectMetodoPago(document.getElementById('abonoMetodo'), 'Elige un método…');
     document.getElementById('abonoMonto').value = '';
+    actualizarAbonoGuardarDisabled();
   }
 
   async function abrirAbonoView(){
@@ -21003,14 +21117,16 @@
     detailView.classList.remove('open');
     payView.classList.remove('open');
     abonoView.classList.add('open');
-    document.getElementById('abonoGuardar').disabled = true;
+    const btn = document.getElementById('abonoGuardar');
+    btn.dataset.cargando = '1';
     pintarAbonoView();
     await cargarHistorialPagos();
-    document.getElementById('abonoGuardar').disabled = false;
+    btn.dataset.cargando = '0';
     pintarAbonoView();
   }
   document.getElementById('menuAbono').addEventListener('click', abrirAbonoView);
   document.getElementById('rowAbono').addEventListener('click', abrirAbonoView);
+  document.getElementById('abonoMetodo').addEventListener('change', actualizarAbonoGuardarDisabled);
 
   document.getElementById('abonoBack').addEventListener('click', ()=>{
     abonoView.classList.remove('open');
@@ -21039,13 +21155,19 @@
         legs: [{ metodo: metodoLabel, monto }],
       });
       a._saldoServicio = r.data.saldoPendienteServicio;
+      a.depositoPagado = true; // mismo flag que ya escribe registrarCobroReserva en la reserva
       showToast(`Abono registrado · ${formatCLP(monto)}`);
       await cargarHistorialPagos();
       pintarAbonoView();
+      if(currentAppt === a) pintarEstadoPagoDrawer(a);
     }catch(e){
       showToast('No se pudo guardar: ' + (e.message || e));
     }finally{
-      btn.disabled = false;
+      // Nunca `btn.disabled = false` a secas -- en el camino de éxito,
+      // pintarAbonoView() ya reseteó abonoMetodo a vacío (nuevo abono
+      // empieza sin método elegido), así que el botón debe quedar
+      // deshabilitado otra vez hasta la próxima elección explícita.
+      actualizarAbonoGuardarDisabled();
     }
   });
 
@@ -21071,14 +21193,48 @@
     pos:'POS', online:'Online', transfer:'Transferencia',
     gift:'Giftcard', debit:'Tarjeta de débito', credit:'Tarjeta de crédito', cash:'Efectivo'
   };
-  let metodoPagoSeleccionado = 'cash';
+  // Nunca un método preseleccionado por defecto -- la admin/recepción debe
+  // elegirlo a propósito antes de poder aprobar el pago (ver
+  // actualizarPayContinueDisabled). Antes quedaba en 'cash' sin que ningún
+  // botón se viera marcado, así que un clic apurado en "Continuar" cobraba
+  // en Efectivo sin que nadie lo hubiera elegido de verdad.
+  let metodoPagoSeleccionado = null;
   document.querySelectorAll('.pay-method').forEach(m=>{
     m.addEventListener('click', ()=>{
       document.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('selected'));
       m.classList.add('selected');
       metodoPagoSeleccionado = m.dataset.m;
+      actualizarPayContinueDisabled();
     });
   });
+
+  /** Agrega una opción en blanco al inicio -- a diferencia de llenarSelect()
+   *  (usado en todo el resto del panel, donde dejar el primer ítem elegido
+   *  por defecto SÍ es el comportamiento correcto), acá un método de pago
+   *  nunca debe quedar elegido solo porque es el primero de la lista. */
+  function llenarSelectMetodoPago(sel, placeholder){
+    sel.innerHTML = '<option value="">' + placeholder + '</option>' +
+      Object.entries(METODOS_PAGO).map(([id,name])=> `<option value="${id}">${name}</option>`).join('');
+    sel.value = '';
+  }
+
+  /** "Continuar"/"Registrar abono" deben quedar deshabilitados hasta que
+   *  haya un método de pago elegido A PROPÓSITO -- en modo múltiples
+   *  métodos, los dos selects cuentan. El backend (registrarCobroReserva)
+   *  igual rechaza cualquier método no reconocido sin fallback (ver
+   *  METODOS_PRESENCIALES, paymentMovements.js) -- esto es solo la UX para
+   *  no llegar a intentarlo con uno vacío. */
+  function actualizarPayContinueDisabled(){
+    const btn = document.getElementById('payContinue');
+    if(btn.dataset.cargando === '1'){ btn.disabled = true; return; }
+    if(multiPagoActivo){
+      const m1 = document.getElementById('multiMetodo1').value;
+      const m2 = document.getElementById('multiMetodo2').value;
+      btn.disabled = !m1 || !m2;
+    } else {
+      btn.disabled = !metodoPagoSeleccionado;
+    }
+  }
 
   const toggleEnviar = document.getElementById('toggleEnviar');
   document.getElementById('rowEnviarCarro').addEventListener('click', ()=>{
@@ -21111,15 +21267,19 @@
     document.getElementById('payMethods').style.opacity = multiPagoActivo ? '0.4' : '';
     document.getElementById('payMethods').style.pointerEvents = multiPagoActivo ? 'none' : '';
     if(multiPagoActivo){
-      llenarSelect(document.getElementById('multiMetodo1'), Object.entries(METODOS_PAGO).map(([id,name])=>({id,name})), 'id', m=> m.name);
-      llenarSelect(document.getElementById('multiMetodo2'), Object.entries(METODOS_PAGO).map(([id,name])=>({id,name})), 'id', m=> m.name);
-      document.getElementById('multiMetodo2').value = 'credit';
+      // Sin método por defecto en ninguno de los dos -- antes el 2º quedaba
+      // en "Tarjeta de crédito" sin que nadie lo hubiera elegido.
+      llenarSelectMetodoPago(document.getElementById('multiMetodo1'), 'Método 1…');
+      llenarSelectMetodoPago(document.getElementById('multiMetodo2'), 'Método 2…');
       document.getElementById('multiMonto1').value = parsePrice(document.getElementById('payTotal').textContent) || '';
       actualizarRestanteMultiPago();
     }
+    actualizarPayContinueDisabled();
   });
   document.getElementById('multiMonto1').addEventListener('input', actualizarRestanteMultiPago);
   document.getElementById('multiMonto2').addEventListener('input', actualizarRestanteMultiPago);
+  document.getElementById('multiMetodo1').addEventListener('change', actualizarPayContinueDisabled);
+  document.getElementById('multiMetodo2').addEventListener('change', actualizarPayContinueDisabled);
 
   /* ---- Asociar transacción (n° de comprobante/referencia) ---- */
   document.getElementById('rowTransaccion').addEventListener('click', ()=>{
@@ -21133,6 +21293,11 @@
   document.getElementById('payContinue').addEventListener('click', async ()=>{
     const btn = document.getElementById('payContinue');
     if(btn.disabled) return; // ya hay una operación en curso -- nunca un segundo click genera otro operationId
+    // La reserva se captura UNA vez, al hacer clic: el await de abajo puede
+    // tardar y la admin puede abrir otra reserva mientras tanto -- todo lo
+    // que se aplica después del cobro (estado, comprobante, botones) debe ir
+    // a la reserva que de verdad se cobró, nunca a la que esté abierta ahora.
+    const a = currentAppt;
     const totalTxt = document.getElementById('payTotal').textContent;
 
     let legs = null;
@@ -21154,7 +21319,7 @@
 
     const numeroTransaccion = document.getElementById('numeroTransaccionInput').value.trim();
 
-    if(currentAppt && currentAppt.fromWeb && currentAppt.webId){
+    if(a && a.fromWeb && a.webId){
       const metodoLabel = legs.map(l=> l.metodo).join(' + ');
       const productos = Object.keys(cart).filter(id=> cart[id] > 0).map(id=> ({ productId:id, qty:cart[id] }));
       // operationId: se genera UNA vez por click, antes de la llamada de red --
@@ -21166,39 +21331,52 @@
       let r;
       try{
         r = await functions.httpsCallable('registrarCobroReserva')({
-          operationId, bookingId: currentAppt.webId, tipoOperacion: 'cobro_final',
+          operationId, bookingId: a.webId, tipoOperacion: 'cobro_final',
           legs, productos, propina: tipAmount(),
           ...(numeroTransaccion ? { numeroTransaccion } : {}),
         });
       }catch(e){
-        btn.disabled = false; btn.textContent = 'Continuar';
+        // Nunca `btn.disabled = false` a secas: si mientras tanto se abrió el
+        // cobro de OTRA reserva, ese botón debe seguir sin método elegido y
+        // deshabilitado -- actualizarPayContinueDisabled() decide según el
+        // estado real de la pantalla.
+        btn.textContent = 'Continuar'; actualizarPayContinueDisabled();
         return showToast('No se pudo guardar el cobro: ' + (e.message || e));
       }
-      btn.disabled = false; btn.textContent = 'Continuar';
-      currentAppt._saldoServicio = r.data.saldoPendienteServicio;
+      btn.textContent = 'Continuar'; actualizarPayContinueDisabled();
+      a._saldoServicio = r.data.saldoPendienteServicio;
 
-      currentAppt.pagado = true;
-      currentAppt.metodoPago = metodoLabel;
-      if(legs.length > 1) currentAppt.pagos = legs;
-      if(numeroTransaccion) currentAppt.numeroTransaccion = numeroTransaccion;
-      paymentBtn.classList.add('paid');
-      document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
+      a.pagado = true;
+      a.metodoPago = metodoLabel;
+      if(legs.length > 1) a.pagos = legs;
+      if(numeroTransaccion) a.numeroTransaccion = numeroTransaccion;
+      if(currentAppt === a){
+        paymentBtn.classList.add('paid');
+        document.getElementById('paymentBtnLabel').textContent = '$ Pagado';
+      }
 
       // Pagar (incluso el total) NO significa que el cliente asistió --
       // "Asistió" es siempre una acción manual y explícita del staff (pill
       // de Etiqueta o el botón "Marcar asistencia"), nunca un efecto
       // secundario de cobrar. El pago solo actualiza el dinero recibido.
 
-      enviarCorreoComprobante(currentAppt, metodoLabel, totalTxt, operationId);
-      mostrarAlertaComprobante(currentAppt, metodoLabel, totalTxt);
+      enviarCorreoComprobante(a, metodoLabel, totalTxt, operationId);
+      mostrarAlertaComprobante(a, metodoLabel, totalTxt);
       // La encuesta se manda sola al marcar "Asistió" -- ver
       // enviarEncuestaAlAsistir en reservas.js.
 
-      cart = {};
+      // Solo si la reserva abierta sigue siendo la que se cobró: si mientras
+      // tanto se abrió otra, el carrito en pantalla es de ESA y no se toca.
+      if(currentAppt === a) cart = {};
     }
     showToast(`Cobro registrado · ${totalTxt}`);
-    payView.classList.remove('open');
-    detailView.classList.add('open');
+    if(currentAppt === a){
+      payView.classList.remove('open');
+      detailView.classList.add('open');
+      // La línea de estado de pago de la ficha seguía diciendo "Sin pagos
+      // registrados" hasta cerrarla y reabrirla -- se repinta con el ledger.
+      pintarEstadoPagoDrawer(a);
+    }
   });
 
   renderBlocks();
