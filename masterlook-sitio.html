@@ -886,6 +886,12 @@
   #rescheduleModal .rsx-dia-num{font-family:var(--rsx-font-sans); font-weight:800; font-size:19px; color:var(--rsx-text);}
   #rescheduleModal .rsx-dia.is-active{background:var(--rsx-accent);}
   #rescheduleModal .rsx-dia.is-active .rsx-dia-nom, #rescheduleModal .rsx-dia.is-active .rsx-dia-num{color:#fff;}
+  #rescheduleModal .rsx-pro-tit{font-family:var(--rsx-font-sans); font-weight:700; font-size:17px; color:var(--rsx-text); margin:0 0 12px;}
+  #rescheduleModal .rsx-pros{display:flex; flex-wrap:wrap; gap:10px; margin:0 0 32px;}
+  #rescheduleModal .rsx-pro{flex:0 0 auto; background:var(--rsx-card2); border-radius:14px; padding:12px 16px; text-align:center; cursor:pointer; font-family:var(--rsx-font-sans); font-weight:600; font-size:15px; color:var(--rsx-text);}
+  #rescheduleModal .rsx-pro-tag{font-weight:500; font-size:11px; color:var(--rsx-text2); margin-top:2px;}
+  #rescheduleModal .rsx-pro.is-active{background:var(--rsx-accent); color:#fff;}
+  #rescheduleModal .rsx-pro.is-active .rsx-pro-tag{color:#fff;}
 
   /* paso 1 -- horarios agrupados por franja */
   #rescheduleModal .rsx-franjas{display:flex; flex-direction:column; gap:28px; margin-bottom:36px;}
@@ -3947,6 +3953,8 @@
       <h2 class="rsx-title">Selecciona fecha y hora de tu servicio</h2>
 
       <div class="rsx-dias" id="rsxDias"></div>
+      <div class="rsx-pro-tit">Profesional</div>
+      <div class="rsx-pros" id="rsxPros"></div>
       <div class="rsx-franjas" id="rsxFranjas"></div>
 
       <button type="button" class="rsx-btn-primary" id="rsxSiguiente" disabled>Siguiente<span class="rsx-btn-arrow"> →</span></button>
@@ -7793,7 +7801,7 @@
        - invitado: llega por el botón "Modificar cita" del correo
          (?reagendar=<id>&token=<token>), se resuelve una vez vía
          obtenerReservaPorToken y se cachea en rsReservaInvitado. */
-  let rsEstado = { bookingId:null, token:null, startMin:null, barberName:null };
+  let rsEstado = { bookingId:null, token:null, startMin:null, barberName:null, barberId:null };
   let rsReservaInvitado = null;
   let rsFechaSel = null;
   /** Texto del servicio a mostrar en el paso 2 -- viene de misReservasCache
@@ -7834,7 +7842,7 @@
   }
 
   function abrirCambioHora(bookingId, servicio){
-    rsEstado = { bookingId, token:null, startMin:null, barberName:null };
+    rsEstado = { bookingId, token:null, startMin:null, barberName:null, barberId:null };
     rsReservaInvitado = null;
     rsServicioTexto = servicio;
     document.getElementById('rescheduleModal').classList.add('open');
@@ -7849,7 +7857,7 @@
    *  al resolver se decide Paso 1 (rsAbrirPaso1) o el mensaje de bloqueo
    *  correspondiente (mostrarModalBloqueado). */
   async function abrirCambioHoraInvitado(bookingId, token){
-    rsEstado = { bookingId, token, startMin:null, barberName:null };
+    rsEstado = { bookingId, token, startMin:null, barberName:null, barberId:null };
     rsReservaInvitado = null;
     document.getElementById('rescheduleModal').classList.add('open');
     rsxMostrar('rsxLoader');
@@ -7904,6 +7912,7 @@
     rsxLoaderTexto('Cargando horarios', 'Preparando opciones para tu cambio de hora…');
     rsEstado.startMin = null;
     rsEstado.barberName = null;
+    rsEstado.barberId = null;
 
     rsFechaSel = null;
     // TiempoSantiago.fechaSantiago()/sumarDiasSantiago() -- nunca
@@ -7925,6 +7934,7 @@
 
     rsxMostrar('rsxPaso1');
     rsxPintarDias();
+    rsxPintarProfesionales();
     rsxCargarHoras(rsFechaSel);
   }
 
@@ -7941,6 +7951,64 @@
     // después de <body>) -- si no, el modal seguiría viéndose aunque se le
     // haya quitado .open, y el sitio público de atrás nunca se revelaría.
     document.documentElement.classList.remove('ml-boot-reagendar');
+  }
+
+  /* ---------- paso 1: profesional (se elige POR ID; nunca "el primero libre") ---------- */
+  /** Profesionales que el cliente puede elegir al reagendar: activos y que realizan el servicio de ESTA
+   *  reserva, en orden ESTABLE (calId y luego id) -- nunca el orden en que Firestore los entrega. */
+  function rsxProfesionalesElegibles(reserva){
+    const servicio = reserva && reserva.serviceId
+      ? (catalog.services || []).find(s=> s.id === reserva.serviceId) : null;
+    const lista = filtrarPorElegibilidad(
+      (catalog.barbers && catalog.barbers.length ? catalog.barbers : BARB_DEMO),
+      [{ barberIds: servicio?.barberIds }]
+    );
+    const num = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : Infinity; };
+    return lista.filter(b=> b && b.id).slice()
+      .sort((a, b)=> (num(a.calId) - num(b.calId)) || String(a.id).localeCompare(String(b.id)));
+  }
+  /** El profesional elegido (objeto completo del catalogo, resuelto por id) o null. */
+  function rsxProfesionalSeleccionado(reserva){
+    if(!rsEstado.barberId) return null;
+    return rsxProfesionalesElegibles(reserva).find(b=> b.id === rsEstado.barberId) || null;
+  }
+  /** Ocupacion REAL de ese profesional (por id) o null si el servidor no la informo (fail-closed).
+   *  obtenerOcupacionDia incluye en `ocupacionPorId` a TODOS los profesionales activos (lista vacia = libre
+   *  todo el dia); una clave ausente significa "no activo o sin dato" y NO se ofrece como disponible. */
+  function rsxOcupacionDe(real, barberId){
+    const m = real && real.ocupacionPorId;
+    if(!m || !Object.prototype.hasOwnProperty.call(m, barberId) || !Array.isArray(m[barberId])) return null;
+    return m[barberId];
+  }
+  /** Tras confirmar: el profesional que el servidor GUARDO debe ser el que se eligio y mostro. */
+  function rsxVerificarProfesionalGuardado(resp, enviado){
+    if(resp && resp.barberId && resp.barberId !== enviado.barberId){
+      throw new Error('No pudimos confirmar tu profesional. Revisa tu reserva en "Mi cuenta" o escríbenos.');
+    }
+  }
+  function rsxPintarProfesionales(){
+    const cont = document.getElementById('rsxPros');
+    if(!cont) return;
+    const reserva = reservaActualParaCambio();
+    const pros = reserva ? rsxProfesionalesElegibles(reserva) : [];
+    // Por defecto queda el profesional que la reserva YA tiene (por id). Si ya no puede atenderla, NO se
+    // elige otro por el cliente: debe escoger uno.
+    if(!rsEstado.barberId && reserva && reserva.barberId && pros.some(b=> b.id === reserva.barberId)){
+      rsEstado.barberId = reserva.barberId;
+    }
+    if(rsEstado.barberId && !pros.some(b=> b.id === rsEstado.barberId)) rsEstado.barberId = null;
+    cont.innerHTML = pros.length
+      ? pros.map(b=> `<div class="rsx-pro ${b.id === rsEstado.barberId ? 'is-active' : ''}" data-id="${escapeHTML(b.id)}">
+          <div class="rsx-pro-nom">${escapeHTML(b.name)}</div>
+          ${reserva && b.id === reserva.barberId ? '<div class="rsx-pro-tag">Tu profesional</div>' : ''}
+        </div>`).join('')
+      : '<div class="rsx-slots-msg">No hay profesionales disponibles para este servicio.</div>';
+    cont.querySelectorAll('.rsx-pro').forEach(el=>
+      el.addEventListener('click', ()=>{
+        rsEstado.barberId = el.dataset.id;
+        cont.querySelectorAll('.rsx-pro').forEach(x=> x.classList.toggle('is-active', x === el));
+        rsxCargarHoras(rsFechaSel);
+      }));
   }
 
   /* ---------- paso 1: selector horizontal de días ---------- */
@@ -7977,7 +8045,6 @@
   async function rsxCargarHoras(fecha){
     const cont = document.getElementById('rsxFranjas');
     rsEstado.startMin = null;
-    rsEstado.barberName = null;
     document.getElementById('rsxSiguiente').disabled = true;
     if(!fecha){
       cont.innerHTML = '<div class="rsx-slots-msg">No hay días disponibles.</div>';
@@ -8008,15 +8075,18 @@
     const limite = Date.now() + 4 * 3600 * 1000;
     const inicioGrilla = Math.ceil(real.horario.abre / 60) * 60;
     const dur = reserva.duracion || 45;
-    // Elegibilidad servicio <-> profesional (barberoElegiblePara) -- mismo
-    // criterio que el Paso 2 del sitio: solo profesionales autorizados para
-    // el servicio de ESTA reserva, calculado una sola vez fuera del loop.
-    const servicioReserva = reserva.serviceId
-      ? (catalog.services || []).find(s=> s.id === reserva.serviceId) : null;
-    const barberosElegibles = filtrarPorElegibilidad(
-      (catalog.barbers && catalog.barbers.length ? catalog.barbers : BARB_DEMO),
-      [{ barberIds: servicioReserva?.barberIds }]
-    );
+    // Solo se calculan los horarios del profesional ELEGIDO (por id). Sin eleccion no se ofrece ningun
+    // horario y, si el servidor no informo su ocupacion, tampoco (fail-closed): nunca "el primero libre".
+    const sel = rsxProfesionalSeleccionado(reserva);
+    if(!sel){
+      cont.innerHTML = '<div class="rsx-slots-msg">Elige un profesional para ver sus horarios.</div>';
+      return;
+    }
+    const ocupSel = rsxOcupacionDe(real, sel.id);
+    if(ocupSel === null){
+      cont.innerHTML = '<div class="rsx-slots-msg">No pudimos confirmar la disponibilidad real de ese profesional. Intenta de nuevo en un momento.</div>';
+      return;
+    }
     const opciones = [];
     for(let min = inicioGrilla; min + dur <= real.horario.cierra; min += 60){
       // TiempoSantiago.instanteSantiagoMs() -- NUNCA new Date(fecha+'T00:00:00')
@@ -8028,30 +8098,12 @@
       if(!TiempoSantiago.existeHorarioEnSantiago(fecha, min)) continue; // hueco del adelanto de hora
       const horaAbsoluta = TiempoSantiago.instanteSantiagoMs(fecha, min);
       if(horaAbsoluta < limite) continue;
-      // esta misma reserva no debe bloquearse a sí misma si se está mirando
-      // su propia fecha actual
-      //
-      // Candidatos = TODOS los barberos reales, nunca solo
-      // Object.keys(real.ocupacion) -- ocupacionDelDia() (backend) solo
-      // agrega una clave al mapa cuando hay ALGO que ocupa a ese barbero
-      // (una reserva, un bloqueo, un horario propio recortado); un barbero
-      // sin ninguna ocupación ese día simplemente NO aparece como clave. Si
-      // acá solo se recorrían las claves existentes, un barbero
-      // completamente libre (o un día donde NINGÚN barbero tiene nada
-      // agendado, real.ocupacion === {}) nunca se consideraba disponible --
-      // el cliente veía "No hay horarios disponibles ese día con 4 horas de
-      // anticipación" aunque sí los hubiera. Bug real encontrado en vivo
-      // (2026-09-22), sin relación con la regla de las 4 horas en sí.
-      const nombresBarberos = barberosElegibles.map((b)=> b.name);
-      const libres = nombresBarberos.filter(nombreBarbero=>{
-        if(fecha === reserva.fecha && nombreBarbero === reserva.barber){
-          const ocupadoSinPropia = (real.ocupacion[nombreBarbero]||[]).filter(([ini,fin])=>
-            !(ini === reserva.startMin && fin === reserva.startMin + reserva.duracion));
-          return !ocupadoSinPropia.some(([ini,fin])=> min < fin && (min+dur) > ini);
-        }
-        return !(real.ocupacion[nombreBarbero]||[]).some(([ini,fin])=> min < fin && (min+dur) > ini);
-      });
-      if(libres.length) opciones.push({ min, barber: libres[0] });
+      // la propia reserva no se bloquea a si misma (se identifica POR ID)
+      const esLaPropia = fecha === reserva.fecha && !!reserva.barberId && sel.id === reserva.barberId;
+      const ocupadoSinPropia = esLaPropia
+        ? ocupSel.filter(([ini, fin])=> !(ini === reserva.startMin && fin === reserva.startMin + reserva.duracion))
+        : ocupSel;
+      if(!ocupadoSinPropia.some(([ini, fin])=> min < fin && (min + dur) > ini)) opciones.push({ min });
     }
 
     if(!opciones.length){
@@ -8070,7 +8122,7 @@
       return `<div>
         <div class="rsx-franja-tit">${f.nom}</div>
         <div class="rsx-slots">
-          ${dentro.map(o=> `<div class="rsx-slot" data-min="${o.min}" data-barber="${escapeHTML(o.barber)}">${String(Math.floor(o.min/60)).padStart(2,'0')}:${String(o.min%60).padStart(2,'0')}</div>`).join('')}
+          ${dentro.map(o=> `<div class="rsx-slot" data-min="${o.min}">${String(Math.floor(o.min/60)).padStart(2,'0')}:${String(o.min%60).padStart(2,'0')}</div>`).join('')}
         </div>
       </div>`;
     }).join('');
@@ -8078,7 +8130,6 @@
     cont.querySelectorAll('.rsx-slot').forEach(o=>
       o.addEventListener('click', ()=>{
         rsEstado.startMin = Number(o.dataset.min);
-        rsEstado.barberName = o.dataset.barber;
         cont.querySelectorAll('.rsx-slot').forEach(x=> x.classList.toggle('is-active', x===o));
         document.getElementById('rsxSiguiente').disabled = false;
       }));
@@ -8118,7 +8169,7 @@
     document.getElementById('rsxResSvc').textContent = rsServicioTexto || '—';
     document.getElementById('rsxResFecha').textContent = rsxCapitaliza(fmtFechaLarga(rsFechaSel));
     document.getElementById('rsxResHora').textContent = rsxHora12(rsEstado.startMin);
-    document.getElementById('rsxResBarbero').textContent = rsEstado.barberName || '—';
+    document.getElementById('rsxResBarbero').textContent = (rsxProfesionalSeleccionado(reservaActualParaCambio()) || {}).name || '—';
 
     rsxMostrar('rsxPaso2');
   });
@@ -8129,8 +8180,11 @@
     rsxLoaderTexto('Confirmando cambio', 'Estamos actualizando tu reserva…');
     try{
       const reserva = reservaActualParaCambio();
+      // El profesional SIEMPRE viaja por su id (el mismo que se mostro y se eligio); nunca se envia sin el.
+      const pro = rsxProfesionalSeleccionado(reserva);
+      if(!pro) throw new Error('Elige un profesional para continuar.');
       const datos = {
-        bookingId: rsEstado.bookingId, barberName: rsEstado.barberName,
+        bookingId: rsEstado.bookingId, barberId: pro.id, barberName: pro.name,
         fecha: rsFechaSel,
         startMin: rsEstado.startMin, minutes: reserva?.duracion || 45,
       };
@@ -8142,8 +8196,10 @@
           });
           const r = await resp.json();
           if(!resp.ok || !r.ok) throw new Error(r.error || 'No se pudo cambiar la hora.');
+          rsxVerificarProfesionalGuardado(r, datos);
         } else {
-          await functions.httpsCallable('reagendarReservaCliente')(datos);
+          const rc = await functions.httpsCallable('reagendarReservaCliente')(datos);
+          rsxVerificarProfesionalGuardado(rc && rc.data, datos);
         }
       })());
       rsxMostrar('rsxExito');
