@@ -7153,8 +7153,11 @@
           return;
         }
         userRole = doc.data().role || 'BARBER';
-        userBarberName = doc.data().barber?.name || null;
-        userBarberId = doc.data().barberId || null;
+        // RECEPTION es solo recepción: aunque una ficha antigua traiga barberId/barber, esta sesión
+        // NO actúa como profesional (ni vista de barbero, ni columna propia, ni filtros por su id).
+        const esSoloRecepcion = userRole === 'RECEPTION';
+        userBarberName = esSoloRecepcion ? null : (doc.data().barber?.name || null);
+        userBarberId = esSoloRecepcion ? null : (doc.data().barberId || null);
         userPermissions = doc.data().permissions || [];
         userIsStaff = true;
         // FASE 1 (cierre): calId propio -- `blocks` identifica al
@@ -18065,9 +18068,17 @@
   // como ya eran en la práctica, exclusivos de ADMIN (services/staff ya
   // exigían isAdmin() en las reglas, con o sin esta casilla).
   const PERMISOS = [
-    { id:'AGENDA_PROPIA',     nombre:'Ver su propia agenda',       grupo:'Agenda' },
+    { id:'AGENDA_PROPIA',     nombre:'Ver su propia agenda',       grupo:'Agenda',
+      ayuda:'Solo para profesionales (barberos): ven únicamente su propia agenda. Recepción no es profesional y no lo usa.' },
     { id:'AGENDA_TODOS',      nombre:'Ver la agenda de todos',     grupo:'Agenda' },
     { id:'AGENDA_EDITAR',     nombre:'Crear y mover reservas',     grupo:'Agenda' },
+    // Permiso delegable por ADMIN a cada cuenta (NO viene con ningún rol salvo ADMIN, que
+    // siempre lo tiene): sin él, una cuenta no puede crear, mover ni editar una reserva en
+    // un horario que ya pasó. Lo valida también el SERVIDOR (crearReservaLocal /
+    // reagendarReservaAdmin leen la ficha real de `staff`) y las reglas de Firestore no
+    // dejan saltárselo escribiendo directo -- ocultar el botón no es la única protección.
+    { id:'RESERVAS_PASADAS',  nombre:'Gestionar reservas en horarios pasados', grupo:'Agenda',
+      ayuda:'Solo recepción y administración. Permite crear, mover o editar una reserva en una fecha u hora que ya pasó, igual que un administrador. Sin este permiso, esas acciones se bloquean.' },
     { id:'RESERVAS_APROBAR',  nombre:'Aprobar reservas web',       grupo:'Agenda' },
     { id:'CLIENTES_VER',      nombre:'Ver clientes',               grupo:'Clientes' },
     { id:'CLIENTES_EDITAR',   nombre:'Editar clientes',            grupo:'Clientes' },
@@ -18082,7 +18093,9 @@
 
   const PERMISOS_ROL = {
     ADMIN: PERMISOS.map(p=> p.id),
-    RECEPTION: ['AGENDA_PROPIA','AGENDA_TODOS','AGENDA_EDITAR','RESERVAS_APROBAR',
+    // RECEPTION NO trae «Ver su propia agenda» (AGENDA_PROPIA): esa agenda es la de un profesional y recepción no lo es;
+    // ve la de todos (AGENDA_TODOS).
+    RECEPTION: ['AGENDA_TODOS','AGENDA_EDITAR','RESERVAS_APROBAR',
                 'CLIENTES_VER','CLIENTES_EDITAR','TIENDA_EDITAR'],
     BARBER: ['AGENDA_PROPIA'],
   };
@@ -19202,8 +19215,12 @@
             <div class="us-av">${ini}</div>
             <div style="min-width:0;">
               <div class="us-nombre">${nombre}</div>
-              ${extras ? `<div class="us-sub">+${extras} permiso${extras>1?'s':''} extra</div>`
-                       : (u.barber ? '<div class="us-sub">barbero</div>' : '')}
+              ${(u.role === 'RECEPTION' && (u.barberId || u.barber))
+                  ? '<div class="us-sub" style="color:#b3261e;">Recepción con ficha de barbero vinculada: edítala y guarda para corregirla</div>'
+                  : (u.role === 'BARBER' && ['AGENDA_TODOS','AGENDA_EDITAR','RESERVAS_APROBAR'].filter(id=> (u.permissions || []).includes(id)).length >= 2)
+                  ? '<div class="us-sub" style="color:#b26a00;">Barbero con permisos de recepción (de un cambio de rol antiguo): revisa si corresponde</div>'
+                  : (extras ? `<div class="us-sub">+${extras} permiso${extras>1?'s':''} extra</div>`
+                       : (u.barber ? '<div class="us-sub">barbero</div>' : ''))}
             </div>
           </div>
           <span class="us-mail">${u.email || '—'}</span>
@@ -19255,13 +19272,17 @@
     document.getElementById('usCorreo').disabled = !!u;
 
     document.getElementById('usRol').innerHTML = ROLES.map(r=>
-      `<option value="${r.id}" ${u?.role === r.id ? 'selected' : ''}>${r.nombre}</option>`).join('');
+      `<option value="${r.id}" ${(u ? (u.role || 'BARBER') : null) === r.id ? 'selected' : ''}>${r.nombre}</option>`).join('');
 
     await cargarCatalogo();
     const barberos = cfgBarberos.filter(b=> b.active);
+    // La ficha a la que la cuenta YA está vinculada siempre es una opción (aunque esté inactiva o falte el embed
+    // `barber`): editar otros datos de un barbero nunca debe soltar su vínculo por un fallo de preselección.
+    const vinculado = u?.barberId || u?.barber?.id || null;
     document.getElementById('usBarbero').innerHTML =
-      '<option value="">No es barbero (recepción o administración)</option>' +
-      barberos.map(b=> `<option value="${b.id}" ${u?.barber?.id === b.id ? 'selected' : ''}>${b.name}</option>`).join('') +
+      '<option value="">Elige el profesional de esta cuenta…</option>' +
+      cfgBarberos.filter(b=> b.active !== false || b.id === vinculado).map(b=>
+        `<option value="${b.id}" ${vinculado === b.id ? 'selected' : ''}>${b.name}${b.active === false ? ' (inactivo)' : ''}</option>`).join('') +
       '<option value="__nuevo__">➕ Crear barbero nuevo con este nombre</option>';
 
     document.getElementById('usAgendaLista').innerHTML = barberos.map(b=>`
@@ -19281,7 +19302,16 @@
     // marcados (sin estar deshabilitados, así que se guardaban igual) todos
     // los permisos de ADMIN que no pertenecían al rol elegido -- hallazgo
     // real al probar la conversión cliente→barbero (2026-10-02).
-    document.getElementById('usRol').onchange = ()=> usPintarPermisos(usEditando, !!usEditando);
+    // Cambiar de rol NO arrastra los permisos del rol anterior (p. ej. un barbero que antes era recepcionista
+    // no hereda «Crear y mover reservas»): se conservan solo los EXTRAS marcados a mano, es decir los que no
+    // venían de serie con el rol que tenía. Los permisos de serie del rol nuevo se marcan solos.
+    usExtrasPorRol = {};
+    if(u){
+      const rolOriginal = u.role || 'BARBER';
+      usExtrasPorRol[rolOriginal] = new Set((u.permissions || []).filter(id=> !(PERMISOS_ROL[rolOriginal] || []).includes(id)));
+    }
+    document.getElementById('usRol').onchange = ()=>
+      usPintarPermisos({ permissions: [...(usExtrasPorRol[document.getElementById('usRol').value] || [])] }, false);
 
     // Si el rol es barbero y no está enlazado, sugerimos crearlo
     document.getElementById('usRol').addEventListener('change', usSugerirBarbero);
@@ -19290,12 +19320,32 @@
     abrirModal('modalUsuario');
   }
 
+  /** ROLES ESTRICTAMENTE SEPARADOS: RECEPTION es solo recepción y BARBER es solo profesional.
+   *  Con qué ficha de `barbers` queda vinculada una cuenta depende ÚNICAMENTE de su rol:
+   *   - BARBER: la que se eligió en el formulario (o '__nuevo__' para crearla).
+   *   - RECEPTION: NINGUNA, siempre. Jamás se vincula ni se crea una ficha de profesional por esta vía.
+   *   - ADMIN: solo conserva el vínculo que YA tenía (el bloque no se muestra); nunca se crea ni se cambia aquí.
+   *  Antes se leía el <select> aunque estuviera oculto: elegir «crear barbero nuevo» estando en BARBER y luego
+   *  cambiar el rol a Recepcionista guardaba una recepcionista con ficha de barbero (y creaba el profesional). */
+  function usBarberIdSegunRol(rol){
+    if(rol === 'BARBER') return document.getElementById('usBarbero').value || null;
+    if(rol === 'ADMIN') return usEditando?.barberId || usEditando?.barber?.id || null;
+    return null;
+  }
+  /** Permisos EXTRA (los que NO vienen de serie con el rol) POR ROL, solo para esta apertura del formulario. Los extras
+   *  que la cuenta ya tenía pertenecen a su rol ORIGINAL: al mirar otro rol y volver no se pierden, pero un rol nuevo
+   *  NUNCA hereda los permisos del anterior -- convertir a alguien (p. ej. de recepción a barbero) empieza solo con los
+   *  permisos propios del rol nuevo. */
+  let usExtrasPorRol = {};
+
   /** Un barbero necesita su ficha para tener columna en la agenda. */
   function usSugerirBarbero(){
     const esBarbero = document.getElementById('usRol').value === 'BARBER';
     const zona = document.getElementById('usBarberoZona');
     const sel = document.getElementById('usBarbero');
     zona.style.display = esBarbero ? '' : 'none';
+    // (El valor del selector oculto NO se borra: volver a BARBER no pierde el vínculo. Lo que se guarda lo decide
+    //  únicamente usBarberIdSegunRol según el rol: fuera de BARBER ese valor jamás llega a `staff`.)
 
     const aviso = document.getElementById('usBarberoAviso');
     if(!aviso) return;
@@ -19330,25 +19380,90 @@
         <div class="us-perm-lista">
           ${PERMISOS.filter(p=> p.grupo === g).map(p=>{
             const delRol = base.includes(p.id);
-            const marcado = delRol || propios.includes(p.id);
-            return `<label class="us-perm ${marcado ? 'on' : ''} ${delRol ? 'base' : ''} ${p.sensible ? 'sensible' : ''}">
-              <input type="checkbox" value="${p.id}" ${marcado ? 'checked' : ''} ${delRol ? 'disabled' : ''}>
+            // «Ver su propia agenda» es de profesionales: en RECEPTION no aplica (queda sin marcar y deshabilitado,
+            // incluso si una ficha antigua lo traía; al guardar se retira).
+            // Permisos que NO aplican a un rol (queda sin marcar y deshabilitado): «Ver su propia agenda» es de
+            // profesionales y «Gestionar reservas en horarios pasados» es de recepción/administración.
+            const etiquetaNoAplica = ({ RECEPTION:{ AGENDA_PROPIA:'solo profesionales' }, BARBER:{ RESERVAS_PASADAS:'solo recepción' } }[rolId] || {})[p.id];
+            const noAplica = !!etiquetaNoAplica;
+            const marcado = !noAplica && (delRol || propios.includes(p.id));
+            return `<label class="us-perm ${marcado ? 'on' : ''} ${delRol ? 'base' : ''} ${p.sensible ? 'sensible' : ''}"${p.ayuda ? ` title="${p.ayuda}"` : ''}>
+              <input type="checkbox" value="${p.id}" ${marcado ? 'checked' : ''} ${(delRol || noAplica) ? 'disabled' : ''}>
               ${p.nombre}
-              ${delRol ? '<span class="us-perm-tag">del rol</span>' : ''}
+              ${delRol ? '<span class="us-perm-tag">del rol</span>' : (noAplica ? `<span class="us-perm-tag">${etiquetaNoAplica}</span>` : '')}
             </label>`;
           }).join('')}
         </div>
       </div>`).join('');
 
     document.querySelectorAll('#usPermisos input:not([disabled])').forEach(i=>
-      i.addEventListener('change', ()=> i.closest('.us-perm').classList.toggle('on', i.checked)));
+      i.addEventListener('change', ()=>{
+        i.closest('.us-perm').classList.toggle('on', i.checked);
+        const rolVisto = document.getElementById('usRol').value;   // extras marcados a mano, del rol que se está viendo
+        const extras = usExtrasPorRol[rolVisto] || (usExtrasPorRol[rolVisto] = new Set());
+        if(i.checked) extras.add(i.value); else extras.delete(i.value);
+      }));
 
     // solo tiene sentido elegir agendas ajenas si no ve todas
     document.getElementById('usAgendas').style.display =
       base.includes('AGENDA_TODOS') || propios.includes('AGENDA_TODOS') ? 'none' : '';
   }
 
+  // Un solo guardado a la vez: el doble clic ya no puede crear dos profesionales.
+  let usGuardando = false;
   document.getElementById('usGuardar').addEventListener('click', async ()=>{
+    if(usGuardando) return;
+    usGuardando = true;
+    try{ await usGuardarImpl(); } finally { usGuardando = false; }
+  });
+
+  /** «Crear barbero nuevo» -- SOLO existe para el rol BARBER (usBarberIdSegunRol) y se ejecuta RECIÉN cuando todo lo
+   *  demás ya está validado (correo, cuenta de acceso), justo antes de guardar la ficha de la cuenta: un fallo
+   *  anterior (correo ya usado, red caída) ya no deja un profesional creado y huérfano. Devuelve false si falló. */
+  async function usCrearFichaProfesional(datos){
+    if(datos.barberId !== '__nuevo__') return true;
+    await cargarCatalogo();   // fichas al día: el id nuevo no puede chocar con ninguna existente (activa o inactiva)
+    const nuevoId = Math.max(0, ...cfgBarberos.map(b=> Number(b.calId) || 0), ...barbers.map(b=> Number(b.id) || 0)) + 1;
+    const ini = datos.name.split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
+    if(MODE === 'api'){
+      try{
+        const r = await api('/manage/barbers', { method:'POST', body: JSON.stringify({ name: datos.name, active: true }) });
+        datos.barberId = r.barber.id;
+        cfgBarberos.push({ id:r.barber.id, name:datos.name, initials:ini, active:true, schedules:[] });
+      }catch(e){ showToast(e.message); return false; }
+    } else {
+      const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:datos.name, initials:ini, active:true, schedules:[] };
+      try{
+        // Creación segura: nunca pisa una ficha existente y se confirma contra el servidor (antes el error se tragaba).
+        const refFicha = db.collection('barbers').doc(nuevo.id);
+        await db.runTransaction(async tx=>{
+          const s = await tx.get(refFicha);
+          if(s.exists) throw new Error('Ya existe un profesional con ese identificador. Recarga el panel e inténtalo de nuevo.');
+          tx.set(refFicha, nuevo);
+        });
+        const chk = await refFicha.get({ source: 'server' });
+        if(!chk.exists) throw new Error('Firestore no confirmó la creación del profesional.');
+      }catch(e){ showToast('No se pudo crear la ficha del profesional: ' + e.message); return false; }
+      datos.barberId = 'd' + nuevoId;
+      if(!barbers.some(x=> String(x.id) === String(nuevoId))) barbers.push({ id:nuevoId, name:datos.name, initials:ini, count:0, active:true });
+      BARBER_COL[datos.name] = nuevoId;
+      if(!cfgBarberos.some(x=> x.id === nuevo.id)) cfgBarberos.push(nuevo);
+      crearColumna(nuevoId);
+      pintarBarberFilterOptions();
+      // El selector queda apuntando a la ficha YA creada: si algo falla después (guardar la cuenta) y se reintenta,
+      // se reutiliza esta ficha.
+      const selBarbero = document.getElementById('usBarbero');
+      if(selBarbero){
+        if(![...selBarbero.options].some(o=> o.value === datos.barberId)) selBarbero.insertAdjacentHTML('beforeend', `<option value="${datos.barberId}">${escapeHTML(datos.name)}</option>`);
+        selBarbero.value = datos.barberId;
+      }
+    }
+    pintarColumnas();
+    showToast(`${datos.name} ya tiene su columna en la agenda`);
+    return true;
+  }
+
+  async function usGuardarImpl(){
     const btn = document.getElementById('usGuardar');
     const datos = {
       name: document.getElementById('usNombre').value.trim(),
@@ -19369,43 +19484,35 @@
       // lo que el propio formulario ya muestra.
       permissions: [...document.querySelectorAll('#usPermisos input:checked')].map(i=> i.value),
       managedBarberIds: [...document.querySelectorAll('#usAgendaLista input:checked')].map(i=> i.value),
-      barberId: document.getElementById('usBarbero').value || null,
+      barberId: usBarberIdSegunRol(document.getElementById('usRol').value),
     };
 
     if(!datos.name) return showToast('Escribe el nombre');
 
-    // crear la ficha del barbero para que tenga columna en la agenda
-    if(datos.barberId === '__nuevo__'){
-      const nuevoId = Math.max(0, ...barbers.map(b=> b.id)) + 1;
-      const ini = datos.name.split(/\s+/).slice(0,2).map(w=> w[0]).join('').toUpperCase();
-
-      if(MODE === 'api'){
-        try{
-          const r = await api('/manage/barbers', {
-            method:'POST', body: JSON.stringify({ name: datos.name, active: true })
-          });
-          datos.barberId = r.barber.id;
-          cfgBarberos.push({ id:r.barber.id, name:datos.name, initials:ini, active:true, schedules:[] });
-        }catch(e){ return showToast(e.message); }
-      } else {
-        datos.barberId = 'd' + nuevoId;
-        const nuevo = { id:'d'+nuevoId, calId:nuevoId, name:datos.name, initials:ini, active:true, schedules:[] };
-        barbers.push({ id:nuevoId, name:datos.name, initials:ini, count:0, active:true });
-        BARBER_COL[datos.name] = nuevoId;
-        cfgBarberos.push(nuevo);
-        try{ await db.collection('barbers').doc(nuevo.id).set(nuevo); }catch(e){}
-        crearColumna(nuevoId);
-        pintarBarberFilterOptions();
-      }
-
-      pintarColumnas();
-      showToast(`${datos.name} ya tiene su columna en la agenda`);
-    }
+    // El correo se valida ANTES de crear nada: una ficha creada y luego un
+    // correo inválido dejaba un profesional huérfano (y un reintento creaba otro).
     if(!/^\S+@\S+\.\S+$/.test(datos.email)) return showToast('El correo no es válido');
+
+    // BARBER es SOLO profesional: sin ficha de profesional no hay barbero (la ficha se elige o se crea aquí mismo).
+    if(datos.role === 'BARBER' && !datos.barberId){
+      return showToast('Un barbero necesita su ficha de profesional: elige una o crea una nueva.');
+    }
+    // BARBER -> RECEPTION: el vínculo de la cuenta se elimina por completo, pero la FICHA del profesional no se toca
+    // (reservas, horarios y disponibilidad quedan igual). Se avisa para que sea una decisión explícita.
+    if(usEditando && usEditando.role === 'BARBER' && datos.role === 'RECEPTION' && (usEditando.barberId || usEditando.barber?.id)){
+      const idFicha = usEditando.barberId || usEditando.barber?.id;
+      const nombreFicha = (cfgBarberos.find(b=> b.id === idFicha) || {}).name || idFicha;
+      const sigue = await mgConfirm(
+        `${datos.name} dejará de ser profesional: su cuenta pasa a recepción y se elimina su vínculo con la ficha «${nombreFicha}».\n\n` +
+        `La ficha «${nombreFicha}» NO se modifica: seguirá en la agenda y recibiendo reservas (con sus reservas, horarios y comisiones) hasta que la desactives en Profesionales.`,
+        { titulo:'Pasar de barbero a recepción', textoConfirmar:'Sí, pasar a recepción', textoCancelar:'Cancelar' });
+      if(!sigue) return;
+    }
 
     btn.disabled = true; btn.textContent = 'Guardando...';
 
     if(MODE === 'api'){
+      if(!(await usCrearFichaProfesional(datos))){ btn.disabled = false; btn.textContent = 'Guardar'; return; }
       try{
         const r = usEditando
           ? await api('/users/' + usEditando.id, { method:'PATCH', body: JSON.stringify(datos) })
@@ -19417,9 +19524,9 @@
         return showToast(e.message);
       }
     } else {
-      const barber = datos.barberId ? cfgBarberos.find(b=> b.id === datos.barberId) : null;
-
       if(usEditando){
+        if(!(await usCrearFichaProfesional(datos))){ btn.disabled = false; btn.textContent = 'Guardar'; return; }
+        const barber = datos.barberId ? (cfgBarberos.find(b=> b.id === datos.barberId) || null) : null;
         const actualizado = { ...usEditando, ...datos, email: usEditando.email, barber };
         try{ await db.collection('staff').doc(usEditando.id).set(actualizado); }
         catch(e){ btn.disabled = false; btn.textContent = 'Guardar'; return showToast('No se pudo guardar: ' + e.message); }
@@ -19443,7 +19550,7 @@
 
         if(resolucion.existe && resolucion.yaEsStaff){
           btn.disabled = false; btn.textContent = 'Guardar';
-          return showToast('Este usuario ya está registrado como profesional.');
+          return showToast('Este usuario ya forma parte del equipo.');
         }
 
         let uid, esReutilizada = false;
@@ -19452,10 +19559,11 @@
           // staff todavía -- se reutiliza el MISMO uid, nunca una cuenta
           // nueva, y nunca se toca su contraseña actual (sin
           // crearCuentaDeAcceso, sin correo de restablecimiento).
+          const comoQue = datos.role === 'BARBER' ? 'profesional' : (datos.role === 'ADMIN' ? 'administrador' : 'recepcionista');
           const mensaje = resolucion.esCliente
-            ? 'Este correo ya pertenece a un cliente registrado. ¿Deseas agregarlo también como profesional de Masterlook?'
-            : 'Este correo ya tiene una cuenta registrada en el sistema. ¿Deseas agregarlo también como profesional de Masterlook?';
-          const confirmar = await mgConfirm(mensaje, { titulo: 'Cuenta existente', textoConfirmar: 'Agregar como profesional' });
+            ? `Este correo ya pertenece a un cliente registrado. ¿Deseas agregarlo también como ${comoQue} de Masterlook?`
+            : `Este correo ya tiene una cuenta registrada en el sistema. ¿Deseas agregarlo también como ${comoQue} de Masterlook?`;
+          const confirmar = await mgConfirm(mensaje, { titulo: 'Cuenta existente', textoConfirmar: 'Agregar como ' + comoQue });
           if(!confirmar){
             btn.disabled = false; btn.textContent = 'Guardar';
             return;
@@ -19472,12 +19580,15 @@
           uid = cuenta.uid;
         }
 
+        // Recién ahora (correo y cuenta ya resueltos) se crea, si corresponde, la ficha de profesional.
+        if(!(await usCrearFichaProfesional(datos))){ btn.disabled = false; btn.textContent = 'Guardar'; return; }
+        const barber = datos.barberId ? (cfgBarberos.find(b=> b.id === datos.barberId) || null) : null;
         const nuevo = { id: uid, ...datos, active:true, barber };
         try{ await db.collection('staff').doc(uid).set(nuevo); }
         catch(e){ btn.disabled = false; btn.textContent = 'Guardar'; return showToast('Cuenta ' + (esReutilizada ? 'vinculada' : 'creada') + ', pero no se pudo guardar la ficha: ' + e.message); }
         usLista.push(nuevo);
         showToast(esReutilizada
-          ? `${datos.name} ahora también es profesional -- conserva su cuenta y contraseña actuales`
+          ? `${datos.name} ahora también forma parte del equipo (${datos.role === 'BARBER' ? 'profesional' : datos.role === 'ADMIN' ? 'administración' : 'recepción'}) -- conserva su cuenta y contraseña actuales`
           : `Acceso creado · le llegó un correo a ${datos.email} para que defina su contraseña`);
       }
       usPintar();
@@ -19485,7 +19596,7 @@
 
     btn.disabled = false; btn.textContent = 'Guardar';
     cerrarModales();
-  });
+  }
 
   async function usToggle(u){
     const activo = u.active !== false;
