@@ -7329,19 +7329,50 @@
   ];
   const barbersRow = document.getElementById('barbersRow');
 
+  /** ORDEN VISUAL del calendario: depende SOLO de un dato estable del
+   *  profesional (su identificador de columna `calId`; si no es numérico, su
+   *  id) -- NUNCA del orden en que Firestore entrega los documentos ('d10'
+   *  ordena antes que 'd2' como texto) ni de la posición en ningún arreglo. */
+  function ordenarBarberosCalendario(lista){
+    const num = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : Infinity; };
+    return [...lista].sort((a,b)=> (num(a.id) - num(b.id)) || String(a.id).localeCompare(String(b.id)));
+  }
+
+  /** Comprueba (con la geometría real de la pantalla) que CADA encabezado
+   *  tiene debajo la columna del MISMO profesional. Devuelve la lista de
+   *  problemas (vacía = alineado). Un encabezado sobre la columna de otro
+   *  profesional hace que se lea una reserva bajo el nombre equivocado y que
+   *  un clic en la agenda abra el formulario con otro profesional. */
+  function verificarAlineacionAgenda(){
+    const problemas = [];
+    document.querySelectorAll('#barbersRow .barber-head').forEach(h=>{
+      const c = document.getElementById('col' + h.dataset.barber);
+      if(!c || c.style.display === 'none'){ problemas.push('encabezado ' + h.dataset.barber + ' sin columna'); return; }
+      if(h.style.gridColumn !== c.style.gridColumn){ problemas.push('encabezado ' + h.dataset.barber + ' (grilla ' + h.style.gridColumn + ') != columna (grilla ' + c.style.gridColumn + ')'); return; }
+      const rh = h.getBoundingClientRect(), rc = c.getBoundingClientRect();
+      if(rh.width > 0 && rc.width > 0 && Math.abs(rh.x - rc.x) > 4) problemas.push('encabezado ' + h.dataset.barber + ' desplazado de su columna');
+    });
+    window.__agendaAlineada = problemas.length === 0;
+    if(problemas.length) console.error('[agenda] encabezado/columna desalineados:', problemas);
+    return problemas;
+  }
+
   /** Vuelve a dibujar las columnas según los barberos activos. */
   function pintarColumnas(){
-    const activos = barbers.filter(b=> b.active !== false);
+    const activos = ordenarBarberosCalendario(barbers.filter(b=> b.active !== false));
 
     barbersRow.innerHTML = '';
     const corner = document.createElement('div');
     corner.style.borderRight = '1px solid var(--border)';
+    corner.style.gridColumn = '1';
     barbersRow.appendChild(corner);
 
-    activos.forEach(b=>{
+    activos.forEach((b, posicion)=>{
       const pct = Math.min(100, Math.round((b.count/6)*100));
       const el = document.createElement('div');
       el.className='barber-head'; el.dataset.barber=b.id;
+      // columna de la grilla EXPLÍCITA (misma fórmula que su columna de abajo)
+      el.style.gridColumn = String(posicion + 2);
       const avatarBg = b.photoUrl ? ` style="background-image:url('${b.photoUrl}');background-size:cover;background-position:center;"` : '';
       el.innerHTML = `
         <div class="b-avatar-ring" style="--pct:${pct}"><div class="b-avatar"${avatarBg}>${b.photoUrl ? '' : b.initials}</div></div>
@@ -7360,10 +7391,20 @@
     const grid = document.getElementById('gridBody');
     if(grid) grid.style.gridTemplateColumns = cols;
 
-    barbers.forEach(b=>{
-      const c = document.getElementById('col' + b.id);
-      if(c) c.style.display = b.active === false ? 'none' : '';
-    });
+    // Cada columna activa recibe la MISMA columna de grilla que su encabezado
+    // (posición dentro de `activos`, calculada una sola vez arriba); las
+    // demás se ocultan. Así el emparejamiento encabezado<->columna no depende
+    // del orden de los nodos en el HTML ni de cuándo se crearon.
+    if(grid){
+      const tc = grid.querySelector('.time-col'); if(tc){ tc.style.gridColumn = '1'; tc.style.gridRow = '1'; }
+      document.querySelectorAll('#gridBody .col').forEach(c=>{
+        const idx = activos.findIndex(b=> String(b.id) === String(c.dataset.barber));
+        if(idx >= 0){ c.style.display = ''; c.style.gridColumn = String(idx + 2); c.style.gridRow = '1'; }
+        else { c.style.display = 'none'; c.style.gridColumn = ''; c.style.gridRow = ''; }
+      });
+      // y los nodos se ordenan igual (las tarjetas viajan dentro de su columna)
+      activos.forEach(b=>{ const c = document.getElementById('col' + b.id); if(c) grid.appendChild(c); });
+    }
 
     // El HTML trae 5 columnas fijas de origen (col1..col5, de cuando el
     // negocio tenía exactamente 5 barberos hardcodeados). Cualquier columna
@@ -7375,6 +7416,8 @@
     document.querySelectorAll('#gridBody .col').forEach(c=>{
       if(!idsConocidos.has(String(c.dataset.barber))) c.style.display = 'none';
     });
+    verificarAlineacionAgenda();
+    if(typeof actualizarAvisoSinColumna === 'function') actualizarAvisoSinColumna();
   }
 
   /** Crea la columna del calendario para un barbero nuevo. */
@@ -7882,7 +7925,10 @@
   // Antes [1,2,3,4,5] hardcodeado -- un 6º+ profesional nunca recibía el
   // reparto de citas solapadas en sub-columnas. Usa la lista real de
   // profesionales activos (mismo criterio que pintarColumnas()).
-  function layoutAllColumns(){ barbers.filter(b=> b.active !== false).forEach(b=> layoutColumn(b.id)); }
+  function layoutAllColumns(){
+    barbers.filter(b=> b.active !== false).forEach(b=> layoutColumn(b.id));
+    if(typeof actualizarAvisoSinColumna === 'function') actualizarAvisoSinColumna();
+  }
 
   /** Pinta en el DOM las citas de UN barbero puntual que ya estaban
    *  correctas en `appointments` pero sin columna todavía (ver el guard
@@ -8117,7 +8163,7 @@
       const data = await api('/admin/agenda?date=' + currentDate);
 
       const colOf = {};
-      barbers.forEach((b,i)=> colOf[b.name] = i+1);
+      barbers.forEach(b=> colOf[b.name] = b.id);   // por id de columna, nunca por posición
 
       const known = new Set(appointments.map(a=> a.apiId).filter(Boolean));
       let added = 0;
@@ -8303,17 +8349,70 @@
     return a;
   }
 
-  function pickColumn(barberName){
-    if(BARBER_COL[barberName]) return BARBER_COL[barberName];
-    // "Cualquiera disponible" → columna con menos reservas, entre los
-    // barberos activos REALES (nunca una lista fija de 5: si hay más o
-    // menos barberos activos, esto se ajusta solo). Map en vez de objeto
-    // plano para no perder el tipo real de b.id (puede ser number o string).
-    const activos = barbers.filter(b=> b.active !== false);
-    if(!activos.length) return 1;
-    const counts = new Map(activos.map(b=> [b.id, 0]));
-    appointments.forEach(a=> { if(counts.has(a.col)) counts.set(a.col, counts.get(a.col)+1); });
-    return [...counts.entries()].sort((x,y)=> x[1]-y[1])[0][0];
+  /** Columna (calId) donde se dibuja una reserva. SOLO por identidad:
+   *   1) por `barberId` (id estable del documento del profesional);
+   *   2) reservas ANTIGUAS sin barberId: por nombre exacto o alias
+   *      `nombresAnteriores`, y SOLO si ese nombre identifica a UN único
+   *      profesional (activo, o el único existente);
+   *   3) en cualquier otro caso `null`: la reserva NO se dibuja bajo ningún
+   *      profesional (se avisa arriba de la agenda) -- jamás "la columna con
+   *      menos reservas" ni la primera de la lista. */
+  function columnaDeReserva(r){
+    const calDe = (cb)=> (cb.calId != null ? cb.calId : cb.id);
+    if(r.barberId){
+      const cb = cfgBarberos.find(x=> x.id === r.barberId);
+      return cb ? calDe(cb) : null;
+    }
+    const nombre = r.barber;
+    if(!nombre) return null;
+    const cands = cfgBarberos.filter(x=> x.name === nombre || (Array.isArray(x.nombresAnteriores) && x.nombresAnteriores.includes(nombre)));
+    const activos = cands.filter(x=> x.active !== false);
+    const unico = activos.length === 1 ? activos[0] : (activos.length === 0 && cands.length === 1 ? cands[0] : null);
+    return unico ? calDe(unico) : null;
+  }
+  function pickColumn(barberName){ return columnaDeReserva({ barber: barberName }); }
+
+  /** Ficha (cfgBarberos) del profesional dueño de una cita/reserva. SOLO por
+   *  identidad: `barberId`; las reservas ANTIGUAS sin barberId, por nombre
+   *  exacto o alias y SOLO si identifica a UN único profesional. Si no se
+   *  puede determinar sin ambigüedad devuelve `null` (jamás "el primero con ese
+   *  nombre"). Lo usan comisiones, vista del barbero y avisos. */
+  function profesionalDeCita(a){
+    if(!a) return null;
+    if(a.barberId) return cfgBarberos.find(b=> b.id === a.barberId) || null;
+    const nombre = a.barber;
+    if(!nombre) return null;
+    const cands = cfgBarberos.filter(b=> b.name === nombre || (Array.isArray(b.nombresAnteriores) && b.nombresAnteriores.includes(nombre)));
+    const activos = cands.filter(b=> b.active !== false);
+    return activos.length === 1 ? activos[0] : (activos.length === 0 && cands.length === 1 ? cands[0] : null);
+  }
+
+  /** Aviso (arriba de la agenda) de las reservas del día que NO se pueden
+   *  dibujar en ninguna columna: profesional sin ficha, ambiguo, o inactivo
+   *  (su columna está oculta). Así nunca desaparecen en silencio ni se
+   *  muestran bajo otro profesional. */
+  function actualizarAvisoSinColumna(){
+    let box = document.getElementById('avisoSinColumna');
+    // `appointments` se declara más abajo (const): en la primera pintada de
+    // columnas todavía no existe -- no hay nada que avisar todavía.
+    let lista;
+    try{ lista = appointments; }catch(e){ return; }
+    const hoyDia = (lista || []).filter(a=> a && a.fecha === currentDate);
+    const huerfanas = hoyDia.filter(a=>{
+      if(a.col == null) return true;
+      const c = document.getElementById('col' + a.col);
+      return !c || c.style.display === 'none';
+    });
+    if(!huerfanas.length){ if(box) box.remove(); return; }
+    if(!box){
+      box = document.createElement('div'); box.id = 'avisoSinColumna';
+      box.style.cssText = 'margin:8px 0;padding:10px 14px;border:1px solid var(--warn,#b45309);border-left:4px solid var(--warn,#b45309);border-radius:8px;background:rgba(180,83,9,.08);font-size:13px;line-height:1.5;';
+      const ancla = document.getElementById('barbersRow');
+      if(ancla && ancla.parentElement) ancla.parentElement.insertBefore(box, ancla);
+    }
+    const hh = (a)=> String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
+    box.innerHTML = '<b>' + huerfanas.length + (huerfanas.length === 1 ? ' reserva de este día no aparece' : ' reservas de este día no aparecen') + ' en ninguna columna</b> (su profesional no está activo o no se pudo identificar): ' +
+      huerfanas.slice(0, 6).map(a=> escapeHTML(hh(a) + ' ' + (a.client || '') + ' — guardada con "' + (a.barber || 'sin profesional') + '"')).join(' · ') + (huerfanas.length > 6 ? ' …' : '');
   }
 
   function parseSlot(slot){
@@ -8340,18 +8439,21 @@
     // con un nombre que no calzara con ningún patrón quedaba mostrado
     // como si durara 45 min en la agenda.
     const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
-    const col = pickColumn(r.barber);
+    // POR ID del profesional (inmutable); el nombre solo se usa para
+    // reservas antiguas sin barberId y solo si es inequívoco.
+    const col = columnaDeReserva(r);
     const start = parseSlot(r.slot);
     const end = addMinutes(start[0], start[1], duracionReal);
-    const barberName = BARBER_COL[r.barber]
-      ? r.barber
-      : (barbers.find(b=> b.id===col) || {}).name;
+    // Nombre MOSTRADO: el de la ficha del profesional dueño del ID; si no hay
+    // ficha, el nombre con que quedó guardada la reserva -- nunca el de otra columna.
+    const cbReserva = r.barberId ? cfgBarberos.find(x=> x.id === r.barberId) : null;
+    const barberName = cbReserva ? cbReserva.name : (r.barber || '');
     // precioFinal ?? price -- si ADMIN ajustó el precio manualmente, la
     // agenda/tarjeta muestra ese valor final, nunca el original de catálogo.
     const precioMostrado = typeof r.precioFinal === 'number' ? r.precioFinal : Number(r.price) || 0;
 
     return {
-      webId: r.id, col, fecha: r.fecha,
+      webId: r.id, barberId: r.barberId || null, col, fecha: r.fecha,
       client: r.client || 'Cliente web',
       service: r.svc,
       price: '$' + precioMostrado.toLocaleString('es-CL'),
@@ -8688,7 +8790,8 @@
       refrescarSelectsCatalogo();
     }, ()=>{ _svcListo = true; _marcarCatalogoListo(); });
     unsubBarbers = db.collection('barbers').onSnapshot(snap=>{
-      cfgBarberos = snap.docs.map(d=> d.data());
+      // `id` SIEMPRE el del documento (nunca confiar en un campo copiado)
+      cfgBarberos = snap.docs.map(d=> ({ ...d.data(), id: d.id }));
       if(hayServer(snap)){ _barListo = true; _marcarCatalogoListo(); }
       sincronizarBarberosDesdeFirestore();   // reconstruye barbers/BARBER_COL/columnas
       refrescarSelectsCatalogo();
@@ -9969,7 +10072,7 @@
         forzar: false, avisarCliente,
         citas: [{
           serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
-          barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
+          barberId: barbero.id, barberName: barbero.name, startMin: h*60+m, minutes: servicio.minutes,
           label: fmtFecha(fecha) + ' · ' + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),
         }],
       });
@@ -11343,9 +11446,11 @@
     sbPintarSemana();
   }
 
-  function sbCitasDelDia(iso, barberName){
+  function sbCitasDelDia(iso, barberName, barberId){
+    // por ID del profesional; el nombre solo para reservas antiguas sin barberId
     return firestoreBookings.filter(r=>
-      r.decision !== 'rechazada' && r.fecha === iso && r.barber === barberName);
+      r.decision !== 'rechazada' && r.fecha === iso &&
+      (r.barberId && barberId ? r.barberId === barberId : (!r.barberId && r.barber === barberName)));
   }
 
   function sbPintarSemana(){
@@ -11449,7 +11554,7 @@
       });
 
       // citas reales de ese día
-      sbCitasDelDia(iso, b.name).forEach(r=>{
+      sbCitasDelDia(iso, b.name, (cfgBarberos.find(x=> (x.calId != null ? x.calId : x.id) === b.id) || {}).id).forEach(r=>{
         const meta = serviceMeta(r.svc);
         const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
         const start = parseSlot(r.slot);
@@ -12435,7 +12540,7 @@
   async function desactivarBarbero(id){
     const b = cfgBarberos.find(x=> x.id === id);
     if(!b) return;
-    const suyas = appointments.filter(a=> a.barber === b.name).length;
+    const suyas = appointments.filter(a=> { const p = profesionalDeCita(a); return !!(p && p.id === b.id); }).length;
     if(suyas && !(await mgConfirm(
       `${b.name} tiene ${suyas} cita(s) en la agenda de este día.\n\n` +
       `Al quitarlo dejará de aparecer y no se le podrán asignar reservas nuevas. ¿Continuar?`
@@ -14053,9 +14158,11 @@
     await cargarCatalogo();
     await cxCargarTarifas();
 
-    const yo = cfgBarberos.find(b=> b.name === userBarberName);
+    // Por ID del profesional vinculado a la cuenta (staff.barberId), nunca por
+    // nombre: dos profesionales con el mismo nombre o un renombrado mezclaban citas.
+    const yo = userBarberId ? (cfgBarberos.find(b=> b.id === userBarberId) || null) : null;
     const misCitas = appointments
-      .filter(a=> a.barber === userBarberName)
+      .filter(a=> { const p = profesionalDeCita(a); return !!(yo && p && p.id === yo.id); })
       .sort((a,b)=> (a.start[0]*60+a.start[1]) - (b.start[0]*60+b.start[1]));
 
     let comisionServicios = 0, propinas = 0, comisionProductos = 0, realizados = 0;
@@ -14404,8 +14511,11 @@
       if(to && a.fecha && a.fecha > to) continue;
 
       const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || cxPrecioServicio(a.service);
-      const barbero = cfgBarberos.find(b=> b.name === a.barber)
-        || { id:'x'+a.col, name:a.barber || 'Sin asignar' };
+      // Profesional por ID (nunca por nombre ni por columna): si la reserva no
+      // se puede atribuir sin ambigüedad queda en una fila aparte, no se le
+      // suma a ningún profesional.
+      const barbero = profesionalDeCita(a)
+        || { id:'sin-asignar:' + (a.barber || ''), name:(a.barber || 'Sin asignar') + ' (profesional no identificable)' };
       if(soloBarberId && barbero.id !== soloBarberId) continue;
       const row = fila(barbero);
 
@@ -14815,7 +14925,7 @@
       if(to && a.fecha && a.fecha > to) continue;
       const propina = Number(a.propina) || 0;
       if(propina <= 0) continue;
-      const barbero = cfgBarberos.find(b=> b.name === a.barber) || { id:'x'+a.col, name:a.barber || 'Sin asignar' };
+      const barbero = profesionalDeCita(a) || { id:'sin-asignar:' + (a.barber || ''), name:(a.barber || 'Sin asignar') + ' (profesional no identificable)' };
       if(soloBarberId && barbero.id !== soloBarberId) continue;
       if(!mapa.has(barbero.id)){
         mapa.set(barbero.id, {
@@ -20108,7 +20218,8 @@
 
     const svcActual = cfgServicios.find(s=> s.name === a.service);
     if(svcActual) document.getElementById('editServicio').value = svcActual.id;
-    const barberoActual = cfgBarberos.find(b=> b.name === a.barber);
+    // Profesional actual por ID (las reservas antiguas sin barberId, solo si su nombre es inequívoco)
+    const barberoActual = profesionalDeCita(a);
     // Profesionales: solo los autorizados para el servicio actual de la
     // reserva -- pero conservando (conservarSiNoCalza=true) al profesional
     // que la reserva YA tiene, aunque ya no califique hoy, marcado aparte:
@@ -20228,7 +20339,7 @@
       // ya tenía (no hace falta mandarla igual, pero no está de más).
       try{
         await functions.httpsCallable('reagendarReservaAdmin')({
-          bookingId: a.webId, barberName: barbero.name, fecha, startMin: h*60+m, minutes: servicio.minutes,
+          bookingId: a.webId, barberId: barbero.id, barberName: barbero.name, fecha, startMin: h*60+m, minutes: servicio.minutes,
           serviceId: servicio.id, servicio: servicio.name, price: servicio.priceClp,
         });
       }catch(e){
@@ -20242,6 +20353,7 @@
     a.price = '$' + servicio.priceClp.toLocaleString('es-CL');
     a.type = serviceMeta(servicio.name).type;
     a.barber = barbero.name;
+    a.barberId = barbero.id;
     a.col = barbero.calId;
     a.fecha = fecha;
     a.start = [h, m];
@@ -21404,7 +21516,19 @@
     // conservado"), y la admin debe elegir uno autorizado o cambiar el
     // servicio.
     const barberoClic = cfgBarberos.find(b=> b.calId === barberoCalId);
-    pfRepoblarBarbero(document.getElementById('nrBarbero'), document.getElementById('nrServicio').value, barberoClic?.id || null, false);
+    // PROTECCIÓN: si no se puede determinar INEQUÍVOCAMENTE el profesional de
+    // la columna, o la agenda no está alineada (encabezado != columna), NO se
+    // abre la reserva ni se asigna a nadie: se muestra el error.
+    if(!barberoClic){
+      showToast('No se pudo determinar el profesional de esa columna. No se abrió la reserva; recarga la página.');
+      return;
+    }
+    if(verificarAlineacionAgenda().length){
+      pintarColumnas();
+      showToast('La agenda estaba desalineada y se corrigió. Vuelve a hacer clic en la columna del profesional.');
+      return;
+    }
+    pfRepoblarBarbero(document.getElementById('nrBarbero'), document.getElementById('nrServicio').value, barberoClic.id, false);
     document.getElementById('nrFecha').value = currentDate;
     // TiempoSantiago.fechaSantiago() -- NUNCA toISOString() (día UTC): con
     // el bug, entre ~20:00 y medianoche hora Chile el propio día de hoy
