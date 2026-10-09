@@ -5,7 +5,7 @@
  * Qué NO hace: no toca reservas, pagos, carrito ni cuentas; no lee ni envía nombre, correo ni teléfono; no manda el código de referido (?rf=); no usa la «configuración automática» de Meta.
  *
  * Reglas duras:
- *  - CONSENTIMIENTO: antes de aceptar no se descarga el Pixel, no se envía nada a Meta y no se crean sus cookies. Rechazar = cero seguimiento. «Preferencias de privacidad» (pie) lo cambia cuando quiera.
+ *  - CONSENTIMIENTO: antes de pulsar «Aceptar» en el aviso inferior no se descarga el Pixel, no se envía nada a Meta y no se crean sus cookies. El control «Desactivar / Activar» de la Política de privacidad cambia la decisión cuando quiera.
  *  - SOLO el Pixel oficial en masterlook.cl / www.masterlook.cl. En cualquier otro sitio (pruebas, DEV, local) NO se carga ningún Pixel salvo que se pida a propósito con ?metaPixelPrueba=<ID>.
  *  - Purchase solo con pago CONFIRMADO por el servidor (el comprobante que devuelve el servidor tras Webpay / Mercado Pago), por lo realmente cobrado en CLP. Una reserva sin anticipo es Schedule, NUNCA Purchase.
  *  - Sin duplicados: cada Schedule/Purchase tiene un identificador propio (schedule_<n.º de operación> / purchase_<n.º de operación>) y se recuerda cuáles ya se enviaron (recargar o volver de Webpay no los repite).
@@ -40,6 +40,10 @@
       else { try { pixelId = sessionStorage.getItem('mlMetaPixelPrueba') || ''; } catch (e) {} }
       if (!/^\d{10,20}$/.test(pixelId)) pixelId = '';
     } catch (e) { pixelId = ''; }
+  }
+
+  if (!esProduccion) {                                               // solo para revisar el diseño en DEV: ?metaReset=1 borra la decisión guardada para volver a ver el aviso (nunca actúa en masterlook.cl)
+    try { if (/[?&]metaReset=1/.test(location.search)) { ['mlMetaConsent', 'mlMetaEnviados'].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} }); try { document.cookie = 'ml_meta_consent=; path=/; max-age=0'; } catch (e) {} } } catch (e) {}
   }
 
   /* ---------- almacenamiento tolerante (los navegadores integrados de Instagram / WhatsApp no persisten localStorage) ---------- */
@@ -108,7 +112,11 @@
 
   /* ---------- carga del Pixel (solo tras aceptar) ---------- */
   function cargarPixel(listo) {
-    if (!pixelId || cargado) { if (listo) listo(); return; }
+    if (!pixelId) { if (listo) listo(); return; }
+    if (cargado) {                                                   // ya estaba cargado: si se había revocado (la persona desactivó y volvió a activar en la misma visita) se vuelve a conceder
+      if (!inicializado) { try { if (typeof window.fbq === 'function') { window.fbq('consent', 'grant'); inicializado = true; } } catch (e) {} }
+      if (listo) listo(); return;
+    }
     if (cargando) return; cargando = true;
     var intentos = 0;
     (function esperarUrl() {
@@ -309,48 +317,102 @@
     try { return enviar('IrAAgendaPro', { sucursal: SUCURSAL_EXTERNA, destino: 'AgendaPro' }, 'agendapro_' + aleatorio(), true); } catch (e) { return false; }
   }
 
-  /* ---------- aviso de consentimiento ---------- */
-  var avisoEl = null;
+  /* ---------- aviso de cookies (barra inferior) ---------- */
+  var avisoEl = null, avisoTimer = null;
+  var CSS_AVISO =
+    '#mlMetaAviso{--mla-bg:rgba(18,18,20,.9);--mla-tx:var(--text-mid,#9a9691);--mla-hi:var(--text-hi,#f5f5f5);--mla-bt:rgba(255,255,255,.12);--mla-bd:rgba(255,255,255,.16);--mla-brillo:rgba(255,255,255,.10);--mla-sombra:rgba(0,0,0,.35);'
+    + 'position:fixed;left:0;right:0;bottom:var(--mla-off,0px);z-index:74;box-sizing:border-box;background:var(--mla-bg);-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);'   /* «vidrio líquido» (gota de agua): fondo translúcido con desenfoque + brillo suave */
+    + 'border-top:1px solid var(--mla-bd);box-shadow:0 -12px 32px var(--mla-sombra),inset 0 1px 0 var(--mla-brillo);'
+    + 'font-family:var(--font-body,inherit);-webkit-font-smoothing:antialiased;animation:mlaSube .28s cubic-bezier(.25,.46,.45,.94) both}'
+    + ':root[data-theme="light"] #mlMetaAviso{--mla-bg:rgba(240,240,242,.88);--mla-tx:#58585d;--mla-hi:#2f2f33;--mla-bt:rgba(214,214,218,.95);--mla-bd:rgba(255,255,255,.7);--mla-brillo:rgba(255,255,255,.95);--mla-sombra:rgba(20,20,25,.09)}'
+    + '#mlMetaAviso::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 160% at 10% -30%,rgba(255,255,255,.55),rgba(255,255,255,0) 55%)}'   /* resplandor de gota arriba a la izquierda */
+    + ':root:not([data-theme="light"]) #mlMetaAviso::before{background:radial-gradient(120% 160% at 10% -30%,rgba(255,255,255,.10),rgba(255,255,255,0) 55%)}'
+    + '#mlMetaAviso .mla-in{position:relative;box-sizing:border-box;max-width:640px;margin:0 auto;padding:14px 14px 12px;display:flex;flex-direction:column;gap:12px}'
+    + '#mlMetaAviso .mla-txt{margin:0;font-size:13px;line-height:1.32;color:var(--mla-tx)}'
+    + '#mlMetaAviso .mla-link{display:inline;padding:0;margin:0;border:0;background:none;color:var(--mla-hi);font:inherit;font-weight:600;cursor:pointer;text-decoration:none}'
+    + '#mlMetaAviso .mla-link:hover{text-decoration:underline}'
+    + '#mlMetaAviso .mla-btns{display:flex;gap:8px}'
+    + '#mlMetaAviso .mla-btns button{flex:1;min-height:33px;padding:0 10px;border:0;border-radius:999px;background:var(--mla-bt);box-shadow:inset 0 1px 0 var(--mla-brillo),0 1px 2px var(--mla-sombra);color:var(--mla-hi);font-family:inherit;font-size:11px;font-weight:600;line-height:1;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:filter .15s}'
+    + '#mlMetaAviso .mla-btns button:hover{filter:brightness(.96)}'
+    + '#mlMetaAviso button:focus-visible{outline:2px solid var(--mla-hi);outline-offset:2px}'
+    + '@keyframes mlaSube{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}'
+    + '@media (prefers-reduced-motion:reduce){#mlMetaAviso{animation:none}}'
+    + '@media (min-width:900px){#mlMetaAviso .mla-in{max-width:1188px;flex-direction:row;align-items:center;justify-content:space-between;gap:28px;padding:14px 24px}#mlMetaAviso .mla-txt{max-width:760px}#mlMetaAviso .mla-btns{flex:0 0 auto}#mlMetaAviso .mla-btns button{flex:0 0 auto;width:164px}}'
+    + 'body.ml-aviso-abierto .chat-bubble{bottom:max(92px,calc(var(--mla-off,0px) + var(--mla-h,0px) + 14px))}';
   function estilos() {
     if (document.getElementById('mlMetaEstilos')) return;
-    var s = document.createElement('style'); s.id = 'mlMetaEstilos';
-    s.textContent = '#mlMetaAviso{position:fixed;left:16px;bottom:16px;z-index:120;width:min(380px,calc(100% - 32px));box-sizing:border-box;padding:14px 16px;border-radius:16px;background:var(--panel,#fff);color:var(--text-hi,#141311);border:1px solid var(--linea,rgba(20,19,17,.14));box-shadow:0 10px 34px rgba(20,19,17,.18);font-family:var(--font-body,inherit);font-size:.8125rem;line-height:1.4}'
-      + '#mlMetaAviso b{display:block;font-size:.875rem;margin-bottom:2px}#mlMetaAviso p{margin:0 0 10px;color:var(--text-mid,#57554f)}#mlMetaAviso .ml-fila{display:flex;gap:8px;align-items:center}'
-      + '#mlMetaAviso button{flex:1;font:inherit;font-weight:600;padding:9px 12px;border-radius:12px;border:1px solid var(--linea,rgba(20,19,17,.22));background:transparent;color:inherit;cursor:pointer}#mlMetaAviso button:focus-visible{outline:2px solid currentColor;outline-offset:2px}'
-      + '#mlMetaAviso .ml-mas{flex:0 0 auto;border:0;padding:9px 4px;font-weight:500;text-decoration:underline;color:var(--text-mid,#57554f)}'
-      + '@media (max-width:760px){#mlMetaAviso{left:12px;right:12px;width:auto;bottom:calc(152px + env(safe-area-inset-bottom))}}';
-    document.head.appendChild(s);
+    var s = document.createElement('style'); s.id = 'mlMetaEstilos'; s.textContent = CSS_AVISO; document.head.appendChild(s);
   }
-  function cerrarAviso() { if (avisoEl && avisoEl.parentNode) avisoEl.parentNode.removeChild(avisoEl); avisoEl = null; }
+  /** El aviso va pegado justo ENCIMA de lo más alto que el sitio tenga fijo abajo (barra inferior flotante / tarjeta de reserva), para no taparlo; y la burbuja del chat se corre para no quedar debajo. */
+  function ubicarAviso() {
+    try {
+      if (!avisoEl) return;
+      var off = 0;
+      ['.bottom-nav', '#rvBarra'].forEach(function (sel) {
+        var e = document.querySelector(sel); if (!e) return;
+        var cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        var r = e.getBoundingClientRect(); if (r.height < 1) return;
+        var d = Math.round(window.innerHeight - r.top); if (d > off && d < window.innerHeight * 0.6) off = d;
+      });
+      var root = document.documentElement.style;
+      root.setProperty('--mla-off', off + 'px'); root.setProperty('--mla-h', Math.round(avisoEl.getBoundingClientRect().height) + 'px');
+    } catch (e) {}
+  }
+  function cerrarAviso() {
+    if (avisoTimer) { clearInterval(avisoTimer); avisoTimer = null; }
+    if (avisoEl && avisoEl.parentNode) avisoEl.parentNode.removeChild(avisoEl); avisoEl = null;
+    try { document.body.classList.remove('ml-aviso-abierto'); document.documentElement.style.removeProperty('--mla-off'); document.documentElement.style.removeProperty('--mla-h'); window.removeEventListener('resize', ubicarAviso); } catch (e) {}
+  }
+  var TEXTO_AVISO = 'Utilizamos cookies y almacenamiento local necesarias para el funcionamiento del sitio. Al continuar navegando, aceptas su uso. Consulta nuestra ';
   function mostrarAviso() {
     try {
       if (!pixelId || avisoEl || gpcRechaza()) return;
       estilos();
-      var d = document.createElement('div'); d.id = 'mlMetaAviso'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Medición de anuncios');
-      var t = document.createElement('b'); t.textContent = 'Medición de anuncios';
-      var p = document.createElement('p'); p.textContent = 'Usamos el Pixel de Meta para medir qué anuncios de Facebook e Instagram te traen a MASTERLOOK. No enviamos tu nombre, correo ni teléfono. ¿Lo aceptas?';
-      var f = document.createElement('div'); f.className = 'ml-fila';
-      var no = document.createElement('button'); no.type = 'button'; no.id = 'mlMetaRechazar'; no.textContent = 'Rechazar';
-      var si = document.createElement('button'); si.type = 'button'; si.id = 'mlMetaAceptar'; si.textContent = 'Aceptar';
-      var mas = document.createElement('button'); mas.type = 'button'; mas.className = 'ml-mas'; mas.id = 'mlMetaMas'; mas.textContent = 'Más información';
-      no.addEventListener('click', function () { decidir('denied'); }); si.addEventListener('click', function () { decidir('granted'); });
+      var d = document.createElement('div'); d.id = 'mlMetaAviso'; d.setAttribute('role', 'region'); d.setAttribute('aria-label', 'Aviso de cookies');
+      var dentro = document.createElement('div'); dentro.className = 'mla-in';
+      var p = document.createElement('p'); p.className = 'mla-txt'; p.appendChild(document.createTextNode(TEXTO_AVISO));
+      var mas = document.createElement('button'); mas.type = 'button'; mas.className = 'mla-link'; mas.id = 'mlMetaMas'; mas.textContent = 'Política de privacidad';
       mas.addEventListener('click', function () { try { if (typeof window.abrirModalLegal === 'function') window.abrirModalLegal('privacidadModal'); } catch (e) {} });
-      f.appendChild(no); f.appendChild(si); f.appendChild(mas); d.appendChild(t); d.appendChild(p); d.appendChild(f);
-      document.body.appendChild(d); avisoEl = d;
+      p.appendChild(mas); p.appendChild(document.createTextNode('.'));
+      var f = document.createElement('div'); f.className = 'mla-btns';
+      var si = document.createElement('button'); si.type = 'button'; si.id = 'mlMetaAceptar'; si.textContent = 'Aceptar';
+      si.addEventListener('click', function () { decidir('granted'); });
+      f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
+      document.body.appendChild(d); avisoEl = d; document.body.classList.add('ml-aviso-abierto');
+      ubicarAviso(); window.addEventListener('resize', ubicarAviso); avisoTimer = setInterval(ubicarAviso, 500);
     } catch (e) {}
   }
   function decidir(v) {
     guardarConsentimiento(v); cerrarAviso();
     if (v === 'granted') cargarPixel(function () { ultimaPantalla = null; sincronizarPantalla(true); });
     else revocarPixel();
+    pintarControl();
   }
-  function abrirPreferencias() { cerrarAviso(); mostrarAviso(); }
+  /* ---------- control dentro de la Política de privacidad (sin barra de preferencias aparte): «Desactivar / Activar» la medición publicitaria en este dispositivo ---------- */
+  function etiquetaControl() {
+    if (gpcRechaza()) return { txt: 'Medición publicitaria desactivada: tu navegador envía la señal «Global Privacy Control».', btn: '' };
+    var on = leerConsentimiento() === 'granted';
+    return { txt: 'Medición publicitaria en este dispositivo: ' + (on ? 'activada.' : 'desactivada.') + ' ', btn: on ? 'Desactivar' : 'Activar' };
+  }
+  function pintarControl() {
+    try {
+      var t = document.getElementById('mlMetaEstadoTxt'), b = document.getElementById('mlMetaToggle'), w = document.getElementById('mlMetaControl'); if (!t || !b || !w) return;
+      var e = etiquetaControl(); t.textContent = e.txt; b.textContent = e.btn; b.style.display = e.btn ? '' : 'none'; w.style.display = '';
+    } catch (e) {}
+  }
+  function prepararControl() {
+    try {
+      var b = document.getElementById('mlMetaToggle'); if (!b || b.getAttribute('data-ml') === '1') return; b.setAttribute('data-ml', '1');
+      b.addEventListener('click', function () { decidir(leerConsentimiento() === 'granted' ? 'denied' : 'granted'); });
+      pintarControl();
+    } catch (e) {}
+  }
 
   /* ---------- arranque ---------- */
   function arrancar() {
     try {
       if (!pixelId) return;                                                          // sin Pixel para este sitio: ni aviso ni nada
-      observarPantallas(); observarReservas();
+      observarPantallas(); observarReservas(); prepararControl();
       var c = leerConsentimiento();
       if (c === 'granted') cargarPixel(function () { sincronizarPantalla(true); });
       else if (c === null) mostrarAviso();
@@ -362,6 +424,6 @@
     activo: activo, estado: function () { return { pixelId: pixelId, produccion: esProduccion, consentimiento: leerConsentimiento(), cargado: cargado, inicializado: inicializado, bloqueadoPorUrl: bloqueadoPorUrl, registro: registro.slice() }; },
     viewContent: viewContent, servicioElegido: servicioElegido, nuevoIntentoReserva: nuevoIntentoReserva, checkoutDesdeChat: checkoutDesdeChat,
     reservaConfirmadaSinAnticipo: reservaConfirmadaSinAnticipo, checkoutCarrito: checkoutCarrito, marcarRetornoPago: marcarRetornoPago, comprobantePintado: comprobantePintado,
-    irAAgendaPro: irAAgendaPro, abrirPreferencias: abrirPreferencias,
+    irAAgendaPro: irAAgendaPro, actualizarControl: pintarControl,
   };
 })();
