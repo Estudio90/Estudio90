@@ -55,6 +55,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
 <script src="config-comun.js"></script>
 <script src="tiempo-santiago.js"></script>
+<script src="meta-consent.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
 <style>
   /* ==========================================================
@@ -3818,6 +3819,7 @@
         <span onclick="abrirModalLegal('terminosModal')">Términos</span>
         <span onclick="abrirModalLegal('privacidadModal')">Privacidad</span>
         <span onclick="abrirModalLegal('arcoModal')">Derechos ARCO</span>
+        <span onclick="if(window.MLMeta) MLMeta.abrirPreferencias()">Preferencias de privacidad</span>
       </div>
     </div>
   </div>
@@ -3850,6 +3852,7 @@
       <p><b>Para qué los usamos.</b> Para confirmar y recordarte tus horas, contactarte por WhatsApp o correo sobre tu reserva, y llevar tu historial de visitas.</p>
       <p><b>Cómo los protegemos.</b> Tu teléfono y correo solo los puede ver el personal autorizado de MASTERLOOK — nunca son públicos ni visibles para otros clientes.</p>
       <p><b>Tus derechos.</b> Puedes pedir ver, corregir o eliminar tus datos cuando quieras, desde <span class="legal-link-inline" onclick="cerrarModalLegal('privacidadModal');abrirModalLegal('arcoModal');">Derechos ARCO</span>.</p>
+      <p><b>Cookies y medición publicitaria.</b> Si lo aceptas en el aviso del sitio, usamos el Pixel de Meta (Facebook e Instagram) para medir qué anuncios te traen a MASTERLOOK y mejorar nuestra publicidad. Enviamos qué páginas ves y si reservas o compras (con el monto), sin tu nombre, correo ni teléfono. Puedes rechazarlo o cambiar tu decisión cuando quieras en «Preferencias de privacidad», en el pie de página.</p>
       <p><b>Marco legal.</b> El tratamiento de tus datos personales se rige por la Ley N° 19.628 sobre Protección de la Vida Privada y la Ley N° 21.719, que crea la Agencia de Protección de Datos Personales y refuerza los derechos de acceso, rectificación, cancelación y oposición (ARCO) en Chile.</p>
     </div>
   </div>
@@ -5201,6 +5204,7 @@
     document.getElementById('toStep2').disabled = false;
     updateSummary();
     actualizarBarra();
+    try{ window.MLMeta && MLMeta.servicioElegido(state.servicios); }catch(_){}
   }
 
   function quitarServicio(id, todo){
@@ -6151,6 +6155,7 @@
           });
           const res = await resp.json();
           if(!resp.ok) throw new Error(res.error || 'No se pudo reservar. Intenta de nuevo.');
+          try{ window.MLMeta && MLMeta.reservaConfirmadaSinAnticipo({ ids: res.bookingIds, servicios: state.servicios }); }catch(_){}
 
           const productosElegidos = (state.upsellSeleccion || []).map(s=> ({ id: s.id, qty: 1 }));
           if(productosElegidos.length && res.bookingIds && res.bookingIds[0]){
@@ -6203,6 +6208,7 @@
    *  reenviar la misma reserva. Solo "Hacer otra reserva"
    *  (reiniciarModoReserva) puede volver a abrir un checkout nuevo. */
   function finalizarCheckout(){
+    try{ window.MLMeta && MLMeta.nuevoIntentoReserva(); }catch(_){}
     reservaConfirmadaFinal = true;
     pagoEnCurso = false;
     const barra = document.getElementById('rvBarra');
@@ -6231,6 +6237,7 @@
     form.submit();
   }
   function reiniciarModoReserva(){
+    try{ window.MLMeta && MLMeta.nuevoIntentoReserva(); }catch(_){}
     // Único lugar que reabre el checkout después de finalizarCheckout() --
     // a propósito, "Hacer otra reserva" es la única salida de ese estado.
     reservaConfirmadaFinal = false;
@@ -7259,6 +7266,7 @@
   async function chatConfirmarYPagarIA(propuesta){
     if(chatPagoIaEnCurso) return;
     chatPagoIaEnCurso = true;
+    try{ window.MLMeta && MLMeta.checkoutDesdeChat(propuesta); }catch(_){}
     document.getElementById('chatChips').innerHTML = '';
     const msg = chatAgregar('bot', 'Redirigiendo a Webpay…');
 
@@ -8642,6 +8650,7 @@
         if(password) body.buyerPassword = password;
         if(pais) body.buyerCountry = pais;
       }
+      try{ window.MLMeta && MLMeta.checkoutCarrito(carrito); }catch(_){}
       const resp = await fetch(FUNCTIONS_BASE + '/mpCrearPreferencia', {
         method: 'POST', headers, body: JSON.stringify(body),
       });
@@ -8760,6 +8769,7 @@
       }catch(e){ /* si falla el chequeo, el servidor igual protege -- se sigue */ }
     }
 
+    try{ window.MLMeta && MLMeta.checkoutCarrito(carrito); }catch(_){}
     // Webpay real: la transacción se crea en el servidor (Cloud Function),
     // que recalcula el monto real leyendo Firestore -- nunca confía en lo
     // que mande el navegador. Transbank confirma el pago del lado del
@@ -8820,6 +8830,7 @@
    *  se arman según lo que la compra realmente incluyó (datos.tieneCurso/
    *  datos.tieneProductos, nunca adivinado en el frontend). */
   function pintarComprobante(datos){
+    try{ window.MLMeta && MLMeta.comprobantePintado(datos); }catch(_){}
     const fila = (label, val)=> (val !== null && val !== undefined && val !== '')
       ? `<div class="cp-linea"><span>${escapeHTML(label)}</span><span>${escapeHTML(String(val))}</span></div>` : '';
 
@@ -9017,6 +9028,7 @@
     // que mpEstadoPago consulte la API de MP -- nunca se concede acceso por él.
     const mpPaymentId = params.get('payment_id') || params.get('collection_id') || '';
     if(!resultado) return;
+    try{ window.MLMeta && MLMeta.marcarRetornoPago(); }catch(_){}
 
     // limpiamos la URL de inmediato para que un refresco no vuelva a procesar
     // (y para que el token nunca quede visible en la barra más que este instante)
@@ -9432,6 +9444,7 @@
   function abrirDetalleCurso(id){
     const c = acCursosActuales.find(x=> String(x.id) === String(id));
     if(!c) return;
+    try{ window.MLMeta && MLMeta.viewContent('Curso', c.id, c.name, c.priceClp); }catch(_){}
     const clases = (c.lessons || []).filter(l=> l.active !== false);
     const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
     const precio = c.priceUsd && c.currency === 'USD' ? 'US$' + c.priceUsd : money(c.priceClp);
@@ -9720,6 +9733,7 @@
           const card = masInfo.closest('.svc-opt');
           const abierto = card.classList.toggle('abierto');
           masInfo.textContent = abierto ? 'Ver menos' : 'Más información';
+          if(abierto){ try{ window.MLMeta && MLMeta.viewContent('Servicio', card.dataset.id, card.dataset.svc, Number(card.dataset.price)); }catch(_){} }
           return;
         }
         // "Seleccionar" agrega el servicio y se queda en la lista -- igual
@@ -10993,6 +11007,7 @@
   function abrirGaleriaProducto(p){
     const fotos = fotosDeProducto(p);
     if(!fotos.length) return; // sin fotos reales -- no hay nada que mostrar
+    try{ window.MLMeta && MLMeta.viewContent('Producto', p.id, p.name, p.priceClp != null ? p.priceClp : p.price); }catch(_){}
     galFotos = fotos;
     galIndice = 0;
     galProducto = p;
@@ -11216,7 +11231,10 @@
     document.body.style.overflow = '';
   }
   function elegirSucursalProvidencia(){
-    window.location.href = URL_AGENDAPRO_PROVIDENCIA;
+    let enviado = false;
+    try{ enviado = !!(window.MLMeta && MLMeta.irAAgendaPro()); }catch(_){}
+    if(enviado) setTimeout(()=>{ window.location.href = URL_AGENDAPRO_PROVIDENCIA; }, 250);   // un instante para que el evento salga antes de abandonar el sitio
+    else window.location.href = URL_AGENDAPRO_PROVIDENCIA;
   }
   // sucursalRecienConfirmada: flag puntual, SOLO para esta llamada -- no se
   // guarda en sessionStorage ni en ningún otro lado. La próxima vez que se
