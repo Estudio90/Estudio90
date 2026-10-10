@@ -6450,7 +6450,79 @@
         }
       }).observe(el, { attributes:true, attributeFilter:['style'] });
     })();
-    return Object.freeze({ recepcion, bloquear, permitido, fijarRolFicha });
+    /* CFG (10-oct-2026): la ventana «Configuración» es solo de administración. Mismas piezas y misma ficha real que arriba (nunca `userRole`).
+     *  admin(): decisión SÍNCRONA. true = la dueña (UID fijo) o la ficha REAL anotada de ESTA sesión dice ADMIN. Sin sesión, sin ficha anotada, con otro rol
+     *  (RECEPTION, BARBER, rol «raro») o sin rol: NO es administración (cierra por defecto). */
+    function admin(){
+      const u = auth.currentUser;
+      if(!u) return false;
+      if(esDueña(u)) return true;
+      return E.uid === u.uid && E.rol === 'ADMIN';
+    }
+    /** Comprobación FUERTE (misma vigencia de 30 s y mismo tope de 4 s que permitido()): relee la ficha propia si la última lectura es vieja; si falla o no contesta,
+     *  vale el último rol real conocido. Nunca lanza error y nunca deja esperando a un administrador. true = es administración. */
+    async function adminPermitido(){
+      try{
+        const u = auth.currentUser;
+        if(u && !esDueña(u)){
+          const vigente = E.uid === u.uid && !!E.rol && (ahora() - E.ms) < VIGENCIA_MS;
+          if(!vigente){
+            const rol = await leerRolFichaReal();
+            if(rol) fijarRolFicha(u.uid, rol);
+          }
+        }
+      }catch(e){ /* sin lectura nueva vale el último rol real conocido (admin() lo usa) */ }
+      return admin();
+    }
+    return Object.freeze({ recepcion, bloquear, permitido, fijarRolFicha, admin, adminPermitido });
+  })();
+
+  /* ==========================================================
+     «CONFIGURAR» (VENTANA «CONFIGURACIÓN») SOLO PARA ADMINISTRACIÓN -- parche CFG, 10-oct-2026.
+     Orden de la dueña: «bloquea esta parte de configuración para barberos y recepción». La ventana Configuración (Negocio y contacto, Portada del sitio, Reservas y pagos:
+     datos del negocio, textos/colores/fotos/videos de la portada, correo de reserva, modalidades de anticipo) la abre solo ADMIN o la dueña (OWNER_UID_FALLBACK).
+     El rol se decide con la FICHA REAL de la sesión (rcClientes.admin() / adminPermitido()), NO con `userRole`.
+     Cierra: (1) el botón «Configurar» del menú de la cuenta (mostrarControlesAdmin); (2) su manejador (no carga nada ni abre la ventana); (3) todo clic dentro de la ventana
+     en una sesión que no es administración (se detiene antes de llegar a cualquier guardado); (4) red de seguridad: si la ventana se hace visible por cualquier otra vía
+     (consola, DOM directo), se cierra al instante.
+     LÍMITE HONESTO: es un cierre de PANTALLA. La protección real de la escritura ya es del servidor (reglas: settings/{doc} write = isAdmin(); Storage de la portada = esAdmin()).
+     La LECTURA de settings/negocio es pública a propósito (el sitio la necesita) y no cambia.
+     ========================================================== */
+  const rcConfig = (function(){
+    let avisoMs = 0;
+    /** Aviso claro (modal propio del panel, nunca alert() nativo). Texto fijo: no lleva datos de nadie. */
+    function aviso(){
+      if(Date.now() - avisoMs < 1500) return;   // varios candados seguidos muestran UN solo aviso
+      avisoMs = Date.now();
+      try{ mgAlert('Esta sección es solo de administración.', { titulo:'Solo administración', textoConfirmar:'Entendido' }); }
+      catch(e){ showToast('Esta sección es solo de administración'); }
+    }
+    /** Comprobación FUERTE al abrir la ventana: true = puede seguir. */
+    async function permitido(){
+      if(await rcClientes.adminPermitido()) return true;
+      aviso();
+      return false;
+    }
+    (function candadoVentanaConfig(){
+      const ventana = document.getElementById('modalConfig');
+      if(!ventana) return;
+      // Cualquier clic dentro de la ventana (guardar, subir/quitar foto o video, interruptores) se detiene en la fase de captura, antes de llegar a su manejador.
+      ventana.addEventListener('click', (ev)=>{
+        if(rcClientes.admin()) return;
+        ev.stopPropagation(); ev.preventDefault();
+        aviso();
+      }, true);
+      // Red de seguridad: si la ventana se hace visible por CUALQUIER vía en una sesión que no es administración, se cierra al instante y se avisa.
+      if(typeof MutationObserver === 'undefined') return;
+      new MutationObserver(()=>{
+        if(!ventana.classList.contains('open') || rcClientes.admin()) return;
+        ventana.classList.remove('open');
+        const otroAbierto = Array.from(document.querySelectorAll('.mg-modal')).some(m=> m.classList.contains('open'));
+        if(!otroAbierto){ const ov = document.getElementById('mgOverlay'); if(ov) ov.classList.remove('open'); }
+        aviso();
+      }).observe(ventana, { attributes:true, attributeFilter:['class'] });
+    })();
+    return Object.freeze({ permitido });
   })();
 
   // ---------- Ordenar menú (solo ADMIN): flechas ↑↓ para acomodar el orden
@@ -8215,6 +8287,10 @@
     });
     // RC: la base de datos «Clientes» es solo de administración -- Recepción no ve esta entrada (rol de la ficha real, decisión síncrona).
     if(rcClientes.recepcion()){ const bcl = document.getElementById('btnClientes'); if(bcl) bcl.style.display = 'none'; }
+    // CFG: «Configurar» (ventana Configuración) es solo de administración -- rol de la ficha real (la dueña por UID), no `userRole`; el resto de roles no ve la entrada.
+    { const bcf = document.getElementById('btnConfig'); if(bcf) bcf.style.display = rcClientes.admin() ? '' : 'none'; }
+    // LOC: «Locales» (sucursales) es solo de administración -- rol de la ficha real (la dueña por UID), no `userRole`; Recepción, profesionales (BARBER) y cualquier otro rol no ven la entrada del menú lateral.
+    { const blc = document.getElementById('btnLocales'); if(blc) blc.style.display = rcClientes.admin() ? '' : 'none'; }
 
     // Accesos a cursos: administrador siempre, o cualquier staff con el
     // permiso específico CURSOS_ACCESOS (aunque no sea ADMIN) -- la función
@@ -10750,6 +10826,7 @@
 
   /* ---------- Configuración ---------- */
   document.getElementById('btnConfig').addEventListener('click', async ()=>{
+    if(!(await rcConfig.permitido())) return;   // CFG: solo administración (comprobación fuerte con la ficha real); no carga nada ni abre la ventana
     await cargarCatalogo();
     pintarConfigServicios();
     pintarConfigEquipo();
@@ -13496,8 +13573,72 @@
     }
   }
 
+  /* ==========================================================
+     «LOCALES» (SUCURSALES) SOLO PARA ADMINISTRACIÓN -- parche LOC, 10-oct-2026.
+     Orden de la dueña: «Cierra SOLO Locales para recepción y obvio también para barbero, eso JAMÁS puede salirle a ellos.» La sección Locales (menú lateral > «Locales»:
+     lista de sucursales, editor de local, imagen del mapa y fotos del local) la abre solo ADMIN o la dueña (OWNER_UID_FALLBACK).
+     El rol se decide con la FICHA REAL de la sesión (rcClientes.admin() / adminPermitido(): las mismas piezas que ya usan «Clientes» y «Configurar»), NO con `userRole`.
+     Cierra: (1) la entrada del menú lateral (mostrarControlesAdmin) para TODO rol que no sea ADMIN -- también para los profesionales (BARBER), que hoy la veían en su hamburguesa;
+     (2) mostrarVistaLocales() (no muestra ni carga nada; también la usa el enlace «Locales» de la ventana Configuración);
+     (3) todo clic dentro de la vista y de sus dos ventanas (editor de local y fotos del local): nuevo local, guardar, activar/desactivar, subir mapa o fotos;
+     (4) red de seguridad: si la vista o una de sus ventanas se hace visible por CUALQUIER otra vía (consola, DOM directo), se cierra al instante.
+     NO toca los otros usos de la colección `locales` (suscripción de locales activos para recordatorios y la dirección que muestra Configuración): son lecturas y siguen igual para todos.
+     LÍMITE HONESTO: es un cierre de PANTALLA. La protección real de la escritura ya es del servidor (reglas: locales/{doc} write = isAdmin(); Storage localPhotos = esAdmin()).
+     La LECTURA de `locales` es pública a propósito (el sitio la usa) y no cambia.
+     ========================================================== */
+  const rcLocales = (function(){
+    let avisoMs = 0;
+    /** Aviso claro (modal propio del panel, nunca alert() nativo). Texto fijo: no lleva datos de nadie. */
+    function aviso(){
+      if(Date.now() - avisoMs < 1500) return;   // varios candados seguidos muestran UN solo aviso
+      avisoMs = Date.now();
+      try{ mgAlert('Esta sección es solo de administración.', { titulo:'Solo administración', textoConfirmar:'Entendido' }); }
+      catch(e){ showToast('Esta sección es solo de administración'); }
+    }
+    /** Comprobación FUERTE al abrir la sección: true = puede seguir. */
+    async function permitido(){
+      if(await rcClientes.adminPermitido()) return true;
+      aviso();
+      return false;
+    }
+    (function candadoSeccionLocales(){
+      const vista = document.getElementById('vistaLocales');
+      const ventanas = ['modalEditarLocal', 'modalLocGaleria'].map(id=> document.getElementById(id)).filter(Boolean);
+      // Cualquier clic dentro de la vista o de sus ventanas (nuevo local, guardar, activar/desactivar, subir mapa o fotos) se detiene en la fase de captura, antes de llegar a su manejador.
+      [vista].concat(ventanas).filter(Boolean).forEach(zona=>{
+        zona.addEventListener('click', (ev)=>{
+          if(rcClientes.admin()) return;
+          ev.stopPropagation(); ev.preventDefault();
+          aviso();
+        }, true);
+      });
+      if(typeof MutationObserver === 'undefined') return;
+      // Red de seguridad (vista): si se hace visible por CUALQUIER vía en una sesión que no es administración, se oculta al instante, se vuelve al inicio y se avisa.
+      if(vista){
+        new MutationObserver(()=>{
+          if(vista.style.display === 'none' || rcClientes.admin()) return;
+          vista.style.display = 'none';
+          irAlInicio();
+          aviso();
+        }).observe(vista, { attributes:true, attributeFilter:['style'] });
+      }
+      // Red de seguridad (ventanas): si el editor de local o la galería de fotos se abren por CUALQUIER vía en una sesión que no es administración, se cierran al instante y se avisa.
+      ventanas.forEach(ventana=>{
+        new MutationObserver(()=>{
+          if(!ventana.classList.contains('open') || rcClientes.admin()) return;
+          ventana.classList.remove('open');
+          const otroAbierto = Array.from(document.querySelectorAll('.mg-modal')).some(m=> m.classList.contains('open'));
+          if(!otroAbierto){ const ov = document.getElementById('mgOverlay'); if(ov) ov.classList.remove('open'); }
+          aviso();
+        }).observe(ventana, { attributes:true, attributeFilter:['class'] });
+      });
+    })();
+    return Object.freeze({ permitido });
+  })();
+
   async function mostrarVistaLocales(){
     if(barberoBloqueado()) return;
+    if(!(await rcLocales.permitido())) return;   // LOC: solo administración (comprobación fuerte con la ficha real); no muestra ni carga nada
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
