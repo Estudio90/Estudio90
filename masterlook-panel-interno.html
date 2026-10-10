@@ -6019,7 +6019,7 @@
   KPI_DEFS.forEach(({label, emoji})=>{
     const card = document.createElement('div');
     card.className = 'kpi-card';
-    card.innerHTML = `<div class="kpi-top"><div class="kpi-label"><span>${emoji}</span>${label}</div></div><div class="kpi-value">—</div>`;
+    card.innerHTML = `<div class="kpi-top"><div class="kpi-label"><span>${escapeHTML(emoji)}</span>${escapeHTML(label)}</div></div><div class="kpi-value">—</div>`;
     kpiRow.appendChild(card);
   });
 
@@ -6170,17 +6170,17 @@
           <div style="color:#8a8880;font-size:11px;letter-spacing:1px;margin-top:4px;">BARBERÍA &amp; SPA</div>
         </div>
         <div style="padding:28px 24px;">
-          <div style="display:inline-block;background:${e.color};color:#fff;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px;">${e.titulo}</div>
-          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${corto}, ${e.texto}</p>
+          <div style="display:inline-block;background:${escapeHTML(e.color)};color:#fff;font-size:12px;padding:5px 12px;border-radius:99px;margin-bottom:16px;">${escapeHTML(e.titulo)}</div>
+          <p style="font-size:15px;color:#1A1815;line-height:1.5;">Hola ${escapeHTML(corto)}, ${escapeHTML(e.texto)}</p>
           <div style="background:#fff;border:1px solid #e5e2d9;border-radius:10px;padding:16px 18px;margin-top:16px;">
             <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Servicio</div>
-            <div style="font-size:15px;color:#1A1815;font-weight:bold;margin-bottom:14px;">${reserva.service || reserva.svc || ''}</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;margin-bottom:14px;">${escapeHTML(reserva.service || reserva.svc || '')}</div>
             <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Hora</div>
-            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${hora}</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${escapeHTML(hora)}</div>
             <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Barbero</div>
-            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${reserva.barber || ''}</div>
+            <div style="font-size:15px;color:#1A1815;margin-bottom:14px;">${escapeHTML(reserva.barber || '')}</div>
             <div style="font-size:13px;color:#57565f;margin-bottom:6px;">Total</div>
-            <div style="font-size:15px;color:#1A1815;font-weight:bold;">${total}</div>
+            <div style="font-size:15px;color:#1A1815;font-weight:bold;">${escapeHTML(total)}</div>
           </div>
           <p style="font-size:12px;color:#57565f;margin-top:20px;">MASTERLOOK · +56 9 4912 4645</p>
         </div>
@@ -6249,7 +6249,7 @@
         <p class="wa-alert-title">Comprobante de pago</p>
         <button class="wa-alert-x" type="button" aria-label="Cerrar">✕</button>
       </div>
-      <p class="wa-alert-sub">${a.client} · ${total}</p>
+      <p class="wa-alert-sub">${escapeHTML(a.client)} · ${escapeHTML(total)}</p>
       <button class="wa-alert-btn" type="button">Enviar comprobante</button>
     `;
     card.querySelector('.wa-alert-x').addEventListener('click', ()=> card.remove());
@@ -6687,7 +6687,7 @@
       tbody.innerHTML = filas.map(r=> `
         <tr>
           <td class="mono">${escapeHTML(abIdCorto(r.id))}</td>
-          <td>${abFmtFecha(r.fecha)}</td>
+          <td>${escapeHTML(abFmtFecha(r.fecha))}</td>
           <td>${r.origen === 'webpay' ? 'Webpay' : 'Presencial'}</td>
           <td>${escapeHTML(r.cliente||'—')}</td>
           <td>${escapeHTML(r.servicio||'—')}</td>
@@ -6843,7 +6843,7 @@
       rvPintarIncidencias(r.data);
       rvPintarResumenInferior(r.data);
     }catch(e){
-      tbody.innerHTML = '<tr><td colspan="8">No se pudo cargar. ' + (e.message||'') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8">No se pudo cargar. ' + escapeHTML((e.message||'')) + '</td></tr>';
       console.error('rvCargar', e);
     }
   }
@@ -6851,7 +6851,7 @@
   function rvPintarMetodosDisponibles(metodos){
     const sel = document.getElementById('rvMetodoPago');
     const actual = sel.value;
-    sel.innerHTML = '<option value="">Todos</option>' + metodos.map(m=> `<option value="${m}">${m}</option>`).join('');
+    sel.innerHTML = '<option value="">Todos</option>' + metodos.map(m=> `<option value="${escapeHTML(m)}">${escapeHTML(m)}</option>`).join('');
     sel.value = metodos.includes(actual) ? actual : '';
   }
 
@@ -6867,18 +6867,20 @@
     el.classList.add('rv-content-fade');
   }
 
-  function rvBottomItem(icono, label, valor){
+  function rvBottomItem(icono, label, valor, pctTxt){
+    // `valor` y `pctTxt` son TEXTO (dinero / porcentaje): se escapan; el <span> del porcentaje lo arma esta función.
+    const extra = (pctTxt === undefined || pctTxt === null) ? '' : ` <span style="color:var(--rv-ink-soft);font-weight:500;">(${escapeHTML(pctTxt)}%)</span>`;
     return `<div class="rv-bottom-item"><span class="rv-icon-circle" style="background:var(--rv-grey-soft);">${icono}</span>
-      <div><div class="rv-bottom-label">${label}</div><div class="rv-bottom-value">${valor}</div></div></div>`;
+      <div><div class="rv-bottom-label">${escapeHTML(label)}</div><div class="rv-bottom-value">${escapeHTML(valor)}${extra}</div></div></div>`;
   }
   function rvPintarResumenInferior(d){
     const pct = (v)=> d.totalFacturado ? Math.round(v/d.totalFacturado*100) : 0;
     const el = document.getElementById('rvResumenInferior');
     el.innerHTML = [
       rvBottomItem(RV_ICONS.coin,'Total facturado', money(d.totalFacturado)),
-      rvBottomItem(RV_ICONS.scissors,'Ventas servicios', `${money(d.servicios)} <span style="color:var(--rv-ink-soft);font-weight:500;">(${pct(d.servicios)}%)</span>`),
-      rvBottomItem(RV_ICONS.cart,'Ventas productos', `${money(d.productos)} <span style="color:var(--rv-ink-soft);font-weight:500;">(${pct(d.productos)}%)</span>`),
-      rvBottomItem(RV_ICONS.cap,'Ventas cursos', `${money(d.cursos)} <span style="color:var(--rv-ink-soft);font-weight:500;">(${pct(d.cursos)}%)</span>`),
+      rvBottomItem(RV_ICONS.scissors,'Ventas servicios', money(d.servicios), pct(d.servicios)),
+      rvBottomItem(RV_ICONS.cart,'Ventas productos', money(d.productos), pct(d.productos)),
+      rvBottomItem(RV_ICONS.cap,'Ventas cursos', money(d.cursos), pct(d.cursos)),
       rvBottomItem(RV_ICONS.ticket,'Tickets', d.cantidadVentas),
       rvBottomItem(RV_ICONS.medal,'Ticket promedio', money(d.ticketPromedio)),
     ].join('');
@@ -6897,8 +6899,8 @@
 
   function rvKpiBlock({label, valor, sub, icono, bg}){
     return `<div class="rv-kpi-block">
-      <span class="rv-icon-circle" style="background:${bg};">${icono}</span>
-      <div><div class="rv-kpi-label">${label}</div><div class="rv-kpi-value">${valor}</div><div class="rv-kpi-sub">${sub}</div></div>
+      <span class="rv-icon-circle" style="background:${escapeHTML(bg)};">${icono}</span>
+      <div><div class="rv-kpi-label">${escapeHTML(label)}</div><div class="rv-kpi-value">${escapeHTML(valor)}</div><div class="rv-kpi-sub">${escapeHTML(sub)}</div></div>
     </div>`;
   }
 
@@ -6909,7 +6911,7 @@
     const kpisEl = document.getElementById('rvKpis');
     kpisEl.innerHTML = `
       <div class="rv-kpi-block rv-kpi-main">
-        <div class="rv-kpi-label">TOTAL FACTURADO${filtrado?` (solo ${d.metodoFiltro})`:''}</div>
+        <div class="rv-kpi-label">TOTAL FACTURADO${filtrado?` (solo ${escapeHTML(d.metodoFiltro)})`:''}</div>
         <div class="rv-kpi-value-lg">${money(d.totalFacturado)}</div>
         ${variacionHtml}
       </div>
@@ -6940,21 +6942,21 @@
       const largo = frac*circunferencia;
       const dashoffset = -acumulado*circunferencia;
       acumulado += frac;
-      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${e.color}" stroke-width="${grosor}" stroke-dasharray="${largo} ${circunferencia-largo}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${escapeHTML(e.color)}" stroke-width="${grosor}" stroke-dasharray="${largo} ${circunferencia-largo}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
     }).join('');
     const cInk = rvToken('--rv-ink'), cInkSoft = rvToken('--rv-ink-soft'), cCreamDeep = rvToken('--rv-cream-deep');
     const svg = `<svg viewBox="0 0 180 180" width="180" height="180">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cCreamDeep}" stroke-width="${grosor}"></circle>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${escapeHTML(cCreamDeep)}" stroke-width="${grosor}"></circle>
       ${arcos}
-      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="-.01em" style="font-variant-numeric:tabular-nums;" fill="${cInk}">${totalTexto}</text>
-      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9.5" letter-spacing=".04em" fill="${cInkSoft}">TOTAL</text>
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="-.01em" style="font-variant-numeric:tabular-nums;" fill="${escapeHTML(cInk)}">${escapeHTML(totalTexto)}</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="9.5" letter-spacing=".04em" fill="${escapeHTML(cInkSoft)}">TOTAL</text>
     </svg>`;
     const leyenda = entries.map(e=>{
       const pct = total > 0 ? Math.round(e.value/total*100) : 0;
-      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;color:${cInk};">
-        <span style="width:10px;height:10px;border-radius:50%;background:${e.color};display:inline-block;flex-shrink:0;"></span>
-        <span style="flex:1;">${e.label}</span><span style="font-weight:600;">${money(e.value)}</span>
-        <span style="color:${cInkSoft};width:40px;text-align:right;">${pct}%</span>
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;color:${escapeHTML(cInk)};">
+        <span style="width:10px;height:10px;border-radius:50%;background:${escapeHTML(e.color)};display:inline-block;flex-shrink:0;"></span>
+        <span style="flex:1;">${escapeHTML(e.label)}</span><span style="font-weight:600;">${money(e.value)}</span>
+        <span style="color:${escapeHTML(cInkSoft)};width:40px;text-align:right;">${pct}%</span>
       </div>`;
     }).join('');
     return `<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
@@ -6993,21 +6995,21 @@
     const path = puntos.map((p,i)=> (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
     const area = path + ` L${puntos[puntos.length-1].x.toFixed(1)},${h-padB} L${puntos[0].x.toFixed(1)},${h-padB} Z`;
     const lInk = rvToken('--rv-ink'), lInkSoft = rvToken('--rv-ink-soft'), lLine = rvToken('--rv-line');
-    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${lInk}"><title>${p.d.fecha}: ${money(p.d.monto)}</title></circle>`).join('');
+    const puntosSvg = puntos.map(p=> `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${escapeHTML(lInk)}"><title>${escapeHTML(p.d.fecha)}: ${money(p.d.monto)}</title></circle>`).join('');
     const saltoEje = Math.max(1, Math.ceil(puntos.length/8));
     const ejeX = puntos.filter((_,i)=> i % saltoEje === 0).map(p=>
-      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" style="font-variant-numeric:tabular-nums;" fill="${lInkSoft}">${p.d.fecha.slice(5)}</text>`).join('');
+      `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" style="font-variant-numeric:tabular-nums;" fill="${escapeHTML(lInkSoft)}">${escapeHTML(p.d.fecha.slice(5))}</text>`).join('');
     const pasosY = 4;
     const ejeY = Array.from({length:pasosY+1}, (_, i)=>{
       const valor = Math.round(max*i/pasosY);
       const y = h-padB - (i/pasosY)*(h-padT-padB);
-      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" style="font-variant-numeric:tabular-nums;" fill="${lInkSoft}">${money(valor)}</text>
-              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="${lLine}" stroke-width="1"></line>`;
+      return `<text x="${padL-8}" y="${y+3}" font-size="9" text-anchor="end" style="font-variant-numeric:tabular-nums;" fill="${escapeHTML(lInkSoft)}">${money(valor)}</text>
+              <line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="${escapeHTML(lLine)}" stroke-width="1"></line>`;
     }).join('');
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="max-width:100%;">
       ${ejeY}
-      <path d="${area}" fill="${lInk}1a"></path>
-      <path d="${path}" fill="none" stroke="${lInk}" stroke-width="2.5"></path>
+      <path d="${area}" fill="${escapeHTML(lInk)}1a"></path>
+      <path d="${path}" fill="none" stroke="${escapeHTML(lInk)}" stroke-width="2.5"></path>
       ${puntosSvg}${ejeX}
     </svg>`;
   }
@@ -7037,21 +7039,21 @@
     }
     tbody.innerHTML = filas.map(f=>{
       const conceptosVenta = f.conceptos.filter(c=> c!=='propina');
-      const tiposHtml = conceptosVenta.map(c=> `<span class="rv-pill ${RV_PILL_TIPO[c]||''}">${RV_LABEL_TIPO[c]||c}</span>`).join(' ');
-      const metodosHtml = f.metodos.map(m=> `<span class="rv-pill rv-pill-metodo">${m}</span>`).join(' ');
+      const tiposHtml = conceptosVenta.map(c=> `<span class="rv-pill ${escapeHTML(RV_PILL_TIPO[c]||'')}">${escapeHTML(RV_LABEL_TIPO[c]||c)}</span>`).join(' ');
+      const metodosHtml = f.metodos.map(m=> `<span class="rv-pill rv-pill-metodo">${escapeHTML(m)}</span>`).join(' ');
       return `<tr>
-        <td class="mono">${f.id}</td>
-        <td>${rvFmtFechaHora(f.fechaMs)}</td>
+        <td class="mono">${escapeHTML(f.id)}</td>
+        <td>${escapeHTML(rvFmtFechaHora(f.fechaMs))}</td>
         <td>MASTERLOOK</td>
-        <td class="mono">${f.comprobante}</td>
+        <td class="mono">${escapeHTML(f.comprobante)}</td>
         <td>${escapeHTML(f.cliente || '—')}</td>
-        <td>${escapeHTML(f.detalle || conceptosVenta.map(c=>RV_LABEL_TIPO[c]||c).join(' + ')).toUpperCase()}${f.cantidadMovimientos>1?` <span style="color:var(--text-low);">(${f.cantidadMovimientos} pagos)</span>`:''}</td>
+        <td>${escapeHTML(f.detalle || conceptosVenta.map(c=>RV_LABEL_TIPO[c]||c).join(' + ')).toUpperCase()}${f.cantidadMovimientos>1?` <span style="color:var(--text-low);">(${escapeHTML(f.cantidadMovimientos)} pagos)</span>`:''}</td>
         <td>${tiposHtml}</td>
         <td>${metodosHtml}</td>
         <td class="r">${money(f.total)}</td>
         <td class="r">$0</td>
         <td class="r">${money(f.total)}</td>
-        <td><button class="ctrl-btn rv-ver" data-saleid="${f.saleId}">👁 Ver</button></td>
+        <td><button class="ctrl-btn rv-ver" data-saleid="${escapeHTML(f.saleId)}">👁 Ver</button></td>
       </tr>`;
     }).join('');
     tbody.querySelectorAll('.rv-ver').forEach(btn=> btn.addEventListener('click', ()=> rvVerDetalle(btn.dataset.saleid)));
@@ -7470,12 +7472,12 @@
       el.className='barber-head'; el.dataset.barber=b.id;
       // columna de la grilla EXPLÍCITA (misma fórmula que su columna de abajo)
       el.style.gridColumn = String(posicion + 2);
-      const avatarBg = b.photoUrl ? ` style="background-image:url('${b.photoUrl}');background-size:cover;background-position:center;"` : '';
+      const avatarBg = b.photoUrl ? ` style="background-image:url('${cssUrlSegura(b.photoUrl)}');background-size:cover;background-position:center;"` : '';
       el.innerHTML = `
-        <div class="b-avatar-ring" style="--pct:${pct}"><div class="b-avatar"${avatarBg}>${b.photoUrl ? '' : b.initials}</div></div>
+        <div class="b-avatar-ring" style="--pct:${pct}"><div class="b-avatar"${avatarBg}>${escapeHTML(b.photoUrl ? '' : b.initials)}</div></div>
         <div>
-          <div class="b-name">${b.name}</div>
-          <div class="b-count">${b.count} reservas <span class="b-pct">· ${pct}%</span></div>
+          <div class="b-name">${escapeHTML(b.name)}</div>
+          <div class="b-count">${escapeHTML(b.count)} reservas <span class="b-pct">· ${pct}%</span></div>
         </div>`;
       el.title = 'Ver la semana de ' + b.name;
       el.addEventListener('click', ()=> abrirSemanaBarbero(b.id));
@@ -7691,9 +7693,9 @@
     wrap.style.display = bajos.length ? '' : 'none';
     if(!bajos.length) wrap.classList.remove('open');
     document.getElementById('stockAlertCount').textContent = bajos.length;
-    lista.innerHTML = bajos.map(p=> `<div class="stock-alert-item" data-id="${p.id}" title="Clic para ajustar el stock">
+    lista.innerHTML = bajos.map(p=> `<div class="stock-alert-item" data-id="${escapeHTML(p.id)}" title="Clic para ajustar el stock">
         <span class="name">${escapeHTML(p.name)}</span>
-        <span class="qty"><span class="dot"></span>${p.stock ?? 0} und.</span>
+        <span class="qty"><span class="dot"></span>${escapeHTML(p.stock ?? 0)} und.</span>
       </div>`).join('');
     lista.querySelectorAll('.stock-alert-item').forEach(el=>
       el.addEventListener('click', ()=>{ wrap.classList.remove('open'); abrirEditarStock(el.dataset.id); }));
@@ -7764,7 +7766,7 @@
       const row = document.createElement('div');
       row.className = 'cart-row';
       row.innerHTML = `
-        <span class="cart-name">${p.name}</span>
+        <span class="cart-name">${escapeHTML(p.name)}</span>
         <div class="cart-qty">
           <button class="qty-btn minus" type="button">−</button>
           <span class="qty-val">${qty}</span>
@@ -7874,11 +7876,34 @@
     return name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   }
 
-  /** Las reservas web las puede crear cualquiera sin iniciar sesión — nunca insertar ese texto directo en HTML. */
+  /** Las reservas web las puede crear cualquiera sin iniciar sesión — nunca insertar ese texto directo en HTML.
+   *  Escapa & < > " ' y la comilla invertida (`), así que sirve para texto y para valores de atributos entre comillas. NO sirve dentro de un atributo on*="" (JavaScript),
+   *  de uno sin comillas, ni para URLs (usar urlSegura / cssUrlSegura). */
   function escapeHTML(texto){
-    return String(texto ?? '').replace(/[&<>"']/g, c=> ({
-      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    return String(texto ?? '').replace(/[&<>"'`]/g, c=> ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;', '`':'&#96;'
     }[c]));
+  }
+  /** URL permitida para un atributo src/href o un url('…') de CSS: solo http(s), blob: y data:image (png/jpeg/gif/webp). Cualquier otra cosa (javascript:, data:text/html,
+   *  vbscript:, esquemas raros, texto con saltos de línea o caracteres de control) devuelve '' (sin imagen / sin enlace). Una ruta sin esquema se acepta si no empieza con «//». */
+  function urlValida(u){
+    const s = String(u ?? '').trim();
+    if(!s || /[\u0000-\u001f\u007f\u0085\u2028\u2029]/.test(s)) return '';
+    const esquema = s.match(/^([A-Za-z][A-Za-z0-9+.\-]*):/);
+    if(esquema){
+      const e = esquema[1].toLowerCase();
+      if(e === 'http' || e === 'https' || e === 'blob') return s;
+      if(e === 'data' && /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+\/=]+$/i.test(s)) return s;
+      return '';
+    }
+    return /^\/\//.test(s) ? '' : s;
+  }
+  /** Para el valor de un atributo HTML entre comillas (src="…", href="…"). */
+  function urlSegura(u){ return escapeHTML(urlValida(u)); }
+  /** Para el interior de url('…') dentro de un atributo style="…": además de validar la URL, codifica comillas, paréntesis, barra invertida y espacios (con escapeHTML solo,
+   *  la comilla escapada vuelve a ser comilla cuando el navegador lee el atributo y cierra el url('')). */
+  function cssUrlSegura(u){
+    return escapeHTML(urlValida(u).replace(/['"()\\\s]/g, c=> '%' + c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')));
   }
 
   /** Quita emojis del texto crudo (nombre de cliente/servicio a veces
@@ -7927,7 +7952,7 @@
     const statusLabel = tagLabels[a.status] || '';
     const badge = a.pagado ? '$' : ((a.depositoPagado || a.abono) ? 'A' : '');
     el.innerHTML = `
-      ${badge ? `<span class="appt-badge">${badge}</span>` : ''}
+      ${badge ? `<span class="appt-badge">${escapeHTML(badge)}</span>` : ''}
       <div class="appt-quick">
         <button class="wa" title="WhatsApp" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm5.7 14.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.5-.6-2.7-1.2-4.4-3.9-4.6-4.1-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 1-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.4.2.5.7 1.7.8 1.9.1.1.1.3 0 .5-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.8c.2-.3.4-.2.7-.1l1.6.8c.2.1.4.2.5.3.1.2.1.9-.1 1.5z"/></svg></button>
         <button class="done" title="Marcar asistencia" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></button>
@@ -7935,7 +7960,7 @@
       <div class="appt-top">
         <div class="appt-client">${escapeHTML(stripEmoji(a.client))}</div>
         <div class="appt-service">${escapeHTML(stripEmoji(a.service))}</div>
-        <div class="appt-time">${s}–${e}</div>
+        <div class="appt-time">${escapeHTML(s)}–${escapeHTML(e)}</div>
       </div>
     `;
     el.addEventListener('click', ()=>openDrawer(a));
@@ -8373,7 +8398,7 @@
     const valorPrevio = sel.value;
     sel.innerHTML = '<option value="all">Todos</option>' +
       barbers.filter(b=> b.active !== false)
-        .map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+        .map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     sel.value = [...sel.options].some(o=> o.value === valorPrevio) ? valorPrevio : 'all';
   }
 
@@ -8798,7 +8823,7 @@
     document.getElementById('nextName').textContent = a.client;
     document.getElementById('nextService').textContent = a.service;
     card.querySelector('.next-foot span:last-child').innerHTML =
-      `<b id="nextBarber">${a.barber.split(' ')[0]}</b> · ${pct}%`;
+      `<b id="nextBarber">${escapeHTML(a.barber.split(' ')[0])}</b> · ${pct}%`;
     card.style.display = '';
   }
 
@@ -9037,10 +9062,10 @@
 
     strip.style.display = '';
     strip.innerHTML = dias.map(d=>`
-      <div class="wk-day ${d.date === currentDate ? 'active' : ''} ${d.date === HOY_ISO() ? 'today' : ''}" data-date="${d.date}">
-        <div class="wk-name">${d.label}</div>
-        <div class="wk-num">${d.dayNumber}</div>
-        <div class="wk-count">${d.count} ${d.count === 1 ? 'hora' : 'horas'}${d.pending ? '<span class="wk-dot"></span>' : ''}</div>
+      <div class="wk-day ${d.date === currentDate ? 'active' : ''} ${d.date === HOY_ISO() ? 'today' : ''}" data-date="${escapeHTML(d.date)}">
+        <div class="wk-name">${escapeHTML(d.label)}</div>
+        <div class="wk-num">${escapeHTML(d.dayNumber)}</div>
+        <div class="wk-count">${escapeHTML(d.count)} ${d.count === 1 ? 'hora' : 'horas'}${d.pending ? '<span class="wk-dot"></span>' : ''}</div>
       </div>`).join('');
     strip.querySelectorAll('.wk-day').forEach(el=>
       el.addEventListener('click', ()=> irADia(el.dataset.date)));
@@ -9215,7 +9240,7 @@
   }
 
   function llenarSelect(sel, items, valueKey, labelFn){
-    sel.innerHTML = items.map(i=> `<option value="${i[valueKey]}">${labelFn(i)}</option>`).join('');
+    sel.innerHTML = items.map(i=> `<option value="${escapeHTML(i[valueKey])}">${escapeHTML(labelFn(i))}</option>`).join('');
   }
 
   /** ÚNICA regla de elegibilidad servicio <-> profesional del panel -- mismo
@@ -9249,10 +9274,10 @@
     const servicio = servicioId ? cfgServicios.find(s=> s.id === servicioId) : null;
     const elegibles = filtrarPorElegibilidad(cfgBarberos.filter(b=> b.active), servicio ? [servicio] : []);
     const previoCalza = !!(valorPrevio && elegibles.some(b=> b.id === valorPrevio));
-    let opcionesHTML = elegibles.map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    let opcionesHTML = elegibles.map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     if(conservarSiNoCalza && valorPrevio && !previoCalza){
       const previo = cfgBarberos.find(b=> b.id === valorPrevio);
-      if(previo) opcionesHTML += `<option value="${previo.id}">${escapeHTML(previo.name)} (ya no autorizado para este servicio)</option>`;
+      if(previo) opcionesHTML += `<option value="${escapeHTML(previo.id)}">${escapeHTML(previo.name)} (ya no autorizado para este servicio)</option>`;
     }
     selEl.innerHTML = '<option value="">Selecciona un profesional…</option>' + opcionesHTML;
     if(previoCalza || (conservarSiNoCalza && valorPrevio)) selEl.value = valorPrevio;
@@ -9342,15 +9367,15 @@
       if(c.muted) cls.push('muted');
       if(c.iso && c.iso === seleccionado) cls.push('sel');
       if(c.iso && minIso && c.iso < minIso) cls.push('disabled');
-      return `<button type="button" class="${cls.join(' ')}" data-iso="${c.iso||''}">${c.dia}</button>`;
+      return `<button type="button" class="${escapeHTML(cls.join(' '))}" data-iso="${escapeHTML(c.iso||'')}">${escapeHTML(c.dia)}</button>`;
     }).join('');
     pop.innerHTML = `
       <div class="nr2-cal-head">
         <button type="button" class="nr2-cal-nav" id="nrCalPrev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <div class="nr2-cal-my"><span>${NR2_MESES_CORTO[mes]}</span><span>${anio}</span></div>
+        <div class="nr2-cal-my"><span>${escapeHTML(NR2_MESES_CORTO[mes])}</span><span>${anio}</span></div>
         <button type="button" class="nr2-cal-nav" id="nrCalNext"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
       </div>
-      <div class="nr2-cal-weekdays">${NR2_DIAS_CORTO.map(d=>`<span>${d}</span>`).join('')}</div>
+      <div class="nr2-cal-weekdays">${NR2_DIAS_CORTO.map(d=>`<span>${escapeHTML(d)}</span>`).join('')}</div>
       <div class="nr2-cal-days">${filas}</div>`;
     pop.addEventListener('click', e=> e.stopPropagation());
     document.getElementById('nrCalPrev').addEventListener('click', ()=>{ nr2CalVista.mes--; if(nr2CalVista.mes<0){ nr2CalVista.mes=11; nr2CalVista.anio--; } nr2PintarCalendario(); });
@@ -9382,15 +9407,15 @@
     pop.innerHTML = `
       <div class="nr2-wheel-body">
         <div class="nr2-wheel-band"></div>
-        <div class="nr2-wheel-col" id="${popId}H">
+        <div class="nr2-wheel-col" id="${escapeHTML(popId)}H">
           <div class="nr2-wheel-pad"></div>
           ${horas.map(h=>`<button type="button" class="nr2-wheel-item" data-h="${h}">${h}</button>`).join('')}
           <div class="nr2-wheel-pad"></div>
         </div>
         <div class="nr2-wheel-colon">:</div>
-        <div class="nr2-wheel-col" id="${popId}M">
+        <div class="nr2-wheel-col" id="${escapeHTML(popId)}M">
           <div class="nr2-wheel-pad"></div>
-          ${mins.map(m=>`<button type="button" class="nr2-wheel-item" data-m="${m}">${m}</button>`).join('')}
+          ${mins.map(m=>`<button type="button" class="nr2-wheel-item" data-m="${escapeHTML(m)}">${escapeHTML(m)}</button>`).join('')}
           <div class="nr2-wheel-pad"></div>
         </div>
       </div>`;
@@ -9631,7 +9656,7 @@
         return;
       }
       cont.innerHTML = data.slots.map(s=>
-        `<div class="mg-slot" data-start="${s.startsAt}">${s.label}</div>`).join('');
+        `<div class="mg-slot" data-start="${escapeHTML(s.startsAt)}">${escapeHTML(s.label)}</div>`).join('');
       cont.querySelectorAll('.mg-slot').forEach(el=>
         el.addEventListener('click', ()=>{
           cont.querySelectorAll('.mg-slot').forEach(x=> x.classList.remove('sel'));
@@ -10004,7 +10029,7 @@
           <input type="radio" name="nr2Reciente">
           <div>
             <div class="nr2-reciente-svc">${escapeHTML(r.svc || '')}</div>
-            <div class="nr2-reciente-sub">Profesional: ${escapeHTML((r.barber||'').toUpperCase())} · ${fmtFecha(r.fecha)}</div>
+            <div class="nr2-reciente-sub">Profesional: ${escapeHTML((r.barber||'').toUpperCase())} · ${escapeHTML(fmtFecha(r.fecha))}</div>
           </div>
         </div>`).join('');
       body.querySelectorAll('.nr2-reciente-item').forEach(item=>{
@@ -10096,7 +10121,7 @@
     if(nr2MenuEstadoListo) return;
     nr2MenuEstadoListo = true;
     document.getElementById('nr2EstadoMenu').innerHTML = NR2_ESTADOS_ORDEN.map(v=>
-      `<div class="nr2-estado-opt" data-v="${v}"><span class="nr2-estado-dot" style="background:var(${NR2_ESTADO_VAR[v]})"></span>${tagLabels[v]}<svg class="nr2-estado-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>`
+      `<div class="nr2-estado-opt" data-v="${escapeHTML(v)}"><span class="nr2-estado-dot" style="background:var(${escapeHTML(NR2_ESTADO_VAR[v])})"></span>${escapeHTML(tagLabels[v])}<svg class="nr2-estado-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>`
     ).join('');
     document.getElementById('nr2EstadoMenu').querySelectorAll('.nr2-estado-opt').forEach(opt=>
       opt.addEventListener('click', ()=>{
@@ -10295,7 +10320,7 @@
     // solo cuando el admin puso algo distinto al genérico, para no repetir
     // "Colación" dos veces.
     const motivoExtra = bl.reason && bl.reason !== 'Colación';
-    const html = `<div class="bo-label">${icono}${texto}</div>` +
+    const html = `<div class="bo-label">${icono}${escapeHTML(texto)}</div>` +
       (motivoExtra ? `<div class="bo-reason">${escapeHTML(bl.reason)}</div>` : '');
     return { clase, html };
   }
@@ -10372,7 +10397,7 @@
       return;
     }
     cont.innerHTML = lista.map(bl=>{
-      const quien = bl.scope === 'all' ? 'Todos los barberos' : bl.barberName;
+      const quien = escapeHTML(bl.scope === 'all' ? 'Todos los barberos' : (bl.barberName || ''));
       // Bloqueos recurrentes/de día completo son de ANTES de este modal
       // simplificado (que ya no tiene esos controles) -- se siguen
       // mostrando con su significado real, nunca como si fueran un rango
@@ -10385,10 +10410,10 @@
       const hora = bl.allDay ? 'Día completo' : `${bl.start}–${bl.end}`;
       const editable = !bl.recurring && !bl.allDay;
       return `<div class="bl-item">
-        <span>${quien} · ${cuando} · ${hora}${bl.reason ? ' · '+bl.reason : ''}</span>
+        <span>${quien} · ${escapeHTML(cuando)} · ${escapeHTML(hora)}${escapeHTML(bl.reason ? ' · '+bl.reason : '')}</span>
         <span style="display:flex;gap:8px;flex:0 0 auto;">
-          ${editable ? `<button data-editar="${bl.id}" style="color:var(--accent);">Editar</button>` : ''}
-          <button data-quitar="${bl.id}">Quitar</button>
+          ${editable ? `<button data-editar="${escapeHTML(bl.id)}" style="color:var(--accent);">Editar</button>` : ''}
+          <button data-quitar="${escapeHTML(bl.id)}">Quitar</button>
         </span>
       </div>`;
     }).join('');
@@ -10448,7 +10473,7 @@
     document.getElementById('blGuardar').textContent = 'Bloquear';
     const sel = document.getElementById('blBarbero');
     sel.innerHTML = '<option value="ALL">🍽️ Todos los barberos (ej. almuerzo)</option>' +
-      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${b.name}</option>`).join('');
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     if(barberoId) sel.value = barberoId;
     document.getElementById('blFecha').value = fecha || currentDate;
     if(horaDesde){
@@ -10502,7 +10527,7 @@
       p=> `${p.name} — $${Number(p.price||0).toLocaleString('es-CL')} (stock: ${p.stock ?? 0})`);
     const selBarbero = document.getElementById('vpBarbero');
     selBarbero.innerHTML = '<option value="">Sin asignar</option>' +
-      cfgBarberos.filter(b=> b.active !== false).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+      cfgBarberos.filter(b=> b.active !== false).map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     document.getElementById('vpCantidad').value = 1;
     // Nunca un método preseleccionado (antes quedaba "Efectivo", el primero
     // de la lista) -- la venta no se puede confirmar hasta elegir uno a
@@ -10521,11 +10546,11 @@
       if(!p) return '';
       const subtotal = Number(p.price||0) * vpCarrito[id];
       total += subtotal;
-      return `<div class="pay-total-row" data-id="${id}">
-        <span>${escapeHTML(p.name)} × ${vpCarrito[id]}</span>
+      return `<div class="pay-total-row" data-id="${escapeHTML(id)}">
+        <span>${escapeHTML(p.name)} × ${escapeHTML(vpCarrito[id])}</span>
         <span style="display:flex;align-items:center;gap:8px;">
-          $${subtotal.toLocaleString('es-CL')}
-          <button type="button" class="mg-close" data-quitar="${id}" style="width:20px;height:20px;font-size:11px;">✕</button>
+          $${escapeHTML(subtotal.toLocaleString('es-CL'))}
+          <button type="button" class="mg-close" data-quitar="${escapeHTML(id)}" style="width:20px;height:20px;font-size:11px;">✕</button>
         </span>
       </div>`;
     }).join('');
@@ -10599,7 +10624,7 @@
     document.getElementById('blGuardar').textContent = 'Guardar cambios';
     const sel = document.getElementById('blBarbero');
     sel.innerHTML = '<option value="ALL">🍽️ Todos los barberos (ej. almuerzo)</option>' +
-      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${b.name}</option>`).join('');
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     sel.value = bl.scope === 'all' ? 'ALL' : (cfgBarberos.find(b=> b.name === bl.barberName)?.id || 'ALL');
     document.getElementById('blFecha').value = bl.date || currentDate;
     document.getElementById('blDesde').value = bl.start || '13:00';
@@ -10858,9 +10883,9 @@
     const fechas = Object.keys(cfgEspecialesCache).sort();
     if(!fechas.length){ cont.innerHTML = '<p class="mg-note" style="margin:0;">Sin horarios especiales configurados.</p>'; return; }
     cont.innerHTML = fechas.map(f=> `
-      <div class="bl-item" data-especial="${f}">
-        <span>${f} — ${escapeHTML(cfgEspecialesCache[f].texto || 'Cerrado')}</span>
-        <button type="button" data-especial-borrar="${f}">Quitar</button>
+      <div class="bl-item" data-especial="${escapeHTML(f)}">
+        <span>${escapeHTML(f)} — ${escapeHTML(cfgEspecialesCache[f].texto || 'Cerrado')}</span>
+        <button type="button" data-especial-borrar="${escapeHTML(f)}">Quitar</button>
       </div>`).join('');
     cont.querySelectorAll('[data-especial-borrar]').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
@@ -11253,28 +11278,28 @@
         { label:'No-show (30 días)', value: s.noShows30Dias },
       ].map(k=> `
         <div class="kpi-card">
-          <div class="kpi-top"><div class="kpi-label">${k.label}</div></div>
-          <div class="kpi-value">${k.value}</div>
+          <div class="kpi-top"><div class="kpi-label">${escapeHTML(k.label)}</div></div>
+          <div class="kpi-value">${escapeHTML(k.value)}</div>
         </div>`).join('');
 
       servCont.innerHTML = s.serviciosMasVendidos.length
         ? s.serviciosMasVendidos.map(x=> `
-          <div class="mi-fila"><span class="mi-nombre">${x.nombre}</span><span class="mi-valor">${x.cantidad} reservas</span></div>`).join('')
+          <div class="mi-fila"><span class="mi-nombre">${escapeHTML(x.nombre)}</span><span class="mi-valor">${escapeHTML(x.cantidad)} reservas</span></div>`).join('')
         : '<div class="mi-vacio">Sin datos en los últimos 30 días.</div>';
 
       barbCont.innerHTML = s.produccionPorBarbero.length
         ? s.produccionPorBarbero.map(x=> `
-          <div class="mi-fila"><span class="mi-nombre">${x.nombre}</span><span class="mi-valor">${x.citas} citas · ${money(x.facturacion)}</span></div>`).join('')
+          <div class="mi-fila"><span class="mi-nombre">${escapeHTML(x.nombre)}</span><span class="mi-valor">${escapeHTML(x.citas)} citas · ${money(x.facturacion)}</span></div>`).join('')
         : '<div class="mi-vacio">Sin datos en los últimos 30 días.</div>';
 
       const nombreDia = (iso)=> new Date(iso + 'T12:00:00').toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'short' });
       diasCont.innerHTML = s.proximosDiasConMenosReservas.length
         ? s.proximosDiasConMenosReservas.map(x=> `
-          <div class="mi-fila"><span class="mi-nombre">${nombreDia(x.fecha)}</span><span class="mi-valor">${x.reservas} reservas</span></div>`).join('')
+          <div class="mi-fila"><span class="mi-nombre">${escapeHTML(nombreDia(x.fecha))}</span><span class="mi-valor">${escapeHTML(x.reservas)} reservas</span></div>`).join('')
         : '<div class="mi-vacio">Sin datos.</div>';
     }catch(e){
       kpiRow.innerHTML = '';
-      const msg = `<div class="mi-vacio">No se pudo cargar: ${e.message}</div>`;
+      const msg = `<div class="mi-vacio">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
       servCont.innerHTML = msg; barbCont.innerHTML = msg; diasCont.innerHTML = msg;
     }
   }
@@ -11595,7 +11620,7 @@
 
       const head = document.createElement('div');
       head.className = 'sb-day-head' + (iso === HOY_ISO() ? ' today' : '');
-      head.innerHTML = `<div class="sb-dname">${DIAS_CORTOS[weekday]}</div><div class="sb-dnum">${d.getDate()}</div>`;
+      head.innerHTML = `<div class="sb-dname">${escapeHTML(DIAS_CORTOS[weekday])}</div><div class="sb-dnum">${d.getDate()}</div>`;
       headerRow.appendChild(head);
 
       const col = document.createElement('div');
@@ -11672,7 +11697,7 @@
             <span class="appt-service">${escapeHTML(stripEmoji(r.svc || ''))}</span>
             <span class="appt-time">${String(start[0]).padStart(2,'0')}:${String(start[1]).padStart(2,'0')}</span>
           </div>
-          <div class="appt-bottom"><div class="appt-bottom-left"><span class="status-dot ${status}"></span></div></div>`;
+          <div class="appt-bottom"><div class="appt-bottom-left"><span class="status-dot ${escapeHTML(apptDotClass(status))}"></span></div></div>`;
         col.appendChild(el);
       });
     }
@@ -11988,31 +12013,31 @@
   function filaServicioHTML(s){
     const catNombre = s.categoryId ? (cfgCategorias.find(c=> c.id === s.categoryId)?.name || '') : '';
     return `
-      <div class="sv-row ${s.active ? '' : 'off'}" data-id="${s.id}">
-        <div class="svc-thumb" data-foto="${s.id}" title="Subir foto principal del servicio"
+      <div class="sv-row ${s.active ? '' : 'off'}" data-id="${escapeHTML(s.id)}">
+        <div class="svc-thumb" data-foto="${escapeHTML(s.id)}" title="Subir foto principal del servicio"
              style="width:48px;height:48px;border-radius:10px;cursor:pointer;background-color:#eee;flex-shrink:0;
                background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
-               ${s.photoUrl ? `background-image:url('${s.photoUrl}');` : ''}">${s.photoUrl ? '' : '📷'}</div>
+               ${s.photoUrl ? `background-image:url('${cssUrlSegura(s.photoUrl)}');` : ''}">${s.photoUrl ? '' : '📷'}</div>
         <div class="sv-row-info">
-          <div class="sv-row-nombre">${s.name}</div>
-          <div class="sv-row-meta">${s.minutes} min${catNombre ? ' · ' + catNombre : ''}</div>
+          <div class="sv-row-nombre">${escapeHTML(s.name)}</div>
+          <div class="sv-row-meta">${escapeHTML(s.minutes)} min${escapeHTML(catNombre ? ' · ' + catNombre : '')}</div>
         </div>
-        <div class="sv-row-precio">$${Number(s.priceClp || 0).toLocaleString('es-CL')}</div>
+        <div class="sv-row-precio">$${escapeHTML(Number(s.priceClp || 0).toLocaleString('es-CL'))}</div>
         <span class="sv-pill ${s.active ? 'on' : 'off'}">${s.active ? 'Activo' : 'Inactivo'}</span>
-        <button type="button" class="svc-galeria-btn" data-galeria="${s.id}"
+        <button type="button" class="svc-galeria-btn" data-galeria="${escapeHTML(s.id)}"
           title="Fotos adicionales para la reserva (además de la foto principal) -- hasta 3 en fila"
           style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border-strong,#ccc);background:#fff;
             cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:2px;padding:0;flex-shrink:0;">
           🖼️${Array.isArray(s.photos) && s.photos.length ? `<span style="font-size:10px;font-weight:700;">${s.photos.length}</span>` : ''}
         </button>
         <div class="sv-opciones-wrap">
-          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${s.id}">Opciones</button>
-          <div class="sv-opciones-menu" data-opciones-menu="${s.id}">
-            <button type="button" data-op-toggle="${s.id}">${s.active ? 'Desactivar servicio' : 'Activar servicio'}</button>
-            <button type="button" class="danger" data-op-eliminar="${s.id}">Eliminar</button>
+          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${escapeHTML(s.id)}">Opciones</button>
+          <div class="sv-opciones-menu" data-opciones-menu="${escapeHTML(s.id)}">
+            <button type="button" data-op-toggle="${escapeHTML(s.id)}">${s.active ? 'Desactivar servicio' : 'Activar servicio'}</button>
+            <button type="button" class="danger" data-op-eliminar="${escapeHTML(s.id)}">Eliminar</button>
           </div>
         </div>
-        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${s.id}">Editar</button>
+        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${escapeHTML(s.id)}">Editar</button>
       </div>`;
   }
 
@@ -12078,15 +12103,15 @@
     if(sinCategoria.length || !cfgCategorias.length) grupos.push({ cat: null, items: sinCategoria });
 
     cont.innerHTML = grupos.map(g=> `
-      <div class="svc-cat-grupo" data-cat="${g.cat ? g.cat.id : ''}">
+      <div class="svc-cat-grupo" data-cat="${escapeHTML(g.cat ? g.cat.id : '')}">
         ${g.cat ? `
           <div class="svc-cat-head">
-            <span class="svc-cat-nombre">${g.cat.name}</span>
+            <span class="svc-cat-nombre">${escapeHTML(g.cat.name)}</span>
             <span class="svc-cat-acciones">
-              <button type="button" data-cat-subir="${g.cat.id}" title="Subir categoría">↑</button>
-              <button type="button" data-cat-bajar="${g.cat.id}" title="Bajar categoría">↓</button>
-              <button type="button" data-cat-renombrar="${g.cat.id}" title="Renombrar categoría">Renombrar</button>
-              <button type="button" class="svc-cat-eliminar" data-cat-eliminar="${g.cat.id}" title="Eliminar categoría">Eliminar</button>
+              <button type="button" data-cat-subir="${escapeHTML(g.cat.id)}" title="Subir categoría">↑</button>
+              <button type="button" data-cat-bajar="${escapeHTML(g.cat.id)}" title="Bajar categoría">↓</button>
+              <button type="button" data-cat-renombrar="${escapeHTML(g.cat.id)}" title="Renombrar categoría">Renombrar</button>
+              <button type="button" class="svc-cat-eliminar" data-cat-eliminar="${escapeHTML(g.cat.id)}" title="Eliminar categoría">Eliminar</button>
             </span>
           </div>` : (cfgCategorias.length ? `
           <div class="svc-cat-head">
@@ -12238,7 +12263,7 @@
     if(!cont) return;
     cont.innerHTML = svcGalFotos.map((url,i)=> `
       <div class="pcm-gal-item">
-        <img src="${url}" alt="">
+        <img src="${urlSegura(url)}" alt="">
         <button type="button" class="pcm-gal-del" data-svcgal-quitar="${i}" title="Quitar foto">✕</button>
         <div class="pcm-gal-mover">
           <button type="button" data-svcgal-mover="${i}:-1" ${i===0?'disabled':''} title="Mover antes">‹</button>
@@ -12414,7 +12439,7 @@
   function mesPoblarCategorias(selectedId){
     const sel = document.getElementById('mesCategoria');
     sel.innerHTML = '<option value="">Sin categoría</option>' +
-      cfgCategorias.map(c=> `<option value="${c.id}" ${selectedId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+      cfgCategorias.map(c=> `<option value="${escapeHTML(c.id)}" ${selectedId === c.id ? 'selected' : ''}>${escapeHTML(c.name)}</option>`).join('');
   }
 
   function mesHabilitarFotos(id){
@@ -12466,7 +12491,7 @@
     cont.innerHTML = activos.length
       ? activos.map(b=> `
         <label class="mpf-servicio-item">
-          <input type="checkbox" data-mes-barbero="${b.id}" ${esNuevo || asignados.has(b.id) ? 'checked' : ''}> ${escapeHTML(b.name)}
+          <input type="checkbox" data-mes-barbero="${escapeHTML(b.id)}" ${esNuevo || asignados.has(b.id) ? 'checked' : ''}> ${escapeHTML(b.name)}
         </label>`).join('')
       : '<div class="cx-empty">Todavía no hay profesionales activos creados.</div>';
 
@@ -12556,24 +12581,24 @@
   function pintarConfigEquipo(){
     const cont = document.getElementById('cfgBarberos');
     cont.innerHTML = cfgBarberos.map(b=> `
-      <div class="sv-row ${b.active ? '' : 'off'}" data-id="${b.id}">
-        <div class="svc-thumb" data-fotobarbero="${b.id}" title="Subir foto del profesional"
+      <div class="sv-row ${b.active ? '' : 'off'}" data-id="${escapeHTML(b.id)}">
+        <div class="svc-thumb" data-fotobarbero="${escapeHTML(b.id)}" title="Subir foto del profesional"
              style="width:48px;height:48px;border-radius:50%;cursor:pointer;background-color:#eee;flex-shrink:0;
                background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
-               ${b.photoUrl ? `background-image:url('${b.photoUrl}');` : ''}">${b.photoUrl ? '' : '📷'}</div>
+               ${b.photoUrl ? `background-image:url('${cssUrlSegura(b.photoUrl)}');` : ''}">${b.photoUrl ? '' : '📷'}</div>
         <div class="sv-row-info">
-          <div class="sv-row-nombre">${b.name}</div>
+          <div class="sv-row-nombre">${escapeHTML(b.name)}</div>
         </div>
-        <button type="button" class="sv-row-ver-horario" data-verhorario="${b.id}">Ver horario</button>
+        <button type="button" class="sv-row-ver-horario" data-verhorario="${escapeHTML(b.id)}">Ver horario</button>
         <span class="sv-row-pipe">|</span>
         <span class="sv-pill ${b.active ? 'on' : 'off'}">${b.active ? 'Activo' : 'Inactivo'}</span>
         <div class="sv-opciones-wrap">
-          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${b.id}">Opciones</button>
-          <div class="sv-opciones-menu" data-opciones-menu="${b.id}">
-            <button type="button" data-op-toggle="${b.id}">${b.active ? 'Desactivar profesional' : 'Activar profesional'}</button>
+          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${escapeHTML(b.id)}">Opciones</button>
+          <div class="sv-opciones-menu" data-opciones-menu="${escapeHTML(b.id)}">
+            <button type="button" data-op-toggle="${escapeHTML(b.id)}">${b.active ? 'Desactivar profesional' : 'Activar profesional'}</button>
           </div>
         </div>
-        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${b.id}">Editar</button>
+        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${escapeHTML(b.id)}">Editar</button>
       </div>`).join('');
 
     cont.querySelectorAll('.sv-row').forEach(row=>{
@@ -12698,10 +12723,10 @@
 
     cont.innerHTML = grupos.filter(g=> g.items.length).map(g=> `
       <div class="mpf-cat-grupo">
-        <div class="mpf-cat-titulo">${g.cat ? g.cat.name : 'Sin categoría'} <span class="mpf-cat-count">(${g.items.length})</span></div>
+        <div class="mpf-cat-titulo">${escapeHTML(g.cat ? g.cat.name : 'Sin categoría')} <span class="mpf-cat-count">(${g.items.length})</span></div>
         ${g.items.map(s=> `
           <label class="mpf-servicio-item">
-            <input type="checkbox" data-mpf-svc="${s.id}" ${esNuevo || asignados.has(s.id) ? 'checked' : ''}> ${s.name}
+            <input type="checkbox" data-mpf-svc="${escapeHTML(s.id)}" ${esNuevo || asignados.has(s.id) ? 'checked' : ''}> ${escapeHTML(s.name)}
           </label>`).join('')}
       </div>`).join('') || '<div class="cx-empty">Todavía no hay servicios creados.</div>';
 
@@ -12944,19 +12969,19 @@
       const calId = b.calId != null ? b.calId : b.id;
       const grupos = clcAgruparBloques(clcBloquesDeSemana(calId, clcSemanaLunes));
       const todasLasFechas = [...new Set(grupos.flatMap(g=> g.dates))].sort();
-      const chips = todasLasFechas.map(f=> `<span class="clc-chip-mini on">${clcEtiquetaFecha(f).slice(0,3)}</span>`).join('');
+      const chips = todasLasFechas.map(f=> `<span class="clc-chip-mini on">${escapeHTML(clcEtiquetaFecha(f).slice(0,3))}</span>`).join('');
       const horaTxt = grupos.length === 1 ? `${grupos[0].start}–${grupos[0].end}`
         : (grupos.length > 1 ? 'Varios horarios' : '');
       return `<div class="cx-pro">
-        <div class="cx-av">${b.initials || (b.name||'').slice(0,2).toUpperCase()}</div>
+        <div class="cx-av">${escapeHTML(b.initials || (b.name||'').slice(0,2).toUpperCase())}</div>
         <div class="cx-info">
           <div class="cx-name">${escapeHTML(b.name)}</div>
           ${grupos.length
-            ? `<div class="clc-fila-chips">${chips}</div><div class="clc-fila-hora">${horaTxt}</div>`
+            ? `<div class="clc-fila-chips">${chips}</div><div class="clc-fila-hora">${escapeHTML(horaTxt)}</div>`
             : `<div class="clc-fila-resumen vacio">Sin colación esta semana</div>`}
         </div>
         <div class="cx-btns">
-          <button class="cx-b edit" data-colacion-de="${b.id}">${grupos.length ? '✎ Editar' : '+ Configurar'}</button>
+          <button class="cx-b edit" data-colacion-de="${escapeHTML(b.id)}">${grupos.length ? '✎ Editar' : '+ Configurar'}</button>
         </div>
       </div>`;
     }).join('');
@@ -12977,8 +13002,8 @@
     const cont = document.getElementById('clcDiasSel');
     const fechas = clcFechasSemana(clcModalSemanaLunes);
     cont.innerHTML = fechas.map((iso,i)=>
-      `<button type="button" class="clc-chip-dia ${clcDiasSeleccionados.has(iso)?'on':''}" data-fecha="${iso}">
-        <span class="clc-chip-letra">${CLC_LETRA[i]}</span><span class="clc-chip-num">${Number(iso.slice(8,10))}</span>
+      `<button type="button" class="clc-chip-dia ${clcDiasSeleccionados.has(iso)?'on':''}" data-fecha="${escapeHTML(iso)}">
+        <span class="clc-chip-letra">${escapeHTML(CLC_LETRA[i])}</span><span class="clc-chip-num">${Number(iso.slice(8,10))}</span>
       </button>`
     ).join('');
     cont.querySelectorAll('[data-fecha]').forEach(btn=>
@@ -13015,12 +13040,12 @@
     wrap.style.display = '';
     cont.innerHTML = clcGruposPendientes.map(g=> `
       <div class="clc-grupo-fila">
-        <div class="clc-grupo-dias">${g.dates.map(f=> `<span class="clc-chip-mini on">${clcEtiquetaFecha(f)}</span>`).join('')}</div>
-        <div class="clc-grupo-hora">${g.start}–${g.end}</div>
+        <div class="clc-grupo-dias">${g.dates.map(f=> `<span class="clc-chip-mini on">${escapeHTML(clcEtiquetaFecha(f))}</span>`).join('')}</div>
+        <div class="clc-grupo-hora">${escapeHTML(g.start)}–${escapeHTML(g.end)}</div>
         <div class="clc-grupo-motivo">${escapeHTML(g.reason || 'Colación')}</div>
         <div class="clc-grupo-acciones">
-          <button type="button" class="clc-editar" data-editar-grupo="${g.tempId}">Editar</button>
-          <button type="button" class="clc-eliminar" data-eliminar-grupo="${g.tempId}">Eliminar</button>
+          <button type="button" class="clc-editar" data-editar-grupo="${escapeHTML(g.tempId)}">Editar</button>
+          <button type="button" class="clc-eliminar" data-eliminar-grupo="${escapeHTML(g.tempId)}">Eliminar</button>
         </div>
       </div>`).join('');
     cont.querySelectorAll('[data-editar-grupo]').forEach(btn=>
@@ -13317,7 +13342,7 @@
       const hhmm = (m)=> String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
       return `
         <div class="mg-wrow ${on ? '' : 'off'}" data-wd="${wd}">
-          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${NOMBRES_DIA[wd]}</label>
+          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${escapeHTML(NOMBRES_DIA[wd])}</label>
           <input type="time" value="${on ? hhmm(blk.startMin) : '10:00'}" data-start>
           <input type="time" value="${on ? hhmm(blk.endMin) : '20:00'}" data-end>
         </div>`;
@@ -13506,23 +13531,23 @@
   function pintarConfigLocales(){
     const cont = document.getElementById('cfgLocales');
     cont.innerHTML = cfgLocales.map(l=> `
-      <div class="sv-row ${l.active ? '' : 'off'}" data-id="${l.id}">
-        <div class="svc-thumb" data-fotolocal="${l.id}" title="Local"
+      <div class="sv-row ${l.active ? '' : 'off'}" data-id="${escapeHTML(l.id)}">
+        <div class="svc-thumb" data-fotolocal="${escapeHTML(l.id)}" title="Local"
              style="width:48px;height:48px;border-radius:10px;cursor:default;background-color:#eee;flex-shrink:0;
                background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
-               ${l.fotos && l.fotos[0] ? `background-image:url('${l.fotos[0]}');` : ''}">${l.fotos && l.fotos[0] ? '' : '🏠'}</div>
+               ${l.fotos && l.fotos[0] ? `background-image:url('${cssUrlSegura(l.fotos[0])}');` : ''}">${l.fotos && l.fotos[0] ? '' : '🏠'}</div>
         <div class="sv-row-info">
-          <div class="sv-row-nombre">${l.nombre}</div>
-          <div class="sv-row-meta">${mlDireccionCompleta(l) || 'Sin dirección todavía'}</div>
+          <div class="sv-row-nombre">${escapeHTML(l.nombre)}</div>
+          <div class="sv-row-meta">${escapeHTML(mlDireccionCompleta(l) || 'Sin dirección todavía')}</div>
         </div>
         <span class="sv-pill ${l.active ? 'on' : 'off'}">${l.active ? 'Activo' : 'Inactivo'}</span>
         <div class="sv-opciones-wrap">
-          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${l.id}">Opciones</button>
-          <div class="sv-opciones-menu" data-opciones-menu="${l.id}">
-            <button type="button" data-op-toggle="${l.id}">${l.active ? 'Desactivar local' : 'Activar local'}</button>
+          <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${escapeHTML(l.id)}">Opciones</button>
+          <div class="sv-opciones-menu" data-opciones-menu="${escapeHTML(l.id)}">
+            <button type="button" data-op-toggle="${escapeHTML(l.id)}">${l.active ? 'Desactivar local' : 'Activar local'}</button>
           </div>
         </div>
-        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${l.id}">Editar</button>
+        <button type="button" class="sv-btn sv-btn-outline sv-editar-btn" data-editar="${escapeHTML(l.id)}">Editar</button>
       </div>`).join('') || '<div class="cx-empty">Todavía no hay ningún local creado.</div>';
 
     cont.querySelectorAll('.sv-row').forEach(row=>{
@@ -13572,7 +13597,7 @@
       const hhmm = (m)=> String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
       return `
         <div class="mg-wrow ${on ? '' : 'off'}" data-wd="${wd}">
-          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${NOMBRES_DIA[wd]}</label>
+          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${escapeHTML(NOMBRES_DIA[wd])}</label>
           <input type="time" value="${on ? hhmm(blk.startMin) : '11:00'}" data-start>
           <input type="time" value="${on ? hhmm(blk.endMin) : '21:00'}" data-end>
         </div>`;
@@ -13670,7 +13695,7 @@
     if(!cont) return;
     cont.innerHTML = locGalFotos.map((url,i)=> `
       <div class="pcm-gal-item">
-        <img src="${url}" alt="">
+        <img src="${urlSegura(url)}" alt="">
         <button type="button" class="pcm-gal-del" data-locgal-quitar="${i}" title="Quitar foto">✕</button>
         <div class="pcm-gal-mover">
           <button type="button" data-locgal-mover="${i}:-1" ${i===0?'disabled':''} title="Mover antes">‹</button>
@@ -13819,7 +13844,7 @@
       const hhmm = (m)=> String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
       return `
         <div class="mg-wrow ${on ? '' : 'off'}" data-wd="${wd}">
-          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${NOMBRES_DIA[wd]}</label>
+          <label><input type="checkbox" ${on ? 'checked' : ''} data-on> ${escapeHTML(NOMBRES_DIA[wd])}</label>
           <input type="time" value="${on ? hhmm(blk.startMin) : '10:00'}" data-start>
           <input type="time" value="${on ? hhmm(blk.endMin) : '20:00'}" data-end>
         </div>`;
@@ -14046,7 +14071,7 @@
           ? '<span style="color:#2e7d32;font-weight:600;">Activo</span>'
           : '<span style="color:#c0392b;font-weight:600;">Inactivo</span>';
         resumenCodigo.innerHTML =
-          `Tu código: <b>${escapeHTML(c.codigo)}</b> — ${estadoTxt} · ${c.descuentoClientePct}% de descuento para el cliente · ${c.comisionOnlinePct}% tu comisión en ventas online con este código`;
+          `Tu código: <b>${escapeHTML(c.codigo)}</b> — ${estadoTxt} · ${escapeHTML(c.descuentoClientePct)}% de descuento para el cliente · ${escapeHTML(c.comisionOnlinePct)}% tu comisión en ventas online con este código`;
       }
 
       pintarDetalleProductosBarbero(); // re-pinta el detalle si ya estaba abierto (usa d.detalle en memoria, sin nueva lectura)
@@ -14086,12 +14111,12 @@
         ? `${v.customerDiscountPctApplied}% (${cxClp(v.customerDiscountAmount)})`
         : '—';
       return `<tr>
-        <td>${fechaTxt}</td>
+        <td>${escapeHTML(fechaTxt)}</td>
         <td>${escapeHTML(v.productName || '')}</td>
-        <td>${cbCanalTxt(v.saleChannel)}</td>
+        <td>${escapeHTML(cbCanalTxt(v.saleChannel))}</td>
         <td class="r">${cxClp(v.subtotal)}</td>
-        <td class="r">${descTxt}</td>
-        <td class="r">${v.professionalCommissionPctApplied}%</td>
+        <td class="r">${escapeHTML(descTxt)}</td>
+        <td class="r">${escapeHTML(v.professionalCommissionPctApplied)}%</td>
         <td class="r">${cxClp(v.professionalCommissionAmount)}</td>
       </tr>`;
     }).join('');
@@ -14127,11 +14152,11 @@
       totComision += v.monto;
       const fechaTxt = cxFmtFechaCorta(v.fecha ? String(v.fecha).slice(0,10) : '');
       return `<tr>
-        <td>${fechaTxt}</td>
+        <td>${escapeHTML(fechaTxt)}</td>
         <td>${escapeHTML(v.cliente || '')}</td>
         <td>${escapeHTML(v.codigoReferido || '')}</td>
         <td class="r">${cxClp(v.comisionBase)}</td>
-        <td class="r">${v.comisionPct}%</td>
+        <td class="r">${escapeHTML(v.comisionPct)}%</td>
         <td class="r">${cxClp(v.monto)}</td>
       </tr>`;
     }).join('');
@@ -14177,7 +14202,7 @@
     const tb = document.getElementById('cbpDetalleTabla');
     const detalle = (cbUltimoPropinas && cbUltimoPropinas.detalle) || [];
     tb.innerHTML = detalle.length
-      ? detalle.map(p=> `<tr><td>${cxFmtFechaCorta(p.fecha)}</td><td>${escapeHTML(p.cliente || '')}</td><td>${escapeHTML(p.servicio || '')}</td><td class="r">${cxClp(p.propina)}</td></tr>`).join('')
+      ? detalle.map(p=> `<tr><td>${escapeHTML(cxFmtFechaCorta(p.fecha))}</td><td>${escapeHTML(p.cliente || '')}</td><td>${escapeHTML(p.servicio || '')}</td><td class="r">${cxClp(p.propina)}</td></tr>`).join('')
       : '<tr><td colspan="4" class="cx-empty">Sin propinas en este período.</td></tr>';
   }
   document.querySelectorAll('#cxBarbero [data-cbp]').forEach(c=>
@@ -14281,12 +14306,14 @@
         comisionTxt = ' · ' + cxClp(c.amount);
       }
       const hora = String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
+      // El estado viene de la etiqueta de la reserva (la escribe quien opera): solo claves propias de ESTADOS, y el texto SIEMPRE escapado.
+      const estadoTxt = Object.prototype.hasOwnProperty.call(ESTADOS, a.status) ? ESTADOS[a.status] : String(a.status == null ? '' : a.status);
       return `<div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
         <div style="display:flex;justify-content:space-between;gap:10px;">
-          <b>${hora} · ${escapeHTML(a.client)}</b>
-          <span class="rc-chip ${asistio ? 'sent' : (a.status === 'no' ? 'none' : 'wait')}">${ESTADOS[a.status] || a.status}</span>
+          <b>${escapeHTML(hora)} · ${escapeHTML(a.client)}</b>
+          <span class="rc-chip ${asistio ? 'sent' : (a.status === 'no' ? 'none' : 'wait')}">${escapeHTML(estadoTxt)}</span>
         </div>
-        <span style="color:#57565f;font-size:12.5px;">${escapeHTML(a.service)}${comisionTxt}</span>
+        <span style="color:#57565f;font-size:12.5px;">${escapeHTML(a.service)}${escapeHTML(comisionTxt)}</span>
         ${a.notaAdmin ? `<div style="background:#fdf6e8;border-radius:8px;padding:8px 10px;font-size:12px;color:#8a6d1f;">📌 ${escapeHTML(a.notaAdmin)}</div>` : ''}
         <button class="mg-btn ghost" data-fotos-cliente="${escapeHTML(a.client)}" style="align-self:flex-start;padding:5px 12px;font-size:11.5px;">📷 Ver / subir fotos</button>
       </div>`;
@@ -14352,7 +14379,7 @@
       try{
         const d = await api('/reports/commission-rates');
         cxPros = d.barbers;
-      }catch(e){ grid.innerHTML = `<div class="cx-empty">${e.message}</div>`; return; }
+      }catch(e){ grid.innerHTML = `<div class="cx-empty">${escapeHTML(e.message)}</div>`; return; }
     } else {
       cxPros = cfgBarberos.filter(b=> b.active).map(b=>{
         const ini = b.initials || b.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
@@ -14376,16 +14403,16 @@
     grid.innerHTML = lista.map(p=>{
       const val = p.defaultType === 'FIXED' ? cxClp(p.defaultValue) : p.defaultValue + '%';
       const tag = p.customServices
-        ? `<span class="cx-tag">${p.customServices} personalizado${p.customServices>1?'s':''}</span>` : '';
+        ? `<span class="cx-tag">${escapeHTML(p.customServices)} personalizado${p.customServices>1?'s':''}</span>` : '';
       return `<div class="cx-pro">
-        <div class="cx-av">${p.initials}</div>
+        <div class="cx-av">${escapeHTML(p.initials)}</div>
         <div class="cx-info">
-          <div class="cx-name">${p.name}</div>
-          <div class="cx-psub">${p.totalServices} servicios · por defecto ${val}${tag}</div>
+          <div class="cx-name">${escapeHTML(p.name)}</div>
+          <div class="cx-psub">${escapeHTML(p.totalServices)} servicios · por defecto ${escapeHTML(val)}${tag}</div>
         </div>
         <div class="cx-btns">
-          <button class="cx-b edit" data-cxedit="${p.id}">✎ Editar</button>
-          <button class="cx-b def" data-cxdef="${p.id}">✎ Por defecto</button>
+          <button class="cx-b edit" data-cxedit="${escapeHTML(p.id)}">✎ Editar</button>
+          <button class="cx-b def" data-cxdef="${escapeHTML(p.id)}">✎ Por defecto</button>
         </div>
       </div>`;
     }).join('');
@@ -14410,7 +14437,7 @@
         const d = await api('/reports/commission-rates/' + id);
         cxEdit = { barberId:id, services:d.services };
       }catch(e){
-        document.getElementById('cxSvcGrid').innerHTML = `<div class="cx-empty">${e.message}</div>`;
+        document.getElementById('cxSvcGrid').innerHTML = `<div class="cx-empty">${escapeHTML(e.message)}</div>`;
         return;
       }
     } else {
@@ -14432,10 +14459,10 @@
   function cxPintarServicios(){
     document.getElementById('cxSvcGrid').innerHTML = cxEdit.services.map((s,i)=>`
       <div class="cx-svc ${s.custom?'custom':''}" data-i="${i}">
-        <div class="cx-sname">${s.name}</div>
+        <div class="cx-sname">${escapeHTML(s.name)}</div>
         <div class="cx-sprice">Precio ${cxClp(s.priceClp)}</div>
         <div class="cx-sin">
-          <input type="number" min="0" step="0.5" value="${s.value}" data-v>
+          <input type="number" min="0" step="0.5" value="${escapeHTML(s.value)}" data-v>
           <select data-t>
             <option value="PERCENT" ${s.type==='PERCENT'?'selected':''}>%</option>
             <option value="FIXED" ${s.type==='FIXED'?'selected':''}>$</option>
@@ -14706,7 +14733,7 @@
         });
         d = await api('/reports/commissions?' + p.toString());
       }catch(e){
-        tb.innerHTML = `<tr><td colspan="7" class="cx-empty">${e.message}</td></tr>`;
+        tb.innerHTML = `<tr><td colspan="7" class="cx-empty">${escapeHTML(e.message)}</td></tr>`;
         return;
       }
     } else {
@@ -14737,18 +14764,18 @@
     tb.innerHTML = d.rows.map(r=>{
       const estado = estados[r.barberId] || 'pendiente';
       return `
-      <tr data-cxid="${r.barberId}">
-        <td><div class="cx-cell"><div class="cx-cav">${r.initials}</div>
-          <div><div style="font-weight:600;">${r.name}</div>
-          <div style="font-size:11px;color:#87868f;">${r.services} realizados${r.services ? ' · ticket ' + cxClp(r.avgTicket) : ''}</div>
-          ${r.noShows ? `<div class="cx-noshow">${r.noShows} no show${r.noShowRetained ? ' · ' + cxClp(r.noShowRetained) + ' retenido' : ''}</div>` : ''}
+      <tr data-cxid="${escapeHTML(r.barberId)}">
+        <td><div class="cx-cell"><div class="cx-cav">${escapeHTML(r.initials)}</div>
+          <div><div style="font-weight:600;">${escapeHTML(r.name)}</div>
+          <div style="font-size:11px;color:#87868f;">${escapeHTML(r.services)} realizados${r.services ? ' · ticket ' + cxClp(r.avgTicket) : ''}</div>
+          ${r.noShows ? `<div class="cx-noshow">${escapeHTML(r.noShows)} no show${r.noShowRetained ? ' · ' + cxClp(r.noShowRetained) + ' retenido' : ''}</div>` : ''}
           </div></div></td>
         <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;">${cxClp(r.totalSales)}</td>
-        <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;color:#57565f;font-size:12px;">${r.commissionPct !== null ? r.commissionPct + '%' : (r.services ? 'varios' : '—')}</td>
+        <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;color:#57565f;font-size:12px;">${escapeHTML(r.commissionPct !== null ? r.commissionPct + '%' : (r.services ? 'varios' : '—'))}</td>
         <td class="r cx-pay">${cxClp(r.totalCommission)}</td>
         <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;">${cxClp(r.totalCommission)}</td>
-        <td><span class="cx-estado ${estado}">${estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span></td>
-        <td class="cx-acciones-wrap" data-cxacciones="${r.barberId}">
+        <td><span class="cx-estado ${escapeHTML(estado)}">${estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span></td>
+        <td class="cx-acciones-wrap" data-cxacciones="${escapeHTML(r.barberId)}">
           <button class="cx-acciones-btn" data-cxaccbtn>⋮</button>
         </td>
       </tr>`;
@@ -14781,7 +14808,7 @@
     const sel = document.getElementById('cxFiltroPro');
     if(sel.dataset.listo) return;
     sel.innerHTML = '<option value="">Todos los profesionales</option>' +
-      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     sel.dataset.listo = '1';
   }
 
@@ -14798,8 +14825,8 @@
       row.querySelector('td').innerHTML = items.slice(0,15).map(i=>{
         const tipo = i.commissionType === 'FIXED' ? 'fijo' : i.commissionPct + '%';
         const f = i.date ? new Date(i.date).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}) + ' · ' : '';
-        return `<div class="cx-drow"><span>${f}${i.service} — ${i.client}</span>
-          <span>${cxClp(i.price)} · ${tipo} → <b>${cxClp(i.commission)}</b></span></div>`;
+        return `<div class="cx-drow"><span>${escapeHTML(f)}${escapeHTML(i.service)} — ${escapeHTML(i.client)}</span>
+          <span>${cxClp(i.price)} · ${escapeHTML(tipo)} → <b>${cxClp(i.commission)}</b></span></div>`;
       }).join('') + (items.length > 15 ? `<div class="cx-drow" style="opacity:.6;">y ${items.length-15} más...</div>` : '');
     };
 
@@ -14929,7 +14956,7 @@
     cont.innerHTML = `
       <h2 style="font-family:var(--font-primary);">MASTERLOOK — Cartola de comisiones</h2>
       <p>${c.soloUno ? `Profesional: <b>${escapeHTML(c.soloUno)}</b>` : '<b>Todos los profesionales</b>'}</p>
-      <p>Período: ${c.periodo} · Generado el ${c.generadoEn}</p>
+      <p>Período: ${escapeHTML(c.periodo)} · Generado el ${escapeHTML(c.generadoEn)}</p>
       ${c.profesionales.map(r=> `
         <h3 style="margin-top:18px;">${escapeHTML(r.name)}</h3>
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -14939,11 +14966,11 @@
             <th style="text-align:right;padding:5px;">% Comisión</th><th style="text-align:right;padding:5px;">Comisión</th>
           </tr></thead>
           <tbody>${r.items.map(i=> `<tr>
-            <td style="padding:5px;border-top:1px solid #ddd;">${i.date||''}</td>
-            <td style="padding:5px;border-top:1px solid #ddd;">${i.hora||''}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;">${escapeHTML(i.date||'')}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;">${escapeHTML(i.hora||'')}</td>
             <td style="padding:5px;border-top:1px solid #ddd;">${escapeHTML(i.service)}</td>
             <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${cxClp(i.price)}</td>
-            <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${i.commissionType === 'FIXED' ? 'fijo' : i.commissionPct + '%'}</td>
+            <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${escapeHTML(i.commissionType === 'FIXED' ? 'fijo' : i.commissionPct + '%')}</td>
             <td style="padding:5px;border-top:1px solid #ddd;text-align:right;">${cxClp(i.commission)}</td>
           </tr>`).join('')}</tbody>
         </table>
@@ -15008,7 +15035,7 @@
     const sel = document.getElementById('tpFiltroPro');
     if(sel.dataset.listo) return;
     sel.innerHTML = '<option value="">Todos los profesionales</option>' +
-      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+      cfgBarberos.filter(b=> b.active).map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
     sel.dataset.listo = '1';
   }
 
@@ -15053,8 +15080,8 @@
 
     const tb = document.getElementById('tpTabla');
     tb.innerHTML = rows.length ? rows.map(r=> `
-      <tr><td><div class="cx-cell"><div class="cx-cav">${r.initials}</div><div style="font-weight:600;">${escapeHTML(r.name)}</div></div></td>
-        <td class="r">${r.servicios}</td>
+      <tr><td><div class="cx-cell"><div class="cx-cav">${escapeHTML(r.initials)}</div><div style="font-weight:600;">${escapeHTML(r.name)}</div></div></td>
+        <td class="r">${escapeHTML(r.servicios)}</td>
         <td class="r cx-pay">${cxClp(r.totalPropinas)}</td>
       </tr>`).join('') : '<tr><td colspan="3" class="cx-empty">No hay propinas registradas en este período.</td></tr>';
   }
@@ -15320,18 +15347,18 @@
       return;
     }
     cont.innerHTML = tsTestimonios.map(t=> `
-      <div class="cu-clase" data-ts="${t.id}">
+      <div class="cu-clase" data-ts="${escapeHTML(t.id)}">
         <div class="cu-thumb-sm" data-ts-ver title="Ver video"
              style="width:44px;height:44px;border-radius:8px;cursor:pointer;background-color:#eee;flex:0 0 auto;
                background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:16px;
-               ${t.streamVideoId && t.streamStatus==='ready' ? `background-image:url('https://${BUNNY_CDN_PUBLIC}/${t.streamVideoId}/thumbnail.jpg');` : ''}">${t.streamVideoId ? '' : '🎬'}</div>
+               ${t.streamVideoId && t.streamStatus==='ready' ? `background-image:url('https://${BUNNY_CDN_PUBLIC}/${cssUrlSegura(t.streamVideoId)}/thumbnail.jpg');` : ''}">${t.streamVideoId ? '' : '🎬'}</div>
         <div class="cu-cinfo">
           <div class="cu-ctitulo">
-            <span>${t.curso || ''}</span>
+            <span>${escapeHTML(t.curso || '')}</span>
             ${badgeEstadoVideo(t.streamStatus)}
             <span class="cu-video-badge" style="background:#eee;color:#555;">${t.tag === 'PRESENCIAL' ? 'Presencial' : 'Online'}</span>
           </div>
-          <div class="cu-curl" style="font-size:11.5px;color:var(--text-mid);">${t.frase || ''}</div>
+          <div class="cu-curl" style="font-size:11.5px;color:var(--text-mid);">${escapeHTML(t.frase || '')}</div>
         </div>
         <div class="cu-cbtns">
           <button class="cu-ib" data-ts-subir title="Subir">↑</button>
@@ -15405,7 +15432,7 @@
       accesosCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
       pintarAccesos();
     }catch(e){
-      cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+      cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
     }
   }
 
@@ -15424,16 +15451,16 @@
       const estadoReal = (a.accessStatus === 'active' && vencido) ? 'expired' : a.accessStatus;
       const creador = a.createdBy === 'system:webpay' ? 'Webpay' : (a.createdBy || '—');
       return `
-      <div class="ac-row" data-id="${a.id}">
+      <div class="ac-row" data-id="${escapeHTML(a.id)}">
         <div class="ac-cell-cliente" data-label="Cliente">
           <div style="font-weight:600;">${escapeHTML(a.buyerName || '—')}</div>
           <div class="ac-sub">${escapeHTML(a.buyerEmail || '')}</div>
         </div>
         <div data-label="Curso">${escapeHTML(a.courseName || a.courseId || '')}</div>
-        <div data-label="Método">${METODO_PAGO_LABEL[a.paymentMethod] || a.paymentMethod || '—'}</div>
-        <div data-label="Inicio">${fmtFechaAcceso(a.accessStartDate)}</div>
-        <div data-label="Expira">${fmtFechaAcceso(a.accessExpirationDate)}</div>
-        <div data-label="Estado"><span class="ac-badge" style="background:${ESTADO_ACCESO_COLOR[estadoReal] || '#9A9691'};">${ESTADO_ACCESO_LABEL[estadoReal] || estadoReal}</span></div>
+        <div data-label="Método">${escapeHTML(METODO_PAGO_LABEL[a.paymentMethod] || a.paymentMethod || '—')}</div>
+        <div data-label="Inicio">${escapeHTML(fmtFechaAcceso(a.accessStartDate))}</div>
+        <div data-label="Expira">${escapeHTML(fmtFechaAcceso(a.accessExpirationDate))}</div>
+        <div data-label="Estado"><span class="ac-badge" style="background:${escapeHTML(ESTADO_ACCESO_COLOR[estadoReal] || '#9A9691')};">${escapeHTML(ESTADO_ACCESO_LABEL[estadoReal] || estadoReal)}</span></div>
         <div class="ac-sub" data-label="Creado por" style="word-break:break-word;">${escapeHTML(creador)}</div>
         <div class="ac-acciones" data-label="Acciones">
           <button class="cu-ib" data-extender title="Extender acceso">＋</button>
@@ -15508,18 +15535,18 @@
         const x = d.data();
         const fecha = x.at?.toDate ? x.at.toDate().toLocaleString('es-CL') : '';
         return `<div style="padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
-          <div style="font-weight:600;">${x.action}</div>
-          <div style="color:var(--text-mid);font-size:11px;">${fecha}${x.by ? ' · ' + x.by : ''}</div>
+          <div style="font-weight:600;">${escapeHTML(x.action)}</div>
+          <div style="color:var(--text-mid);font-size:11px;">${escapeHTML(fecha)}${escapeHTML(x.by ? ' · ' + x.by : '')}</div>
         </div>`;
       }).join('');
-    }catch(e){ cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`; }
+    }catch(e){ cont.innerHTML = `<div class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</div>`; }
   }
 
   document.getElementById('acNuevoAcceso').addEventListener('click', async ()=>{
     const sel = document.getElementById('amCurso');
     try{
       const snap = await db.collection('courses').get();
-      sel.innerHTML = snap.docs.map(d=> `<option value="${d.id}">${d.data().name}</option>`).join('');
+      sel.innerHTML = snap.docs.map(d=> `<option value="${escapeHTML(d.id)}">${escapeHTML(d.data().name)}</option>`).join('');
     }catch(e){ sel.innerHTML = ''; }
     document.getElementById('amCorreo').value = '';
     document.getElementById('amNombre').value = '';
@@ -15603,11 +15630,11 @@
       const fotos = snap.docs.map(d=> d.data());
       cont.innerHTML = fotos.length ? fotos.map(f=> `
         <div>
-          <img src="${f.photoUrl}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
-          <div style="font-size:9.5px;color:#57565f;margin-top:3px;">${escapeHTML(f.clientName || '')} · ${escapeHTML(f.barberName || '')} · ${(f.createdAt || '').slice(0,10)}</div>
+          <img src="${urlSegura(f.photoUrl)}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:9.5px;color:#57565f;margin-top:3px;">${escapeHTML(f.clientName || '')} · ${escapeHTML(f.barberName || '')} · ${escapeHTML((f.createdAt || '').slice(0,10))}</div>
         </div>`).join('') : '<div class="cx-empty" style="grid-column:1/-1;">Todavía no hay fotos subidas.</div>';
     }catch(e){
-      cont.innerHTML = `<div class="cx-empty">No se pudieron cargar las fotos: ${e.message}</div>`;
+      cont.innerHTML = `<div class="cx-empty">No se pudieron cargar las fotos: ${escapeHTML(e.message)}</div>`;
     }
   }
 
@@ -15639,7 +15666,7 @@
   document.getElementById('vtVolver').addEventListener('click', irAlInicio);
 
   function vtKpiCard(label, valor){
-    return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value">${valor}</div></div>`;
+    return `<div class="kpi-card"><div class="kpi-label">${escapeHTML(label)}</div><div class="kpi-value">${escapeHTML(valor)}</div></div>`;
   }
   document.getElementById('vtFiltrar').addEventListener('click', async ()=>{
     const desde = document.getElementById('vtDesde').value;
@@ -15706,10 +15733,10 @@
           <div>Fecha</div><div>Detalle</div><div>Monto</div>
         </div>` + filas.map(f=> `
         <div class="mg-row" style="grid-template-columns:110px 1fr 120px;align-items:center;">
-          <div>${f.fecha}</div><div>${escapeHTML(String(f.detalle))}</div><div>$${(f.monto||0).toLocaleString('es-CL')}</div>
+          <div>${escapeHTML(f.fecha)}</div><div>${escapeHTML(String(f.detalle))}</div><div>$${escapeHTML((f.monto||0).toLocaleString('es-CL'))}</div>
         </div>`).join('') : '<div class="cx-empty">Sin ventas en ese rango.</div>';
     }catch(e){
-      tabla.innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+      tabla.innerHTML = `<div class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
     }
   });
 
@@ -15727,7 +15754,7 @@
     document.getElementById('cpEstado').textContent = '';
     if(!document.getElementById('cpCurso').dataset.cargado){
       db.collection('courses').get().then(snap=>{
-        document.getElementById('cpCurso').innerHTML = snap.docs.map(d=> `<option value="${d.id}">${escapeHTML(d.data().name||d.id)}</option>`).join('');
+        document.getElementById('cpCurso').innerHTML = snap.docs.map(d=> `<option value="${escapeHTML(d.id)}">${escapeHTML(d.data().name||d.id)}</option>`).join('');
         document.getElementById('cpCurso').dataset.cargado = '1';
       }).catch(()=>{});
     }
@@ -16142,7 +16169,7 @@
 
     const proximo = activos.filter(s=> s.nextChargeDate).sort((a,b)=> a.nextChargeDate.localeCompare(b.nextChargeDate))[0];
     document.getElementById('susKpiProximo').innerHTML = proximo
-      ? `${escapeHTML(proximo.name)}<br><span style="font-size:11px;color:#57565f;">${susFormatFecha(proximo.nextChargeDate)}</span>`
+      ? `${escapeHTML(proximo.name)}<br><span style="font-size:11px;color:#57565f;">${escapeHTML(susFormatFecha(proximo.nextChargeDate))}</span>`
       : '--';
 
     const hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -16202,7 +16229,7 @@
   }
   function susPintarAlertas(){
     document.getElementById('susAlertas').innerHTML = susCalcularAlertas()
-      .map(a=> `<div class="sus-alert ${a.tipo||''}">${a.texto}</div>`).join('');
+      .map(a=> `<div class="sus-alert ${escapeHTML(a.tipo||'')}">${escapeHTML(a.texto)}</div>`).join('');
   }
 
   function susPintarProximosPagos(){
@@ -16215,18 +16242,18 @@
       const estado = susEstadoPago(s);
       return `
       <div class="sus-pay-row">
-        <span class="cu-video-badge cu-video-badge--${estado.clase}">${estado.texto}</span>
+        <span class="cu-video-badge cu-video-badge--${escapeHTML(estado.clase)}">${escapeHTML(estado.texto)}</span>
         <div>
-          <div class="sus-pay-nombre">${escapeHTML(s.name)}${s.providerUrl ? ` <a href="${escapeHTML(s.providerUrl)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#4a5cf0;">↗ Ir al proveedor</a>` : ''}</div>
-          <div class="sus-pay-fecha">${susFormatFecha(s.nextChargeDate)}</div>
+          <div class="sus-pay-nombre">${escapeHTML(s.name)}${s.providerUrl ? ` <a href="${urlSegura(s.providerUrl)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:#4a5cf0;">↗ Ir al proveedor</a>` : ''}</div>
+          <div class="sus-pay-fecha">${escapeHTML(susFormatFecha(s.nextChargeDate))}</div>
         </div>
-        <div class="sus-pay-monto">${s.currency} ${Number(s.price).toLocaleString('es-CL')}${clp!=null ? `<small>≈ ${formatCLP(clp)}</small>` : ''}</div>
+        <div class="sus-pay-monto">${escapeHTML(s.currency)} ${escapeHTML(Number(s.price).toLocaleString('es-CL'))}${clp!=null ? `<small>≈ ${formatCLP(clp)}</small>` : ''}</div>
       </div>`;
     }).join('');
   }
 
   function susPintarCalendarioDow(){
-    document.getElementById('susCalDow').innerHTML = ['L','M','X','J','V','S','D'].map(d=> `<div class="sus-cal-dow">${d}</div>`).join('');
+    document.getElementById('susCalDow').innerHTML = ['L','M','X','J','V','S','D'].map(d=> `<div class="sus-cal-dow">${escapeHTML(d)}</div>`).join('');
   }
   function susPintarCalendario(){
     const year = susCalMes.getFullYear(), month = susCalMes.getMonth();
@@ -16243,8 +16270,8 @@
       const fecha = `${year}-${String(month+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
       const servicios = porDia[fecha] || [];
       const sel = fecha === susCalDiaSel ? 'selected' : '';
-      html += `<div class="sus-cal-day ${servicios.length?'has-charge':''} ${sel}" data-fecha="${fecha}">
-        <span class="n">${dia}</span>
+      html += `<div class="sus-cal-day ${servicios.length?'has-charge':''} ${escapeHTML(sel)}" data-fecha="${escapeHTML(fecha)}">
+        <span class="n">${escapeHTML(dia)}</span>
         ${servicios.slice(0,2).map(s=> `<span class="sus-cal-tag">${escapeHTML(s.name)}</span>`).join('')}
         ${servicios.length>2 ? `<span class="sus-cal-tag">+${servicios.length-2}</span>` : ''}
       </div>`;
@@ -16259,8 +16286,8 @@
     const cont = document.getElementById('susCalDetalle');
     if(!susCalDiaSel){ cont.innerHTML = ''; return; }
     const servicios = susServicios.filter(s=> s.nextChargeDate === susCalDiaSel);
-    cont.innerHTML = `<div class="cx-sub" style="margin-bottom:8px;">${susFormatFecha(susCalDiaSel)}</div>` +
-      servicios.map(s=> `<div class="sus-pay-row"><div class="sus-pay-nombre">${escapeHTML(s.name)}</div><div class="sus-pay-monto">${s.currency} ${Number(s.price).toLocaleString('es-CL')}</div></div>`).join('');
+    cont.innerHTML = `<div class="cx-sub" style="margin-bottom:8px;">${escapeHTML(susFormatFecha(susCalDiaSel))}</div>` +
+      servicios.map(s=> `<div class="sus-pay-row"><div class="sus-pay-nombre">${escapeHTML(s.name)}</div><div class="sus-pay-monto">${escapeHTML(s.currency)} ${escapeHTML(Number(s.price).toLocaleString('es-CL'))}</div></div>`).join('');
   }
   document.getElementById('susCalAnterior').addEventListener('click', ()=>{
     susCalMes = new Date(susCalMes.getFullYear(), susCalMes.getMonth()-1, 1);
@@ -16279,29 +16306,29 @@
       const clp = susMontoClp(Number(s.price) || 0, s.currency);
       const estado = susEstadoPago(s);
       const nombreHtml = s.providerUrl
-        ? `<a href="${escapeHTML(s.providerUrl)}" target="_blank" rel="noopener">${escapeHTML(s.name)}</a>`
+        ? `<a href="${urlSegura(s.providerUrl)}" target="_blank" rel="noopener">${escapeHTML(s.name)}</a>`
         : escapeHTML(s.name);
       return `
-      <div class="cu-card sus-card ${s.status==='cancelled' ? 'off' : ''}" data-sus="${s.id}">
+      <div class="cu-card sus-card ${s.status==='cancelled' ? 'off' : ''}" data-sus="${escapeHTML(s.id)}">
         <div class="sus-card-top">
           <div>
             <div class="sus-card-nombre">${nombreHtml}</div>
             <div class="sus-card-cat">${escapeHTML(s.category || 'Otros')}</div>
           </div>
-          <span class="cu-video-badge cu-video-badge--${estado.clase}">${estado.texto}</span>
+          <span class="cu-video-badge cu-video-badge--${escapeHTML(estado.clase)}">${escapeHTML(estado.texto)}</span>
         </div>
         ${s.description ? `<div class="sus-card-desc">${escapeHTML(s.description)}</div>` : ''}
         <div class="sus-card-mid">
-          <div class="sus-card-field">Precio<b>${s.currency} ${Number(s.price).toLocaleString('es-CL')}${clp!=null ? ` <span style="font-weight:500;color:#87868f;">≈ ${formatCLP(clp)}</span>` : ''}</b></div>
-          <div class="sus-card-field">Frecuencia<b>${s.frequency === 'mensual' ? 'Mensual' : s.frequency === 'anual' ? 'Anual' : `Cada ${s.frequencyDays || '?'} días`}</b></div>
-          <div class="sus-card-field">Próximo cobro<b>${susFormatFecha(s.nextChargeDate) || '--'}</b></div>
+          <div class="sus-card-field">Precio<b>${escapeHTML(s.currency)} ${escapeHTML(Number(s.price).toLocaleString('es-CL'))}${clp!=null ? ` <span style="font-weight:500;color:#87868f;">≈ ${formatCLP(clp)}</span>` : ''}</b></div>
+          <div class="sus-card-field">Frecuencia<b>${s.frequency === 'mensual' ? 'Mensual' : s.frequency === 'anual' ? 'Anual' : `Cada ${escapeHTML(s.frequencyDays || '?')} días`}</b></div>
+          <div class="sus-card-field">Próximo cobro<b>${escapeHTML(susFormatFecha(s.nextChargeDate) || '--')}</b></div>
           <div class="sus-card-field">Método de pago<b>${escapeHTML(s.paymentMethod || '--')}</b></div>
           ${s.plan ? `<div class="sus-card-field">Plan<b>${escapeHTML(s.plan)}</b></div>` : ''}
         </div>
         ${s.notes ? `<div class="sus-card-desc" style="margin-top:8px;"><i>${escapeHTML(s.notes)}</i></div>` : ''}
         <div class="sus-card-foot">
           <div class="sus-card-links">
-            ${s.providerUrl ? `<a class="cu-card-link" href="${escapeHTML(s.providerUrl)}" target="_blank" rel="noopener" style="color:#4a5cf0;">↗ Ir al proveedor</a>` : ''}
+            ${s.providerUrl ? `<a class="cu-card-link" href="${urlSegura(s.providerUrl)}" target="_blank" rel="noopener" style="color:#4a5cf0;">↗ Ir al proveedor</a>` : ''}
             <button class="cu-card-link edit" data-sus-editar>✎ Editar</button>
             <button class="cu-card-link" data-sus-pagado style="color:#189d79;">✓ Marcar como pagado</button>
             ${s.status === 'cancelled'
@@ -16476,8 +16503,8 @@
       const s = susServicios.find(x=> x.id === p.servicioId);
       return `<tr>
         <td>${escapeHTML(s ? s.name : '(servicio eliminado)')}</td>
-        <td>${susFormatFecha((p.paidAt || '').slice(0,10))}</td>
-        <td>${p.currency} ${Number(p.amount).toLocaleString('es-CL')}</td>
+        <td>${escapeHTML(susFormatFecha((p.paidAt || '').slice(0,10)))}</td>
+        <td>${escapeHTML(p.currency)} ${escapeHTML(Number(p.amount).toLocaleString('es-CL'))}</td>
         <td>${p.clpEquivalente != null ? formatCLP(p.clpEquivalente) : '--'}</td>
         <td>Pagado</td>
       </tr>`;
@@ -16528,7 +16555,7 @@
           const h = (m.total/maxMes) * 90;
           const x = i*(barW+gap);
           return `<rect x="${x}" y="${110-h}" width="${barW}" height="${h}" rx="4" fill="#1A1815"></rect>
-            <text x="${x+barW/2}" y="126" font-size="10" fill="#57565f" text-anchor="middle">${m.label}</text>`;
+            <text x="${x+barW/2}" y="126" font-size="10" fill="#57565f" text-anchor="middle">${escapeHTML(m.label)}</text>`;
         }).join('')}
       </svg>` : '<div class="cx-empty">Sin datos todavía.</div>';
   }
@@ -16542,7 +16569,7 @@
         const d = await api('/shop/admin/products');
         cuCursos = d.products.filter(p=> p.kind === 'COURSE');
       }catch(e){
-        cont.innerHTML = `<div class="cx-empty">${e.message}</div>`;
+        cont.innerHTML = `<div class="cx-empty">${escapeHTML(e.message)}</div>`;
         return;
       }
     } else if(!cuCursos.length){
@@ -16570,21 +16597,21 @@
 
     cont.innerHTML = cuCursos.map(c=>{
       const thumb = c.streamVideoId && c.streamStatus === 'ready'
-        ? `background-image:url('https://${BUNNY_CDN_PUBLIC}/${c.streamVideoId}/thumbnail.jpg');`
-        : (c.photoUrl ? `background-image:url('${c.photoUrl}');` : '');
+        ? `background-image:url('https://${BUNNY_CDN_PUBLIC}/${cssUrlSegura(c.streamVideoId)}/thumbnail.jpg');`
+        : (c.photoUrl ? `background-image:url('${cssUrlSegura(c.photoUrl)}');` : '');
       return `
-      <div class="cu-card ${c.active === false ? 'off' : ''}" data-cu="${c.id}">
+      <div class="cu-card ${c.active === false ? 'off' : ''}" data-cu="${escapeHTML(c.id)}">
         <div class="cu-card-thumb" data-cu-thumb style="${thumb}">${thumb ? '' : '🎬'}</div>
         <div class="cu-card-body">
           <div class="cu-card-top">
-            <div class="cu-card-nombre">${c.name}</div>
+            <div class="cu-card-nombre">${escapeHTML(c.name)}</div>
             <label class="cu-card-rec">
               <span>Recomendación</span>
               <span class="mg-sw"><input type="checkbox" data-cu-rec ${c.featured !== false ? 'checked' : ''}><span class="mg-sw-track"></span></span>
             </label>
           </div>
           <div class="cu-card-precio">${cxClp(c.priceClp)}</div>
-          <div class="cu-card-desc">${c.description || ''}</div>
+          <div class="cu-card-desc">${escapeHTML(c.description || '')}</div>
         </div>
         <div class="cu-card-foot">
           <button class="cu-card-link del" data-cu-eliminar>🗑 Eliminar</button>
@@ -16649,7 +16676,7 @@
         const d = await api(`/shop/admin/products/${id}/lessons`);
         cuActual = { curso:d.course, clases:d.lessons };
       }catch(e){
-        det.innerHTML = `<div class="cx-empty">${e.message}</div>`;
+        det.innerHTML = `<div class="cx-empty">${escapeHTML(e.message)}</div>`;
         return;
       }
     } else {
@@ -16684,11 +16711,11 @@
       const host = curso.streamStatus === 'ready' ? `https://${BUNNY_CDN_PUBLIC}/${curso.streamVideoId}/thumbnail.jpg` : '';
       return `<div class="cu-thumb" id="cuMediaThumb" title="Clic para cambiar" style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
         background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
-        ${host ? `background-image:url('${host}');` : ''}">${host ? '' : '🎬'}</div>`;
+        ${host ? `background-image:url('${cssUrlSegura(host)}');` : ''}">${host ? '' : '🎬'}</div>`;
     }
     return `<div class="cu-thumb" id="cuMediaThumb" title="Clic para cambiar" style="width:60px;height:60px;border-radius:10px;cursor:pointer;background-color:#eee;
       background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;
-      ${curso.photoUrl ? `background-image:url('${curso.photoUrl}');` : ''}">${curso.photoUrl ? '' : '🖼'}</div>`;
+      ${curso.photoUrl ? `background-image:url('${cssUrlSegura(curso.photoUrl)}');` : ''}">${curso.photoUrl ? '' : '🖼'}</div>`;
   }
 
   function cuPintarDetalle(){
@@ -16699,7 +16726,7 @@
         <div class="cu-editor-titulo">
           <button class="cu-back" id="cuCancelar" title="Volver a cursos">←</button>
           <div>
-            <h2>${curso.name || 'Nuevo curso'}</h2>
+            <h2>${escapeHTML(curso.name || 'Nuevo curso')}</h2>
             <div class="cu-editor-sub">Edición · Vista previa alumno</div>
           </div>
         </div>
@@ -16712,10 +16739,10 @@
       <div class="cu-editor">
         <div class="cu-form">
           <label class="cu-lbl">Nombre</label>
-          <input type="text" id="cuNombre" value="${(curso.name||'').replace(/"/g,'&quot;')}">
+          <input type="text" id="cuNombre" value="${escapeHTML((curso.name||'').replace(/"/g,'&quot;'))}">
 
           <label class="cu-lbl">Precio ($)</label>
-          <input type="number" id="cuPrecio" min="0" step="1000" value="${curso.priceClp || 0}">
+          <input type="number" id="cuPrecio" min="0" step="1000" value="${escapeHTML(curso.priceClp || 0)}">
 
           <label class="cu-lbl">Portada del curso <span style="text-transform:none;">(imagen o video)</span></label>
           <p class="mg-note" style="margin:-4px 0 8px;">Se muestra en la tarjeta del curso (Academy e inicio) y en la portada del aula. Un video se reproduce como muestra; siempre público.</p>
@@ -16729,16 +16756,16 @@
           </div>
 
           <label class="cu-lbl">Descripción</label>
-          <textarea id="cuDesc">${curso.description || ''}</textarea>
+          <textarea id="cuDesc">${escapeHTML(curso.description || '')}</textarea>
 
           <label class="cu-lbl">Precio en dólares <span style="text-transform:none;">(internacional, opcional)</span></label>
-          <input type="number" id="cuPrecioUsd" min="0" value="${curso.priceUsd ?? ''}" placeholder="opcional">
+          <input type="number" id="cuPrecioUsd" min="0" value="${escapeHTML(curso.priceUsd ?? '')}" placeholder="opcional">
 
           <label class="cu-lbl">Duración del acceso <span style="text-transform:none;">(días)</span></label>
-          <input type="number" id="cuDuracionAcceso" min="1" step="1" value="${curso.accessDurationDays ?? 30}">
+          <input type="number" id="cuDuracionAcceso" min="1" step="1" value="${escapeHTML(curso.accessDurationDays ?? 30)}">
 
           <label class="cu-lbl">Enlace de acceso <span style="text-transform:none;">(privado, no se muestra en el sitio, opcional)</span></label>
-          <input type="url" id="cuAcceso" value="${curso.accessUrl || ''}" placeholder="https://...">
+          <input type="url" id="cuAcceso" value="${escapeHTML(curso.accessUrl || '')}" placeholder="https://...">
 
           <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--text-hi);">
             <input type="checkbox" id="cuActivo" ${curso.active !== false ? 'checked' : ''} style="width:auto;">
@@ -16927,7 +16954,7 @@
       ready: { txt:'Listo', cls:'ok' },
       error: { txt:'Error', cls:'err' },
     }[status];
-    return info ? `<span class="cu-video-badge cu-video-badge--${info.cls}">${info.txt}</span>` : '';
+    return info ? `<span class="cu-video-badge cu-video-badge--${escapeHTML(info.cls)}">${escapeHTML(info.txt)}</span>` : '';
   }
 
   function formatBytesCL(bytes){
@@ -17027,7 +17054,7 @@
     const thumb = document.getElementById(thumbId);
     if(!thumb) return;
     if(streamVideoId && status === 'ready'){
-      thumb.innerHTML = `<img src="https://${BUNNY_CDN_PUBLIC}/${streamVideoId}/thumbnail.jpg" style="width:100%;height:100%;object-fit:cover;" alt="">`;
+      thumb.innerHTML = `<img src="https://${BUNNY_CDN_PUBLIC}/${escapeHTML(streamVideoId)}/thumbnail.jpg" style="width:100%;height:100%;object-fit:cover;" alt="">`;
     } else if(streamVideoId){
       thumb.innerHTML = '…';
     } else {
@@ -17182,12 +17209,12 @@
     cont.innerHTML = recs.length ? recs.map(r=> `
       <div class="cu-recurso-item" data-rid="${escapeHTML(r.id)}">
         <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;">
-          <span style="flex:none;">${ecIconoArchivo(r.contentType, r.fileName)}</span>
+          <span style="flex:none;">${escapeHTML(ecIconoArchivo(r.contentType, r.fileName))}</span>
           <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(r.name)}</span>
           ${r.active === false ? '<span class="cu-badge cu-badge--draft" style="flex:none;">Oculto</span>' : ''}
         </span>
         <span style="display:flex;gap:12px;flex:none;align-items:center;">
-          <span class="cu-box-note" style="margin:0;">${ecTamano(r.size)}</span>
+          <span class="cu-box-note" style="margin:0;">${escapeHTML(ecTamano(r.size))}</span>
           <button type="button" class="cu-card-link" data-rec-ver>Ver</button>
           <button type="button" class="cu-card-link" data-rec-toggle>${r.active === false ? 'Mostrar' : 'Ocultar'}</button>
           <button type="button" class="cu-card-link del" data-rec-quitar>Quitar</button>
@@ -17307,12 +17334,12 @@
     cont.innerHTML = recs.length ? recs.map(r=> `
       <div class="cu-recurso-item" data-rid="${escapeHTML(r.id)}">
         <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;">
-          <span style="flex:none;">${ecIconoArchivo(r.contentType, r.fileName)}</span>
+          <span style="flex:none;">${escapeHTML(ecIconoArchivo(r.contentType, r.fileName))}</span>
           <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(r.name)}</span>
           ${r.active === false ? '<span class="cu-badge cu-badge--draft" style="flex:none;">Oculto</span>' : ''}
         </span>
         <span style="display:flex;gap:12px;flex:none;align-items:center;">
-          <span class="cu-box-note" style="margin:0;">${ecTamano(r.size)}</span>
+          <span class="cu-box-note" style="margin:0;">${escapeHTML(ecTamano(r.size))}</span>
           <button type="button" class="cu-card-link" data-rec-ver>Ver</button>
           <button type="button" class="cu-card-link" data-rec-toggle>${r.active === false ? 'Mostrar' : 'Ocultar'}</button>
           <button type="button" class="cu-card-link del" data-rec-quitar>Quitar</button>
@@ -17537,13 +17564,13 @@
     const abierto = cuModulosAbiertos.has(m.id);
     const dot = !ls.length ? 'none' : (pub === ls.length ? 'ok' : (pub === 0 ? 'draft' : 'partial'));
     return `
-      <div class="cu-mod" data-mod="${m.id}">
+      <div class="cu-mod" data-mod="${escapeHTML(m.id)}">
         <div class="cu-mod-head" data-mod-toggle>
           <span class="cu-mod-grab" data-mod-grab draggable="true" title="Arrastrar para reordenar">⠿</span>
           <span class="cu-mod-caret">${abierto ? '▾' : '▸'}</span>
           <span class="cu-mod-title">${escapeHTML(m.title)}</span>
           <span class="cu-mod-meta">${ls.length} clase${ls.length!==1?'s':''} · ${pub} publicada${pub!==1?'s':''}</span>
-          <span class="cu-mod-dot cu-mod-dot--${dot}" title="${dot==='ok'?'Todo publicado':dot==='partial'?'Publicación parcial':dot==='draft'?'Todo en borrador':'Vacío'}"></span>
+          <span class="cu-mod-dot cu-mod-dot--${escapeHTML(dot)}" title="${dot==='ok'?'Todo publicado':dot==='partial'?'Publicación parcial':dot==='draft'?'Todo en borrador':'Vacío'}"></span>
           <span class="cu-mod-acts">
             <button class="cu-ib" data-mod-up title="Subir módulo">↑</button>
             <button class="cu-ib" data-mod-down title="Bajar módulo">↓</button>
@@ -17553,7 +17580,7 @@
         </div>
         <div class="cu-mod-body ${abierto ? '' : 'closed'}" data-mod-drop>
           ${ls.length ? ls.map((l,i)=> renderClaseRow(l, i)).join('') : '<div class="cu-lrow-empty">Sin clases en este módulo.</div>'}
-          <button class="cu-lrow-add" data-add-clase="${m.id}">+ Añadir clase</button>
+          <button class="cu-lrow-add" data-add-clase="${escapeHTML(m.id)}">+ Añadir clase</button>
         </div>
       </div>`;
   }
@@ -17562,11 +17589,11 @@
     const vst = cuEstadoVideoDeClase(l);
     const md = cuActual.media[l.id] || {};
     return `
-      <div class="cu-lrow" data-cl="${l.id}" data-mod="${l.moduleId}">
+      <div class="cu-lrow" data-cl="${escapeHTML(l.id)}" data-mod="${escapeHTML(l.moduleId)}">
         <span class="cu-lgrab" data-l-grab draggable="true" title="Arrastrar">⠿</span>
         <span class="cu-lord">${idx+1}</span>
         <span class="cu-ltitle" title="${escapeHTML(l.title)}">${escapeHTML(l.title)}</span>
-        <span class="cu-ldur">${l.durationMin ? l.durationMin + ' min' : '—'}</span>
+        <span class="cu-ldur">${escapeHTML(l.durationMin ? l.durationMin + ' min' : '—')}</span>
         <span class="cu-lbadges">
           ${CU_VBADGE[vst] || ''}
           <span class="cu-badge ${l.published ? 'cu-badge--pub' : 'cu-badge--draft'}">${l.published ? 'Publicada' : 'Borrador'}</span>
@@ -17872,7 +17899,7 @@
     document.getElementById('ecPub').checked = !!l.published;
     const sel = document.getElementById('ecModulo');
     sel.innerHTML = cuActual.modulos.slice().sort((a,b)=> a.order-b.order)
-      .map(m=> `<option value="${m.id}" ${m.id === l.moduleId ? 'selected' : ''}>${escapeHTML(m.title)}</option>`).join('');
+      .map(m=> `<option value="${escapeHTML(m.id)}" ${m.id === l.moduleId ? 'selected' : ''}>${escapeHTML(m.title)}</option>`).join('');
     document.getElementById('ecUploadEstado').style.display = 'none';
     document.getElementById('ecRecursoNombre').value = '';
     ecPintarEstadoVideo();
@@ -18010,7 +18037,7 @@
     document.getElementById('mcClaseTitulo').textContent = `"${l.title}" — módulo actual: ${(cuActual.modulos.find(m=> m.id === l.moduleId)||{}).title || '—'}`;
     const sel = document.getElementById('mcModulo');
     sel.innerHTML = cuActual.modulos.slice().sort((a,b)=> a.order-b.order)
-      .map(m=> `<option value="${m.id}" ${m.id === l.moduleId ? 'selected' : ''}>${escapeHTML(m.title)}</option>`).join('');
+      .map(m=> `<option value="${escapeHTML(m.id)}" ${m.id === l.moduleId ? 'selected' : ''}>${escapeHTML(m.title)}</option>`).join('');
     abrirModal('modalCuMoverClase');
   }
   document.getElementById('mcArriba').addEventListener('click', ()=> cuMoverClaseEnModulo(mcLessonId, -1));
@@ -18265,7 +18292,7 @@
       const snap = await db.collection('productSales').orderBy('createdAt','desc').limit(100).get();
       ventas = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
     }catch(e){
-      tbody.innerHTML = `<tr><td colspan="6" class="cx-empty">No se pudo cargar: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</td></tr>`;
       return;
     }
 
@@ -18281,11 +18308,11 @@
       const fecha = v.fecha || (v.createdAt ? v.createdAt.slice(0,10) : '—');
       const origenTxt = v.origen === 'barbero'
         ? `👤 ${escapeHTML(v.barberName || 'Barbero')}`
-        : (ORIGEN_LABEL[v.origen] || v.origen);
+        : escapeHTML(ORIGEN_LABEL[v.origen] || v.origen);
       return `<tr>
-        <td>${fecha}</td>
+        <td>${escapeHTML(fecha)}</td>
         <td>${escapeHTML(v.productName)}</td>
-        <td class="r">${v.qty}</td>
+        <td class="r">${escapeHTML(v.qty)}</td>
         <td>${origenTxt}</td>
         <td class="r">${cxClp(v.subtotal)}</td>
         <td class="r">${v.comision ? cxClp(v.comision) : '—'}</td>
@@ -18331,7 +18358,7 @@
     if(!cont) return;
     cont.innerHTML = pcmFotos.map((url,i)=> `
       <div class="pcm-gal-item">
-        <img src="${url}" alt="">
+        <img src="${urlSegura(url)}" alt="">
         <button type="button" class="pcm-gal-del" data-pcm-quitar="${i}" title="Quitar foto">✕</button>
         <div class="pcm-gal-mover">
           <button type="button" data-pcm-mover="${i}:-1" ${i===0?'disabled':''} title="Mover antes">‹</button>
@@ -18420,7 +18447,7 @@
         <path d="M232 60 C 224 30, 244 18, 250 30 C 258 20, 272 30, 262 46 C 256 56, 240 60, 232 60 Z" fill="#8fae86"/>
         <path d="M232 60 C 234 45, 240 34, 250 30" stroke="#7a9a71" stroke-width="1.4" fill="none"/>
       </svg>
-      ${conFoto ? `<img src="${conFoto}" alt="">` : `
+      ${conFoto ? `<img src="${urlSegura(conFoto)}" alt="">` : `
       <svg width="72" height="92" viewBox="0 0 72 92" style="position:absolute;left:50%;bottom:22%;transform:translateX(-50%);filter:drop-shadow(0 10px 14px rgba(0,0,0,.14));">
         <rect x="4" y="14" width="64" height="70" rx="10" fill="#1A1815"/>
         <rect x="14" y="0" width="44" height="18" rx="6" fill="#1A1815"/>
@@ -18484,22 +18511,22 @@
       : `<button class="pc-ib del" data-pc-eliminar title="Eliminar">${PC_ICONO_PAPELERA}</button>`;
 
     return `
-    <tr class="pc-row ${p.active === false ? 'off' : ''}" data-id="${p.id}">
+    <tr class="pc-row ${p.active === false ? 'off' : ''}" data-id="${escapeHTML(p.id)}">
       <td>
         <div class="pc-prod-cell">
-          <div class="pc-thumb" data-fotoprod="${p.id}" title="Subir foto del producto">
-            ${p.photoUrl ? `<img src="${p.photoUrl}" alt="">` : `<span class="ph">📷</span>`}
+          <div class="pc-thumb" data-fotoprod="${escapeHTML(p.id)}" title="Subir foto del producto">
+            ${p.photoUrl ? `<img src="${urlSegura(p.photoUrl)}" alt="">` : `<span class="ph">📷</span>`}
           </div>
           <div class="pc-name">${escapeHTML(p.name)}</div>
         </div>
       </td>
       <td data-label="Precio: "><div class="pc-price">${cxClp(p.price)}</div></td>
       <td data-label="Stock: ">
-        <span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}" data-pc-editar-stock="${p.id}" title="Ajustar stock / marcar agotado" style="cursor:pointer;">${p.stock ?? 0}</span>
+        <span class="pc-stock-pill ${stockBajo ? 'low' : 'ok'}" data-pc-editar-stock="${escapeHTML(p.id)}" title="Ajustar stock / marcar agotado" style="cursor:pointer;">${escapeHTML(p.stock ?? 0)}</span>
         ${p.agotadoManual === true ? '<span class="pc-stock-pill low" style="margin-left:4px;">AGOTADO</span>' : ''}
       </td>
       <td><div class="pc-desc">${escapeHTML(p.description || '')}</div></td>
-      <td><div class="pc-actions"><button class="pc-ib" data-pc-editar="${p.id}" title="Editar">${PC_ICONO_LAPIZ}</button>${accionEliminar}</div></td>
+      <td><div class="pc-actions"><button class="pc-ib" data-pc-editar="${escapeHTML(p.id)}" title="Editar">${PC_ICONO_LAPIZ}</button>${accionEliminar}</div></td>
     </tr>`;
   }
 
@@ -18718,7 +18745,7 @@
     pcmPintarGaleria();
     const selCat = document.getElementById('pcmCategoria');
     selCat.innerHTML = `<option value="">Sin categoría</option>` +
-      PC_CATEGORIAS.map(c=> `<option value="${c}" ${p.category===c?'selected':''}>${c}</option>`).join('');
+      PC_CATEGORIAS.map(c=> `<option value="${escapeHTML(c)}" ${p.category===c?'selected':''}>${escapeHTML(c)}</option>`).join('');
     if(!p.category) selCat.value = '';
 
     const cfg = await pcConfigGeneral();
@@ -18998,7 +19025,7 @@
       const estadoTxt = !row.codigo ? '—'
         : (row.codigoActivo ? '<span style="color:#2e7d32;font-weight:600;">Activo</span>' : '<span style="color:#c0392b;font-weight:600;">Inactivo</span>');
       const accionEditar = puedeEditarComisionesProductos
-        ? `<button class="pc-ib" data-pg-editar="${row.professionalId}" title="Editar código">${PC_ICONO_LAPIZ}</button>`
+        ? `<button class="pc-ib" data-pg-editar="${escapeHTML(row.professionalId)}" title="Editar código">${PC_ICONO_LAPIZ}</button>`
         : '—';
       // Productos vendidos/Monto vendido del mes = presencial + online con
       // código combinados (misma idea que "Total comisión del mes").
@@ -19009,13 +19036,13 @@
       totComPresencial += row.comisionPresencial;
       totComOnline += row.comisionCodigo;
       totComTotal += row.comisionTotalProductos;
-      return `<tr data-pid="${row.professionalId}">
+      return `<tr data-pid="${escapeHTML(row.professionalId)}">
         <td>${escapeHTML(row.nombre)}${row.activo === false ? ' <span class="mg-note" style="margin:0;display:inline;">(inactivo)</span>' : ''}</td>
         <td>${codTxt}</td>
         <td>${estadoTxt}</td>
-        <td class="r">${row.descuentoClientePct != null ? row.descuentoClientePct + '%' : '—'}</td>
-        <td class="r">${presTxt}</td>
-        <td class="r">${row.comisionOnlinePct != null ? row.comisionOnlinePct + '%' : '—'}</td>
+        <td class="r">${escapeHTML(row.descuentoClientePct != null ? row.descuentoClientePct + '%' : '—')}</td>
+        <td class="r">${escapeHTML(presTxt)}</td>
+        <td class="r">${escapeHTML(row.comisionOnlinePct != null ? row.comisionOnlinePct + '%' : '—')}</td>
         <td class="r">${productosVendidos}</td>
         <td class="r">${cxClp(montoVendido)}</td>
         <td class="r">${cxClp(row.comisionPresencial)}</td>
@@ -19140,20 +19167,20 @@
         ? '<span style="color:#2e7d32;font-weight:600;">Activo</span>'
         : '<span style="color:#c0392b;font-weight:600;">Pausado</span>';
       const accionEditar = puedeEditarReferidos
-        ? `<button class="pc-ib" data-rf-editar="${r.id}" title="Editar">${PC_ICONO_LAPIZ}</button>`
+        ? `<button class="pc-ib" data-rf-editar="${escapeHTML(r.id)}" title="Editar">${PC_ICONO_LAPIZ}</button>`
         : '';
       const accionCopiar = `<button class="pc-ib" data-rf-copiar="${escapeHTML(r.codigo)}" title="Copiar link de referido">${PC_ICONO_LINK}</button>`;
       return `<tr>
         <td>${escapeHTML(r.nombre)}</td>
         <td>${tipoTxt}</td>
         <td>${escapeHTML(r.codigo)}</td>
-        <td class="r">${r.comisionPct}%</td>
-        <td class="r">${r.puntosClientePorMil}</td>
+        <td class="r">${escapeHTML(r.comisionPct)}%</td>
+        <td class="r">${escapeHTML(r.puntosClientePorMil)}</td>
         <td>${estadoTxt}</td>
-        <td class="r">${a.ventas || 0}</td>
+        <td class="r">${escapeHTML(a.ventas || 0)}</td>
         <td class="r">${cxClp(a.montoGenerado || 0)}</td>
         <td class="r">${cxClp(a.comisionGenerada || 0)}</td>
-        <td class="r">${a.puntosEntregados || 0}</td>
+        <td class="r">${escapeHTML(a.puntosEntregados || 0)}</td>
         <td class="r"><div style="display:flex;gap:6px;justify-content:flex-end;">${accionCopiar}${accionEditar}</div></td>
       </tr>`;
     }).join('');
@@ -19194,7 +19221,7 @@
     rfEditandoId = id;
     await cargarCatalogo();
     const selPro = document.getElementById('rfProfesional');
-    selPro.innerHTML = cfgBarberos.filter(b=> b.active).map(b=> `<option value="${b.id}">${escapeHTML(b.name)}</option>`).join('');
+    selPro.innerHTML = cfgBarberos.filter(b=> b.active).map(b=> `<option value="${escapeHTML(b.id)}">${escapeHTML(b.name)}</option>`).join('');
 
     const r = id ? rfUltimaLista.find(x=> x.id === id) : null;
     document.getElementById('rfmTitulo').textContent = r ? 'Editando referido' : 'Nuevo referido';
@@ -19270,7 +19297,7 @@
         const d = await api('/users');
         usLista = d.users;
       }catch(e){
-        cont.innerHTML = `<div class="us-vacio">${e.message}</div>`;
+        cont.innerHTML = `<div class="us-vacio">${escapeHTML(e.message)}</div>`;
         return;
       }
     } else {
@@ -19282,7 +19309,7 @@
         // apuntaban a nadie.
         usLista = snap.docs.map(d=> ({ ...d.data(), id: d.id }));
       }catch(e){
-        cont.innerHTML = `<div class="us-vacio">No se pudo cargar: ${e.message}</div>`;
+        cont.innerHTML = `<div class="us-vacio">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
         return;
       }
     }
@@ -19306,11 +19333,11 @@
         const nombre = u.name || u.email || '(sin nombre)';
         const ini = (u.name || u.email || '').trim().split(/[\s@._-]+/).filter(Boolean)
           .slice(0,2).map(w=> w[0]).join('').toUpperCase() || '?';
-        return `<div class="us-fila ${u.active === false ? 'off' : ''}" data-us="${u.id}">
+        return `<div class="us-fila ${u.active === false ? 'off' : ''}" data-us="${escapeHTML(u.id)}">
           <div class="us-quien">
-            <div class="us-av">${ini}</div>
+            <div class="us-av">${escapeHTML(ini)}</div>
             <div style="min-width:0;">
-              <div class="us-nombre">${nombre}</div>
+              <div class="us-nombre">${escapeHTML(nombre)}</div>
               ${(u.role === 'RECEPTION' && (u.barberId || u.barber))
                   ? '<div class="us-sub" style="color:#b3261e;">Recepción con ficha de barbero vinculada: edítala y guarda para corregirla</div>'
                   : (u.role === 'BARBER' && ['AGENDA_TODOS','AGENDA_EDITAR','RESERVAS_APROBAR'].filter(id=> (u.permissions || []).includes(id)).length >= 2)
@@ -19319,8 +19346,8 @@
                        : (u.barber ? '<div class="us-sub">barbero</div>' : ''))}
             </div>
           </div>
-          <span class="us-mail">${u.email || '—'}</span>
-          <span><span class="us-rol" style="background:${rol.color}22;color:${rol.color};">${rol.nombre}</span></span>
+          <span class="us-mail">${escapeHTML(u.email || '—')}</span>
+          <span><span class="us-rol" style="background:${escapeHTML(rol.color)}22;color:${escapeHTML(rol.color)};">${escapeHTML(rol.nombre)}</span></span>
           <div class="us-acciones">
             <button class="us-ib" data-editar title="Editar">✎</button>
             <button class="us-ib" data-clave title="Nueva contraseña">🔑</button>
@@ -19342,13 +19369,13 @@
   function usPintarRoles(){
     document.getElementById('usRoles').innerHTML = ROLES.map(r=>`
       <div class="us-rol-card">
-        <div class="us-rol-top" style="background:${r.color};"></div>
+        <div class="us-rol-top" style="background:${escapeHTML(r.color)};"></div>
         <div class="us-rol-body">
-          <h4 style="color:${r.color};">${r.nombre}</h4>
-          <p>${r.desc}</p>
+          <h4 style="color:${escapeHTML(r.color)};">${escapeHTML(r.nombre)}</h4>
+          <p>${escapeHTML(r.desc)}</p>
           <div class="us-rol-lista">
             ${(PERMISOS_ROL[r.id] || []).slice(0,4).map(id=>
-              `<span>${PERMISOS.find(p=> p.id === id)?.nombre || id}</span>`).join('')}
+              `<span>${escapeHTML(PERMISOS.find(p=> p.id === id)?.nombre || id)}</span>`).join('')}
             ${(PERMISOS_ROL[r.id] || []).length > 4
               ? `<span style="opacity:.7;">y ${PERMISOS_ROL[r.id].length - 4} más</span>` : ''}
           </div>
@@ -19368,7 +19395,7 @@
     document.getElementById('usCorreo').disabled = !!u;
 
     document.getElementById('usRol').innerHTML = ROLES.map(r=>
-      `<option value="${r.id}" ${(u ? (u.role || 'BARBER') : null) === r.id ? 'selected' : ''}>${r.nombre}</option>`).join('');
+      `<option value="${escapeHTML(r.id)}" ${(u ? (u.role || 'BARBER') : null) === r.id ? 'selected' : ''}>${escapeHTML(r.nombre)}</option>`).join('');
 
     await cargarCatalogo();
     const barberos = cfgBarberos.filter(b=> b.active);
@@ -19378,13 +19405,13 @@
     document.getElementById('usBarbero').innerHTML =
       '<option value="">Elige el profesional de esta cuenta…</option>' +
       cfgBarberos.filter(b=> b.active !== false || b.id === vinculado).map(b=>
-        `<option value="${b.id}" ${vinculado === b.id ? 'selected' : ''}>${b.name}${b.active === false ? ' (inactivo)' : ''}</option>`).join('') +
+        `<option value="${escapeHTML(b.id)}" ${vinculado === b.id ? 'selected' : ''}>${escapeHTML(b.name)}${b.active === false ? ' (inactivo)' : ''}</option>`).join('') +
       '<option value="__nuevo__">➕ Crear barbero nuevo con este nombre</option>';
 
     document.getElementById('usAgendaLista').innerHTML = barberos.map(b=>`
       <label class="us-perm">
-        <input type="checkbox" value="${b.id}" ${(u?.managedBarberIds || []).includes(b.id) ? 'checked' : ''}>
-        ${b.name}
+        <input type="checkbox" value="${escapeHTML(b.id)}" ${(u?.managedBarberIds || []).includes(b.id) ? 'checked' : ''}>
+        ${escapeHTML(b.name)}
       </label>`).join('');
 
     usPintarPermisos(u);
@@ -19465,14 +19492,14 @@
 
     const rol = ROLES.find(r=> r.id === rolId);
     document.getElementById('usRolInfo').innerHTML =
-      `<b>${rol.nombre}:</b> ${rol.desc} ${rolId === 'ADMIN'
+      `<b>${escapeHTML(rol.nombre)}:</b> ${escapeHTML(rol.desc)} ${rolId === 'ADMIN'
         ? 'Tiene todos los permisos y no se le pueden quitar.'
         : 'Los permisos marcados en gris vienen con el rol.'}`;
 
     const grupos = [...new Set(PERMISOS.map(p=> p.grupo))];
     document.getElementById('usPermisos').innerHTML = grupos.map(g=>`
       <div class="us-grupo">
-        <div class="us-grupo-tit">${g}</div>
+        <div class="us-grupo-tit">${escapeHTML(g)}</div>
         <div class="us-perm-lista">
           ${PERMISOS.filter(p=> p.grupo === g).map(p=>{
             const delRol = base.includes(p.id);
@@ -19483,10 +19510,10 @@
             const etiquetaNoAplica = ({ RECEPTION:{ AGENDA_PROPIA:'solo profesionales' }, BARBER:{ RESERVAS_PASADAS:'solo recepción' } }[rolId] || {})[p.id];
             const noAplica = !!etiquetaNoAplica;
             const marcado = !noAplica && (delRol || propios.includes(p.id));
-            return `<label class="us-perm ${marcado ? 'on' : ''} ${delRol ? 'base' : ''} ${p.sensible ? 'sensible' : ''}"${p.ayuda ? ` title="${p.ayuda}"` : ''}>
-              <input type="checkbox" value="${p.id}" ${marcado ? 'checked' : ''} ${(delRol || noAplica) ? 'disabled' : ''}>
-              ${p.nombre}
-              ${delRol ? '<span class="us-perm-tag">del rol</span>' : (noAplica ? `<span class="us-perm-tag">${etiquetaNoAplica}</span>` : '')}
+            return `<label class="us-perm ${marcado ? 'on' : ''} ${delRol ? 'base' : ''} ${p.sensible ? 'sensible' : ''}"${p.ayuda ? ` title="${escapeHTML(p.ayuda)}"` : ''}>
+              <input type="checkbox" value="${escapeHTML(p.id)}" ${marcado ? 'checked' : ''} ${(delRol || noAplica) ? 'disabled' : ''}>
+              ${escapeHTML(p.nombre)}
+              ${delRol ? '<span class="us-perm-tag">del rol</span>' : (noAplica ? `<span class="us-perm-tag">${escapeHTML(etiquetaNoAplica)}</span>` : '')}
             </label>`;
           }).join('')}
         </div>
@@ -19550,7 +19577,7 @@
       // se reutiliza esta ficha.
       const selBarbero = document.getElementById('usBarbero');
       if(selBarbero){
-        if(![...selBarbero.options].some(o=> o.value === datos.barberId)) selBarbero.insertAdjacentHTML('beforeend', `<option value="${datos.barberId}">${escapeHTML(datos.name)}</option>`);
+        if(![...selBarbero.options].some(o=> o.value === datos.barberId)) selBarbero.insertAdjacentHTML('beforeend', `<option value="${escapeHTML(datos.barberId)}">${escapeHTML(datos.name)}</option>`);
         selBarbero.value = datos.barberId;
       }
     }
@@ -19754,7 +19781,7 @@
       resenasCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
         .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
     }catch(e){
-      document.getElementById('resPendientesLista').innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+      document.getElementById('resPendientesLista').innerHTML = `<div class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
       return;
     }
     pintarResenasPanel();
@@ -19769,12 +19796,12 @@
       <div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <b>${escapeHTML(r.name || 'Anónimo')}</b>
-          <span style="color:#c9a76a;">${estrellas(r)}</span>
+          <span style="color:#c9a76a;">${escapeHTML(estrellas(r))}</span>
         </div>
         <p style="font-size:12px;color:#57565f;margin:0;">${escapeHTML(r.comment)}</p>
         <div style="display:flex;gap:8px;">
-          <button class="mg-btn solid" data-approve="${r.id}" style="flex:1;padding:7px;">Aprobar</button>
-          <button class="mg-btn ghost" data-reject="${r.id}" style="flex:1;padding:7px;">Rechazar</button>
+          <button class="mg-btn solid" data-approve="${escapeHTML(r.id)}" style="flex:1;padding:7px;">Aprobar</button>
+          <button class="mg-btn ghost" data-reject="${escapeHTML(r.id)}" style="flex:1;padding:7px;">Rechazar</button>
         </div>
       </div>`).join('') : '<div class="cx-empty">No hay reseñas pendientes.</div>';
 
@@ -19782,10 +19809,10 @@
       <div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <b>${escapeHTML(r.name || 'Anónimo')}</b>
-          <span style="color:#c9a76a;">${estrellas(r)}</span>
+          <span style="color:#c9a76a;">${escapeHTML(estrellas(r))}</span>
         </div>
         <p style="font-size:12px;color:#57565f;margin:0;">${escapeHTML(r.comment)}</p>
-        <button class="mg-btn ghost" data-remove="${r.id}" style="align-self:flex-start;padding:6px 12px;">Quitar del sitio</button>
+        <button class="mg-btn ghost" data-remove="${escapeHTML(r.id)}" style="align-self:flex-start;padding:6px 12px;">Quitar del sitio</button>
       </div>`).join('') : '<div class="cx-empty">Todavía no hay reseñas publicadas.</div>';
 
     document.querySelectorAll('#resPendientesLista [data-approve]').forEach(b=>
@@ -19828,7 +19855,7 @@
       arcoCache = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
         .sort((a,b)=> (b.createdAt || '').localeCompare(a.createdAt || ''));
     }catch(e){
-      document.getElementById('arcoLista').innerHTML = `<div class="cx-empty">No se pudo cargar: ${e.message}</div>`;
+      document.getElementById('arcoLista').innerHTML = `<div class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
       return;
     }
     pintarArcoLista();
@@ -19840,13 +19867,13 @@
       <div class="rc-item" style="flex-direction:column;align-items:stretch;gap:6px;${r.atendida ? 'opacity:.55;' : ''}">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <b>${escapeHTML(r.name || '')}</b>
-          <span style="font-size:11px;color:#57565f;">${(r.createdAt || '').slice(0,10)}</span>
+          <span style="font-size:11px;color:#57565f;">${escapeHTML((r.createdAt || '').slice(0,10))}</span>
         </div>
         <span style="font-size:12px;color:#57565f;">📞 ${escapeHTML(r.phone || '')} · ✉ ${escapeHTML(r.email || '')}</span>
         <p style="font-size:12.5px;margin:0;">${escapeHTML(r.message || '')}</p>
         <div style="display:flex;gap:8px;">
-          <button class="mg-btn ${r.atendida ? 'ghost' : 'solid'}" data-toggle="${r.id}" style="flex:1;padding:7px;">${r.atendida ? 'Marcar pendiente' : 'Marcar atendida'}</button>
-          <button class="mg-btn ghost" data-del="${r.id}" style="padding:7px 12px;">Eliminar</button>
+          <button class="mg-btn ${r.atendida ? 'ghost' : 'solid'}" data-toggle="${escapeHTML(r.id)}" style="flex:1;padding:7px;">${r.atendida ? 'Marcar pendiente' : 'Marcar atendida'}</button>
+          <button class="mg-btn ghost" data-del="${escapeHTML(r.id)}" style="padding:7px 12px;">Eliminar</button>
         </div>
       </div>`).join('') : '<div class="cx-empty">No hay solicitudes.</div>';
 
@@ -19895,7 +19922,7 @@
   function pintarPromosLista(){
     const cont = document.getElementById('promosLista');
     cont.innerHTML = promosCache.length ? promosCache.map(p=> `
-      <div class="mg-row" data-id="${p.id}" style="flex-direction:column;align-items:stretch;gap:6px;${p.active === false ? 'opacity:.55;' : ''}">
+      <div class="mg-row" data-id="${escapeHTML(p.id)}" style="flex-direction:column;align-items:stretch;gap:6px;${p.active === false ? 'opacity:.55;' : ''}">
         <input type="text" value="${escapeHTML(p.tag || '')}" data-f="tag" placeholder="Etiqueta">
         <input type="text" value="${escapeHTML(p.title || '')}" data-f="title" placeholder="Título">
         <textarea data-f="description" placeholder="Descripción" style="min-height:50px;">${escapeHTML(p.description || '')}</textarea>
@@ -19908,7 +19935,7 @@
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap;">
             <input type="checkbox" data-f="active" ${p.active !== false ? 'checked' : ''}> Activa
           </label>
-          <button class="mg-del" title="Eliminar" data-del="${p.id}">✕</button>
+          <button class="mg-del" title="Eliminar" data-del="${escapeHTML(p.id)}">✕</button>
         </div>
       </div>`).join('') : '<div class="cx-empty">Todavía no hay promociones creadas.</div>';
 
@@ -20015,12 +20042,12 @@
               ? '<span class="rc-chip sent">Avisado</span>'
               : '<span class="rc-chip wait">Por avisar</span>';
           return `<div class="rc-item">
-            <div><b>${b.clientName}</b> <span class="rc-h">${hora} · ${b.code}</span></div>
+            <div><b>${escapeHTML(b.clientName)}</b> <span class="rc-h">${escapeHTML(hora)} · ${escapeHTML(b.code)}</span></div>
             ${chip}
           </div>`;
         }).join('');
       }catch(e){
-        lista.innerHTML = `<div class="rc-empty">${e.message}</div>`;
+        lista.innerHTML = `<div class="rc-empty">${escapeHTML(e.message)}</div>`;
       }
       return;
     }
@@ -20046,10 +20073,10 @@
           ? '<span class="rc-chip sent">Avisado</span>'
           : '<span class="rc-chip wait">Por avisar</span>';
       return `<div class="rc-item">
-        <div><b>${escapeHTML(r.client)}</b> <span class="rc-h">${hora} · ${escapeHTML(r.svc)}</span></div>
+        <div><b>${escapeHTML(r.client)}</b> <span class="rc-h">${escapeHTML(hora)} · ${escapeHTML(r.svc)}</span></div>
         <div style="display:flex;align-items:center;gap:8px;">
           ${chip}
-          ${waNum ? `<button data-wa="${r.id}" class="mg-btn ghost" style="padding:5px 10px;font-size:11px;" type="button">WhatsApp</button>` : ''}
+          ${waNum ? `<button data-wa="${escapeHTML(r.id)}" class="mg-btn ghost" style="padding:5px 10px;font-size:11px;" type="button">WhatsApp</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -20610,6 +20637,15 @@
     if(status === 'done') return 'st-asistio';
     return ['reservado','confirmado','asistio','no','pend','en_espera'].includes(status) ? 'st-' + status : '';
   }
+  /** Clase del puntito de estado (.status-dot.*): SOLO valores de la lista cerrada que tienen regla CSS (incluye los históricos new/ok/resched/done). La etiqueta
+   *  de una reserva la escribe quien opera y llega por Firestore: NUNCA se interpola cruda en un atributo `class` ni en HTML (inyección de HTML/JS en la sesión ADMIN). */
+  function apptDotClass(status){
+    return ['reservado','confirmado','asistio','no','pend','en_espera','ok','done','new','resched'].includes(status) ? status : '';
+  }
+  /** Texto del estado para mostrar: solo si es una clave PROPIA de tagLabels (nunca llaves del prototipo como `constructor` o `__proto__`). */
+  function apptEstadoTexto(status){
+    return typeof status === 'string' && Object.prototype.hasOwnProperty.call(tagLabels, status) ? tagLabels[status] : '';
+  }
 
   /* Tooltip al pasar el mouse por una reserva (sin hacer clic) -- mismo
      comportamiento que AgendaPro: nombre, servicio, estado, hora, teléfono
@@ -20630,10 +20666,10 @@
       apptHoverBox.innerHTML = `
         <div class="appt-hover-nombre">${escapeHTML(a.client)}</div>
         <div class="appt-hover-servicio">${escapeHTML(a.service)}</div>
-        <div class="appt-hover-fila"><span class="status-dot ${a.status}"></span>${statusLabel}</div>
+        <div class="appt-hover-fila"><span class="status-dot ${escapeHTML(apptDotClass(a.status))}"></span>${escapeHTML(apptEstadoTexto(a.status))}</div>
         <div class="appt-hover-fila">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-          ${s} - ${e}
+          ${escapeHTML(s)} - ${escapeHTML(e)}
         </div>
         ${a.phone ? `<div class="appt-hover-fila">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
@@ -20641,7 +20677,7 @@
         </div>` : ''}
         <div class="appt-hover-fila">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          ${pagoTxt}
+          ${escapeHTML(pagoTxt)}
         </div>
       `;
       const r = el.getBoundingClientRect();
@@ -20694,7 +20730,7 @@
         el.className = 'appt ' + a.type + ' ' + apptStatusClass(nuevoEstado);
         const dot = el.querySelector('.status-dot');
         const txt = el.querySelector('.status-txt');
-        if(dot) dot.className = 'status-dot ' + nuevoEstado;
+        if(dot) dot.className = 'status-dot ' + apptDotClass(nuevoEstado);
         if(txt) txt.textContent = tagLabels[nuevoEstado] || '';
       }
       showToast('Etiqueta actualizada');
@@ -20735,11 +20771,11 @@
         .sort((x,y)=> (y.createdAt||'').localeCompare(x.createdAt||''));
       cont.innerHTML = fotos.length ? fotos.map(f=> `
         <div>
-          <img src="${f.photoUrl}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
-          <div style="font-size:9.5px;color:#57565f;margin-top:3px;">${escapeHTML(f.barberName || '')} · ${(f.createdAt || '').slice(0,10)}</div>
+          <img src="${urlSegura(f.photoUrl)}" loading="lazy" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:9.5px;color:#57565f;margin-top:3px;">${escapeHTML(f.barberName || '')} · ${escapeHTML((f.createdAt || '').slice(0,10))}</div>
         </div>`).join('') : '<div class="cx-empty" style="grid-column:1/-1;">Todavía no hay fotos de este cliente.</div>';
     }catch(e){
-      cont.innerHTML = `<div class="us-vacio">No se pudieron cargar las fotos: ${e.message}</div>`;
+      cont.innerHTML = `<div class="us-vacio">No se pudieron cargar las fotos: ${escapeHTML(e.message)}</div>`;
     }
   }
 
@@ -20814,7 +20850,7 @@
       const snap = await db.collection('bookings').where('client', '==', a.client).get();
       reservas = snap.docs.map(d=> d.data()).sort((x,y)=> (y.createdAt||'').localeCompare(x.createdAt||''));
     }catch(e){
-      document.getElementById('fichaContenido').innerHTML = `<div class="us-vacio">No se pudo cargar: ${e.message}</div>`;
+      document.getElementById('fichaContenido').innerHTML = `<div class="us-vacio">No se pudo cargar: ${escapeHTML(e.message)}</div>`;
       return;
     }
 
@@ -20829,14 +20865,14 @@
 
     const ESTADOS = { pendiente:'Por confirmar', aprobada:'Confirmada', rechazada:'Rechazada' };
     const filas = reservas.map(r=>{
-      const estadoTxt = ESTADOS[r.decision] || r.decision || '—';
+      const estadoTxt = (Object.prototype.hasOwnProperty.call(ESTADOS, r.decision) ? ESTADOS[r.decision] : r.decision) || '—';
       const cls = r.decision === 'aprobada' ? 'sent' : (r.decision === 'rechazada' ? 'none' : 'wait');
       return `<div class="rc-item" style="flex-direction:column;align-items:stretch;gap:4px;">
         <div style="display:flex;justify-content:space-between;gap:10px;">
           <b>${escapeHTML(r.fecha || '')} · ${escapeHTML(r.svc || '')}</b>
-          <span class="rc-chip ${cls}">${estadoTxt}</span>
+          <span class="rc-chip ${escapeHTML(cls)}">${escapeHTML(estadoTxt)}</span>
         </div>
-        <span style="color:#57565f;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(precioDe(r))}${(r.etiqueta === 'asistio' || r.etiqueta === 'done') ? ' · ' + tagLabels['asistio'] : ''}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
+        <span style="color:#57565f;font-size:12px;">${escapeHTML(r.barber || '')} · ${cxClp(precioDe(r))}${escapeHTML((r.etiqueta === 'asistio' || r.etiqueta === 'done') ? ' · ' + tagLabels['asistio'] : '')}${r.numeroTransaccion ? ' · Ref: ' + escapeHTML(r.numeroTransaccion) : ''}</span>
       </div>`;
     }).join('');
 
@@ -21543,8 +21579,8 @@
    *  por defecto SÍ es el comportamiento correcto), acá un método de pago
    *  nunca debe quedar elegido solo porque es el primero de la lista. */
   function llenarSelectMetodoPago(sel, placeholder){
-    sel.innerHTML = '<option value="">' + placeholder + '</option>' +
-      Object.entries(METODOS_PAGO).map(([id,name])=> `<option value="${id}">${name}</option>`).join('');
+    sel.innerHTML = '<option value="">' + escapeHTML(placeholder) + '</option>' +
+      Object.entries(METODOS_PAGO).map(([id,name])=> `<option value="${escapeHTML(id)}">${escapeHTML(name)}</option>`).join('');
     sel.value = '';
   }
 
