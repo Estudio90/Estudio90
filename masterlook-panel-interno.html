@@ -6360,6 +6360,99 @@
       .observe(agenda, { attributes:true, attributeFilter:['style'] });
   })();
 
+  /* ==========================================================
+     BLOQUEO DE LA ENTRADA A LA SECCIÓN «CLIENTES» (BASE DE DATOS) PARA RECEPCIÓN -- parche RC v2, 9-oct-2026.
+     Decisión de la dueña: Recepción puede RESERVAR a cualquier cliente registrado («Nueva Reserva» NO cambia: buscar, elegir, «+ Nuevo cliente», agendar) y la FICHA completa
+     del cliente abre para ella como hoy; tampoco se le pone candado propio a «Agregar Cliente» ni a editar. Lo que se cierra es ENTRAR a la sección:
+     la entrada del menú «Clientes y datos > Clientes», mostrarClientes() y la vista #vistaClientes (con red de seguridad), el listado, la paginación, el buscador y el conteo
+     del módulo, su autorreparación y la importación masiva Excel/CSV; y, por aclaración de la dueña, ELIMINAR UN CLIENTE de la base (eliminar una RESERVA es otra cosa y no se toca aquí).
+     Si lo intenta, ve un aviso claro y no se carga ningún dato de la base.
+     El rol se decide contra la FICHA REAL de la sesión (staff/{uid}), NO contra `userRole` (variable que alguien podría editar desde la consola):
+       - fijarRolFicha(): al entrar al panel se anota el rol de la ficha que el panel YA leyó para iniciar sesión (cero lecturas nuevas);
+       - recepcion(): decisión SÍNCRONA (dibujar el menú y el candado de cada función del módulo): es Recepción si la ficha anotada O la sesión lo dicen;
+       - permitido(): comprobación FUERTE asíncrona al abrir la sección: relee la ficha real si la última lectura tiene más de 30 s;
+         si esa lectura falla o no contesta en 4 s, vale el último rol real conocido (no `userRole`).
+     La dueña (OWNER_UID_FALLBACK) y ADMIN quedan exentos; BARBER no cambia (sus candados de siempre siguen igual).
+     LÍMITE HONESTO: es un bloqueo de INTERFAZ. No toca reglas ni Functions: una persona técnica con CLIENTES_VER todavía podría leer la colección `clientes`
+     desde la consola del navegador. El cierre de fondo (reglas + búsqueda acotada) va en el paquete R2/2B, aparte.
+     ========================================================== */
+  const rcClientes = (function(){
+    const E = { uid:null, rol:null, ms:0 };   // última ficha REAL conocida: de quién, qué rol y cuándo
+    const VIGENCIA_MS = 30000;
+    let avisoMs = 0;
+    const ahora = ()=> Date.now();
+    function esDueña(u){ return !!u && typeof OWNER_UID_FALLBACK !== 'undefined' && u.uid === OWNER_UID_FALLBACK; }
+    function rolSesion(){ try{ return userRole; }catch(e){ return null; } }
+    function fijarRolFicha(uid, rol){
+      if(!uid || typeof rol !== 'string') return;
+      E.uid = uid; E.rol = rol; E.ms = ahora();
+    }
+    /** ¿Esta sesión es Recepción? Síncrono. La dueña por UID nunca. */
+    function recepcion(){
+      const u = auth.currentUser;
+      if(esDueña(u)) return false;
+      const rolFicha = (u && E.uid === u.uid) ? E.rol : null;
+      return rolFicha === 'RECEPTION' || rolSesion() === 'RECEPTION';
+    }
+    /** Aviso claro (modal propio del panel, nunca alert() nativo). Texto fijo: no lleva datos de nadie. */
+    function aviso(){
+      if(ahora() - avisoMs < 1500) return;   // varios candados seguidos muestran UN solo aviso
+      avisoMs = ahora();
+      try{
+        mgAlert('Esta sección es solo de administración. Desde tu cuenta de recepción puedes ver la agenda y agendar a cualquier cliente registrado con «Nueva Reserva», pero no entrar a la base de datos de clientes.',
+          { titulo:'Solo administración', textoConfirmar:'Entendido' });
+      }catch(e){ showToast('Esta sección es solo de administración'); }
+    }
+    /** Candado SÍNCRONO de una función: true = bloqueada (ya mostró el aviso y no debe seguir). */
+    function bloquear(){
+      if(!recepcion()) return false;
+      aviso();
+      return true;
+    }
+    /** Rol que dice la ficha REAL (staff/{uid}) ahora mismo; null si no se pudo leer, no tiene rol o la red no contesta en 4 s (entonces vale el último rol real conocido).
+     *  Es la lectura de la PROPIA ficha (la regla ya la permite). */
+    async function leerRolFichaReal(){
+      const u = auth.currentUser;
+      if(!u) return null;
+      const lectura = (async ()=>{
+        try{
+          const s = await db.collection('staff').doc(u.uid).get();
+          const rol = (s.exists && s.data()) ? s.data().role : null;
+          return typeof rol === 'string' ? rol : null;
+        }catch(e){ return null; }
+      })();
+      const tope = new Promise(resolve=> setTimeout(()=> resolve(null), 4000));
+      return Promise.race([lectura, tope]);
+    }
+    /** Comprobación FUERTE al abrir la sección: true = puede seguir. Nunca lanza error. */
+    async function permitido(){
+      try{
+        const u = auth.currentUser;
+        if(esDueña(u)) return true;
+        const vigente = !!u && E.uid === u.uid && !!E.rol && (ahora() - E.ms) < VIGENCIA_MS;
+        if(!vigente){
+          const rol = await leerRolFichaReal();
+          if(rol) fijarRolFicha(u.uid, rol);
+        }
+      }catch(e){ /* sin lectura nueva vale el último rol real conocido (recepcion() lo usa) */ }
+      return !bloquear();
+    }
+    /** Red de seguridad: si por CUALQUIER vía (consola, DOM directo, restauración, un handler suelto) la vista Clientes se hace visible en una sesión de Recepción,
+     *  se oculta al instante, se vuelve a la agenda y se avisa. No depende de que cada función tenga su propio candado. */
+    (function candadoVistaClientes(){
+      const el = document.getElementById('vistaClientes');
+      if(!el || typeof MutationObserver === 'undefined') return;
+      new MutationObserver(()=>{
+        if(el.style.display !== 'none' && recepcion()){
+          el.style.display = 'none';
+          irAlInicio();
+          aviso();
+        }
+      }).observe(el, { attributes:true, attributeFilter:['style'] });
+    })();
+    return Object.freeze({ recepcion, bloquear, permitido, fijarRolFicha });
+  })();
+
   // ---------- Ordenar menú (solo ADMIN): flechas ↑↓ para acomodar el orden
   // de las secciones principales y de los ítems dentro de cada grupo
   // desplegable, guardado en settings/negocio para que se vea igual desde
@@ -7159,6 +7252,7 @@
         userBarberName = esSoloRecepcion ? null : (doc.data().barber?.name || null);
         userBarberId = esSoloRecepcion ? null : (doc.data().barberId || null);
         userPermissions = doc.data().permissions || [];
+        rcClientes.fijarRolFicha(user.uid, doc.data().role || 'BARBER');   // RC: rol REAL de la ficha, para el bloqueo de «Clientes» (no lee nada nuevo)
         userIsStaff = true;
         // FASE 1 (cierre): calId propio -- `blocks` identifica al
         // profesional por calId (entero corto), no por barberId (id real
@@ -8094,6 +8188,8 @@
      'btnArchivosMultimedia','btnMensajeriaWhatsapp'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = cliOn;
     });
+    // RC: la base de datos «Clientes» es solo de administración -- Recepción no ve esta entrada (rol de la ficha real, decisión síncrona).
+    if(rcClientes.recepcion()){ const bcl = document.getElementById('btnClientes'); if(bcl) bcl.style.display = 'none'; }
 
     // Accesos a cursos: administrador siempre, o cualquier staff con el
     // permiso específico CURSOS_ACCESOS (aunque no sea ADMIN) -- la función
@@ -20787,8 +20883,9 @@
     borrar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
   };
 
-  function mostrarClientes(){
+  async function mostrarClientes(){
     if(barberoBloqueado()) return;
+    if(!(await rcClientes.permitido())) return;   // RC: solo administración (comprobación fuerte con la ficha real)
     ocultarVistasPanel();
     sbCerrarVistaSemana();
     document.getElementById('kpiRow').style.display = 'none';
@@ -20809,6 +20906,7 @@
 
   /** Carga inicial de la vista: página 1 + conteo total + autorreparación. */
   async function clCargar(){
+    if(rcClientes.bloquear()) return;   // RC
     clEstado.pagina = 0;
     clEstado.cursores = [null];
     clEstado.filtro = '';
@@ -20827,6 +20925,7 @@
    *  permiso de escritura (RECEPTION sin CLIENTES_EDITAR) falla en silencio
    *  y lo repara el próximo ADMIN que abra la vista. */
   async function clRepararRecientes(){
+    if(rcClientes.bloquear()) return;   // RC
     const opAlEmpezar = clEstado.opSeq;
     try{
       const snap = await db.collection('clientes').orderBy('createdAt', 'desc').limit(25).get();
@@ -20849,6 +20948,7 @@
   /** Total de clientes vía aggregation query REST (el SDK compat 10.x no
    *  expone .count()). ~1 lectura. Si falla, la barra muestra "Página N". */
   async function clContarTotal(){
+    if(rcClientes.bloquear()) return;   // RC
     try{
       const u = firebase.auth().currentUser;
       if(!u) throw new Error('sin sesión');
@@ -20873,6 +20973,7 @@
 
   /** Trae una página del listado ordenado por nombre (sin búsqueda activa). */
   async function clCargarPagina(n){
+    if(rcClientes.bloquear()) return;   // RC
     const seq = ++clEstado.opSeq;
     clEstado.filtro = '';
     clRenderSkeleton();
@@ -20911,6 +21012,7 @@
   });
 
   async function clEjecutarBusqueda(q){
+    if(rcClientes.bloquear()) return;   // RC
     const seq = ++clEstado.opSeq;
     clEstado.filtro = q;
     clRenderSkeleton();
@@ -21039,6 +21141,7 @@
   });
 
   async function clBorrar(id){
+    if(rcClientes.bloquear()) return;   // RC
     const c = clEstado.docsPagina.find(x=> x.id === id);
     const nombre = c ? (((c.nombre||'') + ' ' + (c.apellido||'')).trim() || 'este cliente') : 'este cliente';
     if(!(await mgConfirm(`¿Eliminar a ${nombre} de la base de clientes?\n\nEsto no borra sus reservas.`))) return;
@@ -21163,7 +21266,10 @@
     return idx;
   }
 
-  document.getElementById('clImportar').addEventListener('click', ()=> document.getElementById('clArchivo').click());
+  document.getElementById('clImportar').addEventListener('click', ()=>{
+    if(rcClientes.bloquear()) return;   // RC
+    document.getElementById('clArchivo').click();
+  });
 
   /** Lee un archivo Excel (.xlsx/.xls) y lo deja como filas de texto, mismo
    *  formato que devuelve parseCSV -- para que el resto del importador
@@ -21178,6 +21284,7 @@
   }
 
   document.getElementById('clArchivo').addEventListener('change', async (ev)=>{
+    if(rcClientes.bloquear()){ ev.target.value = ''; return; }   // RC
     const file = ev.target.files[0];
     if(!file) return;
     const esExcel = /\.xlsx?$/i.test(file.name);
