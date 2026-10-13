@@ -13,7 +13,7 @@
      que un enlace de correo cargue rápido y sin fallos. */
   :root{
     --morado:#8046CE; --morado-hover:#6f39b8; --morado-suave:#F3EEFC;
-    --texto:#2C3941; --texto-medio:#4C5559; --texto-bajo:#8A9296;
+    --texto:#2C3941; --texto-medio:#4C5559; --texto-bajo:#656E73;
     --borde:#E0E4E4; --fondo:#F0F3F4; --ok:#2E9E52; --error:#C0392B;
   }
   *{box-sizing:border-box;}
@@ -62,6 +62,15 @@
   .estado-carga{padding:40px 28px; text-align:center; color:var(--texto-bajo); font-size:14px;}
   .pie{padding:16px 28px; border-top:1px solid var(--borde); color:var(--texto-bajo); font-size:11.5px;}
   #contenido{display:none;}
+
+  /* ---- modo «baja de un clic» (?a=baja): una sola acción, sin interruptores ---- */
+  .baja-texto{color:var(--texto-medio); font-size:14.5px; margin:0 0 20px; line-height:1.55;}
+  .btn-baja{background:var(--morado); font-size:16px; padding:15px 16px;}
+  .enlace-discreto{display:inline-block; margin-top:16px; background:none; border:none; padding:4px 0; color:var(--texto-medio); font-family:inherit; font-size:13.5px; text-decoration:underline; cursor:pointer;}
+  .enlace-discreto:hover{color:var(--texto);}
+  .enlace-discreto:disabled{opacity:.5; cursor:default;}
+  #vistaBaja{display:none;}
+  #vistaPreferencias{display:none;}
 </style>
 </head>
 <body>
@@ -71,30 +80,42 @@
   <div class="estado-carga" id="cargando">Cargando tus preferencias…</div>
 
   <div class="card-body" id="contenido">
-    <h1>Preferencias de correo</h1>
     <p class="sub">Estás gestionando los correos de <span class="em" id="correoTxt">—</span>.</p>
 
-    <div class="opt fija">
-      <div class="opt-head">
-        <label class="sw"><input type="checkbox" checked disabled><span></span></label>
-        <div class="opt-txt">
-          <div class="opt-titulo">Correos del servicio</div>
-          <div class="opt-desc">Confirmaciones de reserva, comprobantes de pago e información de tus compras. Siempre activos — no se pueden desactivar.</div>
-        </div>
-      </div>
+    <!-- Modo «baja de un clic» (?a=baja): la página NO cambia nada al abrirse; un solo botón registra la baja -->
+    <div id="vistaBaja">
+      <h1 id="bajaTitulo">Darme de baja</h1>
+      <p class="baja-texto" id="bajaTexto">Dejarás de recibir novedades y promociones de Masterlook. Los correos de tus reservas y pagos seguirán llegando.</p>
+      <button class="btn btn-baja" id="btnBaja" type="button">Darme de baja</button>
+      <button class="enlace-discreto" id="btnResuscribir" type="button" style="display:none;">Me equivoqué, volver a suscribirme</button>
     </div>
 
-    <div class="opt">
-      <div class="opt-head">
-        <label class="sw"><input type="checkbox" id="swMarketing"><span></span></label>
-        <div class="opt-txt">
-          <div class="opt-titulo">Novedades y promociones</div>
-          <div class="opt-desc">Ofertas, lanzamientos, cursos y novedades de Master Look. Puedes activarlo o desactivarlo cuando quieras.</div>
+    <!-- Centro de preferencias (sin ?a=baja) -->
+    <div id="vistaPreferencias">
+      <h1>Preferencias de correo</h1>
+
+      <div class="opt fija">
+        <div class="opt-head">
+          <label class="sw"><input type="checkbox" checked disabled><span></span></label>
+          <div class="opt-txt">
+            <div class="opt-titulo">Correos del servicio</div>
+            <div class="opt-desc">Confirmaciones de reserva, comprobantes de pago e información de tus compras. Siempre activos — no se pueden desactivar.</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <button class="btn" id="btnGuardar">Guardar preferencias</button>
+      <div class="opt">
+        <div class="opt-head">
+          <label class="sw"><input type="checkbox" id="swMarketing"><span></span></label>
+          <div class="opt-txt">
+            <div class="opt-titulo">Novedades y promociones</div>
+            <div class="opt-desc">Ofertas, lanzamientos, cursos y novedades de Master Look. Puedes activarlo o desactivarlo cuando quieras.</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" id="btnGuardar">Guardar preferencias</button>
+    </div>
     <div class="msg" id="msg"></div>
   </div>
 
@@ -104,22 +125,37 @@
 <script>
 (function(){
   'use strict';
-  var FN_BASE = ['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname)
-    ? 'https://us-central1-estudio90.cloudfunctions.net'
-    : 'https://us-central1-estudio90-dev.cloudfunctions.net';
-  var URL_BAJA = FN_BASE + '/emailBaja';
+  /* [Q1] Lista CERRADA de sitios. Un sitio desconocido NO llama a ninguna Function (nunca se cae al entorno de pruebas "por omisión").
+     producción = masterlook.cl, www.masterlook.cl, estudio90.github.io (mientras convivan) · DEV = estudio90-dev.web.app, estudio90-dev.firebaseapp.com.
+     Interfaz para el arnés de pruebas locales: esta tabla es lo único que se amplía para servir desde un host de pruebas. */
+  var HOSTS = {
+    'masterlook.cl': 'produccion',
+    'www.masterlook.cl': 'produccion',
+    'estudio90.github.io': 'produccion',
+    'estudio90-dev.web.app': 'dev',
+    'estudio90-dev.firebaseapp.com': 'dev'
+  };
+  var tipo = Object.prototype.hasOwnProperty.call(HOSTS, location.hostname) ? HOSTS[location.hostname] : null;
 
-  var token = new URLSearchParams(location.search).get('t') || '';
+  var params = new URLSearchParams(location.search);
+  var token = params.get('t') || '';
+  var campana = params.get('c') || '';
+  if(!/^[A-Za-z0-9_-]{1,128}$/.test(campana)) campana = '';       // el identificador de campaña no es de confianza: el servidor lo vuelve a validar
+  var modoBaja = params.get('a') === 'baja';
+
   var cargando = document.getElementById('cargando');
   var contenido = document.getElementById('contenido');
+  var vistaBaja = document.getElementById('vistaBaja');
+  var vistaPref = document.getElementById('vistaPreferencias');
   var sw = document.getElementById('swMarketing');
   var btn = document.getElementById('btnGuardar');
+  var btnBaja = document.getElementById('btnBaja');
+  var btnRe = document.getElementById('btnResuscribir');
   var msg = document.getElementById('msg');
-  var motivoSupresion = null;
 
-  function mostrarMsg(texto, tipo){
+  function mostrarMsg(texto, tipoMsg){
     msg.textContent = texto;
-    msg.className = 'msg ' + (tipo === 'ok' ? 'ok' : tipo === 'info' ? 'info' : 'err');
+    msg.className = 'msg ' + (tipoMsg === 'ok' ? 'ok' : tipoMsg === 'info' ? 'info' : 'err');
   }
   function errorFatal(texto){
     cargando.textContent = texto;
@@ -127,8 +163,25 @@
     contenido.style.display = 'none';
   }
 
+  if(!tipo){ errorFatal('Enlace no válido en este sitio.'); return; }
   if(!token){ errorFatal('Este enlace no es válido.'); return; }
 
+  var FN_BASE = tipo === 'produccion'
+    ? 'https://us-central1-estudio90.cloudfunctions.net'
+    : 'https://us-central1-estudio90-dev.cloudfunctions.net';
+  var URL_BAJA = FN_BASE + '/emailBaja';
+
+  function cuerpoPost(marketing){
+    var b = { t: token, marketing: marketing };
+    if(campana) b.c = campana;                                    // [Q3] se envía la campaña cuando viene en el enlace
+    return JSON.stringify(b);
+  }
+  function post(marketing){
+    return fetch(URL_BAJA, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: cuerpoPost(marketing) })
+      .then(function(r){ return r.json(); });
+  }
+
+  // El GET NO cambia nada: solo valida el enlace y dice a qué correo corresponde.
   fetch(URL_BAJA + '?t=' + encodeURIComponent(token))
     .then(function(r){ return r.json().then(function(j){ return { status:r.status, j:j }; }); })
     .then(function(res){
@@ -137,32 +190,77 @@
         return;
       }
       document.getElementById('correoTxt').textContent = res.j.email || 'tu correo';
-      sw.checked = !!res.j.recibeMarketing;
-      motivoSupresion = res.j.motivoSupresion || null;
-      // Si ya está de baja y NO puede reactivarse solo (rebote / queja de spam
-      // / bloqueo / supresión administrativa): nota neutral, sin alarma. El
-      // toggle queda desactivado -- volver a activar da 'bloqueado' de todos
-      // modos, así que mejor no ofrecerlo.
-      if(!res.j.recibeMarketing && !res.j.puedeReactivarseSolo){
-        sw.disabled = true;
-        mostrarMsg('No estás recibiendo correos promocionales de Master Look. Si crees que es un error, escríbenos.', 'info');
+      var yaDeBaja = !!res.j.motivoSupresion;
+      if(modoBaja){
+        /* [Q2] baja de un clic */
+        vistaBaja.style.display = 'block';
+        if(yaDeBaja){
+          document.getElementById('bajaTitulo').textContent = 'Ya no recibes novedades';
+          document.getElementById('bajaTexto').textContent = 'Este correo ya no recibe novedades ni promociones de Masterlook. Los correos de tus reservas y pagos siguen llegando.';
+          btnBaja.style.display = 'none';
+          if(res.j.puedeReactivarseSolo){ btnRe.style.display = 'inline-block'; }
+        }
+      }else{
+        /* [Q3] el interruptor refleja el permiso REAL: apagado para quien no tiene permiso registrado */
+        vistaPref.style.display = 'block';
+        sw.checked = !!res.j.recibeMarketing;
+        // Si ya está de baja y NO puede reactivarse solo (rebote / queja de spam / bloqueo / supresión administrativa): nota neutral, sin alarma.
+        if(!res.j.recibeMarketing && !res.j.puedeReactivarseSolo && yaDeBaja){
+          sw.disabled = true;
+          mostrarMsg('No estás recibiendo correos promocionales de Master Look. Si crees que es un error, escríbenos.', 'info');
+        }
       }
       cargando.style.display = 'none';
       contenido.style.display = 'block';
     })
     .catch(function(){ errorFatal('No pudimos cargar tus preferencias. Intenta de nuevo en un momento.'); });
 
+  /* ---- [Q2] botón «Darme de baja» (un clic) ---- */
+  btnBaja.addEventListener('click', function(){
+    btnBaja.disabled = true;
+    var textoOriginal = btnBaja.textContent;
+    btnBaja.textContent = 'Registrando…';
+    msg.className = 'msg';
+    post(false)
+      .then(function(j){
+        if(j && j.ok && j.estado === 'de_baja'){
+          document.getElementById('bajaTitulo').textContent = 'Listo, quedaste de baja';
+          document.getElementById('bajaTexto').textContent = 'No recibirás más novedades ni promociones de Masterlook. Los correos de tus reservas y pagos seguirán llegando.';
+          btnBaja.style.display = 'none';
+          btnRe.style.display = 'inline-block';
+        }else{
+          mostrarMsg('No se pudo registrar la baja. Intenta de nuevo.', 'err');
+          btnBaja.disabled = false; btnBaja.textContent = textoOriginal;
+        }
+      })
+      .catch(function(){ mostrarMsg('No se pudo registrar la baja. Intenta de nuevo.', 'err'); btnBaja.disabled = false; btnBaja.textContent = textoOriginal; });
+  });
+  btnRe.addEventListener('click', function(){
+    btnRe.disabled = true;
+    msg.className = 'msg';
+    post(true)
+      .then(function(j){
+        if(j && j.ok && j.estado === 'suscrito'){
+          document.getElementById('bajaTitulo').textContent = 'Volverás a recibir novedades';
+          document.getElementById('bajaTexto').textContent = 'Listo. Volverás a recibir novedades y promociones de Masterlook. Puedes darte de baja cuando quieras desde cualquier correo.';
+          btnRe.style.display = 'none';
+        }else if(j && j.ok && j.estado === 'bloqueado'){
+          mostrarMsg('No podemos reactivar las promociones para este correo de forma automática.', 'err');
+          btnRe.disabled = false;
+        }else{
+          mostrarMsg('No se pudo guardar. Intenta de nuevo.', 'err'); btnRe.disabled = false;
+        }
+      })
+      .catch(function(){ mostrarMsg('No se pudo guardar. Intenta de nuevo.', 'err'); btnRe.disabled = false; });
+  });
+
+  /* ---- centro de preferencias (sin ?a=baja) ---- */
   btn.addEventListener('click', function(){
     btn.disabled = true;
     var textoOriginal = btn.textContent;
     btn.textContent = 'Guardando…';
     msg.className = 'msg';
-    fetch(URL_BAJA, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ t: token, marketing: sw.checked }),
-    })
-      .then(function(r){ return r.json(); })
+    post(sw.checked)
       .then(function(j){
         if(j && j.ok && j.estado === 'de_baja'){
           mostrarMsg('Listo. No recibirás más correos promocionales de Master Look. Los correos del servicio (reservas, comprobantes) seguirán llegando.', 'ok');
