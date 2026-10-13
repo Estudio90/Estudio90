@@ -1,0 +1,93 @@
+<!doctype html>
+<!-- Enlaces de reserva por sucursal y por profesional.
+       /reservar?sede=nunoa                       reserva en la agenda de Masterlook (Ñuñoa), sin pasar por el selector
+       /reservar?sede=nunoa&profesional=<id>      lo mismo, con ese profesional ya elegido (el id estable del profesional)
+       /reservar?sede=providencia                 agenda de Providencia (el enlace vive en masterlook-enlaces.js)
+       /reservar                                  el selector de sucursales
+     Esta página no muestra nada que venga de la dirección: solo decide a dónde enviar a la persona. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>MASTERLOOK — Reservar</title>
+<!-- Valores de configuración únicos (enlace de Providencia). Ruta relativa: funciona igual desde la raíz del sitio. -->
+<script src="../masterlook-enlaces.js"></script>
+<script>
+/*ML_ROUTER_INI*/
+function mlDestinoReserva(search, cfg, base) {
+  var REENVIAR = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ml_c', 'fbclid', 'gclid', 'rf'];
+  var RE_PROF = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+  var RE_CTRL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+  function limpia(s) {
+    s = String(s == null ? '' : s).trim().toLowerCase();
+    try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) { /* navegador sin normalize: queda en minúsculas */ }
+    return s;
+  }
+  var p;
+  try { p = new URLSearchParams(search || ''); } catch (e) { p = { get: function () { return null; } }; }
+  var sede = limpia(p.get('sede'));
+  var prof = limpia(p.get('profesional'));
+  if (!RE_PROF.test(prof)) prof = '';
+  if (sede !== 'nunoa' && sede !== 'providencia') sede = prof ? 'nunoa' : 'elegir';   // un profesional solo existe en la agenda propia (Ñuñoa)
+  if (sede !== 'nunoa') prof = '';                                                   // en Providencia (AgendaPro) no aplica
+
+  var fwd = [];
+  var utm = [];
+  REENVIAR.forEach(function (k) {
+    var v = p.get(k);
+    if (v == null) return;
+    v = String(v);
+    if (!v.length || v.length > 200 || RE_CTRL.test(v)) return;
+    var par = k + '=' + encodeURIComponent(v);
+    fwd.push(par);
+    if (k.indexOf('utm_') === 0) utm.push(par);
+  });
+
+  var raiz = String(base == null ? '../' : base);
+  var sitio = raiz + 'masterlook-sitio.html';
+
+  if (sede === 'providencia') {
+    var ext = cfg && typeof cfg.providencia === 'string' ? cfg.providencia : '';
+    var permitidos = (cfg && Array.isArray(cfg.dominiosExternos) && cfg.dominiosExternos.length) ? cfg.dominiosExternos : ['agendapro.com'];
+    var m = /^https:\/\/([a-z0-9.-]+)(\/[^\s#]*)?$/i.exec(ext);
+    var host = m ? m[1].toLowerCase() : '';
+    var ok = !!host && permitidos.some(function (d) { return host === d || host.slice(-(d.length + 1)) === '.' + d; });
+    if (ok) {
+      var urlExt = ext;
+      if (cfg.providenciaConUtm && utm.length) urlExt += (ext.indexOf('?') >= 0 ? '&' : '?') + utm.join('&');
+      return { tipo: 'externo', url: urlExt, sede: sede, profesional: '' };
+    }
+    // el enlace de Providencia falta o no es válido: nunca una pantalla en blanco -> el selector del sitio
+    return { tipo: 'sitio', url: sitio + '?' + ['sede=elegir'].concat(fwd).join('&'), sede: 'elegir', profesional: '' };
+  }
+  if (sede === 'nunoa') {
+    var q = ['sede=nunoa'];
+    if (prof) q.push('profesional=' + encodeURIComponent(prof));
+    return { tipo: 'sitio', url: sitio + '?' + q.concat(fwd).join('&') + '#reservas', sede: sede, profesional: prof };
+  }
+  return { tipo: 'sitio', url: sitio + '?' + ['sede=elegir'].concat(fwd).join('&'), sede: 'elegir', profesional: '' };
+}
+/*ML_ROUTER_FIN*/
+
+(function () {
+  try {
+    var d = mlDestinoReserva(location.search, window.ML_ENLACES, '../');
+    location.replace(d.url);
+  } catch (e) { /* si algo falla, queda el enlace visible de abajo */ }
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=../masterlook-sitio.html"></noscript>
+<style>
+  html,body{margin:0;background:#fff;color:#1c1c1c;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:420px;margin:0 auto;padding:64px 16px;text-align:center}
+  a{color:#1c1c1c}
+</style>
+</head>
+<body>
+<main>
+  <p>Abriendo la reserva…</p>
+  <p><a href="../masterlook-sitio.html">Si no se abre sola, toca aquí</a></p>
+</main>
+</body>
+</html>
