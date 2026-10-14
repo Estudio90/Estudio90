@@ -1000,6 +1000,19 @@
         </div>
       </section>
 
+      <!-- [v2.1.7] Base histórica: declaración auditable de la dueña. Solo cifras; nunca correos. -->
+      <section class="au-res" id="bhCard" aria-labelledby="bhTit">
+        <div class="rs-cab">
+          <h2 class="rs-titulo" id="bhTit">Reconocer tu base histórica de clientes</h2>
+        </div>
+        <p class="au-desglose-det" id="bhTexto" aria-live="polite">Cargando…</p>
+        <div class="au-aviso" id="bhAviso" style="display:none;"></div>
+        <div class="au-acc">
+          <button class="btn btn-solid" id="bhAbrir" disabled>Reconocer mi base…</button>
+          <button class="btn btn-outline" id="bhAnular" style="display:none;">Anular la declaración…</button>
+        </div>
+      </section>
+
       <div class="rec-tabla-cab">
         <p class="rec-tabla-cuenta" id="conteoAudiencias" role="status" aria-live="polite"></p>
       </div>
@@ -1692,6 +1705,41 @@
   </div>
 </div>
 
+<!-- ================= MODAL: Reconocer la base histórica (declaración de la dueña) ================= -->
+<div class="modal-fondo" id="modalBaseHistorica" role="dialog" aria-modal="true" aria-labelledby="bhmTitulo">
+  <div class="modal modal-ancho">
+    <div class="modal-head">
+      <h3 id="bhmTitulo">Reconocer tu base histórica</h3>
+      <button class="modal-cerrar" id="bhmCerrar" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="cf-texto" id="bhmIntro" style="margin:0 0 6px;"></p>
+      <div class="pf-seccion-tit" style="margin-top:14px;" id="bhmCifrasTit">Qué pasaría</div>
+      <ul id="bhmCifras" style="margin:6px 0 12px 18px; padding:0; line-height:1.55;"></ul>
+      <div id="bhmTextoWrap">
+        <div class="pf-seccion-tit">Tu declaración (queda guardada, con fecha y tu nombre)</div>
+        <p class="cf-texto" id="bhmTexto" style="margin:6px 0 12px;"></p>
+      </div>
+      <div class="ef-confirma">
+        <label for="bhmFrase">Para confirmar, escribe exactamente esta frase</label>
+        <div class="cf-texto" style="margin:0 0 8px;"><b id="bhmFraseTxt"></b></div>
+        <input type="text" id="bhmFrase" autocomplete="off" spellcheck="false">
+        <div id="bhmClaveWrap">
+          <label for="bhmClave">Tu contraseña (por seguridad se vuelve a pedir; no se guarda)</label>
+          <input type="password" id="bhmClave" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="cfg-msg" id="bhmMsg" role="status"></div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn btn-outline" id="bhmCancelar">Cancelar</button>
+      <button class="btn btn-solid" id="bhmConfirmar" disabled>Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= MODAL: Vista previa del correo (escritorio / móvil) ================= -->
 <div class="modal-fondo" id="modalVistaPrevia" role="dialog" aria-modal="true" aria-labelledby="vpTitulo">
   <div class="modal">
@@ -2128,9 +2176,9 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     'emailCampanaPausar', 'emailCampanaReanudar', 'emailCampanaCancelar', 'emailCampanaReporte', 'emailAtribuirReservas',
     'emailContactosResumen', 'emailContactosReconstruir', 'emailConsentimientoRegistrar', 'emailAudienciaPreview',
     'emailSuprimirManual', 'emailReactivarConsentimiento', 'emailClientesInactivos', 'emailReconstruirVisitas',
-    'emailReconciliarAhora', 'emailClientesPagina',
+    'emailReconciliarAhora', 'emailClientesPagina', 'emailBaseHistoricaDeclarar',
   ]);
-  const EM_TIMEOUT_FN = { emailReconciliarAhora: 300000, emailClientesPagina: 25000 };   // [V21-02] la reconciliación puede tardar más que los 70 s normales del navegador (la Function admite 300 s)
+  const EM_TIMEOUT_FN = { emailReconciliarAhora: 300000, emailClientesPagina: 25000, emailBaseHistoricaDeclarar: 300000 };   // [V21-02] la reconciliación puede tardar más que los 70 s normales del navegador (la Function admite 300 s)
   const emCacheFn = {};
   /** Llama a una Function callable del contrato y devuelve `data`. Rechaza con el error original (con details.motivo si el servidor lo trae). */
   function emLlamar(nombre, datos){
@@ -2148,6 +2196,12 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     estado_desactualizado: 'El estado cambió mientras mirabas. Se recargó la pantalla; inténtalo de nuevo.',
     reauth_requerida: 'Por seguridad, vuelve a escribir tu contraseña para continuar.',
     frase_incorrecta: 'La frase de confirmación no coincide.',
+    indice_desactualizado: 'Primero pulsa «Actualizar contactos»: la lista de contactos no está al día.',
+    declaracion_en_curso: 'Ya hay una ejecución de la declaración en curso. Espera unos minutos y vuelve a intentar.',
+    declaracion_no_vigente: 'Esa declaración ya no está vigente.',
+    declaracion_no_encontrada: 'No encuentro esa declaración.',
+    declaracion_previa: 'Ya hiciste una declaración antes. Confirma que quieres hacer otra para quienes llegaron después.',
+    auditoria_no_disponible: 'No pude registrar la auditoría, así que no hice nada. Inténtalo de nuevo en unos minutos.',
     precondicion_fallida: 'No se puede activar todavía: faltan condiciones.',
     envios_desactivados: 'Los envíos reales están desactivados.',
     direccion_no_autorizada: 'Esa dirección no está en la lista de pruebas autorizadas.',
@@ -4846,6 +4900,7 @@ ${contenido}
         btn.textContent = 'Actualizando…';
         await emLlamar('emailContactosReconstruir', { modo:'aplicar' });
         await cargarResumen();
+        bh.cargar();
         emResumen.cargar(true);
       }catch(e){ emAvisoError('No se pudieron actualizar los contactos', e); }
       finally{ btn.disabled = false; btn.textContent = txt0; }
@@ -4854,6 +4909,7 @@ ${contenido}
     /* ---------- lista ---------- */
     async function abrirVista(){
       cargarResumen();
+      bh.cargar();
       if(listaCargada) return;
       await cargarLista();
     }
@@ -5156,6 +5212,166 @@ ${contenido}
     $('conCancelar').addEventListener('click', cerrarConsentimiento);
     $('conCerrar').addEventListener('click', cerrarConsentimiento);
     $('modalConsentimiento').addEventListener('click', (ev)=>{ if(ev.target === $('modalConsentimiento')) cerrarConsentimiento(); });
+    /* ---------- [v2.1.7] Reconocer la base histórica: declaración auditable de la dueña ----------
+       Solo la dueña (en producción), con la frase exacta y su contraseña reciente. El servidor decide a quién alcanza: base HISTÓRICA de clientes (fichas anteriores al corte, no nacidas de una reserva del sitio),
+       con correo válido, sin baja/rebote/queja/rechazo y sin relleno. Nunca pisa una preferencia que ya existe; la baja siempre gana. No envía ningún correo. Todo texto dinámico entra con textContent. */
+    const bh = (function(){
+      let d = null, modo = null, ocupado = false, falloCarga = '', foco = null, avance = 0;
+      const normF = (x)=> String(x == null ? '' : x).normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase();
+      const vigente = ()=> ((d && d.declaraciones) || []).find((x)=> x.estado === 'completa' || x.estado === 'en_curso') || null;
+      const enCurso = ()=> ((d && d.declaraciones) || []).find((x)=> x.estado === 'en_curso') || null;
+      const soloDuena = ()=> window.EM_HOST_TIPO === 'produccion' && !window.EM_ES_DUENA;     // en DEV cualquier ADMIN prueba; el servidor vuelve a exigirlo
+      const fechaTxt = (iso)=> { const t = iso ? new Date(iso) : null; return (!t || isNaN(t.getTime())) ? '—' : t.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:TZ }); };
+      function lineas(ul, items){ ul.textContent = ''; items.forEach((t)=>{ const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); }
+      function excluidosTxt(ex){
+        ex = ex || {};
+        const it = [];
+        if(N(ex.suprimido)) it.push(fmt(ex.suprimido) + ' con baja, rebote o queja (nunca se tocan)');
+        if(N(ex.revocado)) it.push(fmt(ex.revocado) + ' que rechazaron recibir novedades (se respeta)');
+        if(N(ex.correo_de_relleno)) it.push(fmt(ex.correo_de_relleno) + ' con correo de relleno');
+        if(N(ex.correo_invalido)) it.push(fmt(ex.correo_invalido) + ' con correo inválido');
+        if(N(ex.sin_evidencia_historica)) it.push(fmt(ex.sin_evidencia_historica) + ' que no son de la base histórica (solo reservaron o compraron en el sitio, o llegaron después de hoy)');
+        if(N(ex.solo_reserva)) it.push(fmt(ex.solo_reserva) + ' que solo existen por una reserva (no están en tu base de clientes)');
+        if(N(ex.preferencia_existente)) it.push(fmt(ex.preferencia_existente) + ' con una preferencia anterior (no se pisa)');
+        return it;
+      }
+      function pintar(){
+        const t = $('bhTexto'), av = $('bhAviso'), ab = $('bhAbrir'), an = $('bhAnular');
+        av.style.display = 'none'; av.textContent = ''; an.style.display = 'none';
+        if(!d){
+          t.textContent = 'No se pudo leer el estado de esta función' + (falloCarga ? ': ' + falloCarga : '.');
+          ab.textContent = 'Reintentar'; ab.disabled = false; ab.dataset.modo = 'reintentar'; return;
+        }
+        ab.dataset.modo = 'abrir';
+        const ind = d.indice || {}, ec = enCurso(), v = vigente(), prev = d.ultimaCompleta;
+        an.style.display = (v && !soloDuena()) ? '' : 'none';
+        if(ec){ av.textContent = 'Hay una declaración a medias (quedó cortada por tiempo). Pulsa «Continuar la declaración…» para terminarla.'; av.style.display = ''; }
+        ab.textContent = ec ? 'Continuar la declaración…' : (prev ? 'Hacer otra declaración…' : 'Reconocer mi base…');
+        if(!ind.completo || !ind.fresco){
+          t.textContent = ind.parcial ? 'La última actualización de contactos quedó a medias. Pulsa «Actualizar contactos» otra vez antes de continuar.'
+            : 'Primero pulsa «Actualizar contactos» para que la lista esté al día (menos de 24 horas). Después podrás ver cuántos clientes se reconocen.';
+          ab.disabled = true; return;
+        }
+        let txt = fmt(d.reconocerN) + ' clientes de tu base histórica no tienen permiso registrado y se pueden reconocer con tu declaración (' + fmt(d.yaTenianPermiso) + ' ya tienen permiso). '
+          + 'Las bajas, rebotes, quejas y rechazos siempre quedan fuera, y cualquier persona podrá darse de baja con un clic.';
+        if(prev) txt += ' Última declaración: ' + fechaTxt(prev.creadaAt) + ' · ' + fmt(prev.reconocidos) + ' clientes. Quienes llegaron después no están cubiertos.';
+        if(soloDuena()) txt += ' Solo la dueña puede hacer o anular esta declaración.';
+        t.textContent = txt;
+        ab.disabled = soloDuena() || !(N(d.reconocerN) > 0 || ec);
+      }
+      async function cargar(){
+        try{ d = await emLlamar('emailBaseHistoricaDeclarar', { modo:'ensayo' }); falloCarga = ''; }catch(e){ d = null; falloCarga = emMensajeError(e); }
+        pintar();
+      }
+      function bloquear(b){
+        ocupado = b;
+        ['bhmFrase', 'bhmClave', 'bhmCancelar', 'bhmCerrar'].forEach((id)=> { $(id).disabled = b; });
+      }
+      const alTeclear = (ev)=>{ if(ev.key === 'Escape' && !ocupado){ ev.stopPropagation(); cerrar(); } };
+      function abrir(m){
+        if(!d) return;
+        modo = m;
+        foco = document.activeElement;
+        const anular = m === 'anular', v = vigente(), prev = d.ultimaCompleta, otra = !anular && !!prev && !enCurso();
+        $('bhmTitulo').textContent = anular ? 'Anular la declaración' : (otra ? 'Hacer otra declaración' : 'Reconocer tu base histórica');
+        $('bhmIntro').textContent = anular
+          ? 'Esto deja SIN registro de permiso a quienes esa declaración reconoció. Lo que cada persona cambió después (una baja, o un permiso que dio ella misma) se respeta. No borra nada, y no se toca ningún cliente, reserva ni pago. '
+            + 'Ojo: quienes queden anulados no se pueden volver a reconocer con una declaración; habría que registrarlos uno a uno.'
+          : (otra
+            ? 'Ya hiciste una declaración el ' + fechaTxt(prev.creadaAt) + ' (' + fmt(prev.reconocidos) + ' clientes). Esta alcanzaría a ' + fmt(d.reconocerN) + ' clientes que no estaban cubiertos. '
+              + 'Continúa SOLO si esas personas también se registraron voluntariamente en tu agenda y ya recibían tus comunicaciones (no si solo dejaron su correo al reservar o comprar). No se envía ningún correo ahora.'
+            : 'Vas a declarar, bajo tu responsabilidad, que tus clientes se registraron voluntariamente y ya recibían comunicaciones. El sistema registra el permiso de cada persona alcanzada (con la fecha, tu nombre y el texto declarado). No se envía ningún correo ahora: cada campaña se confirma aparte.');
+        $('bhmCifrasTit').textContent = anular ? 'Qué se anularía' : 'Qué pasaría';
+        lineas($('bhmCifras'), anular
+          ? [fmt(v && v.resumen && v.resumen.reconocidos) + ' permisos creados por esa declaración pasarían a «sin registro» (salvo los que la persona haya cambiado).']
+          : [fmt(d.reconocerN) + ' clientes quedarían con permiso por tu declaración.', fmt(d.yaTenianPermiso) + ' ya tienen permiso y no se tocan.'].concat(excluidosTxt(d.excluidos).map((x)=> 'Fuera: ' + x)));
+        $('bhmTextoWrap').style.display = anular ? 'none' : '';
+        $('bhmTexto').textContent = d.texto || '';
+        $('bhmFraseTxt').textContent = anular ? d.fraseAnular : d.fraseDeclarar;
+        $('bhmFrase').value = ''; $('bhmClave').value = '';
+        $('bhmClaveWrap').style.display = (emTieneClave() && Date.now() - emUltimaReauth >= 240000) ? '' : 'none';
+        const msg = $('bhmMsg'); msg.className = 'cfg-msg'; msg.removeAttribute('role'); msg.textContent = '';
+        bloquear(false); avance = 0;
+        $('bhmConfirmar').disabled = true; $('bhmConfirmar').textContent = 'Confirmar';
+        $('modalBaseHistorica').classList.add('abierto');
+        document.addEventListener('keydown', alTeclear, true);
+        $('bhmFrase').focus();
+      }
+      function validar(){ const esp = modo === 'anular' ? d && d.fraseAnular : d && d.fraseDeclarar; $('bhmConfirmar').disabled = ocupado || !esp || normF($('bhmFrase').value) !== normF(esp); }
+      function cerrar(){
+        if(ocupado) return;
+        $('modalBaseHistorica').classList.remove('abierto'); modo = null;
+        $('bhmClave').value = ''; $('bhmFrase').value = '';                                  // la contraseña y la frase no quedan en la página
+        document.removeEventListener('keydown', alTeclear, true);
+        if(foco && foco.focus){ try{ foco.focus(); }catch(e){} } foco = null;
+      }
+      async function confirmar(){
+        if(!modo || ocupado) return;
+        const anular = modo === 'anular', btn = $('bhmConfirmar'), msg = $('bhmMsg');
+        const frase = $('bhmFrase').value.trim();                                            // se captura UNA vez: no cambia durante la ejecución
+        const otra = !anular && !enCurso() && !!(d && d.hayDeclaracionCompleta);
+        bloquear(true); btn.disabled = true; btn.textContent = anular ? 'Anulando…' : 'Registrando…';
+        msg.className = 'cfg-msg'; msg.removeAttribute('role'); msg.textContent = 'Trabajando… no cierres esta ventana.';
+        const tot = { n:0, previos:0 };
+        try{
+          await emReautenticar($('bhmClave').value);
+          let id = anular ? (vigente() || {}).id : (enCurso() || {}).id;
+          let ultima = null;
+          for(let i = 0; i < 6; i++){                                                        // si el servidor corta por tiempo, se vuelve a llamar (reanudable e idempotente)
+            const datos = { modo: anular ? 'anular' : 'aplicar', frase };
+            if(id) datos.declaracionId = id;
+            if(otra) datos.confirmarNueva = true;
+            const r = await emLlamar('emailBaseHistoricaDeclarar', datos);
+            ultima = r; id = r.declaracionId || id;
+            if(anular){ tot.n += N(r.anulados); tot.previos += N(r.previosAnulados); } else { tot.n += N(r.reconocidos); }
+            avance = tot.n;
+            msg.textContent = (anular ? 'Anulados: ' : 'Reconocidos: ') + fmt(tot.n) + (r.cortado ? ' · continuando… no cierres esta ventana.' : '');
+            if(!r.cortado) break;
+          }
+          bloquear(false); cerrar();
+          await cargar(); cargarResumen(); emResumen.cargar(true);
+          const completa = !!(ultima && ultima.completa), sinCambios = !!(ultima && ultima.sinCambios);
+          const lista = [];
+          if(anular){
+            lista.push('Permisos anulados: ' + fmt(tot.n));
+            if(tot.previos) lista.push('Rastros de permiso (de una supresión manual) que se limpiaron: ' + fmt(tot.previos));
+            lista.push('Respetados porque la persona los cambió: ' + fmt(N(ultima && ultima.cambiadosPorLaPersona)));
+          }else if(!sinCambios){
+            lista.push('Clientes reconocidos: ' + fmt(tot.n));
+            if(N(ultima && ultima.suprimidos) + N(ultima && ultima.revocados)) lista.push('Quedaron fuera porque tienen una baja o un rechazo que llegó justo ahora: ' + fmt(N(ultima.suprimidos) + N(ultima.revocados)));
+            if(N(ultima && ultima.sinEvidencia)) lista.push('Quedaron fuera por no ser de la base histórica (o correo de relleno): ' + fmt(ultima.sinEvidencia));
+          }
+          if(ultima && N(ultima.errores)) lista.push('Quedaron ' + fmt(ultima.errores) + ' pendientes por un error: pulsa de nuevo para terminar.');
+          if(ultima && ultima.auditoriaOk === false) lista.push('Atención: no pude dejar el registro de cierre en la auditoría. Los permisos sí quedaron guardados; avisa para revisarlo.');
+          if(ultima && ultima.registroOk === false) lista.push('Atención: no pude actualizar el resumen de la declaración. Avisa para revisarlo.');
+          let titulo, texto;
+          if(anular){ titulo = completa ? 'Declaración anulada' : 'Anulación a medias'; texto = completa ? 'Listo. Quedó registrado en la auditoría. No se envió ningún correo.' : 'Falta terminar. Pulsa «Anular la declaración…» otra vez.'; }
+          else if(sinCambios){ titulo = 'Nada que reconocer'; texto = 'No había clientes por reconocer ahora; no se registró nada.'; }
+          else if(completa){ titulo = 'Base histórica reconocida'; texto = 'Listo. Quedó registrada tu declaración. No se envió ningún correo: cada campaña se confirma aparte, escribiendo ENVIAR y el número exacto.'; }
+          else { titulo = 'Declaración a medias'; texto = 'Se avanzó, pero falta terminar. Pulsa «Continuar la declaración…».'; }
+          await emAviso({ titulo, textos:[texto], lista });
+        }catch(e){
+          const m = emMotivoDe(e);
+          if(m === 'reauth_requerida') emUltimaReauth = 0;
+          bloquear(false); btn.textContent = 'Confirmar'; validar();
+          if(emTieneClave() && (m === 'reauth_requerida' || (e && e.code === 'em/falta-clave'))){ $('bhmClaveWrap').style.display = ''; $('bhmClave').focus(); }
+          msg.className = 'cfg-msg err'; msg.setAttribute('role', 'alert');
+          msg.textContent = m === 'solo_duena' ? 'Solo la dueña puede hacer o anular esta declaración.' : (emMensajeReauth(e) || emMensajeError(e));
+          const det = emDetalleLista(e); if(det.length) msg.textContent += ' ' + det.join(' · ');
+          if(avance) msg.textContent += ' Avance guardado hasta ahora: ' + fmt(avance) + '. Vuelve a confirmar para continuar donde quedó.';
+          if(!emTieneClave() && m === 'reauth_requerida') msg.textContent += ' Vuelve a pulsar «Confirmar» para confirmar tu cuenta de Google.';
+          cargar();
+        }finally{ $('bhmClave').value = ''; }
+      }
+      $('bhAbrir').addEventListener('click', ()=> { if($('bhAbrir').dataset.modo === 'reintentar') cargar(); else abrir('aplicar'); });
+      $('bhAnular').addEventListener('click', ()=> abrir('anular'));
+      $('bhmFrase').addEventListener('input', validar);
+      $('bhmConfirmar').addEventListener('click', confirmar);
+      $('bhmCancelar').addEventListener('click', cerrar);
+      $('bhmCerrar').addEventListener('click', cerrar);
+      $('modalBaseHistorica').addEventListener('click', (ev)=>{ if(ev.target === $('modalBaseHistorica')) cerrar(); });
+      return { cargar };
+    })();
     $('auActualizar').addEventListener('click', actualizarContactos);
     $('audCerrar').addEventListener('click', cerrarModal);
     $('audCancelar').addEventListener('click', cerrarModal);
@@ -6117,6 +6333,7 @@ ${contenido}
       plan_resend_cambio:'Cambio del plan de Resend', armada:'Campaña confirmada', armada_invalidada:'Confirmación invalidada', bypass_detectado:'Estado alterado detectado',
       campana_pausada_auto:'Pausa automática', campana_pausada:'Pausa manual', campana_cancelada:'Cancelación de campaña',
       consentimiento_manual:'Permiso comercial registrado a mano',
+      declaracion_base_historica:'Declaración de la dueña sobre su base histórica', declaracion_base_historica_anulada:'Declaración sobre la base histórica anulada',
     };
     const PRECOND_TXT = {
       allowlist:'Hay al menos una dirección de prueba autorizada', dominio:'Dominio del remitente verificado en Resend (SPF, DKIM y MX)', secreto:'Clave de Resend cargada en el servidor',
