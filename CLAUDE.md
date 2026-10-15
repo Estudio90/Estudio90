@@ -31,7 +31,8 @@ Los 4 estados operativos vigentes (`etiqueta` en Firestore): **RESERVADO** (teal
 Reglas de negocio, no negociables:
 
 - **Pagar el abono (aunque sea el 100%) nunca marca ASISTIÓ.** Confirmar el pago = pasar a RESERVADO. Asistencia es siempre una acción manual del staff (click en la etiqueta o en "Marcar asistencia").
-- **Comisión del barbero**: se calcula en vivo (nunca se persiste como registro aparte) con la condición `etiqueta === 'asistio' || etiqueta === 'done'` (el `'done'` es compatibilidad con historial). Por eso clickear ASISTIÓ dos veces, o corregir a NO ASISTIÓ después, nunca deja una comisión fantasma — no hay nada que duplicar.
+- **Comisión del barbero** (regla 10-2026): se calcula en vivo (nunca se persiste como registro aparte) con DOS condiciones a la vez: **servicio pagado completo** (suma de movimientos `concepto:'servicio'` del ledger ≥ `price` — anticipo + saldo son UNA sola venta) **y** `etiqueta === 'asistio' || 'done'` (`'done'` es compatibilidad con historial). Pagar nunca marca asistencia, y asistir sin pagar no genera comisión. El cálculo vive en el servidor (`comisionesServicios.js`: `obtenerReporteComisiones` para ADMIN, y compartido con `obtenerMisComisiones`); por eso re-consultar o corregir una etiqueta nunca duplica nada. Tarifa: override por servicio > % por defecto del profesional > **% general** (`settings/comisiones.general` — cambiarlo jamás toca los individuales) > 42. Base = monto del servicio realmente cobrado según el ledger. Redondeo `Math.round` por servicio.
+- **Asistencia y pagos: solo ADMIN/Recepción.** Un BARBER no escribe `bookings` (ni etiqueta ni campos de pago — reglas de Firestore lo exigen); solo consulta sus comisiones vía callables. Una reserva **pagada y asistida queda cerrada para Recepción**: solo un ADMIN puede corregirla.
 - **NO ASISTIÓ**: comisión $0, pero el abono ya pagado queda para el negocio (nunca se borra ni se convierte en comisión).
 
 ## Transbank / Webpay

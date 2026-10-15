@@ -2738,6 +2738,15 @@
 
       <!-- Configuración por servicio -->
       <div class="cx-panel" id="cxConfig">
+        <!-- % general del negocio: se aplica SOLO a profesionales sin
+             porcentaje propio. Guardarlo nunca toca los individuales. -->
+        <div class="cx-regla" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span>Porcentaje <b>general</b> — se aplica solo a los profesionales que no tienen un porcentaje propio. Cambiarlo nunca modifica los porcentajes individuales.</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
+            <input type="number" id="cxGeneralPct" min="0" max="100" step="0.5" style="width:90px;" class="mg-input"> %
+            <button class="ctrl-btn primary" id="cxGeneralGuardar" type="button">Guardar</button>
+          </span>
+        </div>
         <input type="text" class="cx-search" id="cxBuscar" placeholder="Ver las comisiones por profesional">
         <div class="cx-pros" id="cxPros"></div>
       </div>
@@ -2745,18 +2754,18 @@
       <!-- Reporte: "Comisiones barberos" -->
       <div class="cx-panel" id="cxReporte" style="display:none;">
         <div class="cx-regla">
-          Solo se paga comisión por <b>servicios efectivamente realizados</b>.
-          Si el cliente no asiste, el barbero no recibe comisión aunque haya
-          anticipo pagado: ese dinero queda para la barbería.
+          Solo se paga comisión por servicios <b>pagados completos y con el
+          cliente marcado ASISTIÓ</b>. Pagar no marca asistencia, y asistir
+          sin pagar tampoco genera comisión. Si el cliente no asiste, el
+          anticipo pagado queda para la barbería.
         </div>
 
         <div class="cx-filtros-box">
           <div class="cx-filtros-col">
             <label class="cx-flabel">Período</label>
             <div class="cx-chips">
-              <button class="cx-chip on" data-cxr="15">15 días</button>
-              <button class="cx-chip" data-cxr="20">20 días</button>
-              <button class="cx-chip" data-cxr="30">30 días</button>
+              <button class="cx-chip on" data-cxr="hoy">Hoy</button>
+              <button class="cx-chip" data-cxr="quincena">Quincena</button>
               <button class="cx-chip" data-cxr="mes">Mes completo</button>
               <button class="cx-chip" data-cxr="custom">📅 Personalizado</button>
             </div>
@@ -2777,10 +2786,10 @@
         </div>
 
         <div class="cx-kpis">
-          <div class="cx-kpi"><div class="k">Total generado (servicios)</div><div class="v" id="cxVentas">$0</div><div class="k2" id="cxVentasPct">100% del total</div></div>
-          <div class="cx-kpi pay"><div class="k">Comisión total</div><div class="v" id="cxComision">$0</div><div class="k2" id="cxComisionPct">Promedio</div></div>
-          <div class="cx-kpi net"><div class="k">Total a pagar</div><div class="v" id="cxAPagar">$0</div><div class="k2">A profesionales</div></div>
-          <div class="cx-kpi"><div class="k">Profesionales activos</div><div class="v" id="cxServicios">0</div><div class="k2">Con comisiones</div></div>
+          <div class="cx-kpi"><div class="k">Total generado (servicios)</div><div class="v" id="cxVentas">$0</div><div class="k2" id="cxVentasPct">Pagados y asistidos</div></div>
+          <div class="cx-kpi pay"><div class="k">Comisión generada</div><div class="v" id="cxComision">$0</div><div class="k2" id="cxComisionPct">Promedio</div></div>
+          <div class="cx-kpi net"><div class="k">Comisión pagada</div><div class="v" id="cxPagado">$0</div><div class="k2">Marcadas como pagadas</div></div>
+          <div class="cx-kpi"><div class="k">Comisión pendiente</div><div class="v" id="cxAPagar">$0</div><div class="k2" id="cxPendienteTxt">Por pagar a profesionales</div></div>
         </div>
 
         <h3 class="cx-tbl-title">Comisiones por profesional</h3>
@@ -2801,7 +2810,8 @@
            obtenerMisPropinas) -- ni un porcentaje ni un total se calcula
            acá, y ningún número histórico se recalcula con el % de hoy (son
            las comisiones que quedaron guardadas en cada venta). 4 áreas:
-           Servicios (hoy, sin cambios) / Propinas (rango propio) /
+           Servicios (hoy + mes elegido, regla pago completo + asistencia) /
+           Propinas (rango propio) /
            Productos + Código promocional (mes compartido). Sin botones para
            modificar nada: los porcentajes y el código los cambia únicamente
            un ADMIN, desde Productos → Comisiones y códigos. -->
@@ -2811,11 +2821,31 @@
         </div>
         <div id="cbContenido">
 
-          <!-- ===== Servicios -- SIN CAMBIOS de datos/lógica, siempre HOY ===== -->
+          <!-- ===== Servicios -- regla pago completo + asistencia, 100%
+               servidor (obtenerMisComisiones): hoy y el mes elegido en el
+               selector de Productos (abajo). Un servicio asistido sin pago
+               completo todavía NO genera comisión y se avisa aparte. ===== -->
           <h3 class="cx-tbl-title" style="margin-top:0;">Servicios <span class="cx-badge-hoy">Hoy</span></h3>
           <div class="cx-kpis">
-            <div class="cx-kpi"><div class="k">Servicios realizados hoy</div><div class="v" id="cbServicios">0</div></div>
+            <div class="cx-kpi"><div class="k">Servicios pagados y asistidos hoy</div><div class="v" id="cbServicios">0</div></div>
             <div class="cx-kpi pay"><div class="k">Tu comisión hoy</div><div class="v" id="cbComision">$0</div></div>
+          </div>
+
+          <h3 class="cx-tbl-title">Servicios del mes <span class="cx-badge-hoy" id="cbsMesTxt"></span></h3>
+          <div class="cx-kpis">
+            <div class="cx-kpi"><div class="k">Servicios pagados y asistidos</div><div class="v" id="cbsCantidad">0</div></div>
+            <div class="cx-kpi pay"><div class="k">Tu comisión del mes</div><div class="v" id="cbsComision">$0</div></div>
+          </div>
+          <p class="mg-note" id="cbsPendientes" style="display:none;"></p>
+          <button class="ctrl-btn" id="cbsVerDetalle" type="button">Ver detalle</button>
+          <div class="cx-tablebox" id="cbsDetalleBox" style="display:none;margin-top:10px;">
+            <table class="cx-table">
+              <thead><tr>
+                <th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th>
+                <th class="r">Monto cobrado</th><th class="r">% comisión</th><th class="r">Tu comisión</th>
+              </tr></thead>
+              <tbody id="cbsDetalleTabla"></tbody>
+            </table>
           </div>
 
           <!-- ===== Propinas -- área propia, separada de Servicios, con su
@@ -8045,6 +8075,12 @@
     });
     el.querySelector('.done').addEventListener('click', async (ev)=>{
       ev.stopPropagation();
+      // Asistencia: acción exclusiva de ADMIN/Recepción (misma regla que la
+      // pill de Etiqueta; las reglas de Firestore también lo exigen) -- el
+      // barbero solo consulta sus comisiones, nunca marca asistencia.
+      if(userRole !== 'ADMIN' && userRole !== 'RECEPTION'){
+        return showToast('Solo administración o recepción pueden marcar asistencia');
+      }
       // Idempotente: si ya está Asistió (o el histórico 'done'), un segundo
       // click no vuelve a escribir ni a generar comisión duplicada.
       if(a.status === 'asistio' || a.status === 'done') return;
@@ -14041,10 +14077,15 @@
   const cxClp = (n)=> '$' + Math.round(n||0).toLocaleString('es-CL');
   let cxPros = [], cxEdit = null, cxRep = null;
 
-  // Comisiones: por defecto 42%, con overrides por servicio. Se guardan en Firestore
-  // para que no se reseteen al recargar ni queden distintas en cada dispositivo.
+  // Comisiones: % GENERAL del negocio (settings/comisiones.general) para
+  // profesionales sin porcentaje propio, con default por profesional y
+  // overrides por servicio. Se guardan en Firestore para que no se reseteen
+  // al recargar ni queden distintas en cada dispositivo. Prioridad única
+  // (misma del servidor, comisionesServicios.js):
+  // override por servicio > default del profesional > general > 42.
   let cxDemoDefault = {};
   let cxDemoOverride = {};
+  let cxDemoGeneral = null;
   let cxTarifasCargadas = false;
 
   async function cxCargarTarifas(){
@@ -14061,11 +14102,13 @@
         const r = await functions.httpsCallable('obtenerMiTarifaComision')();
         cxDemoDefault = r.data.default || {};
         cxDemoOverride = r.data.overrides || {};
+        cxDemoGeneral = (r.data.general ?? null); // la versión vieja del callable no lo trae: queda null y rige el 42 histórico
       } else {
         const doc = await db.collection('settings').doc('comisiones').get();
         if(doc.exists){
           cxDemoDefault = doc.data().default || {};
           cxDemoOverride = doc.data().overrides || {};
+          cxDemoGeneral = (doc.data().general ?? null);
         }
       }
     }catch(e){}
@@ -14073,19 +14116,37 @@
   }
 
   async function cxGuardarTarifas(){
-    try{ await db.collection('settings').doc('comisiones').set({ default: cxDemoDefault, overrides: cxDemoOverride }); }
+    // merge:true -- guardar defaults/overrides nunca borra el % general (y
+    // viceversa: el % general se guarda solo, abajo, sin tocar estos campos).
+    try{ await db.collection('settings').doc('comisiones').set({ default: cxDemoDefault, overrides: cxDemoOverride }, { merge:true }); }
     catch(e){ showToast('No se pudo guardar la tarifa en el servidor: ' + e.message); }
   }
+
+  /** % GENERAL del negocio: SOLO escribe el campo `general` (merge) -- jamás
+   *  toca `default` (porcentajes individuales) ni `overrides`. */
+  document.getElementById('cxGeneralGuardar').addEventListener('click', async ()=>{
+    const v = Number(document.getElementById('cxGeneralPct').value);
+    if(!Number.isFinite(v) || v < 0) return showToast('Escribe un porcentaje válido');
+    if(v > 100) return showToast('Un porcentaje no puede superar 100%');
+    try{
+      await db.collection('settings').doc('comisiones').set({ general: v }, { merge:true });
+      cxDemoGeneral = v;
+      showToast('Porcentaje general guardado (los porcentajes individuales no cambian)');
+      await cxCargarPros();
+    }catch(e){ showToast('No se pudo guardar: ' + e.message); }
+  });
 
   function cxPrecioServicio(nombre){
     const s = (cfgServicios || []).find(x=> x.name === nombre);
     return s ? s.priceClp : 0;
   }
 
-  /** Comisión aplicable a un barbero para un servicio (modo demo). */
+  /** Comisión aplicable a un barbero para un servicio (modo demo). Misma
+   *  prioridad que el servidor: override > default del profesional >
+   *  general > 42. */
   function cxComisionDemo(barberoId, servicioNombre, precio){
     const ov = (cxDemoOverride[barberoId] || {})[servicioNombre];
-    const def = cxDemoDefault[barberoId] ?? 42;
+    const def = cxDemoDefault[barberoId] ?? cxDemoGeneral ?? 42;
     const value = ov ? ov.value : def;
     const type = ov ? ov.type : 'PERCENT';
     const amount = type === 'FIXED' ? Math.min(value, precio) : Math.round(precio * value / 100);
@@ -14186,9 +14247,25 @@
       sinVincular.style.display = 'none';
       contenido.style.display = '';
 
-      // ---- Servicios (HOY, sin cambios) ----
+      // ---- Servicios (regla pago completo + asistencia, servidor) ----
       document.getElementById('cbServicios').textContent = d.servicios.cantidad;
       document.getElementById('cbComision').textContent = cxClp(d.servicios.comision);
+
+      // ---- Servicios del mes elegido (mismo mes que Productos) ----
+      const sp = d.serviciosPeriodo || { comision:0, cantidad:0, pendientesPago:0, detalle:[] };
+      const mesNum = Number(String(d.mes || '').slice(5, 7));
+      document.getElementById('cbsMesTxt').textContent = mesNum
+        ? (CB_MESES[mesNum-1] + ' ' + String(d.mes).slice(0, 4)) : '';
+      document.getElementById('cbsCantidad').textContent = sp.cantidad;
+      document.getElementById('cbsComision').textContent = cxClp(sp.comision);
+      const cbsPend = document.getElementById('cbsPendientes');
+      if(sp.pendientesPago){
+        cbsPend.style.display = '';
+        cbsPend.textContent = sp.pendientesPago + ' servicio(s) con asistencia marcada pero sin pago completo: la comisión aparecerá cuando administración registre el cobro.';
+      } else {
+        cbsPend.style.display = 'none';
+      }
+      pintarDetalleServiciosBarbero(); // re-pinta el detalle si ya estaba abierto (usa sp.detalle en memoria)
 
       // ---- Productos + Código promocional (mes elegido, combinados) ----
       const productosVendidos = d.productosPresencial.cantidad + (d.codigoPromocional ? d.codigoPromocional.ventas : 0);
@@ -14266,6 +14343,32 @@
       <td></td><td></td>
       <td class="r"><b>${cxClp(totComision)}</b></td>`;
   }
+  /** Detalle de servicios del mes (pagados y asistidos) -- viene completo en
+   *  la misma respuesta de obtenerMisComisiones (d.serviciosPeriodo.detalle):
+   *  abrir/cerrar "Ver detalle" no dispara ninguna lectura nueva. */
+  function pintarDetalleServiciosBarbero(){
+    const tb = document.getElementById('cbsDetalleTabla');
+    const detalle = (cbUltimoReporte && cbUltimoReporte.serviciosPeriodo && cbUltimoReporte.serviciosPeriodo.detalle) || [];
+    tb.innerHTML = detalle.length
+      ? detalle.map(s=> `<tr>
+          <td>${escapeHTML(cxFmtFechaCorta(s.fecha))}</td>
+          <td>${escapeHTML(s.hora || '')}</td>
+          <td>${escapeHTML(s.cliente || '')}</td>
+          <td>${escapeHTML(s.servicio || '')}</td>
+          <td class="r">${cxClp(s.monto)}</td>
+          <td class="r">${escapeHTML(s.comisionTipo === 'FIXED' ? 'fijo' : s.comisionPct + '%')}</td>
+          <td class="r">${cxClp(s.comision)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="7" class="cx-empty">Sin servicios pagados y asistidos en este mes.</td></tr>';
+  }
+  document.getElementById('cbsVerDetalle').addEventListener('click', ()=>{
+    const box = document.getElementById('cbsDetalleBox');
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    document.getElementById('cbsVerDetalle').textContent = abrir ? 'Ocultar detalle' : 'Ver detalle';
+    if(abrir) pintarDetalleServiciosBarbero();
+  });
+
   document.getElementById('cbmBuscar').addEventListener('click', pintarResumenBarbero);
   document.getElementById('cbmVerDetalle').addEventListener('click', ()=>{
     const box = document.getElementById('cbmDetalleBox');
@@ -14437,14 +14540,22 @@
       const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || 0;
       let comisionTxt = '';
       const asistio = a.status === 'asistio' || a.status === 'done';
+      // Comisión de servicio: SOLO con pago completo registrado + asistencia
+      // (misma regla del servidor, comisionesServicios.js). Un servicio
+      // asistido pero aún sin cobrar se muestra sin monto, nunca se suma.
+      const cuentaComision = asistio && a.pagado === true;
       if(asistio){
-        const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
-        comisionServicios += c.amount;
         propinas += Number(a.propina) || 0;
         const subProductos = (a.productosVendidos || []).reduce((s,p)=> s + (p.subtotal||0), 0);
         comisionProductos += Math.round(subProductos * 0.10);
         realizados++;
+      }
+      if(cuentaComision){
+        const c = yo ? cxComisionDemo(yo.id, a.service, precio) : { amount:0 };
+        comisionServicios += c.amount;
         comisionTxt = ' · ' + cxClp(c.amount);
+      } else if(asistio){
+        comisionTxt = ' · comisión al registrarse el pago';
       }
       const hora = String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0');
       // El estado viene de la etiqueta de la reserva (la escribe quien opera): solo claves propias de ESTADOS, y el texto SIEMPRE escapado.
@@ -14526,12 +14637,17 @@
         const ini = b.initials || b.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
         return {
           id:b.id, name:b.name, initials:ini,
-          defaultValue: cxDemoDefault[b.id] ?? 42, defaultType:'PERCENT',
+          defaultValue: cxDemoDefault[b.id] ?? cxDemoGeneral ?? 42, defaultType:'PERCENT',
+          // sin % propio hereda el general: se muestra como heredado, para que
+          // se note qué profesional tiene porcentaje individual y cuál no.
+          heredaGeneral: cxDemoDefault[b.id] === undefined || cxDemoDefault[b.id] === null,
           totalServices: cfgServicios.filter(s=> s.active).length,
           customServices: Object.keys(cxDemoOverride[b.id] || {}).length,
         };
       });
     }
+    const genInput = document.getElementById('cxGeneralPct');
+    if(genInput && document.activeElement !== genInput) genInput.value = (cxDemoGeneral ?? '');
     cxPintarPros();
   }
 
@@ -14549,7 +14665,7 @@
         <div class="cx-av">${escapeHTML(p.initials)}</div>
         <div class="cx-info">
           <div class="cx-name">${escapeHTML(p.name)}</div>
-          <div class="cx-psub">${escapeHTML(p.totalServices)} servicios · por defecto ${escapeHTML(val)}${tag}</div>
+          <div class="cx-psub">${escapeHTML(p.totalServices)} servicios · ${p.heredaGeneral ? 'hereda el general ' : 'propio '}${escapeHTML(val)}${tag}</div>
         </div>
         <div class="cx-btns">
           <button class="cx-b edit" data-cxedit="${escapeHTML(p.id)}">✎ Editar</button>
@@ -14717,6 +14833,16 @@
     // toISOString() (día UTC): comisiones/propinas son dinero asociado a
     // citas, mismo motivo que el fix ya hecho en comisionesProductos.js.
     const hoy = TiempoSantiago.fechaSantiago();
+    if(tipo === 'hoy') return [hoy, hoy];
+    if(tipo === 'quincena'){
+      // Quincena calendario (criterio chileno de pago): 1-15 y 16-fin de mes.
+      const dia = Number(hoy.slice(8, 10));
+      if(dia <= 15) return [hoy.slice(0, 7) + '-01', hoy.slice(0, 7) + '-15'];
+      const [y, m] = hoy.split('-').map(Number);
+      const fin = String(new Date(y, m, 0).getDate()).padStart(2, '0');
+      return [hoy.slice(0, 7) + '-16', hoy.slice(0, 7) + '-' + fin];
+    }
+    // períodos viejos, se mantienen por si otra vista los reusa
     if(tipo === '15') return [TiempoSantiago.sumarDiasSantiago(hoy, -14), hoy];
     if(tipo === '20') return [TiempoSantiago.sumarDiasSantiago(hoy, -19), hoy];
     if(tipo === '30') return [TiempoSantiago.sumarDiasSantiago(hoy, -29), hoy];
@@ -14742,91 +14868,23 @@
   document.getElementById('cxFiltroPro').addEventListener('change', cxCargarReporte);
 
   /**
-   * En modo demo calculamos con las reservas del calendario.
-   * Solo cuentan las COMPLETADAS ('done'): un no show no genera comisión,
-   * y si tenía anticipo pagado, ese monto queda para la barbería.
+   * Reporte de comisiones por servicios -- 100% servidor
+   * (obtenerReporteComisiones, comisionesServicios.js): regla pago completo
+   * + asistencia (pagar no marca asistencia; asistir sin pagar no genera
+   * comisión), base = monto del servicio realmente cobrado según el ledger
+   * (paymentMovements), tarifa override > default del profesional > %
+   * general > 42. Reemplaza el cálculo viejo del navegador (cxReporteDemo),
+   * que solo veía las reservas del día cargado en memoria y no exigía pago.
    */
-  function cxReporteDemo(){
-    const mapa = new Map();
-    const from = document.getElementById('cxDesde').value;
-    const to = document.getElementById('cxHasta').value;
+  async function cxReporteServidor(){
+    const desde = document.getElementById('cxDesde').value;
+    const hasta = document.getElementById('cxHasta').value;
     const soloBarberId = document.getElementById('cxFiltroPro').value;
-
-    const fila = (barbero)=>{
-      if(!mapa.has(barbero.id)){
-        mapa.set(barbero.id, {
-          barberId: barbero.id, name: barbero.name,
-          initials: (barbero.name||'??').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(),
-          services:0, totalSales:0, totalCommission:0,
-          noShows:0, noShowRetained:0, rates:new Set(), items:[]
-        });
-      }
-      return mapa.get(barbero.id);
-    };
-
-    // Todos los profesionales activos aparecen en la tabla, aunque su
-    // comisión del período sea $0 -- no solo los que tuvieron servicios.
-    cfgBarberos.filter(b=> b.active && (!soloBarberId || b.id === soloBarberId)).forEach(fila);
-
-    for(const a of appointments){
-      // 'asistio' es el estado vigente que genera comisión; 'done' se
-      // mantiene por compatibilidad con reservas históricas ya marcadas así.
-      if(!['asistio','done','no'].includes(a.status)) continue;
-      // Comisiones barberos: solo cuentan los servicios REALIZADOS dentro
-      // del período elegido (mismo campo a.fecha que usa el calendario).
-      if(from && a.fecha && a.fecha < from) continue;
-      if(to && a.fecha && a.fecha > to) continue;
-
-      const precio = parseInt(String(a.price).replace(/[^0-9]/g,''), 10) || cxPrecioServicio(a.service);
-      // Profesional por ID (nunca por nombre ni por columna): si la reserva no
-      // se puede atribuir sin ambigüedad queda en una fila aparte, no se le
-      // suma a ningún profesional.
-      const barbero = profesionalDeCita(a)
-        || { id:'sin-asignar:' + (a.barber || ''), name:(a.barber || 'Sin asignar') + ' (profesional no identificable)' };
-      if(soloBarberId && barbero.id !== soloBarberId) continue;
-      const row = fila(barbero);
-
-      if(a.status === 'no'){
-        row.noShows++;
-        if(a.abono) row.noShowRetained += parseInt(String(a.abono).replace(/[^0-9]/g,''),10) || 0;
-        continue;
-      }
-
-      const c = cxComisionDemo(barbero.id, a.service, precio);
-      row.services++;
-      row.totalSales += precio;
-      row.totalCommission += c.amount;
-      row.rates.add(c.type === 'FIXED' ? 'fijo' : c.value);
-      const hora = Array.isArray(a.start) ? String(a.start[0]).padStart(2,'0') + ':' + String(a.start[1]).padStart(2,'0') : '';
-      row.items.push({ date:a.fecha, hora, service:a.service, client:a.client, price:precio,
-                       commission:c.amount, commissionPct:c.value, commissionType:c.type });
-    }
-
-    const rows = [...mapa.values()].map(r=> ({
-      ...r,
-      // sin servicios en el período, se muestra el % por defecto configurado
-      // para ese profesional (settings/comisiones) -- nunca "varios" ni "—".
-      commissionPct: r.rates.size === 1 && typeof [...r.rates][0] === 'number' ? [...r.rates][0]
-        : (r.services === 0 ? (cxDemoDefault[r.barberId] ?? 42) : null),
-      appliedRates: [...r.rates],
-      avgTicket: r.services ? Math.round(r.totalSales / r.services) : 0,
-      items: r.items.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||'') || (a.hora||'').localeCompare(b.hora||'')),
-    })).sort((a,b)=> b.totalSales - a.totalSales);
-
-    const sales = rows.reduce((s,r)=> s + r.totalSales, 0);
-    const commission = rows.reduce((s,r)=> s + r.totalCommission, 0);
-
-    return {
-      from, to,
-      rows,
-      totals: {
-        sales, commission, aPagar: commission,
-        profesionalesActivos: rows.filter(r=> r.services > 0).length,
-        effectivePct: sales ? Number(((commission/sales)*100).toFixed(2)) : 0,
-      }
-    };
+    const r = await functions.httpsCallable('obtenerReporteComisiones')({
+      desde, hasta, ...(soloBarberId ? { barberId: soloBarberId } : {}),
+    });
+    return r.data;
   }
-
   /** Estado de pago (Pendiente/Pagado) por profesional+período -- lo único
    *  de esta pantalla que no se deriva de reservas/servicios ya existentes:
    *  es un registro real que la dueña genera al presionar "Marcar pagado",
@@ -14865,6 +14923,15 @@
     await cargarCatalogo();
     cxPintarFiltroProfesionales();
 
+    // Primera apertura: sin fechas elegidas todavía se usa el chip activo
+    // (por defecto "Hoy") -- nunca un rango vacío (el servidor lo rechaza).
+    if(!document.getElementById('cxDesde').value || !document.getElementById('cxHasta').value){
+      const chip = document.querySelector('#cxReporte .cx-chip.on');
+      const [d0,h0] = cxRango(chip ? chip.dataset.cxr : 'hoy');
+      document.getElementById('cxDesde').value = d0;
+      document.getElementById('cxHasta').value = h0;
+    }
+
     let d;
     if(MODE === 'api'){
       try{
@@ -14878,29 +14945,38 @@
         return;
       }
     } else {
-      d = cxReporteDemo();
+      try{ d = await cxReporteServidor(); }
+      catch(e){
+        tb.innerHTML = `<tr><td colspan="7" class="cx-empty">No se pudo calcular el reporte: ${escapeHTML(e.message || String(e))}</td></tr>`;
+        return;
+      }
     }
     cxRep = d;
+
+    // El estado Pendiente/Pagado por profesional+período (commissionPayments)
+    // se carga ANTES de pintar: los KPIs "pagada"/"pendiente" salen de ahí.
+    const estados = await cxCargarEstados(d.rows, d.from, d.to);
+    const comisionPagada = d.rows.reduce((s,r)=> s + ((estados[r.barberId] === 'pagado') ? r.totalCommission : 0), 0);
 
     document.getElementById('cxPeriodoTxt').textContent =
       `${cxFmtFechaCorta(d.from)} - ${cxFmtFechaCorta(d.to)}`;
     document.getElementById('cxVentas').textContent = cxClp(d.totals.sales);
-    document.getElementById('cxVentasPct').textContent = '100% del total';
+    document.getElementById('cxVentasPct').textContent = d.totals.asistioSinPago
+      ? `${d.totals.asistioSinPago} asistido(s) sin pago completo quedan fuera`
+      : 'Pagados y asistidos';
     document.getElementById('cxComision').textContent = cxClp(d.totals.commission);
     document.getElementById('cxComisionPct').textContent = 'Promedio ' + d.totals.effectivePct + '%';
-    document.getElementById('cxAPagar').textContent = cxClp(d.totals.aPagar);
-    document.getElementById('cxServicios').textContent = d.totals.profesionalesActivos;
+    document.getElementById('cxPagado').textContent = cxClp(comisionPagada);
+    document.getElementById('cxAPagar').textContent = cxClp(Math.max(0, d.totals.commission - comisionPagada));
 
     const totales = document.getElementById('cxTotalesFila');
     totales.innerHTML = `<td><b>Totales</b></td><td class="r">${cxClp(d.totals.sales)}</td><td class="r">-</td>
-      <td class="r">${cxClp(d.totals.commission)}</td><td class="r">${cxClp(d.totals.aPagar)}</td><td></td><td></td>`;
+      <td class="r">${cxClp(d.totals.commission)}</td><td class="r">${cxClp(d.totals.commission)}</td><td></td><td></td>`;
 
     if(!d.rows.length){
-      tb.innerHTML = '<tr><td colspan="7" class="cx-empty">No hay servicios realizados en este período.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="7" class="cx-empty">No hay servicios pagados y asistidos en este período.</td></tr>';
       return;
     }
-
-    const estados = await cxCargarEstados(d.rows, d.from, d.to);
 
     tb.innerHTML = d.rows.map(r=>{
       const estado = estados[r.barberId] || 'pendiente';
@@ -14908,7 +14984,8 @@
       <tr data-cxid="${escapeHTML(r.barberId)}">
         <td><div class="cx-cell"><div class="cx-cav">${escapeHTML(r.initials)}</div>
           <div><div style="font-weight:600;">${escapeHTML(r.name)}</div>
-          <div style="font-size:11px;color:#87868f;">${escapeHTML(r.services)} realizados${r.services ? ' · ticket ' + cxClp(r.avgTicket) : ''}</div>
+          <div style="font-size:11px;color:#87868f;">${escapeHTML(r.services)} pagados y asistidos${r.services ? ' · ticket ' + cxClp(r.avgTicket) : ''}</div>
+          ${r.asistioSinPago ? `<div class="cx-noshow">${escapeHTML(r.asistioSinPago)} asistido(s) con pago incompleto · ${cxClp(r.montoSinPago)} sin cobrar</div>` : ''}
           ${r.noShows ? `<div class="cx-noshow">${escapeHTML(r.noShows)} no show${r.noShowRetained ? ' · ' + cxClp(r.noShowRetained) + ' retenido' : ''}</div>` : ''}
           </div></div></td>
         <td class="r" style="font-family:var(--font-primary); font-variant-numeric:tabular-nums;">${cxClp(r.totalSales)}</td>
@@ -14944,7 +15021,6 @@
     });
     document.addEventListener('click', ()=> document.querySelectorAll('.cx-acciones-menu').forEach(m=> m.remove()), { once:true });
   }
-
   function cxPintarFiltroProfesionales(){
     const sel = document.getElementById('cxFiltroPro');
     if(sel.dataset.listo) return;
@@ -20846,6 +20922,12 @@
       if(!puedeGestionarCita) return;
       const nuevoEstado = d.dataset.s;
       if(nuevoEstado === a.status) return;
+      // Reserva PAGADA y ASISTIDA = cerrada para Recepción: solo un ADMIN
+      // puede corregirla (las reglas de Firestore también lo exigen; esto
+      // solo evita el intento y da un mensaje claro).
+      if(userRole !== 'ADMIN' && a.pagado && (a.status === 'asistio' || a.status === 'done')){
+        return showToast('Reserva pagada y asistida: solo un administrador puede modificarla');
+      }
 
       document.querySelectorAll('.tag-dot').forEach(x=>x.classList.remove('selected'));
       d.classList.add('selected');
