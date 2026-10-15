@@ -408,7 +408,7 @@
   @media (max-width:380px){ .rep-metricas{grid-template-columns:1fr;} }
 
   .aviso-dev{position:fixed; left:12px; bottom:12px; z-index:500; background:#1D2226; color:#fff;
-    font-size:11.5px; padding:8px 12px; border-radius:8px; opacity:.85; max-width:260px; font-family:'Roboto',sans-serif;}
+    font-size:11.5px; padding:8px 12px; border-radius:8px; opacity:.85; max-width:min(320px, calc(100vw - 24px)); font-family:'Roboto',sans-serif;}
 
   /* ---------- galería de plantillas (paso 1 del asistente) ---------- */
   .plantilla-card{background:var(--tarjeta); border:1px solid var(--borde-suave); border-radius:var(--radio);
@@ -546,6 +546,8 @@
   .rs-card{border:1px solid var(--borde-suave); border-radius:var(--radio-chico); padding:14px 14px 12px; min-width:0;}
   .rs-num{font-size:26px; font-weight:700; color:var(--texto-alto); line-height:1.15; font-variant-numeric:tabular-nums;}
   .rs-num[data-vacio="1"]{color:var(--texto-bajo);}
+  .rs-card.rs-nula{border-style:dashed;}   /* tarjeta cuyo recuento es 0 (p. ej. «Sin base legal»): se ve atenuada, sin bajar el contraste del texto */
+  .rs-card.rs-nula .rs-num{color:var(--texto-bajo);}
   .rs-lab{font-size:12.5px; font-weight:700; color:var(--texto-medio); margin-top:6px;}
   .rs-sub{font-size:11.5px; color:var(--texto-bajo); margin-top:3px; line-height:1.45;}
   .rs-origen{display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--texto-bajo); margin-top:8px;}
@@ -637,14 +639,9 @@
   .pg-cifras b{font-variant-numeric:tabular-nums; color:var(--texto-alto);}
   .pg-acciones{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
   .pg-acciones .btn{padding:6px 12px; font-size:12.5px;}
-  .cfg-prueba select{flex:1; padding:9px 11px; border:1px solid var(--borde); border-radius:6px; font-size:13.5px; color:var(--texto-alto); font-family:inherit; background:var(--tarjeta);}
   .btn.deshabilitado-suave{opacity:.5;}
 
-  /* ---- modal de envío final (confirmación fuerte) ---- */
-  .ef-confirma{margin-top:14px; padding:12px 14px; border:1px solid var(--borde); border-radius:var(--radio-chico); background:var(--fondo);}
-  .ef-confirma label{display:block; font-size:12px; font-weight:700; color:var(--texto-medio); margin:0 0 6px;}
-  .ef-confirma input{width:100%; padding:9px 11px; border:1px solid var(--borde); border-radius:6px; font-size:14px; font-family:inherit; background:var(--tarjeta); margin-bottom:10px;}
-  .ef-confirma input:last-child{margin-bottom:0;}
+  /* ---- modal de confirmación de envío (un solo botón) ---- */
   #efCal{margin-top:14px;}
 
   /* ---- reporte de campaña ---- */
@@ -714,7 +711,7 @@
   .precond li[data-ok="0"] .pf-ico{color:var(--rojo);}
   .precond li[data-ok="0"]{color:var(--rojo);}
   .precond small{display:block; color:var(--texto-bajo);}
-  /* T2 (H-T2-11): en el teléfono la cabecera compartida (.mlhdr) mide 467 px sobre una pantalla de 375: Chrome aleja la página, las ventanas fijas (Ver reporte, Envíos reales…) quedan más anchas que lo que se ve y se cortan. Solo en esta página se oculta el chip decorativo «Reservas Online» en pantallas angostas; el componente compartido no se toca. */
+  /* T2 (H-T2-11): en el teléfono la cabecera compartida (.mlhdr) mide 467 px sobre una pantalla de 375: Chrome aleja la página, las ventanas fijas (Ver reporte, Confirmar envío…) quedan más anchas que lo que se ve y se cortan. Solo en esta página se oculta el chip decorativo «Reservas Online» en pantallas angostas; el componente compartido no se toca. */
   @media (max-width:540px){ .mlhdr-pill{display:none;} }
   .campo-form{margin-bottom:14px;}
   .campo-form label{display:block; font-size:12px; font-weight:700; color:var(--texto-medio); margin-bottom:6px;}
@@ -758,7 +755,19 @@
   .lat[data-e="inactivo"]::before{background:var(--pill-programado-fg);}
   .lat .btn-texto{padding:5px 8px; min-height:24px; font-size:12px;}   /* T21 C02: objetivo táctil >= 24 px (WCAG 2.5.8); antes medía 83x18 px en el teléfono */
   @media (max-width:560px){ .lat > span:first-of-type{flex:1 1 12em; min-width:0;} }   /* T21 C02: en el teléfono el texto del latido compartía fila con el punto solo si cabía entero; ahora el punto va junto al texto */
-  #modalContactos .modal-pie{flex-wrap:wrap;}
+  /* ---- v2.2.0: confirmación de envío de un solo botón, plan por tandas, reparto por base legal y barra de progreso del reporte ---- */
+  .ef-base{display:flex; flex-direction:column; gap:3px; margin-top:8px; font-size:12.5px; font-variant-numeric:tabular-nums;}
+  .ef-base .ef-fila{display:flex; justify-content:space-between; gap:12px; color:var(--texto-medio);}
+  .ef-base .ef-fila b{color:var(--texto-alto); font-weight:600;}
+  .ef-plan{margin:0; font-size:13px; line-height:1.55; color:var(--texto-alto);}
+  .ef-plan-det{margin-top:8px; font-size:12px; color:var(--texto-medio);}
+  .ef-plan-det summary{cursor:pointer; padding:4px 0;}
+  .ef-restr{margin:6px 0 0 18px; padding:0; line-height:1.55; font-size:13px; color:var(--texto-alto);}
+  .rep-prog{margin-top:12px;}
+  .rep-prog-cab{display:flex; justify-content:space-between; gap:10px; font-size:12px; color:var(--texto-medio);}
+  .rep-prog-cab b{color:var(--texto-alto); font-variant-numeric:tabular-nums;}
+  .rep-prog .pg-barra{margin:6px 0 2px;}
+  .au-bases{margin:8px 0 0; font-size:13px; color:var(--texto-alto); line-height:1.55;}
 </style>
 </head>
 <body>
@@ -859,8 +868,7 @@
       <div class="page-head">
         <h1 class="page-title">Campañas</h1>
         <div class="ins-grupo">
-          <span class="ins" id="insEntorno" data-t="comprobando">Comprobando entorno…</span>
-          <span class="ins" id="insModo" style="display:none;"></span>
+          <span class="ins" id="insEntorno" data-t="dev" style="display:none;"></span>
         </div>
       </div>
 
@@ -882,13 +890,13 @@
           <div class="rs-card" id="rsContTot">
             <div class="rs-num" data-vacio="1">—</div>
             <div class="rs-lab">Contactos totales</div>
-            <div class="rs-sub">Correos únicos y válidos de tu base de clientes.</div>
+            <div class="rs-sub">Correos únicos y válidos de tu base de contactos.</div>
             <span class="rs-origen">contado por nosotros</span>
           </div>
           <div class="rs-card" id="rsContHab">
             <div class="rs-num" data-vacio="1">—</div>
             <div class="rs-lab">Contactos habilitados</div>
-            <div class="rs-sub">Con permiso registrado, sin baja ni supresión.</div>
+            <div class="rs-sub">Clientes y quienes reservaron, se registraron o compraron, sin bajas ni exclusiones.</div>
             <span class="rs-origen">contado por nosotros</span>
           </div>
           <div class="rs-card" id="rsEnv">
@@ -973,7 +981,7 @@
       <div class="page-head">
         <h1 class="page-title">Audiencias</h1>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-outline" id="btnRegistrarPermiso">Registrar permiso…</button>
+          <button class="btn btn-outline" id="btnRegistrarConsentimiento">Registrar consentimiento…</button>
           <button class="btn btn-solid" id="btnNuevaAudiencia">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Nueva audiencia
@@ -988,28 +996,16 @@
           <div class="rs-act"><span id="auActualizado"></span></div>
         </div>
         <div class="au-res-grid">
-          <div class="rs-card" id="auTot"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">Contactos totales</div><div class="rs-sub">Clientes con correo único y válido.</div></div>
-          <div class="rs-card" id="auHab"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">Habilitados</div><div class="rs-sub">Pueden recibir campañas.</div></div>
-          <div class="rs-card" id="auSinReg"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">Sin permiso registrado</div><div class="rs-sub">Tener un correo de reserva no es permiso.</div></div>
+          <div class="rs-card" id="auTot"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">Contactos totales</div><div class="rs-sub">Correos únicos y válidos de tu base de contactos.</div></div>
+          <div class="rs-card" id="auHab"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">Habilitados</div><div class="rs-sub">Pueden recibir campañas, hayan asistido o no a sus citas.</div></div>
+          <div class="rs-card" id="auSinBase"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">Sin base legal</div><div class="rs-sub">Sin ninguna relación registrada.</div></div>
           <div class="rs-card" id="auBaja"><div class="rs-num" data-vacio="1">—</div><div class="rs-lab">De baja o suprimidos</div><div class="rs-sub">Nunca reciben campañas.</div></div>
         </div>
+        <p class="au-bases" id="auBases"></p>
         <p class="au-desglose-det" id="auDetalle"></p>
         <div class="au-aviso" id="auAviso" style="display:none;"></div>
         <div class="au-acc">
           <button class="btn btn-outline" id="auActualizar">Actualizar contactos</button>
-        </div>
-      </section>
-
-      <!-- [v2.1.7] Base histórica: declaración auditable de la dueña. Solo cifras; nunca correos. -->
-      <section class="au-res" id="bhCard" aria-labelledby="bhTit">
-        <div class="rs-cab">
-          <h2 class="rs-titulo" id="bhTit">Reconocer tu base histórica de clientes</h2>
-        </div>
-        <p class="au-desglose-det" id="bhTexto" aria-live="polite">Cargando…</p>
-        <div class="au-aviso" id="bhAviso" style="display:none;"></div>
-        <div class="au-acc">
-          <button class="btn btn-solid" id="bhAbrir" disabled>Reconocer mi base…</button>
-          <button class="btn btn-outline" id="bhAnular" style="display:none;">Anular la declaración…</button>
         </div>
       </section>
 
@@ -1026,7 +1022,7 @@
         </div>
       </div>
       <div id="lstAudCtl"></div>
-      <p class="rs-pie" id="audNotaPersonas" style="display:none;">La columna «Personas» es el último conteo guardado al crear la audiencia. Usa «Comprobar» para ver cuántas personas la recibirían hoy: solo cuentan quienes tienen permiso registrado y no están de baja.</p>
+      <p class="rs-pie" id="audNotaPersonas" style="display:none;">La columna «Personas» es el último conteo guardado al crear la audiencia. Usa «Comprobar» para ver cuántas personas la recibirían hoy: solo cuentan las personas habilitadas (clientes y quienes reservaron, se registraron o compraron), sin bajas ni exclusiones.</p>
     </div>
 
     <!-- ================= VISTA: EMAILS SUPRIMIDOS ================= -->
@@ -1034,7 +1030,7 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Emails Suprimidos</h1>
-          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);">Correos que NO reciben campañas de marketing: bajas del cliente, rebotes, quejas de spam y supresiones administrativas. Esta lista es nuestra fuente de verdad — no depende del proveedor de envío. «Reactivar» solo quita una baja administrativa: la persona queda «sin permiso registrado» hasta que ella lo registre (o tú, con su constancia, desde Audiencias).</p>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);">Correos que NO reciben campañas de marketing: bajas del cliente, solicitudes de derechos hechas en el formulario del sitio, rebotes, quejas de spam y supresiones administrativas. Esta lista es nuestra fuente de verdad — no depende del proveedor de envío. «Reactivar» solo quita una baja administrativa: la persona vuelve a poder recibir campañas, mientras no tenga otra exclusión.</p>
         </div>
         <button class="btn btn-solid" id="btnSuprimirEmail">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1236,7 +1232,7 @@
             <label>Remitente</label>
             <input type="text" id="cfgRemitente" class="cfg-fijo" readonly value="—">
             <div class="cfg-dato" id="cfgReplyTo"></div>
-            <div class="cfg-hint">Se cambia en Configuración (con los envíos reales desactivados).</div>
+            <div class="cfg-hint">Se cambia en Configuración.</div>
           </div>
           <div class="cfg-campo">
             <label for="cfgAudiencia">Audiencia *</label>
@@ -1248,13 +1244,11 @@
             <textarea id="cfgExtra" placeholder="Correos sueltos separados por coma o salto de línea"></textarea>
           </div>
           <div class="cfg-campo">
-            <label for="cfgPruebaEmail">Enviar una prueba a</label>
+            <label for="cfgBtnPrueba">Prueba del correo</label>
             <div class="cfg-prueba">
-              <input type="email" id="cfgPruebaEmail" placeholder="tu@correo.com" autocomplete="off">
-              <select id="cfgPruebaSel" style="display:none;" aria-label="Dirección de prueba autorizada"></select>
-              <button class="btn btn-outline" id="cfgBtnPrueba">Ver prueba</button>
+              <button class="btn btn-outline" id="cfgBtnPrueba">Enviarme una prueba</button>
             </div>
-            <div class="cfg-hint" id="cfgPruebaHint">Con los envíos reales desactivados no se envía nada: se muestra aquí cómo quedaría el correo, con el enlace de baja real.</div>
+            <div class="cfg-hint" id="cfgPruebaHint">Te llega un correo de prueba a tu propia cuenta, con el pie y el enlace de baja reales. No sale a ningún cliente.</div>
           </div>
 
           <div class="cfg-msg" id="cfgMsg" role="status"></div>
@@ -1296,6 +1290,7 @@
           <div class="pg-caja" id="pgCaja" style="display:none;">
             <div class="pg-cab"><strong id="pgTitulo">Progreso del envío</strong><span class="pill pill-borrador" id="pgEstado">—</span></div>
             <div class="pg-barra"><div id="pgBarra"></div></div>
+            <div class="rep-prog-cab"><span id="pgProgresoTxt" role="status"></span></div>
             <div class="pg-cifras" id="pgCifras"></div>
             <div class="cfg-dato" id="pgDetalle"></div>
             <div class="lat" id="pgLatido" style="display:none;"></div>
@@ -1303,12 +1298,12 @@
           </div>
 
           <div class="cfg-acciones">
-            <button class="btn btn-solid" id="cfgGuardar">Guardar campaña</button>
-            <button class="btn btn-outline" id="cfgSimular">Simular</button>
+            <button class="btn btn-outline" id="cfgGuardar">Guardar campaña</button>
             <button class="btn btn-outline" id="cfgProgramar">Programar…</button>
-            <button class="btn btn-outline" id="cfgEnviarAhora">Enviar ahora</button>
+            <button class="btn btn-solid" id="cfgEnviarAhora">Enviar campaña</button>
           </div>
           <div class="cfg-hint" id="cfgAccionesHint"></div>
+          <ul class="ef-restr" id="cfgRestricciones" style="display:none;"></ul>
           <div class="cfg-prog" id="cfgProgWrap">
             <input type="datetime-local" id="cfgProgFecha" aria-label="Fecha y hora de envío">
             <button class="btn btn-solid" id="cfgProgConfirmar" style="padding:8px 14px;">Programar</button>
@@ -1325,7 +1320,7 @@
           <div class="vp-escenario">
             <iframe class="vp-marco" id="cfgPreviewFrame" title="Vista previa del correo" sandbox="" referrerpolicy="no-referrer" data-disp="escritorio"></iframe>
           </div>
-          <div class="vp-nota" id="cfgPreviewNota">El pie con tus datos y el enlace de baja se agregan al enviar. Para verlo igual que lo recibirá el cliente, usa «Ver prueba».</div>
+          <div class="vp-nota" id="cfgPreviewNota">El pie con tus datos y el enlace de baja se agregan al enviar. Para verlo igual que lo recibirá el cliente, usa «Enviarme una prueba».</div>
         </div>
       </div>
     </div>
@@ -1337,7 +1332,7 @@
           <h1 class="page-title">Enlaces de reserva</h1>
           <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);max-width:680px;">Copia y pega estos enlaces en Instagram, anuncios, correos y mensajes. Se generan solos desde los profesionales reales: cuando entre uno nuevo aparecerá aquí.</p>
         </div>
-        <span class="ins" id="enEntorno" data-t="comprobando">Entorno…</span>
+        <span class="ins" id="enEntorno" data-t="dev" style="display:none;"></span>
       </div>
       <div class="en-prueba" id="enPrueba" style="display:none;">Enlaces de PRUEBA: apuntan al entorno de pruebas. No los uses en anuncios, correos reales ni redes sociales.</div>
       <div class="en-grupo" id="enSeguimiento">
@@ -1355,9 +1350,9 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Configuración</h1>
-          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);max-width:680px;">Envíos reales, remitente, límites y pie del correo. Cada cambio queda registrado con quién lo hizo y cuándo.</p>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--texto-medio);max-width:680px;">Estado del envío, remitente, límites y pie del correo. Cada cambio queda registrado con quién lo hizo y cuándo.</p>
         </div>
-        <div class="ins-grupo"><span class="ins" id="cfEntorno" data-t="comprobando">Comprobando entorno…</span><button type="button" class="btn btn-outline" id="cfRecargar">Actualizar</button></div>
+        <div class="ins-grupo"><span class="ins" id="cfEntorno" data-t="dev" style="display:none;"></span><button type="button" class="btn btn-outline" id="cfRecargar">Actualizar</button></div>
       </div>
       <div class="rs-error" id="cfError" style="display:none;"></div>
       <div id="cfContenido"><div class="rep-vacio">Cargando la configuración…</div></div>
@@ -1411,12 +1406,13 @@
       <div id="efDatos"></div>
 
       <div class="pf-resumen" style="margin-top:14px;">
-        <div class="pf-seccion-tit">Destinatarios (calculado por el sistema, no en esta pantalla)</div>
+        <div class="pf-seccion-tit">A quién le llega (lo calcula el sistema)</div>
         <div class="ef-embudo" id="efEmbudo"></div>
+        <div class="ef-base" id="efBases"></div>
       </div>
 
       <div id="efCal" style="display:none;">
-        <div class="pf-seccion-tit">Cómo saldrá, por tandas (estimado)</div>
+        <div class="pf-seccion-tit">Cómo saldrá</div>
         <div id="efCalCuerpo"></div>
       </div>
 
@@ -1426,13 +1422,7 @@
       </div>
 
       <div class="pf-veredicto" id="efVeredicto" data-ok="wait">—</div>
-
-      <div class="ef-confirma" id="efConfirma" style="display:none;">
-        <label for="efConfTexto">Para confirmar, escribe la palabra ENVIAR</label>
-        <input type="text" id="efConfTexto" autocomplete="off" spellcheck="false">
-        <label for="efConfNum" id="efConfNumEtq">Y escribe el número exacto de destinatarios</label>
-        <input type="text" id="efConfNum" inputmode="numeric" autocomplete="off" spellcheck="false">
-      </div>
+      <ul class="ef-restr" id="efRestricciones" style="display:none;"></ul>
 
       <div id="efProgreso" style="display:none; margin-top:14px;">
         <div class="pf-seccion-tit">Resultado</div>
@@ -1535,7 +1525,7 @@
           <label data-seg="habilitados">
             <input type="radio" name="audSeg" value="habilitados" checked>
             <span class="seg-cuerpo">Todos los clientes habilitados para marketing
-              <span class="aud-seg-sub">Tienen permiso registrado y no están de baja, rebotados ni suprimidos.</span>
+              <span class="aud-seg-sub">Clientes y personas que reservaron, se registraron o compraron. Quedan fuera las bajas, las solicitudes de derechos y los rebotes.</span>
             </span>
             <span class="seg-n" data-n="habilitados">—</span>
           </label>
@@ -1671,75 +1661,6 @@
   </div>
 </div>
 
-<!-- ================= MODAL: Activar / desactivar envíos reales ================= -->
-<div class="modal-fondo" id="modalEnviosReales" role="dialog" aria-modal="true" aria-labelledby="erTitulo">
-  <div class="modal modal-ancho">
-    <div class="modal-head">
-      <h3 id="erTitulo">Envíos reales</h3>
-      <button class="modal-cerrar" id="erCerrar" aria-label="Cerrar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="ef-modo" id="erModo" data-dry="1">—</div>
-      <p class="cf-texto" id="erExplica" style="margin:0 0 6px;"></p>
-      <div class="pf-seccion-tit" style="margin-top:14px;">Condiciones (las comprueba el servidor)</div>
-      <div id="erPrecond"></div>
-      <div class="ef-confirma" id="erConfirma">
-        <label for="erFrase">Para confirmar, escribe exactamente esta frase</label>
-        <div class="cf-texto" style="margin:0 0 8px;"><b id="erFraseTxt"></b></div>
-        <input type="text" id="erFrase" autocomplete="off" spellcheck="false">
-        <div id="erClaveWrap">
-          <label for="erClave">Tu contraseña (por seguridad se vuelve a pedir; no se guarda)</label>
-          <input type="password" id="erClave" autocomplete="current-password">
-        </div>
-        <label for="erMotivo">Motivo (opcional, queda en la auditoría)</label>
-        <input type="text" id="erMotivo" maxlength="300" autocomplete="off">
-      </div>
-      <div class="cfg-msg" id="erMsg" role="status"></div>
-    </div>
-    <div class="modal-pie">
-      <button class="btn btn-outline" id="erCancelar">Cancelar</button>
-      <button class="btn btn-solid" id="erConfirmar" disabled>Confirmar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= MODAL: Reconocer la base histórica (declaración de la dueña) ================= -->
-<div class="modal-fondo" id="modalBaseHistorica" role="dialog" aria-modal="true" aria-labelledby="bhmTitulo">
-  <div class="modal modal-ancho">
-    <div class="modal-head">
-      <h3 id="bhmTitulo">Reconocer tu base histórica</h3>
-      <button class="modal-cerrar" id="bhmCerrar" aria-label="Cerrar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p class="cf-texto" id="bhmIntro" style="margin:0 0 6px;"></p>
-      <div class="pf-seccion-tit" style="margin-top:14px;" id="bhmCifrasTit">Qué pasaría</div>
-      <ul id="bhmCifras" style="margin:6px 0 12px 18px; padding:0; line-height:1.55;"></ul>
-      <div id="bhmTextoWrap">
-        <div class="pf-seccion-tit">Tu declaración (queda guardada, con fecha y tu nombre)</div>
-        <p class="cf-texto" id="bhmTexto" style="margin:6px 0 12px;"></p>
-      </div>
-      <div class="ef-confirma">
-        <label for="bhmFrase">Para confirmar, escribe exactamente esta frase</label>
-        <div class="cf-texto" style="margin:0 0 8px;"><b id="bhmFraseTxt"></b></div>
-        <input type="text" id="bhmFrase" autocomplete="off" spellcheck="false">
-        <div id="bhmClaveWrap">
-          <label for="bhmClave">Tu contraseña (por seguridad se vuelve a pedir; no se guarda)</label>
-          <input type="password" id="bhmClave" autocomplete="current-password">
-        </div>
-      </div>
-      <div class="cfg-msg" id="bhmMsg" role="status"></div>
-    </div>
-    <div class="modal-pie">
-      <button class="btn btn-outline" id="bhmCancelar">Cancelar</button>
-      <button class="btn btn-solid" id="bhmConfirmar" disabled>Confirmar</button>
-    </div>
-  </div>
-</div>
-
 <!-- ================= MODAL: Vista previa del correo (escritorio / móvil) ================= -->
 <div class="modal-fondo" id="modalVistaPrevia" role="dialog" aria-modal="true" aria-labelledby="vpTitulo">
   <div class="modal">
@@ -1780,11 +1701,11 @@
   </div>
 </div>
 
-<!-- ================= MODAL: Registrar permiso para recibir novedades (alta manual con constancia) ================= -->
+<!-- ================= MODAL: Registrar consentimiento para recibir novedades (alta manual con constancia) ================= -->
 <div class="modal-fondo" id="modalConsentimiento" role="dialog" aria-modal="true" aria-labelledby="conTitulo">
   <div class="modal" style="max-width:520px;">
     <div class="modal-head">
-      <h3 id="conTitulo">Registrar permiso para recibir novedades</h3>
+      <h3 id="conTitulo">Registrar consentimiento para recibir novedades</h3>
       <button class="modal-cerrar" id="conCerrar" aria-label="Cerrar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -1803,35 +1724,14 @@
     </div>
     <div class="modal-pie">
       <button class="btn btn-outline" id="conCancelar">Cancelar</button>
-      <button class="btn btn-solid" id="conGuardar">Registrar permiso</button>
+      <button class="btn btn-solid" id="conGuardar">Registrar consentimiento</button>
     </div>
   </div>
 </div>
 
-<!-- ================= MODAL: Contactos desactualizados (v2.1): confirmación explícita antes de enviar a clientes ================= -->
-<div class="modal-fondo" id="modalContactos" role="dialog" aria-modal="true" aria-labelledby="ctxTitulo">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-head">
-      <h3 id="ctxTitulo">Los contactos no están al día</h3>
-      <button class="modal-cerrar" id="ctxCerrar" aria-label="Cerrar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p class="cf-texto" id="ctxTexto" style="margin:0 0 12px;"></p>
-      <p class="cf-texto" style="margin:0 0 14px;">La última visita y los servicios de cada persona salen de las reservas y solo se recalculan al pulsar «Actualizar contactos». Con datos viejos, el orden de los más recientes y los segmentos «recientes» y «llevan tiempo sin reservar» pueden fallar.</p>
-      <div class="campo-form"><label class="check" for="ctxCasilla"><input type="checkbox" id="ctxCasilla"><span id="ctxCasillaTxt">Enviar igual</span></label></div>
-    </div>
-    <div class="modal-pie">
-      <button class="btn btn-outline" id="ctxCancelar">Cancelar</button>
-      <button class="btn btn-outline" id="ctxIrAudiencias">Ir a Audiencias</button>
-      <button class="btn btn-solid" id="ctxEnviarIgual" disabled>Enviar igual</button>
-    </div>
-  </div>
-</div>
 </div><!-- /.app -->
 
-<div class="aviso-dev" id="avisoEntorno" style="display:none">estudio90-dev · Email Marketing (Etapa 2). Datos y campañas reales del entorno de pruebas.</div>
+<div class="aviso-dev" id="avisoEntorno" role="status" style="display:none">Entorno de pruebas: los correos no salen a clientes reales.</div>
 <script>
 /* >>> INICIO MLAutoguardado · copia fiel de D3_editor/lab/pagina/prototipo_autoguardado.js (sha256 78d047652eb5…) <<< */
 /**
@@ -2168,17 +2068,80 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
   function emFechaHora(x){ const d = emDate(x); return d ? d.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:TZ }) + ' ' + d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', timeZone:TZ }) : '—'; }
   function emHora(x){ const d = emDate(x); return d ? d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', timeZone:TZ }) : ''; }
   const EM_RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  /** 'AAAA-MM-DD' (día de Chile que entrega el servidor) -> «15 de octubre de 2026»; '' si no tiene esa forma. */
+  function emFechaDia(s){
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    if(!m) return '';
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
+    return isNaN(d) ? '' : d.toLocaleDateString('es-CL', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' });
+  }
+  /** Progreso de una campaña, 0 a 100: (habilitados - pendientes) / habilitados. Nunca marca 100 % mientras quede algo pendiente (99 como máximo). null si no hay habilitados o no se sabe cuántos quedan. */
+  function emProgresoPct(objetivo, pendientes){
+    const o = emPrimerNumero(objetivo), p = emPrimerNumero(pendientes);
+    if(o == null || o <= 0 || p == null) return null;
+    const pct = Math.max(0, Math.min(100, Math.round(((o - p) / o) * 100)));
+    return p > 0 ? Math.min(99, pct) : pct;
+  }
+  /** Primer valor que sea un número válido (null / undefined / '' se saltan); null si ninguno lo es. Nunca inventa un 0. */
+  function emPrimerNumero(){
+    for(let i = 0; i < arguments.length; i++){ const x = arguments[i]; if(x != null && x !== '' && Number.isFinite(Number(x))) return Number(x); }
+    return null;
+  }
+  /** Qué limita el envío por día, en lenguaje simple (plan.limitante del servidor: plan_diario · plan_mensual · politica_* · calentamiento). '' si no limita o no se conoce. */
+  function emLimitanteTxt(l){
+    const k = String(l || '');
+    if(k === 'plan_diario') return 'el límite diario de tu plan de Resend';
+    if(k === 'plan_mensual') return 'el límite mensual de tu plan de Resend';
+    if(k.indexOf('politica') === 0) return 'tu política de envío (Configuración)';
+    if(k === 'calentamiento') return 'el calentamiento del dominio (empieza con pocos correos y sube de a poco)';
+    return '';
+  }
+  /** El plan de envío en palabras simples, a partir de `plan` ({ destinatarios, hoy, dias, terminaEl, limitante }) de emailCampanaValidar. [] si el servidor no lo manda (versión anterior). */
+  function emPlanTexto(plan){
+    if(!plan || typeof plan !== 'object' || N(plan.destinatarios) <= 0) return [];
+    const hoy = N(plan.hoy), dias = N(plan.dias), fin = emFechaDia(plan.terminaEl);
+    const out = [];
+    if(plan.estimable === false){                 // el servidor no puede calcular el calendario (por ejemplo, faltan límites): no se inventa una fecha
+      out.push((hoy > 0 ? 'Hoy salen ' + fmt(hoy) + '; el resto continúa solo en los días siguientes. ' : '') + 'Todavía no se puede estimar el día de término. El sistema envía solo, por tandas, dentro de tus límites.');
+    }else if(dias > 1){
+      out.push(hoy > 0 ? 'Hoy salen ' + fmt(hoy) + '; el resto continúa solo los días siguientes' + (fin ? '; termina el ' + fin + '.' : ' (todavía no se puede estimar el día de término).')
+        : 'Hoy no sale ninguno; empieza en el próximo día con cupo y continúa solo' + (fin ? ' hasta el ' + fin + '.' : '.'));
+    }else if(hoy > 0){
+      out.push('Sale todo hoy (' + fmt(hoy) + ' correos), por tandas.');
+    }else{
+      out.push('Hoy no sale ninguno' + (fin ? '; saldrá el ' + fin + '.' : '.'));
+    }
+    const lim = emLimitanteTxt(plan.limitante);
+    if(lim) out.push('Lo que define cuántos salen por día: ' + lim + '.');
+    return out;
+  }
+  /** Restricciones del servidor ([{ id, texto }], ya en lenguaje simple) como lista segura; [] si el servidor no las envía (versión anterior). */
+  function emRestriccionesDe(r){
+    const a = r && Array.isArray(r.restricciones) ? r.restricciones : [];
+    return a.slice(0, 20).map((x)=> ({ id: String((x && x.id) || ''), texto: String((x && (x.texto || x.detalle)) || '').slice(0, 300) })).filter((x)=> x.texto);
+  }
+  /** 'produccion' | 'pruebas' | null. Acepta la forma nueva del servidor ('produccion' | 'pruebas') y la anterior ({ id:'produccion'|'dev', etiqueta }). */
+  function emEntornoId(x){
+    const v = (x && typeof x === 'object') ? x.id : x;
+    if(v === 'produccion') return 'produccion';
+    if(v === 'pruebas' || v === 'dev') return 'pruebas';
+    return null;
+  }
 
   /* ---------- Functions: lista cerrada = las que el contrato permite llamar desde el panel ---------- */
+  // [v2.2.0] ya no se llaman emailEnviosRealesCambiar (el envío es automático), emailBaseHistoricaDeclarar (retirada) ni emailPrueba (la prueba es un correo real a la cuenta de quien la pide)
   const EM_FN_PERMITIDAS = new Set([
-    'emailEstadisticasResumen', 'emailEstadoEnvios', 'emailEnviosRealesCambiar', 'emailConfigGuardar', 'emailAuditoriaVerificar',
-    'emailPrueba', 'emailPruebaEnviar', 'emailCampanaValidar', 'emailCampanaProgramar', 'emailCampanaEnviarAhora', 'emailPlanificadorAhora',
+    'emailEstadisticasResumen', 'emailEstadoEnvios', 'emailConfigGuardar', 'emailAuditoriaVerificar',
+    'emailPruebaEnviar', 'emailCampanaValidar', 'emailCampanaProgramar', 'emailCampanaEnviarAhora', 'emailPlanificadorAhora',
     'emailCampanaPausar', 'emailCampanaReanudar', 'emailCampanaCancelar', 'emailCampanaReporte', 'emailAtribuirReservas',
     'emailContactosResumen', 'emailContactosReconstruir', 'emailConsentimientoRegistrar', 'emailAudienciaPreview',
     'emailSuprimirManual', 'emailReactivarConsentimiento', 'emailClientesInactivos', 'emailReconstruirVisitas',
-    'emailReconciliarAhora', 'emailClientesPagina', 'emailBaseHistoricaDeclarar',
+    'emailReconciliarAhora', 'emailClientesPagina',
   ]);
-  const EM_TIMEOUT_FN = { emailReconciliarAhora: 300000, emailClientesPagina: 25000, emailBaseHistoricaDeclarar: 300000 };   // [V21-02] la reconciliación puede tardar más que los 70 s normales del navegador (la Function admite 300 s)
+  // [V21-02] la reconciliación puede tardar más que los 70 s normales del navegador (la Function admite 300 s) · [v2.2.0] «Actualizar contactos» procesa toda la base: la Function admite hasta 540 s
+  // [v2.2.0, fase de pruebas] «Enviar campaña» / «Programar» / «Procesar ahora» arman la campaña (hasta miles de destinatarios), pueden despachar una tanda y en el servidor admiten 300 s; «Comprobar» y la prueba, 120 s: con los 70 s normales del navegador
+  // la dueña vería "no se pudo conectar" aunque el servidor siguiera trabajando (y podría reintentar).
+  const EM_TIMEOUT_FN = { emailReconciliarAhora: 300000, emailClientesPagina: 25000, emailContactosReconstruir: 540000, emailCampanaEnviarAhora: 300000, emailCampanaProgramar: 300000, emailPlanificadorAhora: 300000, emailCampanaValidar: 120000, emailPruebaEnviar: 120000 };
   const emCacheFn = {};
   /** Llama a una Function callable del contrato y devuelve `data`. Rechaza con el error original (con details.motivo si el servidor lo trae). */
   function emLlamar(nombre, datos){
@@ -2191,41 +2154,34 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
   const EM_MOTIVOS = {
     no_autenticado: 'Debes iniciar sesión en el panel.',
     sin_rol_admin: 'Email Marketing es solo para administradores.',
-    solo_duena: 'Solo la dueña puede activar el envío a clientes.',
     argumento_invalido: 'Hay un dato con formato o largo no válido. Revísalo e inténtalo de nuevo.',
     estado_desactualizado: 'El estado cambió mientras mirabas. Se recargó la pantalla; inténtalo de nuevo.',
     reauth_requerida: 'Por seguridad, vuelve a escribir tu contraseña para continuar.',
-    frase_incorrecta: 'La frase de confirmación no coincide.',
     indice_desactualizado: 'Primero pulsa «Actualizar contactos»: la lista de contactos no está al día.',
-    declaracion_en_curso: 'Ya hay una ejecución de la declaración en curso. Espera unos minutos y vuelve a intentar.',
-    declaracion_no_vigente: 'Esa declaración ya no está vigente.',
-    declaracion_no_encontrada: 'No encuentro esa declaración.',
-    declaracion_previa: 'Ya hiciste una declaración antes. Confirma que quieres hacer otra para quienes llegaron después.',
     auditoria_no_disponible: 'No pude registrar la auditoría, así que no hice nada. Inténtalo de nuevo en unos minutos.',
-    precondicion_fallida: 'No se puede activar todavía: faltan condiciones.',
-    envios_desactivados: 'Los envíos reales están desactivados.',
-    direccion_no_autorizada: 'Esa dirección no está en la lista de pruebas autorizadas.',
-    lista_llena: 'La lista de pruebas admite hasta 20 direcciones.',
+    precondicion_fallida: 'Todavía no se puede enviar: falta resolver lo que se indica.',
+    envios_desactivados: 'El envío está detenido por seguridad. No se puede enviar ahora; avisa a quien administra el sistema.',
     audiencia_cambio: 'La audiencia cambió desde que la revisaste. Revisa los números nuevos y confirma de nuevo.',
-    confirmacion_incorrecta: 'Escribe ENVIAR y el número exacto de destinatarios.',
+    confirmacion_incorrecta: 'La confirmación no es válida. Vuelve a revisar la campaña y confirma de nuevo.',
     armada_invalida: 'La campaña cambió después de confirmarla: vuelve a confirmar.',
-    requiere_rearmar: 'Los envíos reales cambiaron desde que se confirmó la campaña: vuelve a confirmarla.',
+    requiere_rearmar: 'Algo cambió desde que se confirmó la campaña: vuelve a confirmarla.',
     sin_limites_definidos: 'Faltan límites de envío definidos por ti (Configuración).',
     remitente_dominio_no_verificado: 'El dominio del remitente no está verificado en Resend.',
-    remitente_requiere_envios_desactivados: 'Apaga los envíos reales antes de cambiar el remitente.',
+    remitente_requiere_envios_desactivados: 'Por ahora el remitente no se puede cambiar desde aquí. Avisa a quien administra el sistema.',
+    remitente_con_campanas_activas: 'Hay campañas programadas o enviándose: espera a que terminen (o cancélalas) antes de cambiar el remitente.',
     contenido_critico: 'El contenido tiene problemas que impiden el envío.',
     mes_invalido: 'Mes no válido.',
     refresco_muy_frecuente: 'Los datos se actualizaron hace menos de 30 segundos.',
     campana_no_encontrada: 'La campaña ya no existe.',
-    indice_no_construido: 'Aún no se han calculado los contactos: pulsa «Actualizar contactos».',
+    indice_no_construido: 'Falta calcular tus contactos (se hace una sola vez tras esta versión). Pulsa «Actualizar contactos» en Audiencias.',
     reconstruccion_en_curso: 'Ya hay una actualización de contactos en curso.',
     sin_seguimiento_de_clics: 'El seguimiento de clics no está activo en Resend.',
-    baja_vigente: 'La persona se dio de baja: no se puede registrar permiso.',
+    baja_vigente: 'La persona se dio de baja: no se puede registrar su consentimiento.',
     sede_deshabilitada: 'Esa sucursal no tiene datos confiables para segmentar.',
     segmento_invalido: 'Segmento o filtro desconocido.',
-    contactos_desactualizados: 'Los contactos no están al día. Actualízalos en Audiencias antes de enviar, o confirma que quieres enviar igual.',   // [V21-19]
+    contactos_desactualizados: 'Los contactos no están al día. Pulsa «Actualizar contactos» en Audiencias y vuelve a intentar.',   // [V21-19] (el servidor v2.2.0 ya no lo exige; se conserva por si responde un servidor anterior)
     envios_en_vuelo: 'Quedaron correos en vuelo: Resend pudo haberlos aceptado y no se reenvían a ciegas. Pulsa “Reconciliar ahora” y vuelve a intentar.',   // [V21-02]
-    consentimiento_ya_registrado: 'Esta persona ya tiene un permiso registrado a mano. Confirma si quieres reemplazarlo.',   // [V21-13]
+    consentimiento_ya_registrado: 'Esta persona ya tiene un consentimiento registrado a mano. Confirma si quieres reemplazarlo.',   // [V21-13]
     cursor_invalido: 'La lista se actualizó mientras la mirabas. Volviste a la primera página.',   // [V214]
     consulta_no_disponible: 'No se pudo cargar la lista de clientes en este momento. Inténtalo de nuevo en unos minutos.',   // [V214]
   };
@@ -2239,7 +2195,7 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     if(code === 'not-found') return 'Esta función todavía no está disponible en este entorno. Avisa a quien administra el sistema.';
     if(code === 'unavailable' || code === 'deadline-exceeded' || code === 'cancelled') return 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
     if(code === 'unauthenticated') return EM_MOTIVOS.no_autenticado;
-    if(code === 'permission-denied') return 'No tienes permiso para esta acción, o la campaña cambió en otra pestaña.';
+    if(code === 'permission-denied') return 'Tu cuenta no tiene acceso a esta acción, o la campaña cambió en otra pestaña.';
     if(code === 'resource-exhausted') return 'Demasiadas solicitudes seguidas. Espera un momento e inténtalo de nuevo.';
     const t = e && e.message ? String(e.message) : '';
     if(!t || /^(internal|unknown|failed to fetch|network|load failed)/i.test(t)) return 'Ocurrió un error inesperado. Inténtalo de nuevo en un momento.';
@@ -2317,13 +2273,6 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     if(r === 'reconciliar') await emReconciliar.ejecutar();
     return r;
   }
-  /** «hace N horas» para la antigüedad de los contactos (el servidor entrega horas, con decimales). */
-  function emHorasTxt(h){
-    const x = Number(h);
-    if(!Number.isFinite(x) || x < 1) return 'menos de 1 hora';
-    const n = Math.floor(x);
-    return n + (n === 1 ? ' hora' : ' horas');
-  }
   /** [CT-03] El resultado del ARMADO: en emailCampanaProgramar es la respuesta misma; en emailCampanaEnviarAhora viene dentro de `programado` (en la raíz está el resultado de la vuelta que corrió). */
   function emArmadoDe(r){ return (r && r.programado && typeof r.programado === 'object') ? r.programado : (r || {}); }
   /** El bloque `planificador` ({ activo, ultimoLatidoAt, edadMin }) que el servidor agrega al armar una campaña (dentro de `programado` o en la raíz); null si no vino (servidor anterior) o no tiene la forma del latido. */
@@ -2348,7 +2297,7 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
 
   /* =========================================================================
      FORMULARIO GENÉRICO + REAUTENTICACIÓN (sin prompt() nativo)
-     El servidor exige haber confirmado la contraseña hace menos de 5 minutos para activar envíos y autorizar direcciones (auth_time <= 300 s).
+     [v2.2.0] Enviar una campaña ya NO pide contraseña ni frase: la reautenticación queda solo para confirmar el Reply-To (el servidor exige haber confirmado la contraseña hace menos de 5 minutos).
      La contraseña va SOLO a Firebase Auth (reauthenticateWithCredential): no se guarda, no se registra, no se manda a ninguna Function.
      ======================================================================= */
   let emUltimaReauth = 0;
@@ -2486,37 +2435,29 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
         .finally(()=>{ enVuelo = null; notificar(); });
       return enVuelo;
     }
-    const nivel = ()=> (datos && datos.control && ['desactivado','pruebas','clientes'].indexOf(datos.control.nivel) !== -1) ? datos.control.nivel : null;
     return {
-      cargar, datos: ()=> datos, error: ()=> error, recibidoMs: ()=> recibidoMs, nivel,
-      entorno: ()=> (datos && datos.entorno) || null,
+      cargar, datos: ()=> datos, error: ()=> error, recibidoMs: ()=> recibidoMs,
+      entorno: ()=> emEntornoId(datos && datos.entorno),                                                    // 'produccion' | 'pruebas' | null (sin dato)
+      envioDisponible: ()=> (datos && typeof datos.envioDisponible === 'boolean') ? datos.envioDisponible : null,   // null = el servidor no lo informa (versión anterior)
+      restricciones: ()=> emRestriccionesDe(datos),
       seq: ()=> (datos && datos.control) ? N(datos.control.seq) : 0,
       alCambiar: (f)=> { oyentes.push(f); },
     };
   })();
 
-  /** Pinta la insignia de entorno con el dato del SERVIDOR (no con el nombre del sitio) y ajusta lo que depende del entorno. */
+  /** [v2.2.0] Entorno con el dato del SERVIDOR (no con el nombre del sitio). En pruebas: franja fija «Entorno de pruebas: los correos no salen a clientes reales.»; en producción no se muestra nada. */
   function emAplicarEntorno(entorno){
-    if(!entorno || (entorno.id !== 'produccion' && entorno.id !== 'dev')) return;
-    ['insEntorno','cfEntorno','enEntorno'].forEach((id)=>{ const el = $(id); if(el){ el.textContent = String(entorno.etiqueta || (entorno.id === 'dev' ? 'Entorno de pruebas (DEV)' : 'Producción')); el.dataset.t = entorno.id; } });
+    const id = emEntornoId(entorno);
+    if(!id) return;
+    const pruebas = id === 'pruebas';
+    ['insEntorno','cfEntorno','enEntorno'].forEach((i)=>{ const el = $(i); if(el){ el.textContent = pruebas ? 'Entorno de pruebas' : ''; el.dataset.t = 'dev'; el.style.display = pruebas ? '' : 'none'; } });
     const av = $('avisoEntorno');
     if(av){
-      if(entorno.id === 'dev'){ av.textContent = 'Entorno de pruebas (DEV) · estudio90-dev. Aquí nada llega a clientes reales.'; av.style.display = ''; document.body.style.paddingBottom = '72px'; } else { av.style.display = 'none'; document.body.style.paddingBottom = ''; }
+      if(pruebas){ av.textContent = 'Entorno de pruebas: los correos no salen a clientes reales.'; av.style.display = ''; document.body.style.paddingBottom = '72px'; } else { av.style.display = 'none'; document.body.style.paddingBottom = ''; }
     }
-    const verRec = entorno.id === 'dev' || EM_RECUPERAR_EN_PRODUCCION;
-    ['sbRecuperar','nmRecuperar'].forEach((id)=>{ const el = $(id); if(el) el.style.display = verRec ? '' : 'none'; });
-    const en = $('enPrueba'); if(en) en.style.display = entorno.id === 'dev' ? '' : 'none';
-  }
-  const EM_NIVEL_TXT = {
-    desactivado: ['Envíos reales desactivados', 'gris'],
-    pruebas: ['Envíos reales activados · solo pruebas', 'activo'],
-    clientes: ['Envíos reales activados · clientes', 'activo'],
-  };
-  function emAplicarModo(){
-    const el = $('insModo'); if(!el) return;
-    const n = emEstado.nivel();
-    if(!n){ el.style.display = 'none'; return; }
-    el.style.display = ''; el.textContent = EM_NIVEL_TXT[n][0]; el.dataset.t = EM_NIVEL_TXT[n][1];
+    const verRec = pruebas || EM_RECUPERAR_EN_PRODUCCION;
+    ['sbRecuperar','nmRecuperar'].forEach((i)=>{ const el = $(i); if(el) el.style.display = verRec ? '' : 'none'; });
+    const en = $('enPrueba'); if(en) en.style.display = pruebas ? '' : 'none';
   }
   emEstado.alCambiar(function(datos){
     if(datos){
@@ -2525,7 +2466,6 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       const recibe = !!(pie && pie.recibe === true);
       if(recibe !== EM_RECIBE_HOLA){ EM_RECIBE_HOLA = recibe; if(typeof emReconstruirPlantillas === 'function') emReconstruirPlantillas(); }
     }
-    emAplicarModo();
   });
 
   /* =========================================================================
@@ -2623,15 +2563,15 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
 
       const c = r.contactos, e = r.envios || {}, p = r.periodo || {};
       if(c && c.totales != null){
-        celda('rsContTot', fmt(c.totales), 'Correos únicos y válidos de tu base de clientes.' + (c.soloReserva ? ' Aparte hay ' + fmt(c.soloReserva) + ' correos que solo existen en reservas: no cuentan.' : ''), false);
-        celda('rsContHab', fmtN(c.habilitados), c.regla && c.regla.texto ? String(c.regla.texto) : 'Con permiso registrado, sin baja ni supresión.', c.habilitados == null);
+        celda('rsContTot', fmt(c.totales), 'Correos únicos y válidos de tu base de contactos.', false);   // lo que devuelva el servidor, sin explicar diferencias con «Habilitados»
+        celda('rsContHab', fmtN(c.habilitados), 'Clientes y quienes reservaron, se registraron o compraron, sin bajas ni exclusiones.', c.habilitados == null);
       }else{
         celda('rsContTot', '—', 'Aún no calculado: usa «Actualizar contactos» en Audiencias.', true);
         celda('rsContHab', '—', 'Aún no calculado.', true);
       }
       $('rsEnv').querySelector('.rs-lab').textContent = mes === mesActual ? 'Correos enviados este mes' : 'Correos enviados en ' + emMesTxt(mes);
-      const subEnv = ['de campañas ' + fmt(e.deCampanas), 'de prueba ' + fmt(e.dePrueba)];
-      if(N(e.simulados) > 0) subEnv.push(fmt(e.simulados) + ' simulados (no son correos)');
+      const subEnv = ['de campañas ' + fmt(e.deCampanas)];
+      if(N(e.dePrueba) > 0) subEnv.push('pruebas tuyas ' + fmt(e.dePrueba));
       if(N(e.sinClasificar) > 0) subEnv.push('Sin clasificar (anteriores a este módulo): ' + fmt(e.sinClasificar));   // [V21-21] envíos viejos sin origen: ni de campañas ni de prueba
       celda('rsEnv', fmtN(e.enviados), 'Aceptados por Resend · ' + subEnv.join(' · '), e.enviados == null);
       const sinConfirmar = N(e.enviados) > 0 && N(e.entregados) === 0 && N(e.fallidos) === 0 && N(e.enTransito) >= N(e.enviados);
@@ -2653,7 +2593,6 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       const avisos = [];
       if(r.controlCruzado && r.controlCruzado.coincide === false) avisos.push('El contador diario (' + fmt(r.controlCruzado.quotaMarketingSent) + ') no coincide con el recuento por destinatario (' + fmt(e.enviados) + '). Pulsa «Actualizar» para recalcular.');
       if(r.discrepancia && typeof r.discrepancia === 'object') avisos.push('El recuento actual (' + fmt(r.discrepancia.recuento) + ') es menor que el guardado (' + fmt(r.discrepancia.guardado) + '): se conserva la cifra guardada, porque el contador de enviados de un mes no baja. Si crees que es un error, revisa las campañas de ese mes.');   // [V21-21]
-      if(r.modo && r.modo.simulacion) avisos.push('Modo simulación: los envíos reales están desactivados, no sale ningún correo.');
       const av = $('rsAviso'); av.textContent = avisos.join(' '); av.style.display = avisos.length ? '' : 'none';
       $('rsActualizado').textContent = r.calculadoAt ? 'Actualizado ' + emHora(r.calculadoAt) : '';
       $('rsActualizar').style.display = p.cerrado ? 'none' : '';
@@ -2713,8 +2652,9 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       return ((ahoraMs == null ? Date.now() : ahoraMs) - d.getTime()) > 10 * 86400000;
     }
 
-    /** NÚCLEO PURO. `rep` = respuesta de emailCampanaReporte ; `u` = config.umbrales de emailEstadoEnvios (puede faltar) ; `ahoraMs` = reloj (solo para pruebas). */
-    function metricas(rep, u, ahoraMs){
+    /** NÚCLEO PURO. `rep` = respuesta de emailCampanaReporte ; `u` = config.umbrales de emailEstadoEnvios (puede faltar) ; `ahoraMs` = reloj (solo para pruebas) ;
+     *  `extra` = datos que el reporte no trae y se leen de la campaña (`{ seleccionados }`: personas de la audiencia elegida antes de quitar a nadie). */
+    function metricas(rep, u, ahoraMs, extra){
       const m = (rep && rep.metricas) || {}, seg = (rep && rep.seguimiento) || {}, res = (rep && rep.reservas) || {};
       const fd = m.fallidosDetalle || {};
       const enviados = N(m.enviados), entregados = N(m.entregados), fallidos = N(m.fallidos), enTransito = N(m.enTransito);
@@ -2729,8 +2669,14 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       const conUmbrales = !!(u && u.quejas && u.rebote);
       let salud = 'sin-datos';
       if(enviados > 0 && !sinConfirmar && conUmbrales) salud = (nQueja === 'risk' || nRebote === 'risk') ? 'riesgo' : ((nQueja === 'warn' || nRebote === 'warn') ? 'atencion' : 'saludable');
+      const objetivo = N(m.objetivo), pendientes = N(m.pendientes);
+      const rebotes = N(fd.rebotesDuros) + N(fd.rebotesBlandos) + N(fd.bloqueados) + N(fd.invalidos);       // [v2.2.0] «Rebotes» del reporte: todo lo que rebotó o fue rechazado por el buzón
+      const errores = N(fd.fallosEnvio) + N(m.noAceptados);                                                  // [v2.2.0] «Errores»: no se pudieron enviar (fallo del envío o Resend no lo aceptó)
       return {
-        objetivo: N(m.objetivo), enviados, noAceptados: N(m.noAceptados), pendientes: N(m.pendientes), simulados: N(m.simulados),
+        seleccionados: emPrimerNumero(m.seleccionados, rep && rep.seleccionados, extra && extra.seleccionados),   // null = sin dato (nunca se inventa)
+        progresoPct: emProgresoPct(objetivo, pendientes),
+        rebotes, errores,
+        objetivo, enviados, noAceptados: N(m.noAceptados), pendientes, simulados: N(m.simulados),
         entregados, enTransito, fallidos, fallidosDetalle: fd, quejas, bajas,
         clicsUnicos: m.clicsUnicos, clicsTotales: m.clicsTotales, aperturasUnicas: m.aperturasUnicas, aperturasTotales: m.aperturasTotales,
         pEntrega: pct(entregados, enviados), pFallidos: pct(fallidos, enviados), pQueja: pct(quejas, baseQueja), pBaja: pct(bajas, enviados),
@@ -2753,14 +2699,14 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     }
     const seccion = (t)=> '<div class="rep-seccion">' + esc(t) + '</div>';
 
-    function pintar(rep){
+    function pintar(rep, extra){
       const camp = rep.campana || {};
       const u = (emEstado.datos() && emEstado.datos().config && emEstado.datos().config.umbrales) || null;
-      const m = metricas(rep, u);
+      const m = metricas(rep, u, null, extra);
       $('repTitulo').textContent = camp.nombre || 'Campaña';
       const ini = emDate(camp.inicioEnvioAt), fin = emDate(camp.finEnvioAt);
       const pill = PILL_ESTADO[camp.estado] ? PILL_ESTADO[camp.estado][1] : (camp.estado || '—');
-      $('repFecha').textContent = (ini ? (fin ? 'Envío del ' + emFecha(ini) + ' al ' + emFecha(fin) : 'Envío iniciado el ' + emFechaHora(ini)) : 'Sin fecha de envío todavía') + ' · Estado: ' + pill + (camp.esPrueba ? ' · Prueba' : '');
+      $('repFecha').textContent = (ini ? (fin ? 'Envío del ' + emFecha(ini) + ' al ' + emFecha(fin) : 'Envío iniciado el ' + emFechaHora(ini)) : 'Sin fecha de envío todavía') + ' · Estado: ' + pill + (camp.esPrueba && emEstado.entorno() !== 'produccion' ? ' · Prueba' : '');   // en producción nunca se etiqueta «prueba»
       const badge = $('repSalud'); badge.dataset.salud = m.salud; badge.textContent = SALUD_TXT[m.salud];
 
       const vacio = $('repVacio'), cuerpo = $('repCuerpo'), resEl = $('repResumen');
@@ -2772,39 +2718,42 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       }
       vacio.style.display = 'none'; cuerpo.style.display = 'block'; resEl.style.display = 'flex';
       const resumen = [];
-      resumen.push('Objetivo <b>' + fmt(m.objetivo) + '</b>');
+      resumen.push('Habilitados <b>' + fmt(m.objetivo) + '</b>');
       resumen.push('Enviados (aceptados por Resend) <b>' + fmt(m.enviados) + '</b>');
       if(m.pendientes) resumen.push('Pendientes <b>' + fmt(m.pendientes) + '</b>');
-      if(m.noAceptados) resumen.push('No aceptados <b>' + fmt(m.noAceptados) + '</b>');
-      if(m.simulados) resumen.push('Simulados <b>' + fmt(m.simulados) + '</b> (no son correos)');
       resEl.innerHTML = resumen.join(' · ');
 
       const aviso = $('repAvisoEventos');
       const cal = rep.calidad || {};
       if(m.soloSimulada){
-        aviso.style.display = 'block'; aviso.textContent = 'Campaña simulada: no salió ningún correo real, así que no hay entregas, rebotes ni clics que mostrar.';
+        aviso.style.display = 'block'; aviso.textContent = 'Esta campaña no envió correos reales, así que no hay entregas, rebotes ni clics que mostrar.';
       }else if(m.sinConfirmar || cal.sinWebhook){
         aviso.style.display = 'block'; aviso.textContent = 'Sin confirmación de Resend todavía: las entregas y los rebotes aparecen cuando Resend avisa. Si pasan horas sin cambios, revisa el estado del aviso automático (webhook) en Configuración.';
       }else aviso.style.display = 'none';
 
-      let html = seccion('Envío') + '<div class="rep-metricas">';
-      html += tarjeta(fmt(m.enviados), 'Enviados', { destacado:true, rotulo:'exacta', sub:'Aceptados por Resend' });
+      // [v2.2.0] Las 8 cifras de la campaña (+ progreso). Todo sale de los contadores reales; lo que aún no existe dice «Sin confirmación todavía» o «—», nunca un 0 inventado.
+      let html = seccion('Resultado de la campaña') + '<div class="rep-metricas">';
+      html += m.seleccionados == null ? tarjeta('—', 'Seleccionados', { nd:true, sub:'Sin dato de esta campaña' })
+        : tarjeta(fmt(m.seleccionados), 'Seleccionados', { sub:'Personas de la audiencia elegida, antes de quitar a nadie' });
+      html += tarjeta(fmt(m.objetivo), 'Habilitados', { destacado:true, sub:'Pueden recibirla: sin bajas, solicitudes de derechos, rebotes, correos no válidos ni duplicados' });
       html += tarjeta(fmt(m.pendientes), 'Pendientes', { sub:'Todavía no salen' });
-      html += tarjeta(fmt(m.noAceptados), 'No aceptados', { sub:'Resend los rechazó al enviar' });
-      html += '</div>';
-
-      html += seccion('Resultado') + '<div class="rep-metricas">';
+      html += tarjeta(fmt(m.enviados), 'Enviados', { destacado:true, rotulo:'exacta', sub:'Aceptados por Resend' });
       if(m.sinConfirmar){
-        html += tarjeta('Sin confirmación de Resend todavía', 'Entregados', { nd:true, rotulo:'no' });
+        html += tarjeta('Sin confirmación todavía', 'Entregados', { nd:true, rotulo:'no' });
       }else{
-        html += tarjeta(fmt(m.entregados), 'Entregados', { destacado:true, pct:pctTxt(m.pEntrega), rotulo:'exacta', sub:'Confirmados por Resend' });
+        html += tarjeta(fmt(m.entregados), 'Entregados', { pct:pctTxt(m.pEntrega), rotulo:'exacta', sub:'Confirmados por Resend' });
       }
+      const rbTxt = [['rebotes duros', m.fallidosDetalle.rebotesDuros], ['blandos', m.fallidosDetalle.rebotesBlandos], ['bloqueados', m.fallidosDetalle.bloqueados], ['inválidos', m.fallidosDetalle.invalidos]].filter((x)=> N(x[1]) > 0).map((x)=> x[0] + ' ' + fmt(x[1])).join(' · ');
+      // si Resend todavía no confirmó nada, un «0 %» de rebotes sería engañoso: se muestra el conteo SIN porcentaje y se dice por qué
+      html += tarjeta(fmt(m.rebotes), 'Rebotes', { pct: m.sinConfirmar ? '' : pctTxt(pct(m.rebotes, m.enviados)), nivel:m.nRebote, rotulo:'exacta', sub: m.sinConfirmar ? 'Sin confirmación todavía' : (rbTxt || 'Correos que no llegaron al buzón') });
+      html += tarjeta(fmt(m.errores), 'Errores', { rotulo:'exacta', sub:'No se pudieron enviar' });
+      html += tarjeta(fmt(m.bajas), 'Bajas', { pct:pctTxt(m.pBaja), rotulo:'exacta', sub:'Se dieron de baja con esta campaña' });
+      html += '</div>';
+      html += m.progresoPct == null ? '' : '<div class="rep-prog"><div class="rep-prog-cab"><span>Progreso</span><b>' + esc(String(m.progresoPct)) + ' %</b></div><div class="pg-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + esc(String(m.progresoPct)) + '" aria-label="Progreso del envío"><div style="width:' + esc(String(m.progresoPct)) + '%"></div></div></div>';
+
+      html += seccion('Más detalle') + '<div class="rep-metricas">';
       html += tarjeta(fmt(m.enTransito), 'En tránsito', { sub:'Aceptados, sin resultado final' });
-      const fdTxt = [['rebotes duros', m.fallidosDetalle.rebotesDuros], ['blandos', m.fallidosDetalle.rebotesBlandos], ['bloqueados', m.fallidosDetalle.bloqueados], ['inválidos', m.fallidosDetalle.invalidos], ['fallos de envío', m.fallidosDetalle.fallosEnvio]].filter((x)=> N(x[1]) > 0).map((x)=> x[0] + ' ' + fmt(x[1])).join(' · ');
-      // si Resend todavía no confirmó nada, un «0 %» de fallidos o de quejas sería engañoso: se muestra el conteo SIN porcentaje y se dice por qué
-      html += tarjeta(fmt(m.fallidos), 'Rebotados y fallidos', { pct: m.sinConfirmar ? '' : pctTxt(m.pFallidos), nivel:m.nFallidos, rotulo:'exacta', sub: m.sinConfirmar ? 'Sin confirmación de Resend todavía' : (fdTxt || 'Rebotes, bloqueos y fallos') });
       html += tarjeta(fmt(m.quejas), 'Quejas de spam', { pct: m.sinConfirmar ? '' : pctTxt(m.pQueja), nivel:m.nQueja, rotulo:'exacta' });
-      html += tarjeta(fmt(m.bajas), 'Bajas de suscripción', { pct:pctTxt(m.pBaja), rotulo:'exacta' });
       html += '</div>';
 
       html += seccion('Interacción') + '<div class="rep-metricas">';
@@ -2844,6 +2793,14 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     }
 
     let idActual = null;
+    /** [v2.2.0] «Seleccionados» = personas de la audiencia elegida antes de quitar a nadie: el reporte no lo trae, se lee de las estadísticas de la campaña. Nunca rompe el reporte: si no se puede leer, queda sin dato. */
+    async function extraCampana(id){
+      try{
+        const s = await firebase.firestore().collection('emailCampaigns').doc(id).get();
+        const st = (s.exists && s.data() && s.data().stats) || {};
+        return { seleccionados: emPrimerNumero(st.audienceCount) };
+      }catch(_){ return {}; }
+    }
     async function atribuir(id, btn){
       btn.disabled = true; btn.textContent = 'Actualizando…';
       try{ await emLlamar('emailAtribuirReservas', { modo:'aplicar', campaignId:id }); await abrir(id); }
@@ -2863,9 +2820,9 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       modal.classList.add('abierto');
       try{
         if(!emEstado.datos()) { try{ await emEstado.cargar(); }catch(_){ /* los umbrales son opcionales */ } }
-        const rep = await emLlamar('emailCampanaReporte', { campaignId: id });
+        const [rep, extra] = await Promise.all([emLlamar('emailCampanaReporte', { campaignId: id }), extraCampana(id)]);
         if(idActual !== id) return;
-        pintar(rep);
+        pintar(rep, extra);
       }catch(e){
         $('repTitulo').textContent = emMotivoDe(e) === 'campana_no_encontrada' ? 'La campaña ya no existe' : 'No se pudo cargar el reporte';
         $('repResumen').style.display = 'flex'; $('repResumen').textContent = emMensajeError(e);
@@ -3046,39 +3003,6 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       finally{ corriendo = false; }
     }
     return { ejecutar, frases };
-  })();
-
-  /* =========================================================================
-     [V21-19] CONTACTOS DESACTUALIZADOS -- antes de enviar a clientes, si el índice de contactos tiene más horas de las permitidas (o nunca se construyó),
-     el servidor rechaza con `contactos_desactualizados`. Este modal propio ofrece ir a Audiencias o enviar igual (solo con la casilla marcada).
-     ======================================================================= */
-  const emContactos = (function(){
-    const m = $('modalContactos');
-    let resolver = null;
-    function fin(dec){ if(!resolver) return; const r = resolver; resolver = null; m.classList.remove('abierto'); r(dec); }
-    /** e = el error `contactos_desactualizados` (details: { antiguedadHoras, maxHoras, nunca }). Devuelve 'enviar_igual' | 'audiencias' | 'cancelar'. */
-    function preguntar(e){
-      const d = (e && e.details && typeof e.details === 'object') ? e.details : {};
-      const nunca = d.nunca === true || d.antiguedadHoras == null;
-      return new Promise((resolve)=>{
-        if(resolver) fin('cancelar');
-        resolver = resolve;
-        $('ctxTexto').textContent = nunca
-          ? 'Los contactos nunca se actualizaron. Actualiza los contactos antes de enviar, o confirma que quieres enviar igual.'
-          : 'Los contactos se actualizaron hace ' + emHorasTxt(d.antiguedadHoras) + (N(d.maxHoras) > 0 ? ' (lo recomendado es como máximo ' + fmt(d.maxHoras) + ' h)' : '') + '. Actualiza los contactos antes de enviar, o confirma que quieres enviar igual.';
-        $('ctxCasillaTxt').textContent = nunca ? 'Enviar igual, aunque los contactos nunca se actualizaron' : 'Enviar igual, con contactos de hace ' + emHorasTxt(d.antiguedadHoras);
-        $('ctxCasilla').checked = false; $('ctxEnviarIgual').disabled = true;
-        m.classList.add('abierto');
-        $('ctxCasilla').focus();
-      });
-    }
-    $('ctxCasilla').addEventListener('change', ()=>{ $('ctxEnviarIgual').disabled = !$('ctxCasilla').checked; });
-    $('ctxEnviarIgual').addEventListener('click', ()=>{ if($('ctxCasilla').checked) fin('enviar_igual'); });
-    $('ctxIrAudiencias').addEventListener('click', ()=> fin('audiencias'));
-    $('ctxCancelar').addEventListener('click', ()=> fin('cancelar'));
-    $('ctxCerrar').addEventListener('click', ()=> fin('cancelar'));
-    m.addEventListener('click', (ev)=>{ if(ev.target === m) fin('cancelar'); });
-    return { preguntar };
   })();
 
   // (los filtros de la lista de campañas los cablea emLista: filtros reales)
@@ -4226,7 +4150,7 @@ ${contenido}
       const puedeProgreso = ['enviando','pausada','pausada_reputacion'].indexOf(d.status) !== -1;   // [V21-07] sin esto, una campaña en curso no tenía forma de llegar al monitor
       const btn = (acc, texto, extraAttr)=> '<button class="btn-texto" data-acc="' + esc(acc) + '" data-id="' + esc(id) + '"' + (extraAttr || '') + '>' + esc(texto) + '</button>';
       return `<tr>
-          <td class="campana-nombre c-prim">${esc(d.name || 'Sin título')}${d.esPrueba ? '<span class="etq">Prueba</span>' : ''}${d.armada && d.armada.modo === 'simulacion' ? '<span class="etq">Simulación</span>' : ''}</td>
+          <td class="campana-nombre c-prim">${esc(d.name || 'Sin título')}${d.esPrueba && emEstado.entorno() !== 'produccion' ? '<span class="etq">Prueba</span>' : ''}</td>
           <td>${aud ? `<span class="audiencia-tag">${esc(aud)}</span>` : '<span class="audiencia-extra">—</span>'}${extra ? `<span class="audiencia-extra">+${fmt(extra)}</span>` : ''}</td>
           <td class="c-nw">${esc(emFechaCampana(d))}</td>
           <td><span class="pill ${esc(cls)}">${esc(txt)}</span>${nota ? '<span class="est-nota">' + esc(nota) + '</span>' : ''}${bloqueo ? '<span class="est-nota aviso">' + esc(bloqueo) + '</span>' : ''}</td>
@@ -4788,7 +4712,8 @@ ${contenido}
   /* ===================================================================
      emAudiencias -- página "Audiencias" ([P9]).
      Trabaja con la base REAL de clientes: los números salen de las Functions emailContactosResumen / emailAudienciaPreview (solo cifras, nunca
-     correos). Habilitado = permiso registrado + correo válido + sin baja ni supresión; tener un correo por una reserva NO es permiso.
+     correos). Habilitado = toda persona de la base (cliente, reserva online, cuenta o compra) salvo bajas, solicitudes de derechos, rebotes o quejas, correos no válidos o de relleno y quienes rechazaron novedades.
+     La asistencia a las citas (ASISTIÓ, NO ASISTIÓ, PENDIENTE, CANCELADA) no decide nada de esto: el panel solo muestra lo que devuelve el servidor.
      El navegador lee `emailAudiences` (colección chica) UNA vez por entrada a la vista y escribe solo audiencias (sin cambios).
      =================================================================== */
   const emAudiencias = (function(){
@@ -4855,28 +4780,50 @@ ${contenido}
 
     /* ---------- resumen de la base de contactos ---------- */
     function celda(id, valor, vacio){ const c = $(id); const n = c.querySelector('.rs-num'); n.textContent = valor; n.dataset.vacio = vacio ? '1' : ''; }
+    /** Contadores por base legal. Acepta lo nuevo del servidor (porBase, sinBaseLegal) y, si es una versión anterior, lo que se puede deducir; null = el servidor no lo informa. */
+    function basesDe(r){
+      const hb = (r.habilitadosPorBase && typeof r.habilitadosPorBase === 'object') ? r.habilitadosPorBase : ((r.porBase && typeof r.porBase === 'object') ? r.porBase : {});
+      const bl = (r.baseLegal && typeof r.baseLegal === 'object') ? r.baseLegal : {};
+      const ex = (r.excluidos && r.excluidos.porMotivo) || {}, cons = r.consentimiento || {};
+      return {
+        consentimiento: emPrimerNumero(hb.consentimiento, cons.otorgado),
+        relacion: emPrimerNumero(hb.relacion_comercial),
+        sin: emPrimerNumero(r.sinBaseLegal, hb.sin_base_legal, ex.sin_base_legal, bl.sin_base, ex.sin_consentimiento),   // «sin_registro» (consentimiento) ya no vale como «sin base»: quien no pidió recibir novedades igual puede estar habilitado por su relación comercial
+      };
+    }
     function pintarResumen(r){
       resumen = r;
-      const t = r.totales || {}, cons = r.consentimiento || {}, sup = r.suprimidos || {};
+      const t = r.totales || {}, cons = r.consentimiento || {}, sup = r.suprimidos || {}, ex = (r.excluidos && r.excluidos.porMotivo) || {};
       const completo = !(r.indice && r.indice.completo === false);
+      const b = basesDe(r);
       celda('auTot', completo ? fmtN(t.contactos) : '—', !completo || t.contactos == null);
       celda('auHab', completo ? fmtN(r.habilitados) : '—', !completo || r.habilitados == null);
-      celda('auSinReg', completo ? fmtN(cons.sin_registro) : '—', !completo || cons.sin_registro == null);
+      celda('auSinBase', completo ? fmtN(b.sin) : '—', !completo || b.sin == null);
+      $('auSinBase').classList.toggle('rs-nula', completo && b.sin === 0);   // sin nadie en esta categoría la tarjeta se ve atenuada
       celda('auBaja', completo ? fmtN(sup.total) : '—', !completo || sup.total == null);
+      // por base legal: entre los habilitados, quiénes lo son por consentimiento y quiénes por ser clientes (relación comercial)
+      $('auBases').textContent = (completo && (b.consentimiento != null || b.relacion != null))
+        ? 'Habilitados por base legal: ' + fmtN(b.consentimiento) + ' con consentimiento · ' + fmtN(b.relacion) + ' clientes con relación comercial.' : '';
+      // por qué quedan fuera, en palabras simples: solo estas causas (baja · solicitud de derechos · rebote o queja · correo no válido · correo de relleno · rechazaron novedades); haber reservado, asistido o no no excluye a nadie
       const det = [];
       if(completo){
-        if(cons.otorgado != null) det.push('Con permiso registrado: ' + fmt(cons.otorgado));
-        if(cons.revocado) det.push('Permiso revocado: ' + fmt(cons.revocado));
-        if(t.soloReserva) det.push('Correos que solo existen en reservas (no cuentan): ' + fmt(t.soloReserva));
-        if(t.invalidos) det.push('Correos no válidos: ' + fmt(t.invalidos));
-        if(r.regla && r.regla.texto) det.push(String(r.regla.texto));
+        const pm = sup.porMotivo || {};
+        const bajas = N(pm.baja) + N(pm.manual), rebotes = N(pm.rebote_duro) + N(pm.rebote_blando) + N(pm.bloqueado) + N(pm.invalido) + N(pm.queja_spam), derechos = N(pm.oposicion_arco);
+        if(bajas) det.push('Con baja: ' + fmt(bajas));
+        if(derechos) det.push('Por solicitud de derechos (formulario del sitio): ' + fmt(derechos));   // v2.2.0: quien pidió no recibir comunicaciones comerciales en el formulario del sitio queda fuera solo
+        if(rebotes) det.push('Con rebote o queja de spam: ' + fmt(rebotes));
+        if(N(sup.total) - bajas - derechos - rebotes > 0) det.push('Otras supresiones: ' + fmt(N(sup.total) - bajas - derechos - rebotes));
+        if(t.invalidos) det.push('Con correo no válido: ' + fmt(t.invalidos));
+        if(N(cons.revocado) || N(ex.revocado)) det.push('Rechazaron recibir novedades: ' + fmt(N(cons.revocado) || N(ex.revocado)));
+        if(N(ex.placeholder)) det.push('Con correo de relleno: ' + fmt(ex.placeholder));
       }
-      $('auDetalle').textContent = det.join(' · ');
+      $('auDetalle').textContent = det.length ? 'Quedan fuera: ' + det.join(' · ') + '.' : '';
       const ind = r.indice || {};
       $('auActualizado').textContent = completo && ind.antiguedadHoras != null ? 'Contactos actualizados hace ' + (ind.antiguedadHoras < 1 ? 'menos de 1' : Math.round(ind.antiguedadHoras)) + ' h' : '';
       const av = $('auAviso');
-      if(!completo){ av.textContent = 'Aún no se han calculado los contactos. Pulsa «Actualizar contactos» para ver los números reales.'; av.style.display = ''; }
-      else if(ind.antiguedadHoras != null && ind.antiguedadHoras > 24){ av.textContent = 'Los contactos se actualizaron hace más de 24 horas: los números pueden estar desfasados. Pulsa «Actualizar contactos».'; av.style.display = ''; }
+      if(!completo){ av.textContent = 'Falta calcular tus contactos (se hace una sola vez tras esta versión). Pulsa «Actualizar contactos» para ver los números reales.'; av.style.display = ''; }
+      else if(N(r.sinRecalcular) > 0){ av.textContent = 'Hay ' + fmt(r.sinRecalcular) + ' contactos que todavía no se calculan con esta versión (se hace una sola vez). Pulsa «Actualizar contactos» para verlos bien aquí.'; av.style.display = ''; }
+      else if(ind.antiguedadHoras != null && ind.antiguedadHoras > 24){ av.textContent = 'Los contactos se actualizaron hace más de 24 horas. Si llegaron clientes nuevos, pulsa «Actualizar contactos» para verlos aquí; no hace falta para enviar.'; av.style.display = ''; }
       else av.style.display = 'none';
       pintarConteosSegmentos();
     }
@@ -4884,7 +4831,9 @@ ${contenido}
       try{ pintarResumen(await emLlamar('emailContactosResumen', {})); }
       catch(e){
         const av = $('auAviso'); av.textContent = 'No se pudo leer la base de contactos: ' + emMensajeError(e); av.style.display = '';
-        ['auTot','auHab','auSinReg','auBaja'].forEach((id)=> celda(id, '—', true));
+        ['auTot','auHab','auSinBase','auBaja'].forEach((id)=> celda(id, '—', true));
+        $('auSinBase').classList.remove('rs-nula');
+        $('auBases').textContent = ''; $('auDetalle').textContent = '';
       }
     }
     async function actualizarContactos(){
@@ -4897,10 +4846,9 @@ ${contenido}
           'Esto solo actualiza el índice de contactos de Email Marketing. No modifica clientes, reservas ni pagos.'],
           botones:[{ id:'no', texto:'Cancelar', tipo:'outline' }, { id:'si', texto:'Aplicar', tipo:'solid' }] });
         if(r !== 'si') return;
-        btn.textContent = 'Actualizando…';
+        btn.textContent = 'Actualizando… puede tardar unos minutos';
         await emLlamar('emailContactosReconstruir', { modo:'aplicar' });
         await cargarResumen();
-        bh.cargar();
         emResumen.cargar(true);
       }catch(e){ emAvisoError('No se pudieron actualizar los contactos', e); }
       finally{ btn.disabled = false; btn.textContent = txt0; }
@@ -4909,7 +4857,6 @@ ${contenido}
     /* ---------- lista ---------- */
     async function abrirVista(){
       cargarResumen();
-      bh.cargar();
       if(listaCargada) return;
       await cargarLista();
     }
@@ -4945,7 +4892,9 @@ ${contenido}
       }catch(e){ emAvisoError('No se pudo eliminar la audiencia', e); }
     }
 
-    const MOTIVO_TXT = { sin_consentimiento:'sin permiso registrado', suprimidos:'de baja o suprimidos', revocados:'con el permiso revocado', invalidos:'con correo no válido', placeholder:'con correo de relleno' };
+    const MOTIVO_TXT = { suprimidos:'de baja o rebotados', revocados:'que rechazaron novedades', invalidos:'con correo no válido', placeholder:'con correo de relleno' };
+    /** «Sin base legal» del desglose: el servidor lo manda como sinBaseLegal y, por compatibilidad, también como sinConsentimiento; se cuenta UNA sola vez. null si no viene. */
+    const sinBaseDe = (d)=> emPrimerNumero(d.sinBaseLegal, d.sinConsentimiento, d.sin_base_legal, d.sin_consentimiento);
     /** Desglose en texto a partir de la respuesta de emailAudienciaPreview (acepta el formato nuevo y el anterior). */
     function partesDesglose(d){
       const p = [];
@@ -4953,6 +4902,8 @@ ${contenido}
       else if(d.totalBruto != null) p.push('<b>' + fmt(d.totalBruto) + '</b> en bruto');
       if(d.duplicados) p.push(fmt(d.duplicados) + ' duplicado' + (d.duplicados === 1 ? '' : 's'));
       Object.keys(MOTIVO_TXT).forEach((k)=>{ if(N(d[k]) > 0) p.push(fmt(d[k]) + ' ' + MOTIVO_TXT[k]); });
+      if(N(sinBaseDe(d)) > 0) p.push(fmt(sinBaseDe(d)) + ' sin base legal');
+      if(d.porBase && typeof d.porBase === 'object' && (N(d.porBase.consentimiento) > 0 || N(d.porBase.relacion_comercial) > 0)) p.push('de los habilitados: ' + fmt(d.porBase.consentimiento) + ' con consentimiento y ' + fmt(d.porBase.relacion_comercial) + ' clientes con relación comercial');
       if(d.rechazados) p.push(fmt(d.rechazados) + ' dado' + (d.rechazados === 1 ? '' : 's') + ' de baja');
       if(d.ventana && d.ventana.desde) p.push('reservas del ' + esc(d.ventana.desde) + ' al ' + esc(d.ventana.hasta));
       if(d.truncadaA) p.push('lista recortada a ' + fmt(d.truncadaA));
@@ -4965,7 +4916,7 @@ ${contenido}
       const celdaEl = fila.querySelector('td');
       const btn = document.querySelector(`[data-check="${CSS.escape(id)}"]`);
       fila.style.display = '';
-      celdaEl.textContent = 'Comprobando contra clientes, permisos y supresiones…';
+      celdaEl.textContent = 'Comprobando contra clientes, base legal y bajas…';
       if(btn) btn.disabled = true;
       try{
         const r = await emLlamar('emailAudienciaPreview', { audienceId: id });
@@ -5165,11 +5116,11 @@ ${contenido}
       finally{ btn.disabled = false; btn.textContent = 'Guardar audiencia'; }
     }
 
-    /* ---------- alta manual de permiso (única vía para que un administrador deje constancia): #modalConsentimiento ---------- */
+    /* ---------- alta manual de consentimiento (la vía para que un administrador deje constancia de que la persona pidió recibir novedades): #modalConsentimiento ---------- */
     function abrirConsentimiento(){
       $('conEmail').value = ''; $('conCanal').value = 'presencial'; $('conNota').value = '';
       $('conMsg').className = 'cfg-msg'; $('conMsg').textContent = '';
-      $('conGuardar').disabled = false; $('conGuardar').textContent = 'Registrar permiso';
+      $('conGuardar').disabled = false; $('conGuardar').textContent = 'Registrar consentimiento';
       $('modalConsentimiento').classList.add('abierto'); $('conEmail').focus();
     }
     function cerrarConsentimiento(){ $('modalConsentimiento').classList.remove('abierto'); }
@@ -5187,191 +5138,31 @@ ${contenido}
         try{ r = await emLlamar('emailConsentimientoRegistrar', datos); }
         catch(e1){
           if(emMotivoDe(e1) !== 'consentimiento_ya_registrado') throw e1;
-          // [V21-13] ya hay un permiso registrado: se muestra lo anterior (como texto, nunca como HTML) y solo se reemplaza si la persona lo confirma
+          // [V21-13] ya hay un consentimiento registrado: se muestra lo anterior (como texto, nunca como HTML) y solo se reemplaza si la persona lo confirma
           const d = (e1.details && typeof e1.details === 'object') ? e1.details : {};
           const canalAnt = Object.prototype.hasOwnProperty.call(CANAL_TXT, d.canalAnterior) ? CANAL_TXT[d.canalAnterior] : String(d.canalAnterior || '—').slice(0, 40);
           const lineas = ['Cómo lo pidió antes: ' + canalAnt, 'Nota anterior: «' + String(d.notaAnterior || '—').slice(0, 300) + '»', 'Registrado por ' + String(d.porAnterior || 'un administrador').slice(0, 80) + (d.atAnterior ? ' el ' + emFechaHora(d.atAnterior) : '') + '.'];
           if(d.puedeReemplazar !== true){
-            await emAviso({ titulo:'Ya hay un permiso registrado', textos:['Esta persona ya tiene un permiso que no se puede reemplazar desde aquí: viene de otra fuente (por ejemplo, el formulario del sitio) y vale más que una nota manual.'], lista:lineas });
-            btn.disabled = false; btn.textContent = 'Registrar permiso'; return;
+            await emAviso({ titulo:'Ya hay un consentimiento registrado', textos:['Esta persona ya tiene un consentimiento que no se puede reemplazar desde aquí: viene de otra fuente (por ejemplo, el formulario del sitio) y vale más que una nota manual.'], lista:lineas });
+            btn.disabled = false; btn.textContent = 'Registrar consentimiento'; return;
           }
-          const dec = await emAviso({ titulo:'Ya hay un permiso registrado', textos:['Esta persona ya tiene un permiso registrado a mano. Si lo reemplazas, el registro anterior queda guardado en la auditoría.'], lista:lineas,
-            botones:[{ id:'no', texto:'No reemplazar', tipo:'outline' }, { id:'si', texto:'Reemplazar el permiso', tipo:'solid' }] });
-          if(dec !== 'si'){ btn.disabled = false; btn.textContent = 'Registrar permiso'; return; }
+          const dec = await emAviso({ titulo:'Ya hay un consentimiento registrado', textos:['Esta persona ya tiene un consentimiento registrado a mano. Si lo reemplazas, el registro anterior queda guardado en la auditoría.'], lista:lineas,
+            botones:[{ id:'no', texto:'No reemplazar', tipo:'outline' }, { id:'si', texto:'Reemplazar el consentimiento', tipo:'solid' }] });
+          if(dec !== 'si'){ btn.disabled = false; btn.textContent = 'Registrar consentimiento'; return; }
           r = await emLlamar('emailConsentimientoRegistrar', Object.assign({}, datos, { confirmarReemplazo:true }));
         }
         cerrarConsentimiento(); cargarResumen();
-        await emAviso({ titulo: (r && r.reemplazo) ? 'Permiso reemplazado' : 'Permiso registrado', texto:'Listo. Esa persona ya puede recibir campañas (mientras no se dé de baja). Quedó anotado en la auditoría.' });
-      }catch(e){ btn.disabled = false; btn.textContent = 'Registrar permiso'; err(emMensajeError(e)); }
+        await emAviso({ titulo: (r && r.reemplazo) ? 'Consentimiento reemplazado' : 'Consentimiento registrado', texto:'Listo. Esa persona ya puede recibir campañas (mientras no se dé de baja). Quedó anotado en la auditoría.' });
+      }catch(e){ btn.disabled = false; btn.textContent = 'Registrar consentimiento'; err(emMensajeError(e)); }
     }
 
     // ---------- wiring ----------
     $('btnNuevaAudiencia').addEventListener('click', abrirModal);
-    $('btnRegistrarPermiso').addEventListener('click', abrirConsentimiento);
+    $('btnRegistrarConsentimiento').addEventListener('click', abrirConsentimiento);
     $('conGuardar').addEventListener('click', guardarConsentimiento);
     $('conCancelar').addEventListener('click', cerrarConsentimiento);
     $('conCerrar').addEventListener('click', cerrarConsentimiento);
     $('modalConsentimiento').addEventListener('click', (ev)=>{ if(ev.target === $('modalConsentimiento')) cerrarConsentimiento(); });
-    /* ---------- [v2.1.7] Reconocer la base histórica: declaración auditable de la dueña ----------
-       Solo la dueña (en producción), con la frase exacta y su contraseña reciente. El servidor decide a quién alcanza: base HISTÓRICA de clientes (fichas anteriores al corte, no nacidas de una reserva del sitio),
-       con correo válido, sin baja/rebote/queja/rechazo y sin relleno. Nunca pisa una preferencia que ya existe; la baja siempre gana. No envía ningún correo. Todo texto dinámico entra con textContent. */
-    const bh = (function(){
-      let d = null, modo = null, ocupado = false, falloCarga = '', foco = null, avance = 0;
-      const normF = (x)=> String(x == null ? '' : x).normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase();
-      const vigente = ()=> ((d && d.declaraciones) || []).find((x)=> x.estado === 'completa' || x.estado === 'en_curso') || null;
-      const enCurso = ()=> ((d && d.declaraciones) || []).find((x)=> x.estado === 'en_curso') || null;
-      const soloDuena = ()=> window.EM_HOST_TIPO === 'produccion' && !window.EM_ES_DUENA;     // en DEV cualquier ADMIN prueba; el servidor vuelve a exigirlo
-      const fechaTxt = (iso)=> { const t = iso ? new Date(iso) : null; return (!t || isNaN(t.getTime())) ? '—' : t.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric', timeZone:TZ }); };
-      function lineas(ul, items){ ul.textContent = ''; items.forEach((t)=>{ const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); }
-      function excluidosTxt(ex){
-        ex = ex || {};
-        const it = [];
-        if(N(ex.suprimido)) it.push(fmt(ex.suprimido) + ' con baja, rebote o queja (nunca se tocan)');
-        if(N(ex.revocado)) it.push(fmt(ex.revocado) + ' que rechazaron recibir novedades (se respeta)');
-        if(N(ex.correo_de_relleno)) it.push(fmt(ex.correo_de_relleno) + ' con correo de relleno');
-        if(N(ex.correo_invalido)) it.push(fmt(ex.correo_invalido) + ' con correo inválido');
-        if(N(ex.sin_evidencia_historica)) it.push(fmt(ex.sin_evidencia_historica) + ' que no son de la base histórica (solo reservaron o compraron en el sitio, o llegaron después de hoy)');
-        if(N(ex.solo_reserva)) it.push(fmt(ex.solo_reserva) + ' que solo existen por una reserva (no están en tu base de clientes)');
-        if(N(ex.preferencia_existente)) it.push(fmt(ex.preferencia_existente) + ' con una preferencia anterior (no se pisa)');
-        return it;
-      }
-      function pintar(){
-        const t = $('bhTexto'), av = $('bhAviso'), ab = $('bhAbrir'), an = $('bhAnular');
-        av.style.display = 'none'; av.textContent = ''; an.style.display = 'none';
-        if(!d){
-          t.textContent = 'No se pudo leer el estado de esta función' + (falloCarga ? ': ' + falloCarga : '.');
-          ab.textContent = 'Reintentar'; ab.disabled = false; ab.dataset.modo = 'reintentar'; return;
-        }
-        ab.dataset.modo = 'abrir';
-        const ind = d.indice || {}, ec = enCurso(), v = vigente(), prev = d.ultimaCompleta;
-        an.style.display = (v && !soloDuena()) ? '' : 'none';
-        if(ec){ av.textContent = 'Hay una declaración a medias (quedó cortada por tiempo). Pulsa «Continuar la declaración…» para terminarla.'; av.style.display = ''; }
-        ab.textContent = ec ? 'Continuar la declaración…' : (prev ? 'Hacer otra declaración…' : 'Reconocer mi base…');
-        if(!ind.completo || !ind.fresco){
-          t.textContent = ind.parcial ? 'La última actualización de contactos quedó a medias. Pulsa «Actualizar contactos» otra vez antes de continuar.'
-            : 'Primero pulsa «Actualizar contactos» para que la lista esté al día (menos de 24 horas). Después podrás ver cuántos clientes se reconocen.';
-          ab.disabled = true; return;
-        }
-        let txt = fmt(d.reconocerN) + ' clientes de tu base histórica no tienen permiso registrado y se pueden reconocer con tu declaración (' + fmt(d.yaTenianPermiso) + ' ya tienen permiso). '
-          + 'Las bajas, rebotes, quejas y rechazos siempre quedan fuera, y cualquier persona podrá darse de baja con un clic.';
-        if(prev) txt += ' Última declaración: ' + fechaTxt(prev.creadaAt) + ' · ' + fmt(prev.reconocidos) + ' clientes. Quienes llegaron después no están cubiertos.';
-        if(soloDuena()) txt += ' Solo la dueña puede hacer o anular esta declaración.';
-        t.textContent = txt;
-        ab.disabled = soloDuena() || !(N(d.reconocerN) > 0 || ec);
-      }
-      async function cargar(){
-        try{ d = await emLlamar('emailBaseHistoricaDeclarar', { modo:'ensayo' }); falloCarga = ''; }catch(e){ d = null; falloCarga = emMensajeError(e); }
-        pintar();
-      }
-      function bloquear(b){
-        ocupado = b;
-        ['bhmFrase', 'bhmClave', 'bhmCancelar', 'bhmCerrar'].forEach((id)=> { $(id).disabled = b; });
-      }
-      const alTeclear = (ev)=>{ if(ev.key === 'Escape' && !ocupado){ ev.stopPropagation(); cerrar(); } };
-      function abrir(m){
-        if(!d) return;
-        modo = m;
-        foco = document.activeElement;
-        const anular = m === 'anular', v = vigente(), prev = d.ultimaCompleta, otra = !anular && !!prev && !enCurso();
-        $('bhmTitulo').textContent = anular ? 'Anular la declaración' : (otra ? 'Hacer otra declaración' : 'Reconocer tu base histórica');
-        $('bhmIntro').textContent = anular
-          ? 'Esto deja SIN registro de permiso a quienes esa declaración reconoció. Lo que cada persona cambió después (una baja, o un permiso que dio ella misma) se respeta. No borra nada, y no se toca ningún cliente, reserva ni pago. '
-            + 'Ojo: quienes queden anulados no se pueden volver a reconocer con una declaración; habría que registrarlos uno a uno.'
-          : (otra
-            ? 'Ya hiciste una declaración el ' + fechaTxt(prev.creadaAt) + ' (' + fmt(prev.reconocidos) + ' clientes). Esta alcanzaría a ' + fmt(d.reconocerN) + ' clientes que no estaban cubiertos. '
-              + 'Continúa SOLO si esas personas también se registraron voluntariamente en tu agenda y ya recibían tus comunicaciones (no si solo dejaron su correo al reservar o comprar). No se envía ningún correo ahora.'
-            : 'Vas a declarar, bajo tu responsabilidad, que tus clientes se registraron voluntariamente y ya recibían comunicaciones. El sistema registra el permiso de cada persona alcanzada (con la fecha, tu nombre y el texto declarado). No se envía ningún correo ahora: cada campaña se confirma aparte.');
-        $('bhmCifrasTit').textContent = anular ? 'Qué se anularía' : 'Qué pasaría';
-        lineas($('bhmCifras'), anular
-          ? [fmt(v && v.resumen && v.resumen.reconocidos) + ' permisos creados por esa declaración pasarían a «sin registro» (salvo los que la persona haya cambiado).']
-          : [fmt(d.reconocerN) + ' clientes quedarían con permiso por tu declaración.', fmt(d.yaTenianPermiso) + ' ya tienen permiso y no se tocan.'].concat(excluidosTxt(d.excluidos).map((x)=> 'Fuera: ' + x)));
-        $('bhmTextoWrap').style.display = anular ? 'none' : '';
-        $('bhmTexto').textContent = d.texto || '';
-        $('bhmFraseTxt').textContent = anular ? d.fraseAnular : d.fraseDeclarar;
-        $('bhmFrase').value = ''; $('bhmClave').value = '';
-        $('bhmClaveWrap').style.display = (emTieneClave() && Date.now() - emUltimaReauth >= 240000) ? '' : 'none';
-        const msg = $('bhmMsg'); msg.className = 'cfg-msg'; msg.removeAttribute('role'); msg.textContent = '';
-        bloquear(false); avance = 0;
-        $('bhmConfirmar').disabled = true; $('bhmConfirmar').textContent = 'Confirmar';
-        $('modalBaseHistorica').classList.add('abierto');
-        document.addEventListener('keydown', alTeclear, true);
-        $('bhmFrase').focus();
-      }
-      function validar(){ const esp = modo === 'anular' ? d && d.fraseAnular : d && d.fraseDeclarar; $('bhmConfirmar').disabled = ocupado || !esp || normF($('bhmFrase').value) !== normF(esp); }
-      function cerrar(){
-        if(ocupado) return;
-        $('modalBaseHistorica').classList.remove('abierto'); modo = null;
-        $('bhmClave').value = ''; $('bhmFrase').value = '';                                  // la contraseña y la frase no quedan en la página
-        document.removeEventListener('keydown', alTeclear, true);
-        if(foco && foco.focus){ try{ foco.focus(); }catch(e){} } foco = null;
-      }
-      async function confirmar(){
-        if(!modo || ocupado) return;
-        const anular = modo === 'anular', btn = $('bhmConfirmar'), msg = $('bhmMsg');
-        const frase = $('bhmFrase').value.trim();                                            // se captura UNA vez: no cambia durante la ejecución
-        const otra = !anular && !enCurso() && !!(d && d.hayDeclaracionCompleta);
-        bloquear(true); btn.disabled = true; btn.textContent = anular ? 'Anulando…' : 'Registrando…';
-        msg.className = 'cfg-msg'; msg.removeAttribute('role'); msg.textContent = 'Trabajando… no cierres esta ventana.';
-        const tot = { n:0, previos:0 };
-        try{
-          await emReautenticar($('bhmClave').value);
-          let id = anular ? (vigente() || {}).id : (enCurso() || {}).id;
-          let ultima = null;
-          for(let i = 0; i < 6; i++){                                                        // si el servidor corta por tiempo, se vuelve a llamar (reanudable e idempotente)
-            const datos = { modo: anular ? 'anular' : 'aplicar', frase };
-            if(id) datos.declaracionId = id;
-            if(otra) datos.confirmarNueva = true;
-            const r = await emLlamar('emailBaseHistoricaDeclarar', datos);
-            ultima = r; id = r.declaracionId || id;
-            if(anular){ tot.n += N(r.anulados); tot.previos += N(r.previosAnulados); } else { tot.n += N(r.reconocidos); }
-            avance = tot.n;
-            msg.textContent = (anular ? 'Anulados: ' : 'Reconocidos: ') + fmt(tot.n) + (r.cortado ? ' · continuando… no cierres esta ventana.' : '');
-            if(!r.cortado) break;
-          }
-          bloquear(false); cerrar();
-          await cargar(); cargarResumen(); emResumen.cargar(true);
-          const completa = !!(ultima && ultima.completa), sinCambios = !!(ultima && ultima.sinCambios);
-          const lista = [];
-          if(anular){
-            lista.push('Permisos anulados: ' + fmt(tot.n));
-            if(tot.previos) lista.push('Rastros de permiso (de una supresión manual) que se limpiaron: ' + fmt(tot.previos));
-            lista.push('Respetados porque la persona los cambió: ' + fmt(N(ultima && ultima.cambiadosPorLaPersona)));
-          }else if(!sinCambios){
-            lista.push('Clientes reconocidos: ' + fmt(tot.n));
-            if(N(ultima && ultima.suprimidos) + N(ultima && ultima.revocados)) lista.push('Quedaron fuera porque tienen una baja o un rechazo que llegó justo ahora: ' + fmt(N(ultima.suprimidos) + N(ultima.revocados)));
-            if(N(ultima && ultima.sinEvidencia)) lista.push('Quedaron fuera por no ser de la base histórica (o correo de relleno): ' + fmt(ultima.sinEvidencia));
-          }
-          if(ultima && N(ultima.errores)) lista.push('Quedaron ' + fmt(ultima.errores) + ' pendientes por un error: pulsa de nuevo para terminar.');
-          if(ultima && ultima.auditoriaOk === false) lista.push('Atención: no pude dejar el registro de cierre en la auditoría. Los permisos sí quedaron guardados; avisa para revisarlo.');
-          if(ultima && ultima.registroOk === false) lista.push('Atención: no pude actualizar el resumen de la declaración. Avisa para revisarlo.');
-          let titulo, texto;
-          if(anular){ titulo = completa ? 'Declaración anulada' : 'Anulación a medias'; texto = completa ? 'Listo. Quedó registrado en la auditoría. No se envió ningún correo.' : 'Falta terminar. Pulsa «Anular la declaración…» otra vez.'; }
-          else if(sinCambios){ titulo = 'Nada que reconocer'; texto = 'No había clientes por reconocer ahora; no se registró nada.'; }
-          else if(completa){ titulo = 'Base histórica reconocida'; texto = 'Listo. Quedó registrada tu declaración. No se envió ningún correo: cada campaña se confirma aparte, escribiendo ENVIAR y el número exacto.'; }
-          else { titulo = 'Declaración a medias'; texto = 'Se avanzó, pero falta terminar. Pulsa «Continuar la declaración…».'; }
-          await emAviso({ titulo, textos:[texto], lista });
-        }catch(e){
-          const m = emMotivoDe(e);
-          if(m === 'reauth_requerida') emUltimaReauth = 0;
-          bloquear(false); btn.textContent = 'Confirmar'; validar();
-          if(emTieneClave() && (m === 'reauth_requerida' || (e && e.code === 'em/falta-clave'))){ $('bhmClaveWrap').style.display = ''; $('bhmClave').focus(); }
-          msg.className = 'cfg-msg err'; msg.setAttribute('role', 'alert');
-          msg.textContent = m === 'solo_duena' ? 'Solo la dueña puede hacer o anular esta declaración.' : (emMensajeReauth(e) || emMensajeError(e));
-          const det = emDetalleLista(e); if(det.length) msg.textContent += ' ' + det.join(' · ');
-          if(avance) msg.textContent += ' Avance guardado hasta ahora: ' + fmt(avance) + '. Vuelve a confirmar para continuar donde quedó.';
-          if(!emTieneClave() && m === 'reauth_requerida') msg.textContent += ' Vuelve a pulsar «Confirmar» para confirmar tu cuenta de Google.';
-          cargar();
-        }finally{ $('bhmClave').value = ''; }
-      }
-      $('bhAbrir').addEventListener('click', ()=> { if($('bhAbrir').dataset.modo === 'reintentar') cargar(); else abrir('aplicar'); });
-      $('bhAnular').addEventListener('click', ()=> abrir('anular'));
-      $('bhmFrase').addEventListener('input', validar);
-      $('bhmConfirmar').addEventListener('click', confirmar);
-      $('bhmCancelar').addEventListener('click', cerrar);
-      $('bhmCerrar').addEventListener('click', cerrar);
-      $('modalBaseHistorica').addEventListener('click', (ev)=>{ if(ev.target === $('modalBaseHistorica')) cerrar(); });
-      return { cargar };
-    })();
     $('auActualizar').addEventListener('click', actualizarContactos);
     $('audCerrar').addEventListener('click', cerrarModal);
     $('audCancelar').addEventListener('click', cerrarModal);
@@ -5423,12 +5214,16 @@ ${contenido}
       queja_spam:   'Marcó el correo como spam',
       bloqueado:    'Bloqueado por el proveedor',
       invalido:     'Correo con formato inválido',
+      oposicion_arco:'Solicitud de derechos (formulario del sitio)',   // v2.2.0: la persona pidió no recibir comunicaciones comerciales en el formulario de derechos del sitio
     };
     const ORIGEN = {
       link:'Enlace de baja', admin:'Administración', planificador:'Sistema',
       webhook_proveedor:'Webhook de Resend',
+      formulario_derechos:'Formulario de derechos',   // v2.2.0
       brevo_webhook:'Webhook (histórico)', // compat: supresiones creadas antes de la migración
     };
+    /** Texto de un motivo u origen: solo claves propias del mapa (un valor desconocido o raro, como «constructor», nunca rompe la pantalla ni muestra código); si no existe, el valor tal cual o «—». */
+    const txtDe = (mapa, k)=> Object.prototype.hasOwnProperty.call(mapa, k) ? mapa[k] : String(k == null || k === '' ? '—' : k).slice(0, 80);
 
     async function abrirVista(){
       if(listaCargada) return;
@@ -5451,22 +5246,23 @@ ${contenido}
     /** Fila con los valores que se ordenan (correo, motivo y origen tal como se leen, fecha en milisegundos) + la supresión tal cual para dibujarla. */
     function vista(s){
       const f = emDate(s.createdAt);
-      return { s, email: String(s.email || s.id || ''), motivo: String(Object.prototype.hasOwnProperty.call(MOTIVO, s.reason) ? MOTIVO[s.reason] : (s.reason || '—')),
-        origen: String(Object.prototype.hasOwnProperty.call(ORIGEN, s.source) ? ORIGEN[s.source] : (s.source || '—')), fecha: f && Number.isFinite(f.getTime()) ? f.getTime() : null };
+      return { s, email: String(s.email || s.id || ''), motivo: String(txtDe(MOTIVO, s.reason)),
+        origen: String(txtDe(ORIGEN, s.source)), fecha: f && Number.isFinite(f.getTime()) ? f.getTime() : null };
     }
     function filaSupHtml(v){
       const s = v.s;
       const reactivable = s.reason === 'manual';
+      // una baja del cliente o una solicitud de derechos son decisión de la persona: el administrador no las revierte (el servidor tampoco lo permite)
       const accion = reactivable
         ? `<button class="btn-texto" data-react="${esc(s.email)}" style="padding:4px 0;">Reactivar</button>`
-        : (s.reason === 'baja'
+        : (s.reason === 'baja' || s.reason === 'oposicion_arco'
             ? '<span style="font-size:12px;color:var(--texto-bajo);">Solo el cliente</span>'
             : '<span style="font-size:12px;color:var(--texto-bajo);">—</span>');
       return `
           <tr>
             <td class="campana-nombre c-prim" style="word-break:break-all;">${esc(s.email || s.id)}</td>
-            <td>${esc(MOTIVO[s.reason] || s.reason || '—')}</td>
-            <td>${esc(ORIGEN[s.source] || s.source || '—')}</td>
+            <td>${esc(txtDe(MOTIVO, s.reason))}</td>
+            <td>${esc(txtDe(ORIGEN, s.source))}</td>
             <td class="c-nw">${fechaCorta(s.createdAt)}</td>
             <td style="color:var(--texto-bajo); font-size:12.5px;">${esc(s.detail || '')}</td>
             <td>${accion}</td>
@@ -5558,6 +5354,27 @@ ${contenido}
      [P7] PROGRESO REAL de una campaña (paso 3): escucha el documento de la campaña (onSnapshot) y muestra SOLO conteos reales
      (progreso/stats del servidor). Pausar / Reanudar / Cancelar / «Procesar ahora». Sin bucle en el navegador: el avance lo da el servidor.
      ======================================================================= */
+  /** [v2.2.0] Las cifras del monitor a partir del documento de la campaña (progreso + stats del servidor). Pura. Devuelve { lista:[[etiqueta, número|texto]], progresoPct:0..100|null }. */
+  function emCifrasEnVivo(d){
+    const pr = d.progreso || null, s = d.stats || {};
+    const objetivo = pr ? N(pr.objetivo) : N(s.targetCount);
+    const enviados = pr ? N(pr.enviados) : N(s.sentCount);
+    const num = (x)=> emPrimerNumero(x);
+    const sel = num(s.audienceCount);
+    const pend = pr ? (N(pr.pendientes) + N(pr.enReintento)) : null;   // [v2.2.0 P3] igual que el reporte: pendientes (sin enviar + en cola) MÁS los que esperan un reintento; antes «Progreso 100 %» y «Pendientes 0» mientras quedaban correos en reintento
+    const ent = num(s.deliveredCount);
+    const sinEventos = enviados > 0 && !ent && ['hardBounceCount','softBounceCount','blockedCount','invalidCount','failedEventCount'].every((k)=> !N(s[k]));
+    const reb = ['hardBounceCount','softBounceCount','blockedCount','invalidCount'].some((k)=> num(s[k]) != null) ? ['hardBounceCount','softBounceCount','blockedCount','invalidCount'].reduce((a, k)=> a + N(s[k]), 0) : null;
+    const err = pr ? N(pr.fallidos) : num(s.failedCount);
+    const baj = num(s.unsubscribeCount);
+    const lista = [
+      ['Seleccionados', sel == null ? '—' : sel], ['Habilitados', objetivo],
+      ['Pendientes', pend == null ? '—' : pend], ['Enviados', enviados],
+      ['Entregados', sinEventos ? 'Sin confirmación todavía' : (ent == null ? '—' : ent)],
+      ['Rebotes', reb == null ? '—' : reb], ['Errores', err == null ? '—' : err], ['Bajas', baj == null ? '—' : baj],
+    ];
+    return { lista, progresoPct: pend != null ? emProgresoPct(objetivo, pend) : (objetivo > 0 ? emProgresoPct(objetivo, Math.max(0, objetivo - enviados)) : null) };
+  }
   const emProgreso = (function(){
     let unsub = null, id = null, ultimo = null, tLat = null;
     const EST = { activa:'Enviando', esperando_cupo:'Esperando el cupo', esperando_ventana:'Esperando el horario de envío', esperando_proveedor:'Esperando a Resend', pausada:'Pausada', terminada:'Terminada' };
@@ -5597,24 +5414,26 @@ ${contenido}
       const enviados = pr ? N(pr.enviados) : N(s.sentCount);
       const pill = $('pgEstado'); const base = PILL_ESTADO[st] || PILL_ESTADO.borrador;
       pill.className = 'pill ' + base[0]; pill.textContent = (pr && pr.estado && EST[pr.estado] && st === 'enviando') ? EST[pr.estado] : base[1];
-      $('pgBarra').style.width = (objetivo > 0 ? Math.min(100, Math.round(enviados / objetivo * 100)) : 0) + '%';
-      const cif = [['Objetivo', objetivo], ['Enviados', enviados]];
-      if(pr){ cif.push(['Pendientes', N(pr.pendientes)], ['En reintento', N(pr.enReintento)], ['Fallidos', N(pr.fallidos)], ['Omitidos', N(pr.omitidos)], ['Tandas hechas', N(pr.tandasHechas)]); }
-      $('pgCifras').innerHTML = cif.map((x)=> '<div><span>' + esc(x[0]) + '</span><b>' + fmt(x[1]) + '</b></div>').join('');
+      // [v2.2.0] mismas cifras que el reporte: Seleccionados, Habilitados, Pendientes, Enviados, Entregados, Rebotes, Errores y Bajas (+ barra de Progreso). «—» = el servidor aún no lo informa.
+      const cifras = emCifrasEnVivo(d);
+      $('pgBarra').style.width = (cifras.progresoPct == null ? 0 : cifras.progresoPct) + '%';
+      $('pgProgresoTxt').textContent = cifras.progresoPct == null ? '' : 'Progreso: ' + cifras.progresoPct + ' %';
+      const cif = cifras.lista.slice();
+      if(pr){ cif.push(['En reintento', N(pr.enReintento)], ['Omitidos', N(pr.omitidos)], ['Tandas hechas', N(pr.tandasHechas)]); }
+      $('pgCifras').innerHTML = cif.map((x)=> '<div><span>' + esc(x[0]) + '</span><b>' + (typeof x[1] === 'number' ? fmt(x[1]) : esc(x[1])) + '</b></div>').join('');
       const det = [];
       if(pr && pr.proximoIntentoAt) det.push('Próximo intento: ' + emFechaHora(pr.proximoIntentoAt));
       if(pr && pr.terminoEstimado) det.push('Término estimado: ' + pr.terminoEstimado);
       if(d.bloqueo && d.bloqueo.tipo){ const tm = emTextoBloqueoMotivo(d.bloqueo); det.push('Detenida: ' + (tm || ((BLOQUEO_TXT[d.bloqueo.tipo] || 'por el sistema') + (d.bloqueo.detalle ? ' (' + String(d.bloqueo.detalle).slice(0, 160) + ')' : '')))); }
       if(d.pauseReason && (st === 'pausada' || st === 'pausada_reputacion')) det.push('Motivo de la pausa: ' + String(d.pauseReason).slice(0, 200));
       $('pgDetalle').textContent = det.join(' · ');
-      const real = (emEstado.nivel() === 'pruebas' || emEstado.nivel() === 'clientes');
       const acc = [];
       const lat = emLatidoDe('planificador'); const sinPlanificador = !!lat && !lat.activo;   // [V21-07] sin latido, «Procesar ahora» es la forma de avanzar
       const btn = (a, t, principal)=> '<button type="button" class="btn ' + (principal ? 'btn-solid' : 'btn-outline') + '" data-pg="' + esc(a) + '">' + esc(t) + '</button>';
       if(st === 'enviando') acc.push(btn('pausar', 'Pausar'));
       if(st === 'pausada') acc.push(btn('reanudar', 'Reanudar'));
       if(st === 'pausada_reputacion') acc.push(btn('reanudar_rep', 'Reanudar…'));
-      if(['enviando','programada'].indexOf(st) !== -1 && real) acc.push(btn('procesar', 'Procesar ahora', sinPlanificador));
+      if(['enviando','programada'].indexOf(st) !== -1) acc.push(btn('procesar', 'Procesar ahora', sinPlanificador));
       if(['enviando','pausada'].indexOf(st) !== -1) acc.push(btn('reconciliar', 'Reconciliar ahora'));   // [V21-02] revisa los envíos que quedaron a medias
       if(['programada','pausada','pausada_reputacion','enviando','fallida'].indexOf(st) !== -1) acc.push('<button type="button" class="btn btn-outline" data-pg="cancelar" style="color:var(--rojo);">Cancelar campaña</button>');
       acc.push(btn('reporte', 'Ver reporte'));
@@ -5647,7 +5466,8 @@ ${contenido}
   /* =========================================================================
      emConfig -- paso 3 del asistente ([P5][P6]): configurar, comprobar y programar el envío.
      Nombre, asunto, texto de vista previa, audiencia y adicionales se GUARDAN SOLOS mientras escribes (mismo autoguardado del editor).
-     Programar / Enviar ahora exigen confirmación fuerte (ENVIAR + número exacto) y solo existen con los envíos reales activados.
+     [v2.2.0] «Enviar campaña» y «Programar…» están siempre disponibles: abren un resumen con un solo botón «Confirmar envío» (sin frase, sin número, sin contraseña).
+     Si algo impide el envío, se muestran las `restricciones` del servidor en lenguaje simple. El envío por tandas, los límites y las bajas los maneja el sistema solo.
      ======================================================================= */
   const emConfig = (function(){
     let campId = null;
@@ -5657,7 +5477,6 @@ ${contenido}
 
     function msg(texto, tipo){ const el = $('cfgMsg'); el.textContent = texto; el.className = 'cfg-msg ' + (tipo || 'info'); }
     function limpiarMsg(){ $('cfgMsg').className = 'cfg-msg'; }
-    function nivel(){ return emEstado.nivel(); }
     function remitenteTxt(){
       const e = emEstado.datos(); const r = e && e.config && e.config.remitente;
       return r && r.senderEmail ? { nombre: r.senderName || 'Masterlook', correo: r.senderEmail } : null;
@@ -5695,20 +5514,18 @@ ${contenido}
       return { campaignId: campId, subject: $('cfgAsunto').value.trim(), preheader: $('cfgPreheader').value.trim(), audienceId: $('cfgAudiencia').value || null, extraRecipients: extraDeUI() };
     }
 
-    /* ---------- bloque de prueba (según el nivel de envíos) ---------- */
+    /* ---------- bloque de prueba: UN correo real a la cuenta de quien lo pide ---------- */
+    function correoDeCuenta(){
+      const u = firebase.auth().currentUser;
+      const c = u && typeof u.email === 'string' ? u.email.trim().toLowerCase() : '';
+      return EM_RE_EMAIL.test(c) ? c : '';
+    }
     function pintarPrueba(){
-      const n = nivel(), e = emEstado.datos();
-      const real = n === 'pruebas' || n === 'clientes';
-      const dirs = (e && e.control && Array.isArray(e.control.allowlist)) ? e.control.allowlist : [];
-      $('cfgPruebaEmail').style.display = real ? 'none' : '';
-      const sel = $('cfgPruebaSel'); sel.style.display = real ? '' : 'none';
-      sel.textContent = '';
-      if(dirs.length) dirs.forEach((d)=>{ const o = document.createElement('option'); o.value = d.email; o.textContent = d.email; sel.appendChild(o); });
-      else { const o = document.createElement('option'); o.value = ''; o.textContent = 'No hay direcciones autorizadas'; sel.appendChild(o); }
-      $('cfgBtnPrueba').textContent = real ? 'Enviar prueba' : 'Ver prueba';
-      $('cfgPruebaHint').textContent = real
-        ? 'Se envía UN correo real a la dirección elegida (solo las autorizadas en Configuración). Cuenta en el resumen del mes como correo de prueba.'
-        : 'Con los envíos reales desactivados no se envía nada: se muestra aquí cómo quedaría el correo, con el enlace de baja real.';
+      const c = correoDeCuenta();
+      $('cfgBtnPrueba').disabled = !c;
+      $('cfgPruebaHint').textContent = c
+        ? 'Te llega un correo de prueba a tu cuenta (' + c + '), con el pie y el enlace de baja reales. No sale a ningún cliente.'
+        : 'No encuentro el correo de tu cuenta, así que no puedo enviarte la prueba.';
     }
     function pintarRemitente(){
       const r = remitenteTxt();
@@ -5717,15 +5534,22 @@ ${contenido}
       $('cfgReplyTo').textContent = rt && rt.email ? 'Las respuestas llegan a ' + rt.email + (rt.estado === 'confirmado' ? ' (confirmado).' : ' (sin confirmar todavía).') : 'Reply-To sin definir: las respuestas de los clientes no tienen adónde llegar. Defínelo en Configuración.';
       pintarBandeja();
     }
+    /** Restricciones que mostrar ahora: las de la última comprobación de ESTA campaña (más precisas) o, si no hay, las del estado general del envío. */
+    function restriccionesAhora(){
+      const p = preflight.restricciones();
+      return p.length ? p : emEstado.restricciones();
+    }
     function pintarBotones(){
-      const n = nivel();
-      const real = n === 'pruebas' || n === 'clientes';
-      $('cfgProgramar').disabled = !real; $('cfgEnviarAhora').disabled = !real;
-      $('cfgProgramar').classList.toggle('deshabilitado-suave', !real); $('cfgEnviarAhora').classList.toggle('deshabilitado-suave', !real);
-      $('cfgAccionesHint').textContent = n === null
-        ? 'No se pudo leer el estado de los envíos reales: por seguridad solo puedes guardar y simular.'
-        : (real ? '«Programar» y «Enviar ahora» te piden una confirmación fuerte antes de armar el envío. Nada sale solo al activar.'
-          : 'Los envíos reales están desactivados (Configuración): puedes guardar y simular, pero no programar ni enviar.');
+      // «Enviar campaña» y «Programar…» nunca se apagan por el estado: si algo falta, al pulsar se explica qué (y aquí se adelanta)
+      const rs = restriccionesAhora(), ul = $('cfgRestricciones');
+      $('cfgAccionesHint').textContent = rs.length
+        ? 'Todavía no se puede enviar. Esto es lo que falta:'
+        : (emEstado.envioDisponible() === false
+          ? 'Todavía no se puede enviar. Pulsa «Comprobar» para ver el motivo.'
+          : '«Enviar campaña» te muestra un resumen para confirmar. Después el sistema la envía solo, por tandas, y respeta las bajas que lleguen mientras tanto.');
+      ul.textContent = '';
+      rs.forEach((x)=>{ const li = document.createElement('li'); li.textContent = x.texto; ul.appendChild(li); });
+      ul.style.display = rs.length ? '' : 'none';
     }
     emEstado.alCambiar(function(){
       if($('vistaConfigCampana').style.display === 'none') return;
@@ -5758,7 +5582,6 @@ ${contenido}
         else emB.existe = true;
         const b = emB;
         $('cfgNombre').value = b.nombre; $('cfgAsunto').value = b.asunto; $('cfgPreheader').value = b.preheader; $('cfgExtra').value = b.extra.join(', ');
-        $('cfgPruebaEmail').value = '';
         $('cfgAudiencia').innerHTML = ['<option value="">— Elige una audiencia —</option>'].concat(audSnap.docs.map(a=>{
           const ad = a.data();
           const n = ad.type === 'fija' ? ` (lista fija · ${(ad.emails || []).length})` : (ad.ultimoConteo != null ? ` (${ad.ultimoConteo} personas)` : '');
@@ -5768,7 +5591,7 @@ ${contenido}
           msg('La audiencia que tenía esta campaña ya no existe. Elige otra antes de enviar.', 'err');
         }
         const nota = $('cfgPreviewNota');
-        nota.textContent = 'El pie con tus datos y el enlace de baja se agregan al enviar. Para verlo igual que lo recibirá el cliente, usa «Ver prueba».';
+        nota.textContent = 'El pie con tus datos y el enlace de baja se agregan al enviar. Para verlo igual que lo recibirá el cliente, usa «Enviarme una prueba».';
         pintarPreview(c.htmlFinal || '');
         pintarRemitente(); pintarPrueba(); pintarBotones();
         emVistaPrevia.aplicarDisp('cfg', 'escritorio');
@@ -5789,12 +5612,12 @@ ${contenido}
        preflight -- «Comprobación antes de enviar» + resumen + calendario estimado. Llama a emailCampanaValidar (solo lectura).
        ----------------------------------------------------------------- */
     const preflight = (function(){
-      let ultimo = null, stale = true, corriendo = false, paraCamp = null, revEdit = 0;
+      let ultimo = null, stale = true, corriendo = false, paraCamp = null, revEdit = 0, enVuelo = null;   // enVuelo: la promesa de la comprobación que está corriendo AHORA (la reutiliza quien llegue mientras tanto)
       const LABELS = {
         asunto:'Asunto', remitente:'Remitente configurado', html_presente:'Contenido del correo', html_tamano:'Tamaño del HTML',
         enlace_baja:'Enlace de baja', footer:'Pie de marca', cta_https:'Enlaces HTTPS', cta_acortadores:'Sin acortadores dudosos',
         audiencia:'Audiencia con destinatarios', cuota_primer_dia:'Cupo disponible hoy', tope_warmup:'Tope del calentamiento',
-        produccion_habilitada:'Envíos reales activados', one_click_baja:'Baja de un clic (List-Unsubscribe)',
+        produccion_habilitada:'Envío habilitado', one_click_baja:'Baja de un clic (List-Unsubscribe)',
         dominio_verificado:'Dominio verificado en el proveedor', dominio_autenticado:'Dominio autenticado (SPF/DKIM/DMARC)', spf:'SPF', dkim:'DKIM', dmarc:'DMARC',
         webhook_activo:'Aviso automático de Resend activo', transporte_produccion:'Transporte de producción',
         imagenes_incrustadas:'Imágenes de relleno o incrustadas', imagenes_sin_src:'Imágenes sin dirección', imagenes_https:'Imágenes con dirección https',
@@ -5818,8 +5641,9 @@ ${contenido}
       const label = (id)=> LABELS[id] || String(id).replace(/_/g, ' ');
       const item = (nv, txt, detalle)=>
         `<div class="pf-item" data-nivel="${esc(nv)}">${ICO[nv]}<span><b>${esc(txt)}</b>${detalle ? ' <small>— '+esc(detalle)+'</small>' : ''}</span></div>`;
-      const DESG = { audienciaBruta:'Audiencia bruta', duplicados:'− Duplicados', invalidos:'− Con correo no válido', suprimidos:'− De baja o suprimidos', rechazados:'− Rechazaron marketing',
-        sin_consentimiento:'− Sin permiso registrado', revocados:'− Con el permiso revocado', placeholder:'− Con correo de relleno', omitidosPorFrecuencia:'− Omitidos por frecuencia' };
+      // [v2.2.0] el embudo con las exclusiones automáticas (bajas, rebotes, inválidos, sin base legal, duplicados) tal como las calcula el servidor
+      const DESG = { audienciaBruta:'Audiencia elegida', duplicados:'− Duplicados', invalidos:'− Con correo no válido', suprimidos:'− De baja o rebotados', rechazados:'− Rechazaron novedades',
+        sinBaseLegal:'− Sin base legal', placeholder:'− Con correo de relleno', omitidosPorFrecuencia:'− Omitidos por frecuencia' };
 
       // [V21-03] el servidor revisa si cada botón apunta a una página que existe (404/410 = crítico). Aquí solo se ordena lo que devuelve (`enlaces`), sin tocar la red.
       const MOTIVO_ENLACE = { timeout:'tardó demasiado en responder', dns:'no se encontró el sitio', error_dns:'no se encontró el sitio', host_no_permitido:'la dirección no está permitida',
@@ -5841,20 +5665,21 @@ ${contenido}
         return out;
       }
       function reset(){ ultimo = null; stale = true; paraCamp = campId; revEdit++; pintar(); }
-      function marcarStale(){ stale = true; revEdit++; sello(); gate(); }
+      function marcarStale(){ stale = true; revEdit++; sello(); pintarBotones(); }
       function sello(){
         const s = $('pfSello');
         if(corriendo){ s.textContent = 'comprobando…'; return; }
         if(!ultimo){ s.textContent = ''; return; }
         s.textContent = stale ? 'hay cambios sin comprobar' : 'comprobado';
       }
-      function gate(){
-        const bloquear = !!ultimo && !stale && ultimo.puedeEnviar === false;
-        $('cfgProgramar').classList.toggle('pf-bloqueado', bloquear);
+      // [v2.2.0 P1] Quien llega mientras otra comprobación corre (p. ej. la silenciosa de la apertura del paso 3) ya NO recibe un `ultimo` vacío: se cuelga de la MISMA comprobación y obtiene su resultado.
+      function correr(opts){
+        if(corriendo && enVuelo) return enVuelo;
+        enVuelo = correrReal(opts || {}).finally(()=>{ enVuelo = null; });
+        return enVuelo;
       }
-      async function correr(opts){
+      async function correrReal(opts){
         opts = opts || {};
-        if(corriendo) return ultimo;
         const idAlIniciar = campId, revAlIniciar = revEdit;
         corriendo = true; sello();
         $('pfComprobar').disabled = true; $('pfComprobar').textContent = 'Comprobando…';
@@ -5876,20 +5701,33 @@ ${contenido}
           corriendo = false;
           $('pfComprobar').disabled = false;
           $('pfComprobar').textContent = ultimo ? 'Volver a comprobar' : 'Comprobar';
-          sello(); gate();
+          sello(); pintarBotones();
         }
       }
 
       function calendarioHtml(r){
         const lim = r.limites || {};
         if(lim.sinLimitesDefinidos) return '<div class="cfg-dato">No se puede estimar: faltan límites de envío definidos por ti (Configuración).</div>';
+        const planTxt = emPlanTexto(r.plan).map((t)=> '<p class="ef-plan">' + esc(t) + '</p>').join('');
         const cal = Array.isArray(r.calendario) ? r.calendario : [];
-        if(!cal.length) return '<div class="cfg-dato">Sin calendario: la campaña saldría en una sola tanda.</div>';
+        if(!cal.length) return planTxt || '<div class="cfg-dato">Sin calendario: la campaña saldría en una sola tanda.</div>';
         const fdia = (s)=> { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + '-' + m[1] : String(s || ''); };
-        return '<div class="cal-wrap"><table class="cal-tabla"><thead><tr><th>Tanda</th><th>Día</th><th>Correos</th><th>Acumulado</th></tr></thead><tbody>'
+        return planTxt + '<div class="cal-wrap"><table class="cal-tabla"><thead><tr><th>Tanda</th><th>Día</th><th>Correos</th><th>Acumulado</th></tr></thead><tbody>'
           + cal.slice(0, 120).map((x)=> '<tr><td>' + esc(x.n) + '</td><td>' + esc(fdia(x.dia)) + '</td><td>' + fmt(x.cantidad) + '</td><td>' + fmt(x.acumulado) + '</td></tr>').join('') + '</tbody></table></div>'
-          + (r.terminoEstimado ? '<div class="cfg-dato"><b>Término estimado:</b> ' + esc(fdia(r.terminoEstimado)) + '</div>' : '')
+          + (!r.plan && r.terminoEstimado ? '<div class="cfg-dato"><b>Término estimado:</b> ' + esc(fdia(r.terminoEstimado)) + '</div>' : '')
           + (Array.isArray(r.supuestos) && r.supuestos.length ? '<ul class="cal-sup">' + r.supuestos.slice(0, 8).map((t)=> '<li>' + esc(t) + '</li>').join('') + '</ul>' : '');
+      }
+      /** Lo que impide enviar AHORA, en lenguaje simple: las `restricciones` del servidor; si el servidor es anterior, los requisitos que fallaron. [] si nada lo impide o la comprobación está vieja. */
+      function restricciones(){
+        if(!ultimo || stale || paraCamp !== campId) return [];
+        const r = emRestriccionesDe(ultimo);
+        if(r.length) return r;
+        if(ultimo.puedeEnviar === false){
+          const fall = ((ultimo.criticos || []).concat((ultimo.correoFinal && ultimo.correoFinal.criticos) || [])).filter((c)=> c && !c.ok);
+          const lista = fall.map((c)=> ({ id: String(c.id || ''), texto: label(c.id) + (c.detalle ? ': ' + String(c.detalle).slice(0, 200) : '') }));
+          return lista.length ? lista : [{ id:'', texto:'Hay requisitos sin cumplir. Revisa la comprobación.' }];
+        }
+        return [];
       }
       function pintar(){
         const cuerpo = $('pfCuerpo');
@@ -5919,56 +5757,51 @@ ${contenido}
         const objetivo = aud.objetivo != null ? aud.objetivo : s.objetivo;
         const d = Object.assign({}, s, aud.desglose || {});
         const lim = r.limites || {};
-        const nv = (r.control && r.control.nivel) || emEstado.nivel();
+        d.sinBaseLegal = emPrimerNumero(d.sinBaseLegal, d.sinConsentimiento, d.sin_consentimiento);   // el servidor lo manda con los dos nombres: se cuenta una sola vez
         const celdas = [];
         Object.keys(DESG).forEach((k)=> { if(d[k] != null && (k === 'audienciaBruta' || N(d[k]) > 0)) celdas.push(cel(DESG[k], fmt(d[k]))); });
-        celdas.push(cel('Se intentará enviar a', fmtN(objetivo), true));
-        celdas.push(cel('Podrían salir hoy', lim.sinLimitesDefinidos ? 'sin límites definidos' : (lim.cupoHoy != null ? fmt(lim.cupoHoy) : '—')));
-        celdas.push(cel('Término estimado', r.terminoEstimado || '—'));
-        const cx = s.contactos;
-        if(cx && typeof cx === 'object') celdas.push(cel('Contactos actualizados', cx.antiguedadHoras == null ? 'nunca' : 'hace ' + emHorasTxt(cx.antiguedadHoras)));   // [V21-19]
-        celdas.push(cel('Modo', nv === 'clientes' ? 'Envío real a clientes' : (nv === 'pruebas' ? 'Envío real solo a direcciones de prueba' : 'Simulación: no se envían correos reales')));
+        celdas.push(cel('Se enviará a', fmtN(objetivo), true));
+        const pb = d.porBase && typeof d.porBase === 'object' ? d.porBase : null;
+        if(pb){ celdas.push(cel('Con consentimiento', fmt(pb.consentimiento))); celdas.push(cel('Clientes con relación comercial', fmt(pb.relacion_comercial))); }
+        if(r.plan && typeof r.plan === 'object'){
+          celdas.push(cel('Salen hoy', fmt(r.plan.hoy)));
+          celdas.push(cel('Días de envío', fmt(r.plan.dias)));
+          celdas.push(cel('Termina el', emFechaDia(r.plan.terminaEl) || '—'));
+        }else{                                                                                              // servidor anterior: se usa el cupo y el término estimado de siempre
+          celdas.push(cel('Podrían salir hoy', lim.sinLimitesDefinidos ? 'sin límites definidos' : (lim.cupoHoy != null ? fmt(lim.cupoHoy) : '—')));
+          celdas.push(cel('Término estimado', r.terminoEstimado || '—'));
+        }
         $('pfResGrid').innerHTML = celdas.join('');
         const cal = $('pfBloqueCal');
-        if(nv === 'desactivado' || (!Array.isArray(r.calendario) && !lim.sinLimitesDefinidos)) cal.style.display = 'none';
+        if(!Array.isArray(r.calendario) && !lim.sinLimitesDefinidos && !r.plan) cal.style.display = 'none';
         else { cal.style.display = ''; $('pfCalendario').innerHTML = calendarioHtml(r); }
 
         const v = $('pfVeredicto');
-        if(r.puedeEnviar){
+        if(r.puedeEnviar !== false){
           v.dataset.ok = '1';
-          v.textContent = r.preflightObligatorio ? 'Comprobación superada. La campaña puede enviarse.' : 'Sin bloqueos. La campaña puede enviarse (comprobación informativa).';
+          v.textContent = 'Todo en orden: la campaña se puede enviar.';
         }else{
           v.dataset.ok = '0';
-          const fallidos = criticos.filter(c=> !c.ok).map(c=> label(c.id));
-          v.textContent = 'No se puede enviar todavía: ' + (fallidos.join(' · ') || 'requisitos sin cumplir') + '.';
+          const faltas = restricciones().map((x)=> String(x.texto).replace(/[\s.]+$/, ''));      // sin el punto final de cada una: se agrega uno solo al cierre
+          v.textContent = 'Todavía no se puede enviar: ' + (faltas.join(' · ') || 'hay requisitos sin cumplir') + '.';
         }
-      }
-      async function exigirOK(){
-        if(paraCamp !== campId || !ultimo || stale){
-          msg('Comprobando la campaña antes de continuar…', 'info');
-          const r = await correr({});
-          if(!r) return false;
-        }
-        if(ultimo && ultimo.puedeEnviar === false){
-          const fallidos = ((ultimo.criticos || []).concat((ultimo.correoFinal && ultimo.correoFinal.criticos) || [])).filter(c=> !c.ok).map(c=> label(c.id));
-          msg('No se puede continuar: ' + (fallidos.join(' · ') || 'la comprobación previa no pasó') + '. Revisa la comprobación.', 'err');
-          $('pfCaja').scrollIntoView({ behavior:'smooth', block:'nearest' });
-          return false;
-        }
-        return true;
       }
       // para el modal de confirmación: asegura una comprobación FRESCA de esta campaña y devuelve la respuesta completa (o null)
+      // [v2.2.0 P1] Si ya hay una comprobación corriendo (la silenciosa de la apertura) se ESPERA y se reutiliza: «Enviar campaña» abre la confirmación en el primer clic. Si esa terminó vieja, fallida o de otra
+      // campaña, se repite UNA sola vez (ya no silenciosa: así el error se ve).
       async function paraModal(){
-        if(paraCamp !== campId || !ultimo || stale){ const r = await correr({}); if(!r) return null; }
+        const falta = ()=> paraCamp !== campId || !ultimo || stale;
+        if(falta() && corriendo && enVuelo) await enVuelo;
+        if(falta()){ const r = await correr({}); if(!r) return null; }
         return (paraCamp === campId && ultimo) ? ultimo : null;
       }
-      return { reset, marcarStale, correr, exigirOK, pintar, paraModal, etiqueta: label, iconos: ICO, enlacesFilas };
+      return { reset, marcarStale, correr, pintar, paraModal, restricciones, etiqueta: label, iconos: ICO, enlacesFilas };
     })();
 
-    /* ---------- acciones: guardar / simular / programar / enviar ---------- */
+    /* ---------- acciones: guardar / programar / enviar ---------- */
     async function accionar(accion, scheduledAt, confirmacion){
       limpiarMsg();
-      const btns = ['cfgGuardar','cfgSimular','cfgProgramar','cfgEnviarAhora','cfgProgConfirmar'];
+      const btns = ['cfgGuardar','cfgProgramar','cfgEnviarAhora','cfgProgConfirmar'];
       btns.forEach(b=> $(b).disabled = true);
       try{
         if(!(await guardarAntes())) return null;
@@ -5982,9 +5815,8 @@ ${contenido}
         }
         const arm = emArmadoDe(r);                                                         // [CT-03] en «Enviar ahora» el armado viene dentro de `programado`
         const pl = emPlanificadorDe(r);                                                    // [V21-07] el servidor dice si el planificador automático está vivo
-        const sinPlan = !!pl && pl.activo === false && accion !== 'simular' && accion !== 'guardar';
+        const sinPlan = !!pl && pl.activo === false && accion !== 'guardar';
         const txt = accion === 'guardar' ? 'Campaña guardada como lista para enviar.'
-          : accion === 'simular' ? 'Simulación lista. No salió ningún correo real. ' + emAvisoDe(r)
           : accion === 'ahora' ? 'Campaña confirmada. ' + (sinPlan ? '' : 'Saldrá por tandas según tus límites y horario: el avance se ve en «Progreso». ') + emAvisoDe(r)
           : 'Campaña programada para ' + (arm.scheduledAt ? new Date(arm.scheduledAt).toLocaleString('es-CL', { timeZone:TZ }) : 'la fecha elegida') + '. ' + emAvisoDe(r);
         msg(txt.trim(), sinPlan ? 'info' : 'ok');
@@ -6000,131 +5832,129 @@ ${contenido}
       }
     }
 
+    /** «Enviarme una prueba»: UN correo real a la cuenta de quien lo pide (el servidor lo comprueba con el correo del inicio de sesión). Sin contraseña ni lista previa. */
     async function enviarPrueba(){
-      const real = nivel() === 'pruebas' || nivel() === 'clientes';
       const btn = $('cfgBtnPrueba');
+      const email = correoDeCuenta();
+      if(!email){ msg('No encuentro el correo de tu cuenta, así que no puedo enviarte la prueba.', 'err'); return; }
       if(!(await guardarAntes())) return;
       limpiarMsg();
-      if(real){
-        const email = $('cfgPruebaSel').value;
-        if(!email){ msg('No hay direcciones de prueba autorizadas. Agrégalas en Configuración.', 'err'); return; }
-        if(!(await emConfirmar('Enviar correo de prueba', 'Se enviará UN correo real a ' + email + '. ¿Continuar?', 'Enviar prueba'))) return;
-        btn.disabled = true; btn.textContent = 'Enviando…';
-        try{
-          const r = await emLlamar('emailPruebaEnviar', { campaignId: campId, email });
-          const x = r.resultado || {};
-          if(x.enviado) msg('Prueba enviada a ' + email + '. Resend la aceptó; la entrega se confirma en el reporte cuando Resend avise.', 'ok');
-          else msg('No se envió: ' + (x.motivo ? String(x.motivo).slice(0, 200) : (x.estado === 'esperando' ? 'quedó esperando cupo u horario' : 'error de envío')) + '.' + (emAvisoDe(r) ? ' ' + emAvisoDe(r).slice(0, 300) : ''), 'err');
-        }catch(e){ msg(emMensajeError(e) + (emDetalleLista(e).length ? ' ' + emDetalleLista(e).join(' · ') : ''), 'err'); }
-        finally{ btn.disabled = false; pintarPrueba(); }
-        return;
-      }
-      const email = $('cfgPruebaEmail').value.trim().toLowerCase();
-      if(!EM_RE_EMAIL.test(email)){ msg('Escribe un correo válido para ver la prueba.', 'err'); return; }
-      btn.disabled = true; btn.textContent = 'Preparando…';
+      btn.disabled = true; btn.textContent = 'Enviando…';
       try{
-        const r = await emLlamar('emailPrueba', { campaignId: campId, email });
-        $('cfgPreviewFrame').srcdoc = String(r.html || '');
-        $('cfgPreviewNota').textContent = 'Vista con el pie real y el enlace de baja del destinatario de ejemplo. No se envió nada.';
-        msg('No se envió ningún correo. Arriba se ve cómo quedaría el correo para ' + email + ', con el pie y el enlace de baja reales.' + (r.asunto ? ' Asunto: «' + r.asunto + '».' : ''), 'info');
-      }catch(e){ msg(emMensajeError(e), 'err'); }
-      finally{ btn.disabled = false; pintarPrueba(); }
+        const r = await emLlamar('emailPruebaEnviar', { campaignId: campId, email });
+        const x = r.resultado || {};
+        if(x.enviado) msg('Prueba enviada a ' + email + '. Resend la aceptó: revisa tu bandeja de entrada (y la carpeta de spam).', 'ok');
+        else msg('No se envió: ' + (x.motivo ? String(x.motivo).slice(0, 200) : (x.estado === 'esperando' ? 'quedó esperando cupo u horario' : 'error de envío')) + '.' + (emAvisoDe(r) ? ' ' + emAvisoDe(r).slice(0, 300) : ''), 'err');
+      }catch(e){ msg(emMensajeError(e) + (emDetalleLista(e).length ? ' ' + emDetalleLista(e).join(' · ') : ''), 'err'); }
+      finally{ btn.textContent = 'Enviarme una prueba'; pintarPrueba(); }
     }
 
     /* ===================================================================
-       emEnvioFinal -- #modalEnvioFinal. Último paso antes de armar un envío real: muestra el embudo COMPLETO (todo viene del servidor),
-       el calendario por tandas, y exige escribir ENVIAR y el número exacto de destinatarios. El servidor vuelve a calcular la audiencia
-       y rechaza si el número o la huella cambiaron (audiencia_cambio).
+       emEnvioFinal -- #modalEnvioFinal. El resumen antes de enviar y UN solo botón «Confirmar envío» (sin escribir ENVIAR ni el número).
+       Todo viene del servidor: a cuántos habilitados llega (y cuántos se quitaron y por qué), el reparto por base legal y el plan por tandas.
+       El panel manda confirmacion:{ confirmado:true, objetivo, huella }: si la audiencia cambió entre la revisión y el envío, el servidor lo rechaza (audiencia_cambio)
+       y aquí se muestra el número nuevo y se pide confirmar de nuevo.
        =================================================================== */
     const emEnvioFinal = (function(){
       let resp = null, campDelModal = null, modo = null, enviando = false, completado = false;
-      const MOTIVO = { baja:'Bajas voluntarias', rebote_duro:'Rebotes duros', rebote_blando:'Rebotes blandos', queja_spam:'Quejas de spam', bloqueado:'Bloqueados por el proveedor',
-        invalido:'Inválidas (marcadas por el proveedor)', manual:'Supresiones manuales', sin_consentimiento:'Sin permiso registrado', otro:'Otras supresiones' };
+      const MOTIVO = { baja:'Bajas voluntarias', manual:'Bajas administrativas', rebote_duro:'Rebotes', rebote_blando:'Rebotes temporales repetidos', queja_spam:'Quejas de spam', bloqueado:'Bloqueados por el proveedor',
+        invalido:'Correos inválidos (marcados por el proveedor)', oposicion_arco:'Solicitudes de derechos (formulario del sitio)', otro:'Otras supresiones' };
       const objetivoDe = (r)=> N((r.audiencia && r.audiencia.objetivo != null) ? r.audiencia.objetivo : (r.resumen && r.resumen.objetivo));
-      function abrir(r, m){
+      const textoBoton = ()=> modo && modo.tipo === 'programar' ? 'Confirmar programación' : 'Confirmar envío';
+      /** `aviso`: texto opcional para el encabezado (por ejemplo, cuando la audiencia cambió y se reabre con el número nuevo). */
+      function abrir(r, m, aviso){
         resp = r; campDelModal = campId; modo = m || { tipo:'ahora' }; enviando = false; completado = false;
-        const s = r.resumen || {}, aud = r.audiencia || {}, nv = (r.control && r.control.nivel) || emEstado.nivel();
-        const esReal = nv === 'pruebas' || nv === 'clientes';
+        const s = r.resumen || {}, aud = r.audiencia || {};
         const objetivo = objetivoDe(r);
-        const modoEl = $('efModo'); modoEl.dataset.dry = esReal ? '0' : '1';
-        modoEl.textContent = esReal
-          ? (nv === 'pruebas' ? 'ENVÍO REAL SOLO A DIRECCIONES DE PRUEBA: únicamente recibirán el correo las direcciones autorizadas.' : 'ENVÍO REAL A CLIENTES: se enviarán correos a los destinatarios de abajo, por tandas.')
-          : 'Simulación: NO se enviará ningún correo real.';
+        const modoEl = $('efModo');
+        modoEl.dataset.dry = aviso ? '0' : '1';
+        modoEl.textContent = aviso
+          || (modo.tipo === 'programar' && modo.scheduledAt
+            ? 'Vas a programar esta campaña para el ' + new Date(modo.scheduledAt).toLocaleString('es-CL', { timeZone:TZ }) + ': saldrá a ' + fmt(objetivo) + ' personas habilitadas.'
+            : 'Vas a enviar esta campaña a ' + fmt(objetivo) + ' personas habilitadas.');
         $('efTitulo').textContent = modo.tipo === 'programar' ? 'Confirmar programación' : 'Confirmar envío de la campaña';
-        const rem = remitenteTxt(); const e = emEstado.datos() || {}; const dom = (e.resend && e.resend.dominio) || {}; const rt = e.config && e.config.replyTo;
+        const rem = remitenteTxt(); const e = emEstado.datos() || {}; const rt = e.config && e.config.replyTo;
         const audTxt = s.audiencia ? (s.audiencia.name || '(sin nombre)') + ' — ' + (s.audiencia.type === 'fija' ? 'lista fija' : 'dinámica') : 'Solo destinatarios sueltos';
         const datos = [
           ['Campaña', s.campana || $('cfgNombre').value || '(sin nombre)'],
           ['Asunto', s.asunto || $('cfgAsunto').value || '—'],
           ['Remitente', ((s.senderName || (rem && rem.nombre)) || 'Masterlook') + ' <' + ((s.senderEmail || (rem && rem.correo)) || '—') + '>'],
-          ['Reply-To', rt && rt.email ? rt.email + (rt.estado === 'confirmado' ? ' (confirmado)' : ' (sin confirmar)') : 'sin definir'],
-          ['Dominio', dom.nombre ? dom.nombre + ' · ' + (okDomEF(dom.estado) ? 'verificado en Resend' : 'sin verificar') : 'sin información'],
-          ['Audiencia', audTxt],
         ];
+        if(rt && rt.email) datos.push(['Respuestas a', rt.email]);
+        datos.push(['Audiencia', audTxt]);
         if(modo.tipo === 'programar' && modo.scheduledAt) datos.push(['Fecha', new Date(modo.scheduledAt).toLocaleString('es-CL', { timeZone:TZ })]);
         $('efDatos').innerHTML = datos.map(([k,v])=> '<div class="ef-dato"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>').join('');
 
+        // a cuántos llega y cuántos se quitaron solos (bajas, rebotes, inválidos, sin base legal, duplicados)
         const dsg = Object.assign({}, s, aud.desglose || {});
         const spm = dsg.suprimidosPorMotivo || s.suprimidosPorMotivo || {};
         const sumMotivos = Object.values(spm).reduce((a,b)=> a + N(b), 0);
-        const filas = [['Cantidad bruta encontrada', fmt(dsg.audienciaBruta)], ['− Duplicados eliminados', fmt(dsg.duplicados)], ['− Con formato inválido', fmt(dsg.invalidos)]];
-        if(sumMotivos > 0) Object.keys(spm).sort().forEach(k=> { if(N(spm[k]) > 0) filas.push(['− ' + (MOTIVO[k] || k), fmt(spm[k])]); });
-        else filas.push(['− De baja o suprimidos (bajas, rebotes, quejas)', fmt(dsg.suprimidos)]);
-        if(N(dsg.sin_consentimiento) > 0) filas.push(['− Sin permiso registrado', fmt(dsg.sin_consentimiento)]);
-        if(N(dsg.revocados) > 0) filas.push(['− Con el permiso revocado', fmt(dsg.revocados)]);
-        filas.push(['− Rechazaron marketing (preferencias)', fmt(dsg.rechazados)], ['− Omitidos por frecuencia (ya recibieron otra campaña)', fmt(dsg.omitidosPorFrecuencia)]);
+        const filas = [['Audiencia elegida', fmt(emPrimerNumero(dsg.audienciaBruta, dsg.totalBruto))], ['− Duplicados', fmt(dsg.duplicados)], ['− Con correo no válido', fmt(dsg.invalidos)]];
+        if(sumMotivos > 0){
+          // un motivo que el panel no conoce (versión nueva del servidor) se suma en «Otras supresiones»: nunca se pinta un código técnico ni se rompe la ventana
+          let otras = 0;
+          Object.keys(spm).sort().forEach(k=> {
+            if(N(spm[k]) <= 0) return;
+            if(Object.prototype.hasOwnProperty.call(MOTIVO, k) && k !== 'otro') filas.push(['− ' + MOTIVO[k], fmt(spm[k])]);
+            else otras += N(spm[k]);
+          });
+          if(otras > 0) filas.push(['− ' + MOTIVO.otro, fmt(otras)]);
+        }
+        else filas.push(['− De baja o rebotados', fmt(dsg.suprimidos)]);
+        filas.push(['− Rechazaron novedades', fmt(dsg.rechazados)]);
+        const sinBase = emPrimerNumero(dsg.sinBaseLegal, dsg.sinConsentimiento, dsg.sin_consentimiento, dsg.sin_base_legal);
+        if(N(sinBase) > 0) filas.push(['− Sin base legal', fmt(sinBase)]);
+        if(N(dsg.placeholder) > 0) filas.push(['− Con correo de relleno', fmt(dsg.placeholder)]);
+        if(N(dsg.omitidosPorFrecuencia) > 0) filas.push(['− Omitidos por frecuencia (ya recibieron otra campaña)', fmt(dsg.omitidosPorFrecuencia)]);
         $('efEmbudo').innerHTML = filas.map(([k,v])=> '<div class="ef-fila"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>').join('')
-          + '<div class="ef-fila ef-total"><span>Recibirían la campaña</span><b>'+fmt(objetivo)+'</b></div>';
+          + '<div class="ef-fila ef-total"><span>Habilitados: recibirán la campaña</span><b>'+fmt(objetivo)+'</b></div>';
+        // el reparto por base legal (entre los habilitados)
+        const pb = dsg.porBase && typeof dsg.porBase === 'object' ? dsg.porBase : null;
+        $('efBases').innerHTML = pb
+          ? '<div class="ef-fila"><span>De ellos: con consentimiento</span><b>' + fmt(pb.consentimiento) + '</b></div><div class="ef-fila"><span>De ellos: clientes con relación comercial</span><b>' + fmt(pb.relacion_comercial) + '</b></div>' : '';
 
-        const cal = $('efCal');
-        if(esReal){ cal.style.display = ''; $('efCalCuerpo').innerHTML = calendarioParaModal(r); } else cal.style.display = 'none';
+        $('efCal').style.display = '';
+        $('efCalCuerpo').innerHTML = calendarioParaModal(r);
 
         const adv0 = r.advertencias || []; const adv = adv0.concat(((r.correoFinal && r.correoFinal.advertencias) || []).filter((a)=> !adv0.some((x)=> x.id === a.id)));   // T21 C04: ídem en la ventana de confirmación
         $('efBloqueAdv').style.display = adv.length ? '' : 'none';
         $('efAdvertencias').innerHTML = adv.map(a=> '<div class="pf-item" data-nivel="warn">' + ICON_WARN + '<span><b>' + esc(preflight.etiqueta(a.id)) + '</b>' + (a.detalle ? ' <small>— ' + esc(a.detalle) + '</small>' : '') + '</span></div>').join('');
 
-        const v = $('efVeredicto'), btn = $('efConfirmar'), conf = $('efConfirma');
-        const ok = !!r.puedeEnviar && objetivo > 0;
-        $('efConfTexto').value = ''; $('efConfNum').value = '';
+        const v = $('efVeredicto'), btn = $('efConfirmar'), lista = $('efRestricciones');
+        const ok = r.puedeEnviar === true && objetivo > 0;
+        lista.textContent = ''; lista.style.display = 'none';
         if(ok){
           v.dataset.ok = '1';
-          v.textContent = esReal ? 'Comprobación superada. Escribe la confirmación para continuar.' : 'Comprobación superada. Puedes confirmar la simulación.';
-          conf.style.display = esReal ? '' : 'none';
-          $('efConfNumEtq').textContent = 'Y escribe el número exacto de destinatarios (' + fmt(objetivo) + ')';
-          btn.textContent = esReal ? (modo.tipo === 'programar' ? 'Confirmar programación' : 'Confirmar envío') : 'Confirmar simulación';
-          btn.disabled = esReal;
+          v.textContent = 'Todo en orden. Al confirmar, el sistema envía la campaña solo, por tandas y sin duplicados, y respeta las bajas que lleguen mientras tanto.';
+          btn.textContent = textoBoton(); btn.disabled = false;
         }else{
           v.dataset.ok = '0';
-          const fallidos = (r.criticos || []).filter(c=> !c.ok);
-          const detAud = (fallidos.find(c=> c.id === 'audiencia') || {}).detalle;
-          const enlTxt = preflight.enlacesFilas(r.enlaces).filter(x=> x.nivel === 'fail').slice(0, 3).map(x=> x.titulo).join(' ');   // [V21-03]
-          v.textContent = fallidos.length
-            ? ('No se puede enviar: ' + fallidos.map(c=> preflight.etiqueta(c.id)).join(' · ') + '.' + (detAud ? ' ' + detAud + '.' : '') + (enlTxt ? ' ' + enlTxt : '') + ' Corrige la campaña y vuelve a comprobar.')
-            : (objetivo === 0 ? 'No hay destinatarios tras aplicar todas las exclusiones. No se puede enviar.' : 'No se puede enviar todavía: requisitos sin cumplir.');
-          conf.style.display = 'none'; btn.disabled = true; btn.textContent = 'Confirmar';
+          v.textContent = r.puedeEnviar === true ? 'No hay destinatarios tras aplicar todas las exclusiones. No se puede enviar.' : 'Todavía no se puede enviar. Esto es lo que falta:';
+          preflight.restricciones().forEach((x)=>{ const li = document.createElement('li'); li.textContent = x.texto; lista.appendChild(li); });
+          lista.style.display = lista.children.length ? '' : 'none';
+          btn.textContent = textoBoton(); btn.disabled = true;
         }
         $('efProgreso').style.display = 'none'; $('efProgTxt').textContent = '—';
         $('efCancelar').disabled = false; $('efCerrar').disabled = false;
         $('modalEnvioFinal').classList.add('abierto');
+        btn.focus();
       }
-      const okDomEF = (v)=> v === true || /^(ok|verified|verificado|true|valid|success)/i.test(String(v == null ? '' : v));
+      /** El plan por tandas: primero en palabras ("Hoy salen X; el resto continúa solo…"), después el detalle por día (plegado) si hay más de un día. */
       function calendarioParaModal(r){
         const lim = r.limites || {};
         if(lim.sinLimitesDefinidos) return '<div class="cfg-dato" style="color:var(--rojo);">Faltan límites de envío definidos por ti: sin ellos no se puede armar un envío a clientes (Configuración).</div>';
+        // [v2.2.0 P2] El plan del servidor (`plan`, `calendario`) se calcula con los cupos de HOY. Si la campaña se PROGRAMA para otra fecha, «Hoy salen X» y «termina el …» serían falsos (hoy no sale nada y el término
+        // real es posterior a la fecha elegida) y contradirían el encabezado: aquí solo se dice cuándo empieza; el día de término se calcula cuando empiece.
+        if(modo && modo.tipo === 'programar' && modo.scheduledAt) return '<p class="ef-plan">Empieza el ' + esc(new Date(modo.scheduledAt).toLocaleString('es-CL', { timeZone:TZ })) + ' y continúa solo por tandas dentro de tus límites. El día de término se calcula cuando empiece.</p>';
+        const planTxt = emPlanTexto(r.plan).map((t)=> '<p class="ef-plan">' + esc(t) + '</p>').join('');
         const cal = Array.isArray(r.calendario) ? r.calendario : [];
-        if(!cal.length) return '<div class="cfg-dato">Saldría en una sola tanda.</div>';
+        if(!planTxt && !cal.length) return '<div class="cfg-dato">Saldría en una sola tanda.</div>';
         const fdia = (s)=> { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? m[3] + '-' + m[2] + '-' + m[1] : String(s || ''); };
-        return '<div class="cal-wrap"><table class="cal-tabla"><thead><tr><th>Tanda</th><th>Día</th><th>Correos</th><th>Acumulado</th></tr></thead><tbody>'
-          + cal.slice(0, 120).map((x)=> '<tr><td>' + esc(x.n) + '</td><td>' + esc(fdia(x.dia)) + '</td><td>' + fmt(x.cantidad) + '</td><td>' + fmt(x.acumulado) + '</td></tr>').join('') + '</tbody></table></div>'
-          + (r.terminoEstimado ? '<div class="cfg-dato"><b>Término estimado:</b> ' + esc(fdia(r.terminoEstimado)) + ' (es una estimación)</div>' : '');
-      }
-      function validarConfirmacion(){
-        if(!resp || enviando) return;
-        const nv = (resp.control && resp.control.nivel) || emEstado.nivel();
-        if(nv !== 'pruebas' && nv !== 'clientes') return;
-        const num = Number(String($('efConfNum').value).replace(/[.\s]/g, ''));
-        const ok = $('efConfTexto').value.trim() === 'ENVIAR' && Number.isFinite(num) && num === objetivoDe(resp) && !!resp.puedeEnviar;
-        $('efConfirmar').disabled = !ok;
+        const tabla = '<div class="cal-wrap"><table class="cal-tabla"><thead><tr><th>Tanda</th><th>Día</th><th>Correos</th><th>Acumulado</th></tr></thead><tbody>'
+          + cal.slice(0, 120).map((x)=> '<tr><td>' + esc(x.n) + '</td><td>' + esc(fdia(x.dia)) + '</td><td>' + fmt(x.cantidad) + '</td><td>' + fmt(x.acumulado) + '</td></tr>').join('') + '</tbody></table></div>';
+        const termino = (!r.plan && r.terminoEstimado) ? '<div class="cfg-dato"><b>Término estimado:</b> ' + esc(fdia(r.terminoEstimado)) + ' (es una estimación)</div>' : '';
+        if(cal.length > 1 && planTxt) return planTxt + '<details class="ef-plan-det"><summary>Ver el detalle por día</summary>' + tabla + '</details>';
+        return planTxt + (cal.length ? tabla : '') + termino;
       }
       function cerrarForzado(){ $('modalEnvioFinal').classList.remove('abierto'); }
       function cerrar(){ if(enviando) return; cerrarForzado(); }
@@ -6133,52 +5963,49 @@ ${contenido}
         if(enviando) return;
         const btn = $('efConfirmar'); if(btn.disabled) return;
         if(!resp || campDelModal !== campId){ msg('La campaña cambió. Vuelve a abrir la confirmación.', 'err'); cerrarForzado(); return; }
-        const nv = (resp.control && resp.control.nivel) || emEstado.nivel();
-        const esReal = nv === 'pruebas' || nv === 'clientes';
         enviando = true; btn.disabled = true; $('efCancelar').disabled = true; $('efCerrar').disabled = true;
-        btn.textContent = esReal ? 'Armando…' : 'Simulando…';
+        btn.textContent = modo.tipo === 'programar' ? 'Programando…' : 'Enviando…';
         $('efProgreso').style.display = ''; $('efProgTxt').textContent = 'Comprobando de nuevo en el servidor…';
+        const objetivoAntes = objetivoDe(resp);
+        let reabierto = false;
         try{
-          const conf = esReal ? { texto:'ENVIAR', objetivo: Number(String($('efConfNum').value).replace(/[.\s]/g, '')), huella: String((resp.audiencia && resp.audiencia.huella) || '') } : undefined;
-          const accion = esReal ? modo.tipo : 'simular';
-          let r;
-          try{ r = await accionar(accion, modo.scheduledAt, conf); }
-          catch(e1){
-            if(!(esReal && emMotivoDe(e1) === 'contactos_desactualizados')) throw e1;
-            // [V21-19] los contactos no están al día: se pregunta (modal propio con casilla); nunca se envía en silencio con datos viejos
-            const dec = await emContactos.preguntar(e1);
-            if(dec !== 'enviar_igual'){
-              completado = true;
-              $('efProgTxt').textContent = dec === 'audiencias' ? 'No se envió nada. Primero actualiza los contactos en Audiencias («Actualizar contactos») y vuelve a confirmar la campaña.' : 'No se envió nada: los contactos no están al día.';
-              if(dec === 'audiencias'){ cerrarForzado(); mostrarVista('audiencias'); }
-              return;
-            }
-            r = await accionar(accion, modo.scheduledAt, Object.assign({}, conf, { contactosViejos:true }));
-          }
-          $('efProgTxt').textContent = esReal
-            ? 'Listo. La campaña quedó confirmada. ' + (emAvisoDe(r) ? emAvisoDe(r) + ' ' : (modo.tipo === 'programar' ? 'Saldrá en la fecha elegida. ' : 'Saldrá por tandas según tus límites y horario. ')) + (modo.tipo === 'ahora' ? 'La primera tanda se procesó ahora mismo (si estás dentro de tu horario, ya salió); el resto sale por tandas. El avance se ve en «Progreso».' : 'No se envió nada en este momento: el avance se ve en «Progreso».')   /* T21 C03: «Enviar ahora» corre UNA tanda en el servidor (emailCampanaEnviarAhora), no es verdad que «no se envió nada» */
-            : 'Simulación completada. 0 correos reales.';
+          const conf = { confirmado: true, objetivo: objetivoAntes, huella: String((resp.audiencia && resp.audiencia.huella) || '') };
+          const r = await accionar(modo.tipo, modo.scheduledAt, conf);
+          $('efProgTxt').textContent = 'Listo. La campaña quedó confirmada. ' + (emAvisoDe(r) ? emAvisoDe(r) + ' ' : (modo.tipo === 'programar' ? 'Saldrá en la fecha elegida. ' : 'Saldrá por tandas según tus límites y horario. ')) + (modo.tipo === 'ahora' ? 'La primera tanda se procesó ahora mismo (si estás dentro de tu horario, ya salió); el resto sale por tandas. El avance se ve en «Progreso».' : 'No se envió nada en este momento: el avance se ve en «Progreso».');   /* T21 C03: «Enviar ahora» corre UNA tanda en el servidor (emailCampanaEnviarAhora), no es verdad que «no se envió nada» */
           completado = true;
           if(r) emLista.cargar(true);
         }catch(e){
           const m = emMotivoDe(e);
           if(m === 'audiencia_cambio'){
-            $('efProgTxt').textContent = 'La audiencia cambió mientras revisabas (llegó una baja o entró alguien). Cierra y vuelve a revisar los números nuevos antes de confirmar.';
+            // la audiencia cambió entre la revisión y el envío (llegó una baja, entró alguien): se vuelve a calcular, se muestra el número nuevo y se pide confirmar de nuevo
             preflight.marcarStale();
-          }else $('efProgTxt').textContent = 'No se pudo completar: ' + emMensajeError(e);
-          completado = true;
+            let nuevo = null;
+            try{ nuevo = await preflight.paraModal(); }catch(_){ nuevo = null; }
+            const det = (e && e.details && typeof e.details === 'object') ? e.details : {};
+            if(!nuevo && det.objetivo != null) nuevo = Object.assign({}, resp, { audiencia: Object.assign({}, resp.audiencia || {}, { objetivo: det.objetivo, huella: det.huella, desglose: det.desglose || (resp.audiencia || {}).desglose }) });
+            if(nuevo){
+              const n1 = objetivoDe(nuevo);
+              abrir(nuevo, modo, 'La audiencia cambió mientras revisabas (llegó una baja o entró alguien). Ahora son ' + fmt(n1) + ' personas habilitadas' + (n1 !== objetivoAntes ? ' (antes eran ' + fmt(objetivoAntes) + ')' : '') + '. Revisa y confirma de nuevo.');
+              reabierto = true;
+            }else{
+              $('efProgTxt').textContent = 'La audiencia cambió mientras revisabas. Cierra esta ventana y vuelve a pulsar el botón para ver los números nuevos.';
+              completado = true;
+            }
+          }else{
+            $('efProgTxt').textContent = 'No se pudo completar: ' + emMensajeError(e) + (emDetalleLista(e).length ? ' ' + emDetalleLista(e).join(' · ') : '');
+            completado = true;
+          }
         }finally{
-          enviando = false; $('efCancelar').disabled = false; $('efCerrar').disabled = false; btn.disabled = false; btn.textContent = 'Cerrar';
+          if(!reabierto){ enviando = false; $('efCancelar').disabled = false; $('efCerrar').disabled = false; btn.disabled = false; btn.textContent = 'Cerrar'; }
         }
       }
       $('efCerrar').addEventListener('click', cerrar);
       $('efCancelar').addEventListener('click', cerrar);
       $('efConfirmar').addEventListener('click', confirmar);
-      $('efConfTexto').addEventListener('input', validarConfirmacion);
-      $('efConfNum').addEventListener('input', validarConfirmacion);
-      return { abrir };
+      return { abrir, objetivoDe };
     })();
 
+    /** Pulsar «Enviar campaña» / «Programar»: comprueba la campaña en el servidor y, si todo está en orden, abre el resumen con un solo botón; si no, explica qué falta. */
     async function abrirConfirmacion(m){
       const b = m.tipo === 'programar' ? $('cfgProgConfirmar') : $('cfgEnviarAhora');
       if(b.disabled) return;
@@ -6187,6 +6014,14 @@ ${contenido}
       try{
         const resp = await preflight.paraModal();
         if(!resp){ msg('No se pudo comprobar la campaña antes de enviar. Revisa la comprobación de arriba.', 'err'); $('pfCaja').scrollIntoView({ behavior:'smooth', block:'nearest' }); return; }
+        if(resp.puedeEnviar !== true || emEnvioFinal.objetivoDe(resp) <= 0){
+          const rs = preflight.restricciones().map((x)=> x.texto);
+          await emAviso({ titulo:'Todavía no se puede enviar',
+            textos:[ resp.puedeEnviar === true ? 'No hay destinatarios tras aplicar todas las exclusiones (bajas, solicitudes de derechos, rebotes y correos no válidos).' : 'Esto es lo que falta para poder enviar:' ],
+            lista: resp.puedeEnviar === true ? [] : (rs.length ? rs : ['Hay requisitos sin cumplir. Revisa la comprobación.']) });
+          pintarBotones(); $('pfCaja').scrollIntoView({ behavior:'smooth', block:'nearest' });
+          return;
+        }
         emEnvioFinal.abrir(resp, m);
       }catch(e){ msg('No se pudo abrir la confirmación: ' + emMensajeError(e), 'err'); }
       finally{ b.disabled = false; b.textContent = orig; }
@@ -6209,7 +6044,6 @@ ${contenido}
     $('cfgExtra').addEventListener('input', ()=>{ if(!emB) return; emB.extra = extraDeUI(); emAuto.cambio('config'); preflight.marcarStale(); });
 
     $('cfgGuardar').addEventListener('click', ()=> accionar('guardar').catch(()=>{}));
-    $('cfgSimular').addEventListener('click', async ()=>{ if(await preflight.exigirOK()) accionar('simular').catch(()=>{}); });
     $('cfgEnviarAhora').addEventListener('click', ()=> abrirConfirmacion({ tipo:'ahora' }));
     $('cfgProgramar').addEventListener('click', ()=> $('cfgProgWrap').classList.toggle('visible'));
     $('cfgProgCancelar').addEventListener('click', ()=> $('cfgProgWrap').classList.remove('visible'));
@@ -6235,7 +6069,7 @@ ${contenido}
     let presetSel = '';
     const PRESET_TXT = { instagram:'Instagram', meta_ads:'Meta Ads', whatsapp:'WhatsApp', email:'Correo', google_negocio:'Google' };
     const cfgEnl = ()=> (window.ML_ENLACES && typeof window.ML_ENLACES === 'object') ? window.ML_ENLACES : null;
-    function esDev(){ const e = emEstado.entorno(); return e ? e.id === 'dev' : window.EM_HOST_TIPO === 'dev'; }
+    function esDev(){ const e = emEstado.entorno(); return e ? e === 'pruebas' : window.EM_HOST_TIPO === 'dev'; }
     function origen(){
       const c = cfgEnl(), prod = (c && c.origenProduccion) || '';
       if(!esDev()) return prod;
@@ -6319,36 +6153,20 @@ ${contenido}
     return { abrirVista, origen, utmActual };
   })();
   /* ===================================================================
-     emAjustes -- vista «Configuración» ([P3]): envíos reales, remitente, límites, calentamiento, umbrales, reintentos, pie y estado de Resend.
-     Todo se LEE de emailEstadoEnvios y se ESCRIBE con emailEnviosRealesCambiar / emailConfigGuardar (el navegador nunca escribe estos datos).
+     emAjustes -- vista «Configuración» ([P3]): estado del envío, remitente, límites, calentamiento, umbrales, reintentos, pie y estado de Resend.
+     Todo se LEE de emailEstadoEnvios y se ESCRIBE con emailConfigGuardar (el navegador nunca escribe estos datos). [v2.2.0] Ya no hay interruptor de envío ni lista de direcciones de prueba: el envío es automático.
      Cada cambio pide un motivo, queda en la auditoría con quién/cuándo, y los límites se muestran SIEMPRE como «definido por ti».
      =================================================================== */
   const emAjustes = (function(){
     let cargado = false;
     const CONT = ()=> $('cfContenido');
-    const NIVEL_NOMBRE = { desactivado:'Desactivados', pruebas:'Activados · solo pruebas', clientes:'Activados · clientes' };
-    const NIVEL_TIPO = { desactivado:'gris', pruebas:'activo', clientes:'activo' };
     const TIPO_AUDIT = {
-      envios_reales_cambio:'Cambio de envíos reales', intento_rechazado:'Intento rechazado', config_cambio:'Cambio de configuración', remitente_cambio:'Cambio de remitente',
+      envios_reales_cambio:'Cambio del estado de envíos', intento_rechazado:'Intento rechazado', config_cambio:'Cambio de configuración', remitente_cambio:'Cambio de remitente',
       plan_resend_cambio:'Cambio del plan de Resend', armada:'Campaña confirmada', armada_invalidada:'Confirmación invalidada', bypass_detectado:'Estado alterado detectado',
       campana_pausada_auto:'Pausa automática', campana_pausada:'Pausa manual', campana_cancelada:'Cancelación de campaña',
-      consentimiento_manual:'Permiso comercial registrado a mano',
-      declaracion_base_historica:'Declaración de la dueña sobre su base histórica', declaracion_base_historica_anulada:'Declaración sobre la base histórica anulada',
+      consentimiento_manual:'Consentimiento registrado a mano',
+      declaracion_base_historica:'Registro anterior sobre la base histórica (función retirada)', declaracion_base_historica_anulada:'Registro anterior sobre la base histórica anulado (función retirada)',
     };
-    const PRECOND_TXT = {
-      allowlist:'Hay al menos una dirección de prueba autorizada', dominio:'Dominio del remitente verificado en Resend (SPF, DKIM y MX)', secreto:'Clave de Resend cargada en el servidor',
-      reglas_cerradas:'La configuración de Email Marketing no se puede leer sin iniciar sesión', webhook_verificado:'Resend ya avisó al menos un evento (aviso automático verificado)',
-      prueba_real:'Se entregó un correo de prueba real', reply_to:'Reply-To confirmado (una casilla que recibe las respuestas)', plan_resend:'Plan de Resend declarado',
-      limites:'Al menos un límite de envío definido por ti', pie:'Pie del correo con identificación y un medio de contacto que funcione',
-      primer_dia:'Tope diario del primer día de 150 o menos (mientras el dominio no esté calentado)',
-    };
-    const PRECOND_REQ = {
-      activar_pruebas: ['allowlist','dominio','secreto','reglas_cerradas'],
-      activar_clientes: ['allowlist','dominio','secreto','reglas_cerradas','webhook_verificado','prueba_real','reply_to','plan_resend','limites','primer_dia','pie'],
-    };
-    const FUENTE_PRIMER_DIA = { politica_topeDiario:'del tope diario de tu política de envío', calentamiento:'del escalón vigente del calentamiento', plan_diario:'del límite diario del plan (menos la reserva para reservas y pagos)' };
-    const FRASE = { activar_pruebas:'ACTIVAR ENVIOS DE PRUEBA', activar_clientes:'Autorizo activar Email Marketing para clientes reales' };
-    const normFrase = (s)=> String(s || '').replace(/[“”«»"'.]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
     const okDom = (v)=> v === true || /^(ok|verified|verificado|true|valid|valido|válido|success)/i.test(String(v == null ? '' : v));
     const pctDe = (f)=> f == null || !Number.isFinite(Number(f)) ? '—' : String(+(Number(f) * 100).toFixed(3)).replace('.', ',') + ' %';
     const nd = (t)=> '<span class="nd">' + esc(t) + '</span>';
@@ -6367,54 +6185,31 @@ ${contenido}
 
     /* ---------- render ---------- */
     function pintar(e){
-      const c = e.control || {}, cfg = e.config || {}, nivel = emEstado.nivel() || 'desactivado';
+      const c = e.control || {}, cfg = e.config || {};
       emAplicarEntorno(e.entorno);
       const html = [];
 
-      // 1) Envíos reales
-      const u = c.ultimoCambio;
-      let b1 = '<div class="cf-estado-grande"><span class="ins" data-t="' + esc(NIVEL_TIPO[nivel]) + '">' + esc(NIVEL_NOMBRE[nivel]) + '</span></div>';
-      b1 += '<p class="cf-texto">' + esc(nivel === 'desactivado'
-        ? 'No sale ningún correo real. Las campañas solo se pueden simular. Este es el estado por defecto y el más seguro.'
-        : (nivel === 'pruebas' ? 'Solo pueden recibir correos las direcciones de prueba autorizadas de abajo. Los clientes no reciben nada.'
-          : 'Las campañas que confirmes pueden salir a tu audiencia habilitada, en tandas.')) + '</p>';
-      if(c.valido === false) b1 += '<p class="cf-texto" style="color:var(--rojo);">' + esc('El estado guardado no es válido, así que el sistema quedó desactivado por seguridad. ' + (c.motivo ? String(c.motivo) : '')) + '</p>';
-      if(c.bloqueoProveedor && c.bloqueoProveedor.tipo) b1 += '<p class="cf-texto" style="color:var(--pill-programado-fg);">' + esc('Los envíos están frenados por un problema con Resend (' + String(c.bloqueoProveedor.detalle || c.bloqueoProveedor.tipo) + ').') + '</p>';
-      if(u && u.at) b1 += fila('Último cambio', esc((u.porNombre || 'un administrador') + ' · ' + emFechaHora(u.at) + ' · ' + (NIVEL_NOMBRE[u.desdeNivel] || u.desdeNivel || '—') + ' → ' + (NIVEL_NOMBRE[u.haciaNivel] || u.haciaNivel || '—')), u.motivo ? esc('Motivo: ' + u.motivo) : '', false);
-      b1 += '<p class="cf-nota-legal">Activar nunca envía nada por sí solo: cada campaña se confirma aparte, escribiendo ENVIAR y el número exacto de destinatarios.</p>';
-      const pre = Array.isArray(e.precondiciones) ? e.precondiciones : [];
-      if(pre.length){
-        const req = nivel === 'pruebas' ? PRECOND_REQ.activar_clientes : (nivel === 'desactivado' ? PRECOND_REQ.activar_pruebas : []);
-        const vistas = pre.filter((p)=> req.length === 0 || req.indexOf(p.id) !== -1);
-        if(vistas.length && nivel !== 'clientes'){
-          b1 += '<div class="pf-seccion-tit" style="margin-top:14px;">' + esc(nivel === 'desactivado' ? 'Qué se necesita para activar los envíos de prueba' : 'Qué se necesita para activar los envíos a clientes') + '</div>' + listaPrecond(vistas);
-        }
-      }
-      let a1 = '';
-      if(nivel === 'desactivado') a1 += boton('activar_pruebas', 'Activar envíos de prueba…', { solid:true });
-      if(nivel === 'pruebas'){
-        a1 += window.EM_ES_DUENA ? boton('activar_clientes', 'Activar envíos a clientes…', { solid:true }) : '<span class="cf-sub" style="align-self:center;">Solo la dueña puede activar el envío a clientes.</span>';
-      }
-      if(nivel !== 'desactivado') a1 += boton('desactivar', 'Desactivar envíos');
-      a1 += boton('auditoria', 'Ver auditoría');
+      // 1) Estado del envío (solo lectura: el sistema comprueba solo, antes de cada envío, y dice qué falta)
+      const disp = emEstado.envioDisponible(), restr = emEstado.restricciones();
+      let b1 = '';
+      if(disp === true) b1 += '<div class="cf-estado-grande">' + chip('Listo para enviar', true) + '</div>';
+      else if(disp === false) b1 += '<div class="cf-estado-grande">' + chip('Falta resolver algo para poder enviar', false) + '</div>';
+      b1 += '<p class="cf-texto">' + esc('Cuando confirmes una campaña, el sistema la envía solo, por tandas, respetando los límites de abajo. Quita automáticamente a quienes se dieron de baja, enviaron una solicitud de derechos, rebotaron o tienen un correo no válido, no repite envíos y respeta las bajas que lleguen mientras la campaña sale.') + '</p>';
+      if(restr.length) b1 += '<ul class="ef-restr">' + restr.map((x)=> '<li>' + esc(x.texto) + '</li>').join('') + '</ul>';
+      if(c.bloqueoProveedor && c.bloqueoProveedor.tipo) b1 += '<p class="cf-texto" style="color:var(--pill-programado-fg);">' + esc('El envío está frenado por un problema con Resend (' + String(c.bloqueoProveedor.detalle || c.bloqueoProveedor.tipo) + ').') + '</p>';
+      let a1 = boton('auditoria', 'Ver auditoría');
       const ai = e.auditoriaIntegra;
       if(ai) a1 += '<span style="align-self:center;">' + chip(ai.ok ? 'Auditoría íntegra (' + fmt(ai.total) + ' registros)' : 'Auditoría alterada en el registro ' + fmt(ai.rotoEn), !!ai.ok) + '</span>';
-      html.push(seccion('Envíos reales', 'Un solo interruptor, solo para administradores. Todo cambio queda registrado con quién y cuándo.', b1, a1));
-
-      // 2) Direcciones de prueba
-      const lista = (c.allowlist || []);
-      let b2 = lista.length ? '<ul class="cf-lista-dir">' + lista.map((d)=> '<li><div><b>' + esc(d.email) + '</b><span class="cf-meta">' + esc((d.autorizadaPorNombre ? 'Autorizada por ' + d.autorizadaPorNombre : 'Autorizada') + (d.autorizadaAt ? ' · ' + emFecha(d.autorizadaAt) : '') + (d.nota ? ' · ' + d.nota : '')) + '</span></div><button type="button" class="btn-texto" style="color:var(--rojo);" data-acc="quitar_dir" data-dato="' + esc(d.email) + '">Quitar</button></li>').join('') + '</ul>'
-        : '<p class="cf-texto">' + esc('Todavía no hay direcciones de prueba. Sin ninguna no se pueden activar los envíos de prueba.') + '</p>';
-      html.push(seccion('Direcciones de prueba autorizadas (' + lista.length + ')', 'Solo estas direcciones pueden recibir correos en el nivel «solo pruebas». Máximo 20; cada una queda con su nota.', b2, boton('agregar_dir', 'Agregar dirección…')));
+      html.push(seccion('Estado del envío', 'Lo que el sistema comprueba solo antes de cada envío. No hay interruptor que activar.', b1, a1));
 
       // 3) Remitente y Reply-To
       const rem = cfg.remitente || {}, rt = cfg.replyTo || null, dom = (e.resend && e.resend.dominio) || {};
       let b3 = fila('Remitente', rem.senderEmail ? esc((rem.senderName || 'Masterlook') + ' <' + rem.senderEmail + '>') : nd('sin configurar'), rem.meta && rem.meta.definidoAt ? defPor(rem.meta) : '', !rem.senderEmail);
       b3 += fila('Dominio', dom.nombre ? esc(dom.nombre) + '<div class="cf-dom">' + chip('SPF', okDom(dom.spf)) + chip('DKIM', okDom(dom.dkim)) + chip('MX', okDom(dom.mx)) + chip('DMARC', okDom(dom.dmarc)) + chip(okDom(dom.estado) ? 'Verificado en Resend' : 'Sin verificar', okDom(dom.estado)) + '</div>' : nd('sin información'), dom.via ? esc(dom.via === 'api' ? 'Comprobado con la API de Resend' : 'Comprobado por DNS (la clave de Resend es de solo envío)') : '', !dom.nombre);
       b3 += fila('Reply-To', rt && rt.email ? esc(rt.email) + ' ' + chip(rt.estado === 'confirmado' ? 'Confirmado' : 'Sin confirmar', rt.estado === 'confirmado') : nd('sin definir'), rt && rt.email ? '' : esc('Es la casilla donde llegan las respuestas de los clientes. Necesaria antes de enviar a clientes.'), !(rt && rt.email));
-      b3 += '<p class="cf-nota-legal">' + esc('Si el remitente es una casilla que todavía no recibe correo, define un Reply-To que sí leas: ahí llegarán las respuestas. El remitente solo se puede cambiar con los envíos desactivados y con el dominio ya verificado.') + '</p>';
+      b3 += '<p class="cf-nota-legal">' + esc('Si el remitente es una casilla que todavía no recibe correo, define un Reply-To que sí leas: ahí llegarán las respuestas. El remitente solo se puede cambiar si su dominio ya está verificado en Resend.') + '</p>';
       html.push(seccion('Remitente y Reply-To', 'Quién aparece como emisor y adónde llegan las respuestas.', b3,
-        boton('ed_remitente', 'Cambiar remitente…', { dis: nivel !== 'desactivado', titulo: nivel !== 'desactivado' ? 'Apaga los envíos reales para cambiar el remitente' : '' })
+        boton('ed_remitente', 'Cambiar remitente…')
         + boton('ed_replyto', 'Definir Reply-To…') + (rt && rt.email && rt.estado !== 'confirmado' ? boton('conf_replyto', 'Confirmo que recibo las respuestas', { solid:true }) : '')));
 
       // 4) Plan y política de envío
@@ -6427,11 +6222,8 @@ ${contenido}
       b4 += fila('Horario de envío (hora de Chile)', po.ventana && po.ventana.desde ? esc(po.ventana.desde + ' a ' + po.ventana.hasta) : nd('sin definir'), '', !(po.ventana && po.ventana.desde));
       const col = po.colchonTransaccional || {};
       b4 += fila('Reserva para correos de reservas y pagos', (col.diario != null || col.mensual != null) ? esc((col.diario != null ? fmt(col.diario) + ' por día' : '') + (col.diario != null && col.mensual != null ? ' · ' : '') + (col.mensual != null ? fmt(col.mensual) + ' por mes' : '')) : nd('sin definir'), '', col.diario == null && col.mensual == null);
-      const pd = (lim.primerDia && typeof lim.primerDia === 'object') ? lim.primerDia : null;      // [V21-09] lo calcula el servidor; el panel no inventa ningún número
-      if(pd) b4 += fila('Primer día de envío a clientes', (pd.tope != null ? esc(fmt(pd.tope) + ' correos') : nd('sin tope')) + ' ' + (pd.ok ? chip('Cumple', true) : chip('Supera el máximo de ' + fmt(pd.maximoPermitido != null ? pd.maximoPermitido : 150), false)),
-        pd.calentamientoCompletado ? esc('El calentamiento está completado: este límite ya no se exige.') : esc((FUENTE_PRIMER_DIA[pd.fuente] ? 'Sale ' + FUENTE_PRIMER_DIA[pd.fuente] + '. ' : '') + 'Mientras el dominio no esté calentado, el máximo para el primer día de envío a clientes es ' + fmt(pd.maximoPermitido != null ? pd.maximoPermitido : 150) + ' correos.'), false);
-      if(lim.sinLimitesDefinidos) b4 += '<p class="cf-texto" style="color:var(--pill-programado-fg);">' + esc('Sin límites definidos no se puede armar un envío a clientes. Define al menos uno.') + '</p>';
-      else if(lim.cupoHoy != null) b4 += '<p class="cf-texto">' + esc('Con lo definido, hoy se podrían enviar ' + fmt(lim.cupoHoy) + ' correos' + (lim.limitante ? ' (limita: ' + String(lim.limitante) + ')' : '') + '.') + '</p>';
+      if(lim.sinLimitesDefinidos) b4 += '<p class="cf-texto" style="color:var(--pill-programado-fg);">' + esc('Sin límites definidos no se puede enviar una campaña. Define al menos uno.') + '</p>';
+      else if(lim.cupoHoy != null) b4 += '<p class="cf-texto">' + esc('Con lo definido, hoy se podrían enviar ' + fmt(lim.cupoHoy) + ' correos' + (emLimitanteTxt(lim.limitante) ? ' (lo limita ' + emLimitanteTxt(lim.limitante) + ')' : '') + '.') + '</p>';
       html.push(seccion('Plan de Resend y límites', 'Lo que tú declaras. El sistema usa el límite más bajo de los que definas.', b4, boton('ed_plan', 'Editar plan…') + boton('ed_politica', 'Editar política de envío…')));
 
       // 5) Calentamiento
@@ -6440,7 +6232,7 @@ ${contenido}
       const pasos = Array.isArray(cal.pasos) ? cal.pasos : (Array.isArray(cfg.warmupPasos) ? cfg.warmupPasos : []);
       let b5 = fila('Calentamiento', cal.activo === true ? chip('Activo', true) : (cal.activo === false ? chip('Apagado') : nd('sin información')), fuenteCal ? esc('Calendario: ' + (fuenteCal === 'propio' ? 'propio' : String(fuenteCal).replace(/_/g, ' '))) : '', cal.activo == null);
       b5 += pasos.length ? '<table class="cf-tabla"><thead><tr><th>Escalón</th><th>Tope por día</th><th>Días mínimos</th><th>Máx. por hora</th></tr></thead><tbody>' + pasos.map((p)=> '<tr><td>' + esc(p.paso) + '</td><td>' + (p.tope == null ? 'sin tope' : esc(fmt(p.tope))) + '</td><td>' + esc(p.diasMin) + '</td><td>' + (p.maxPorHora ? esc(fmt(p.maxPorHora)) : '—') + '</td></tr>').join('') + '</tbody></table>' : '';
-      b5 += '<p class="cf-nota-legal">' + esc('Un dominio nuevo debe empezar con pocos correos y subir de a poco. Puedes usar el calendario recomendado por Resend (consultado el 11-oct-2026) como punto de partida. Para activar los envíos a clientes, mientras el dominio no esté calentado el primer día no puede pasar de 150 correos: el calendario recomendado (150, 250, 400, 700, 1.000, 1.500 y 2.000 por día) lo cumple.') + '</p>';
+      b5 += '<p class="cf-nota-legal">' + esc('Un dominio nuevo debe empezar con pocos correos y subir de a poco. El sistema aplica este calendario solo: si la campaña es más grande que el tope del día, sigue los días siguientes sin que tengas que hacer nada. Puedes usar el calendario recomendado por Resend (consultado el 11-oct-2026: 150, 250, 400, 700, 1.000, 1.500 y 2.000 por día) como punto de partida.') + '</p>';
       html.push(seccion('Calentamiento del dominio', 'Tope diario que sube escalón por escalón mientras las tasas se mantienen sanas.', b5, boton('ed_calentamiento', 'Editar calentamiento…')));
 
       // 6) Umbrales + reintentos
@@ -6455,12 +6247,13 @@ ${contenido}
       // 7) Pie del correo
       const pie = cfg.pieCorreo || {}, cc = pie.correoContacto || null;
       let b7 = fila('Nombre comercial', pie.nombreComercial ? esc(pie.nombreComercial) : nd('sin definir'), defPor(pie), !pie.nombreComercial);
-      b7 += fila('Motivo del envío', pie.motivo ? esc(pie.motivo) : nd('texto estándar'), '', !pie.motivo) + fila('Dirección', pie.direccion ? esc(pie.direccion) : nd('sin dirección'), '', !pie.direccion);
+      b7 += fila('Aviso inferior y enlace de baja', esc('Los agrega el sistema (no se editan)'), '', false) + fila('Dirección', pie.direccion ? esc(pie.direccion) : nd('sin dirección'), '', !pie.direccion);   // el aviso es fijo: ya no hay «motivo» editable
+      b7 += fila('Política de privacidad (enlace)', pie.politicaUrl ? esc(pie.politicaUrl) : nd('sin enlace (opcional)'), '', !pie.politicaUrl);
       b7 += fila('Teléfono', pie.telefono ? esc(pie.telefono) : nd('sin teléfono'), '', !pie.telefono);
       b7 += fila('Correo de contacto', cc && cc.email ? esc(cc.email) + ' ' + chip(cc.recibe === true ? 'Recibe mensajes' : 'No aparece en el pie', cc.recibe === true) : nd('sin correo'), cc && cc.email && cc.recibe !== true ? esc('Solo se muestra en el pie si declaras que esa casilla recibe mensajes.') : '', !(cc && cc.email));
       b7 += fila('Sitio web', pie.sitioWeb ? esc(pie.sitioWeb) : nd('sin definir'), '', !pie.sitioWeb);
-      b7 += '<p class="cf-nota-legal">' + esc('Todo correo comercial lleva automáticamente este pie y un enlace de baja de un clic. Pide que alguien revise el texto legal («aceptaste recibir novedades…») antes de enviar a clientes.') + '</p>';
-      html.push(seccion('Pie del correo', 'Identificación de Masterlook y datos de contacto que se agregan al final de todo correo comercial.', b7, boton('ed_pie', 'Editar pie…')));
+      b7 += '<p class="cf-nota-legal">' + esc('El sistema agrega automáticamente el aviso inferior y el enlace de baja, únicamente en los correos de Email Marketing. Son tres líneas fijas: «Has recibido este correo porque has reservado o te has registrado con MASTERLOOK.», «Este mensaje ha sido enviado por MASTERLOOK.» y «No recibir más estos mensajes.» (esta última es el enlace de baja de un clic). Las confirmaciones de reserva, recordatorios, comprobantes de pago y demás correos del sitio no lo llevan. Pide que alguien revise estos datos antes de enviar a clientes.') + '</p>';
+      html.push(seccion('Pie del correo', 'Identificación de Masterlook y datos de contacto que se agregan al final de los correos de Email Marketing.', b7, boton('ed_pie', 'Editar pie…')));
 
       // 7b) [V21-07] Envío automático por tandas: latido de los dos programadores (solo si el servidor lo informa; nunca se afirma «activo» sin señal)
       const lpl = emLatidoDe('planificador'), lre = emLatidoDe('reconciliador');
@@ -6476,7 +6269,6 @@ ${contenido}
       // 8) Estado de Resend
       const rs = e.resend || {}, cu = rs.cuota || {}, rl = cu.ratelimit || {};
       let b8 = fila('Aviso automático (webhook)', (rs.webhook && rs.webhook.verificadoAt) || c.webhookVerificadoAt ? chip('Verificado', true) + ' ' + esc(emFechaHora((rs.webhook && rs.webhook.verificadoAt) || c.webhookVerificadoAt)) : chip('Todavía no llegó ningún evento firmado', false), '', false);
-      b8 += fila('Correo de prueba entregado', c.pruebaRealEntregadaAt ? esc(emFechaHora(c.pruebaRealEntregadaAt)) : nd('todavía ninguno'), '', !c.pruebaRealEntregadaAt);
       b8 += fila('Uso informado por Resend', (cu.mensualUsado != null || cu.diarioUsado != null) ? esc((cu.mensualUsado != null ? fmt(cu.mensualUsado) + ' este mes' : '') + (cu.mensualUsado != null && cu.diarioUsado != null ? ' · ' : '') + (cu.diarioUsado != null ? fmt(cu.diarioUsado) + ' hoy' : '')) : nd('Resend todavía no informó el uso'), cu.observadoAt ? esc('Observado ' + emFechaHora(cu.observadoAt) + '. Incluye también los correos de reservas.') : '', cu.mensualUsado == null && cu.diarioUsado == null);
       if(rl && rl.limite != null) b8 += fila('Ritmo permitido', esc(fmt(rl.limite) + ' peticiones por segundo · quedan ' + fmt(rl.restante)), '', false);
       if(cu.ultimoError429 && cu.ultimoError429.nombre) b8 += fila('Último aviso de cuota', esc(String(cu.ultimoError429.nombre) + (cu.ultimoError429.at ? ' · ' + emFechaHora(cu.ultimoError429.at) : '')), '', false);
@@ -6484,14 +6276,6 @@ ${contenido}
 
       CONT().innerHTML = html.join('');
     }
-    function listaPrecond(p){
-      return '<ul class="precond">' + p.map((x)=> '<li data-ok="' + (x.ok ? '1' : '0') + '">' + (x.ok ? preflightIco('ok') : preflightIco('fail')) + '<span>' + esc(PRECOND_TXT[x.id] || x.id) + (x.detalle ? '<small>' + esc(x.detalle) + '</small>' : '') + '</span></li>').join('') + '</ul>';
-    }
-    function preflightIco(t){
-      return t === 'ok' ? '<svg class="pf-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 10l4 4 8-9"/></svg>'
-        : '<svg class="pf-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 5l10 10M15 5L5 15"/></svg>';
-    }
-
     /* ---------- carga ---------- */
     async function cargar(opts){
       const err = $('cfError'); err.style.display = 'none';
@@ -6532,7 +6316,7 @@ ${contenido}
     const FORMS = {
       ed_remitente: ()=>{
         const r = (emEstado.datos().config || {}).remitente || {};
-        return editar('remitente', 'Cambiar remitente', 'Solo se puede cambiar con los envíos desactivados y con el dominio ya verificado en Resend.',
+        return editar('remitente', 'Cambiar remitente', 'Solo se puede cambiar si el dominio del correo ya está verificado en Resend.',
           [{ id:'senderName', tipo:'texto', etiqueta:'Nombre que ve el cliente', valor:r.senderName || 'Masterlook', requerido:true, max:60, par:true },
            { id:'senderEmail', tipo:'email', etiqueta:'Correo del remitente', valor:r.senderEmail || '', requerido:true, max:254, par:true }],
           (v)=>{
@@ -6636,107 +6420,31 @@ ${contenido}
       ed_pie: async function(){
       const p = (emEstado.datos().config || {}).pieCorreo || {}, cc = p.correoContacto || {};
       await emForm.abrir({
-        titulo:'Pie del correo', intro:'Va al final de todo correo comercial, junto al enlace de baja. Necesita al menos un medio de contacto que funcione.',
+        titulo:'Pie del correo', intro:'Estos datos van al final de los correos de Email Marketing y necesitan al menos un medio de contacto que funcione. El aviso inferior y el enlace de baja («No recibir más estos mensajes.») los agrega el sistema automáticamente y no se editan aquí.',
         campos:[
           { id:'nombreComercial', tipo:'texto', etiqueta:'Nombre comercial', valor:p.nombreComercial || 'Masterlook', requerido:true, max:60 },
-          { id:'motivoPie', tipo:'texto', etiqueta:'Motivo del envío (opcional)', valor:p.motivo || '', max:200, ayuda:'Si lo dejas vacío se usa el texto estándar «Recibes este correo porque aceptaste recibir novedades de…».' },
           { id:'direccion', tipo:'texto', etiqueta:'Dirección del local', valor:p.direccion || '', max:200 },
           { id:'telefono', tipo:'texto', etiqueta:'Teléfono', valor:p.telefono || '', max:30, par:true },
           { id:'sitioWeb', tipo:'texto', etiqueta:'Sitio web (https)', valor:p.sitioWeb || 'https://masterlook.cl', max:200, requerido:true, par:true },
           { id:'correoEmail', tipo:'email', etiqueta:'Correo de contacto', valor:cc.email || '', max:254 },
           { id:'correoRecibe', tipo:'check', etiqueta:'Esa casilla recibe mensajes (solo así aparece en el pie)', valor: cc.recibe === true },
+          { id:'politicaUrl', tipo:'texto', etiqueta:'Enlace a tu política de privacidad (opcional)', valor:p.politicaUrl || '', max:200, placeholder:'https://masterlook.cl/privacidad', ayuda:'Debe empezar con https://. Si lo pones, aparece en el pie de los correos de Email Marketing.' },
           campoMotivo(),
         ],
         textoGuardar:'Guardar cambios',
-        alGuardar: async (v)=> guardarSeccion('pieCorreo', { nombreComercial: v.nombreComercial, motivo: v.motivoPie || null, direccion: v.direccion || null, telefono: v.telefono || null,
-          correoContacto: v.correoEmail ? { email: v.correoEmail.toLowerCase(), recibe: !!v.correoRecibe } : null, sitioWeb: v.sitioWeb }, v.motivo),
+        alGuardar: async (v)=>{
+          const url = String(v.politicaUrl || '').trim();
+          if(url && !/^https:\/\/[^\s<>"']+$/i.test(url)) throw new Error('El enlace a la política de privacidad debe empezar con https:// y no llevar espacios.');
+          // el aviso inferior es fijo y lo arma el sistema: ya no se manda `motivo` (el servidor sigue aceptando la clave, solo que este panel no la usa)
+          const valores = { nombreComercial: v.nombreComercial, direccion: v.direccion || null, telefono: v.telefono || null,
+            correoContacto: v.correoEmail ? { email: v.correoEmail.toLowerCase(), recibe: !!v.correoRecibe } : null, sitioWeb: v.sitioWeb };
+          if(url || p.politicaUrl) valores.politicaUrl = url || null;      // solo se manda si hay algo que guardar o que quitar: así un servidor anterior sigue aceptando el pie sin este campo
+          return guardarSeccion('pieCorreo', valores, v.motivo);
+        },
         alDesactualizar: ()=> cargar(),
       });
       },
     };
-
-    /* ---------- activar / desactivar ---------- */
-    async function desactivar(){
-      const si = await emConfirmar('Desactivar los envíos reales', 'Dejarán de salir correos reales: el sistema comprueba este interruptor antes de cada envío a Resend. Lo único que puede salir después es el lote que YA iba en camino en ese instante (como máximo 100 correos por cada campaña que estuviera enviando); esos correos no se pueden retirar. Lo que no salió queda pendiente y no se repite al volver a activar. Las campañas armadas se pausan y no se reanudan solas. Puedes volver a activarlos cuando quieras.', 'Desactivar envíos', true);
-      if(!si) return;
-      try{
-        await emLlamar('emailEnviosRealesCambiar', { accion:'desactivar' });
-        await cargar(); emResumen.cargar(false);
-        await emAviso({ titulo:'Envíos reales desactivados', texto:'Listo. Desde ahora no sale ningún correo real nuevo (solo pudo salir el lote que ya iba en camino). Quedó registrado en la auditoría.' });
-      }catch(e){ emAvisoError('No se pudo desactivar', e); }
-    }
-    const er = {
-      accion: null,
-      abrir: function(accion){
-        er.accion = accion;
-        const e = emEstado.datos() || {}, pre = Array.isArray(e.precondiciones) ? e.precondiciones : [];
-        const req = PRECOND_REQ[accion];
-        $('erTitulo').textContent = accion === 'activar_clientes' ? 'Activar envíos a clientes' : 'Activar envíos de prueba';
-        const modo = $('erModo'); modo.dataset.dry = accion === 'activar_clientes' ? '0' : '1';
-        modo.textContent = accion === 'activar_clientes' ? 'Esto permite enviar campañas reales a tus clientes (cada campaña se sigue confirmando aparte).' : 'Esto permite enviar correos reales SOLO a las direcciones de prueba autorizadas.';
-        $('erExplica').textContent = 'Activar no envía nada por sí solo. Después tendrás que confirmar cada campaña escribiendo ENVIAR y el número exacto de destinatarios.';
-        const lista = req.filter((id)=> id !== 'primer_dia' || pre.some((p)=> p.id === 'primer_dia')).map((id)=> pre.find((p)=> p.id === id) || { id, ok:false, detalle:'Sin información del servidor' });
-        $('erPrecond').innerHTML = listaPrecond(lista);
-        $('erFraseTxt').textContent = FRASE[accion];
-        $('erFrase').value = ''; $('erMotivo').value = ''; $('erClave').value = '';
-        $('erClaveWrap').style.display = (emTieneClave() && Date.now() - emUltimaReauth >= 240000) ? '' : 'none';
-        $('erMsg').className = 'cfg-msg'; $('erMsg').textContent = '';
-        $('erConfirmar').disabled = true; $('erConfirmar').textContent = 'Confirmar';
-        $('modalEnviosReales').classList.add('abierto');
-        $('erFrase').focus();
-      },
-      validar: function(){
-        const ok = normFrase($('erFrase').value) === normFrase(FRASE[er.accion] || '###');
-        $('erConfirmar').disabled = !ok;
-      },
-      cerrar: function(){ $('modalEnviosReales').classList.remove('abierto'); er.accion = null; },
-      confirmar: async function(){
-        if(!er.accion) return;
-        const btn = $('erConfirmar'), msg = $('erMsg'); btn.disabled = true; btn.textContent = 'Activando…'; msg.className = 'cfg-msg';
-        try{
-          await emReautenticar($('erClave').value);
-          await emLlamar('emailEnviosRealesCambiar', { accion: er.accion, confirmacion: $('erFrase').value.trim(), seqEsperado: emEstado.seq(), motivo: $('erMotivo').value.trim() || undefined });
-          const quien = er.accion;
-          er.cerrar();
-          await cargar(); emResumen.cargar(false);
-          await emAviso({ titulo: quien === 'activar_clientes' ? 'Envíos a clientes activados' : 'Envíos de prueba activados', texto:'Listo. No se envió ningún correo. Cada campaña se confirma aparte, escribiendo ENVIAR y el número exacto de destinatarios.' });
-        }catch(e){
-          btn.disabled = false; btn.textContent = 'Confirmar';
-          if(emMotivoDe(e) === 'reauth_requerida') emUltimaReauth = 0;
-          if(emMotivoDe(e) === 'estado_desactualizado') cargar();
-          msg.className = 'cfg-msg err';
-          msg.textContent = emMensajeReauth(e) || emMensajeError(e);
-          const det = emDetalleLista(e); if(det.length) msg.textContent += ' ' + det.join(' · ');
-          if(!emTieneClave() && emMotivoDe(e) === 'reauth_requerida') msg.textContent += ' Vuelve a pulsar «Confirmar» para confirmar tu cuenta de Google.';
-        }
-      },
-    };
-    $('erFrase').addEventListener('input', er.validar);
-    $('erConfirmar').addEventListener('click', er.confirmar);
-    $('erCancelar').addEventListener('click', er.cerrar);
-    $('erCerrar').addEventListener('click', er.cerrar);
-    $('modalEnviosReales').addEventListener('click', (ev)=>{ if(ev.target === $('modalEnviosReales')) er.cerrar(); });
-
-    /* ---------- direcciones de prueba ---------- */
-    async function agregarDireccion(){
-      await emForm.abrir({
-        titulo:'Autorizar dirección de prueba',
-        intro:'Solo esta dirección podrá recibir correos reales en el nivel «solo pruebas». Usa una casilla tuya (por ejemplo, la de quien hará la prueba final).',
-        campos:[
-          { id:'email', tipo:'email', etiqueta:'Correo', requerido:true, max:254 },
-          { id:'nota', tipo:'textarea', etiqueta:'Nota (para qué se autoriza)', requerido:true, minLargo:10, max:200, ayuda:'Entre 10 y 200 caracteres. Queda en la auditoría.' },
-        ],
-        reauth:true, textoGuardar:'Autorizar',
-        alGuardar: async (v)=>{ await emLlamar('emailEnviosRealesCambiar', { accion:'autorizar_direccion', seqEsperado: emEstado.seq(), direcciones:[{ email: v.email.toLowerCase(), nota: v.nota }] }); await cargar(); },
-        alDesactualizar: ()=> cargar(),
-      });
-    }
-    async function quitarDireccion(email){
-      const si = await emConfirmar('Quitar dirección de prueba', 'Esa dirección dejará de poder recibir correos de prueba: ' + email, 'Quitar', true);
-      if(!si) return;
-      try{ await emLlamar('emailEnviosRealesCambiar', { accion:'quitar_direccion', seqEsperado: emEstado.seq(), direcciones:[{ email }] }); await cargar(); }
-      catch(e){ if(emMotivoDe(e) === 'estado_desactualizado') cargar(); emAvisoError('No se pudo quitar la dirección', e); }
-    }
 
     /* ---------- auditoría ---------- */
     async function verAuditoria(){
@@ -6762,11 +6470,7 @@ ${contenido}
     CONT().addEventListener('click', (ev)=>{
       const b = ev.target.closest ? ev.target.closest('button[data-acc]') : null; if(!b || b.disabled) return;
       const acc = b.dataset.acc;
-      if(acc === 'activar_pruebas' || acc === 'activar_clientes') er.abrir(acc);
-      else if(acc === 'desactivar') desactivar();
-      else if(acc === 'auditoria') verAuditoria();
-      else if(acc === 'agregar_dir') agregarDireccion();
-      else if(acc === 'quitar_dir') quitarDireccion(b.dataset.dato);
+      if(acc === 'auditoria') verAuditoria();
       else if(acc === 'refrescar_resend') cargar({ refrescarResend:true });
       else if(acc === 'recargar_latido') cargar();
       else if(acc === 'reconciliar_ahora') emReconciliar.ejecutar();
@@ -6794,7 +6498,8 @@ ${contenido}
 
   /* ---------- arranque: lo llama el gate de sesión cuando ya hay Firebase + sesión + rol ADMIN confirmado ---------- */
   window.emIniciarPanel = function(){
-    emEstado.cargar().catch(()=>{});     // estado de los envíos + entorno (el servidor dice si esto es Producción o DEV)
+    if(window.EM_HOST_TIPO === 'dev') emAplicarEntorno('pruebas');   // el sitio de pruebas nunca es producción: la franja aparece sin esperar al servidor
+    emEstado.cargar().catch(()=>{});     // estado de los envíos + entorno (el servidor dice si esto es producción o pruebas)
     emResumen.cargar(false);             // contadores reales del mes actual
     emLista.cargar(true);                // campañas
   };
@@ -6898,7 +6603,6 @@ ${contenido}
     // Recién ACÁ hay sesión real + Firebase inicializado + rol confirmado --
     // seguro para leer emailCampaigns (antes de esto firebase.initializeApp
     // ni siquiera había corrido, ver comentario en emCargarBorradores).
-    window.EM_ES_DUENA = esDueña;      // solo la dueña puede activar el envío a clientes (el servidor lo vuelve a exigir)
     window.emIniciarPanel();
   });
 })();
