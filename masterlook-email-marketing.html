@@ -655,6 +655,21 @@
   .rep-res-btn{margin-top:10px;}
   .rep-hdr-estado{margin-left:8px;}
 
+  /* ---- [v2.3] Detalle por persona del reporte ---- */
+  .rep-pers-filtros{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 12px;}
+  .rep-pers-filtros button{border:1px solid var(--borde-suave); background:var(--tarjeta); color:var(--texto-medio); border-radius:999px; padding:5px 12px; font-size:12px; font-family:var(--font-body); cursor:pointer;}
+  .rep-pers-filtros button[data-activo]{background:var(--texto-alto); color:var(--tarjeta); border-color:var(--texto-alto);}
+  .rep-pers-scroll{max-height:380px; overflow:auto; border:1px solid var(--borde-suave); border-radius:10px;}
+  .rep-pers{width:100%; font-size:12.5px; border-collapse:collapse; font-variant-numeric:tabular-nums;}
+  .rep-pers th{position:sticky; top:0; background:var(--tarjeta); text-align:left; padding:7px 10px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--texto-bajo); border-bottom:1px solid var(--borde-suave); z-index:1;}
+  .rep-pers td{padding:6px 10px; border-bottom:1px solid var(--borde-suave); color:var(--texto-medio); vertical-align:top;}
+  .rep-pers td b{color:var(--texto-alto); font-weight:600;}
+  .rep-pers .pers-sub{display:block; font-size:11px; color:var(--texto-bajo); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .rep-pers .pers-si{color:#1d9a6c; font-weight:600;}
+  .rep-pers .pers-no{color:var(--rojo, #c0392b); font-weight:600;}
+  .rep-pers-acc{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center;}
+  .rep-pers-cuenta{font-size:12px; color:var(--texto-bajo); margin-left:auto;}
+
   /* ---- Audiencias: resumen, segmentos con conteos ---- */
   .au-res{background:var(--tarjeta); border-radius:var(--radio); box-shadow:var(--sombra); padding:18px 20px; margin-bottom:16px;}
   .au-res-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px;}
@@ -1006,7 +1021,9 @@
         <div class="au-aviso" id="auAviso" style="display:none;"></div>
         <div class="au-acc">
           <button class="btn btn-outline" id="auActualizar">Actualizar contactos</button>
+          <button class="btn btn-outline" id="auValidar">Validar base</button>
         </div>
+        <div class="au-aviso" id="auValidarRes" style="display:none;"></div>
       </section>
 
       <div class="rec-tabla-cab">
@@ -1382,6 +1399,7 @@
       <div id="repCuerpo">
         <div class="rep-aviso-eventos" id="repAvisoEventos" style="display:none;"></div>
         <div id="repMetricasWrap"></div>
+        <div id="repPersonasWrap"></div>
         <p class="rep-nota" id="repNota"></p>
       </div>
     </div>
@@ -1538,6 +1556,7 @@
           </label>
           <div class="aud-dias-inline" id="audExtraRecientes" style="display:none;">
             Últimos <input type="number" id="audDiasRec" value="90" min="1" max="730"> días
+            <button type="button" class="btn btn-outline" id="audDias365" style="padding:4px 10px;font-size:12px;">Último año (365)</button>
           </div>
           <label data-seg="sin_reservar">
             <input type="radio" name="audSeg" value="sin_reservar">
@@ -2137,11 +2156,12 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
     'emailContactosResumen', 'emailContactosReconstruir', 'emailConsentimientoRegistrar', 'emailAudienciaPreview',
     'emailSuprimirManual', 'emailReactivarConsentimiento', 'emailClientesInactivos', 'emailReconstruirVisitas',
     'emailReconciliarAhora', 'emailClientesPagina',
+    'emailCampanaDestinatarios', 'emailValidarBase',   // [v2.3] seguimiento por persona + validación local de la base
   ]);
   // [V21-02] la reconciliación puede tardar más que los 70 s normales del navegador (la Function admite 300 s) · [v2.2.0] «Actualizar contactos» procesa toda la base: la Function admite hasta 540 s
   // [v2.2.0, fase de pruebas] «Enviar campaña» / «Programar» / «Procesar ahora» arman la campaña (hasta miles de destinatarios), pueden despachar una tanda y en el servidor admiten 300 s; «Comprobar» y la prueba, 120 s: con los 70 s normales del navegador
   // la dueña vería "no se pudo conectar" aunque el servidor siguiera trabajando (y podría reintentar).
-  const EM_TIMEOUT_FN = { emailReconciliarAhora: 300000, emailClientesPagina: 25000, emailContactosReconstruir: 540000, emailCampanaEnviarAhora: 300000, emailCampanaProgramar: 300000, emailPlanificadorAhora: 300000, emailCampanaValidar: 120000, emailPruebaEnviar: 120000 };
+  const EM_TIMEOUT_FN = { emailReconciliarAhora: 300000, emailClientesPagina: 25000, emailContactosReconstruir: 540000, emailCampanaEnviarAhora: 300000, emailCampanaProgramar: 300000, emailPlanificadorAhora: 300000, emailCampanaValidar: 120000, emailPruebaEnviar: 120000, emailCampanaDestinatarios: 120000, emailValidarBase: 300000 };
   const emCacheFn = {};
   /** Llama a una Function callable del contrato y devuelve `data`. Rechaza con el error original (con details.motivo si el servidor lo trae). */
   function emLlamar(nombre, datos){
@@ -2784,6 +2804,7 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
         html += seccion('Enviados por día') + '<table class="rep-dia"><tbody>' + dias.map((d)=> '<tr><td>' + esc(d) + '</td><td style="text-align:right;">' + fmt(rep.porDia[d]) + '</td></tr>').join('') + '</tbody></table>';
       }
       $('repMetricasWrap').innerHTML = html;
+      personasPreparar();   // [v2.3] el detalle por persona se ofrece siempre; se carga solo si se pide
       $('repNota').innerHTML = '<b>Cómo leer estas cifras.</b> Enviados, entregados, rebotes, quejas y bajas las contamos nosotros desde los eventos de Resend. '
         + '<b>Aperturas estimadas:</b> Apple Mail y otros lectores abren los correos de forma automática; el número real de personas puede ser menor. '
         + '<b>Clics registrados:</b> son los clics que Resend registró; pueden incluir clics automáticos de antivirus, programas de seguridad o bots, así que no equivalen a personas. '
@@ -2817,6 +2838,7 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       const b0 = $('repSalud'); b0.dataset.salud = 'sin-datos'; b0.textContent = '';
       $('repVacio').style.display = 'none';
       $('repCuerpo').style.display = 'none';
+      $('repPersonasWrap').innerHTML = '';
       modal.classList.add('abierto');
       try{
         if(!emEstado.datos()) { try{ await emEstado.cargar(); }catch(_){ /* los umbrales son opcionales */ } }
@@ -2829,10 +2851,164 @@ window.MLEnlaces = { RE_PROF, RE_UTM, UTM_CLAVES, PRESETS, ORIGENES_VALIDOS, ori
       }
     }
 
-    function cerrar(){ modal.classList.remove('abierto'); idActual = null; }
+    function cerrar(){ modal.classList.remove('abierto'); idActual = null; perDatos = null; $('repPersonasWrap').innerHTML = ''; }
     $('cerrarReporte').addEventListener('click', cerrar);
     $('cerrarReporte2').addEventListener('click', cerrar);
     modal.addEventListener('click', (e)=>{ if(e.target === modal) cerrar(); });
+
+    /* =====================================================================
+       [v2.3] DETALLE POR PERSONA -- emailCampanaDestinatarios (solo ADMIN).
+       Se carga bajo demanda (botón), nunca junto con el reporte: son hasta
+       1.500 filas con nombre y correo. Clics = solo los REALES (el servidor
+       ya filtró bots/antivirus); las aperturas siempre se rotulan estimadas.
+       ===================================================================== */
+    const PERS_FILTROS = [
+      ['todos', 'Todos'], ['abrieron', 'Abrieron'], ['clicaron', 'Hicieron clic'],
+      ['clic_sin_reserva', 'Clic y NO reservaron'], ['reservaron', 'Reservaron'], ['rebotaron', 'Rebotaron'],
+    ];
+    const PERS_MAX_FIJA = 10000;   // == MAX_EMAILS_AUDIENCIA_FIJA del backend
+    let perDatos = null, perFiltro = 'todos';
+
+    function perPasa(f, filtro){
+      const reservo = !!(f.reserva && f.reserva.estado === 'confirmada');
+      switch(filtro){
+        case 'abrieron': return N(f.aperturas) > 0;
+        case 'clicaron': return N(f.clicsReales) > 0;
+        case 'clic_sin_reserva': return N(f.clicsReales) > 0 && !reservo;
+        case 'reservaron': return reservo;
+        case 'rebotaron': return f.entrega === 'fallido';
+        default: return true;
+      }
+    }
+    const perFiltradas = ()=> (perDatos ? perDatos.filas.filter((f)=> perPasa(f, perFiltro)) : []);
+
+    function personasPreparar(){
+      perDatos = null; perFiltro = 'todos';
+      $('repPersonasWrap').innerHTML = seccion('Detalle por persona')
+        + '<div class="rep-res-btn"><button type="button" class="btn btn-outline" id="repVerPersonas" style="padding:6px 12px;font-size:12.5px;">Ver persona por persona</button>'
+        + ' <span class="rep-mx-sub">Quién abrió, quién hizo clic y quién reservó. Solo lectura.</span></div>';
+      const bt = $('repVerPersonas');
+      if(bt) bt.addEventListener('click', ()=> personasCargar(bt));
+    }
+    async function personasCargar(btn){
+      const id = idActual;
+      btn.disabled = true; btn.textContent = 'Cargando…';
+      try{
+        const rep = await emLlamar('emailCampanaDestinatarios', { campaignId: id });
+        if(idActual !== id) return;
+        perDatos = rep; perFiltro = 'todos';
+        personasPintar();
+      }catch(e){
+        btn.disabled = false; btn.textContent = 'Ver persona por persona';
+        emAvisoError('No se pudo cargar el detalle por persona', e);
+      }
+    }
+
+    function perEntregaHtml(f){
+      if(f.entrega === 'entregado') return '<span class="pers-si">✓</span>';
+      if(f.entrega === 'fallido') return '<span class="pers-no">✗</span>' + (f.motivoFallo ? '<span class="pers-sub">' + esc(f.motivoFallo) + '</span>' : '');
+      if(f.entrega === 'en_transito') return '<span title="Aceptado por Resend, sin confirmación del buzón">·</span>';
+      return '<span class="pers-sub">' + esc(f.motivoFallo || f.estado || 'no enviado') + '</span>';
+    }
+    function perReservaHtml(f){
+      const r = f.reserva;
+      if(r && r.estado === 'confirmada'){
+        const partes = ['<span class="pers-si">✓' + (r.metodo === 'token' ? '' : ' ~') + '</span> <b>' + esc('$' + fmt(r.monto)) + '</b>'];
+        const sub = [r.servicios, r.fechaCita].filter(Boolean).join(' · ');
+        if(sub) partes.push('<span class="pers-sub">' + esc(sub) + '</span>');
+        return partes.join('');
+      }
+      if(r && r.estado === 'no_finalizada') return '<span class="pers-sub">inició sin finalizar</span>';
+      if(r && r.estado === 'cancelada_despues') return '<span class="pers-sub">cancelada después</span>';
+      if(f.intencionAgendaPro) return '<span class="pers-sub" title="Clicó el enlace de agenda: intención, sin reserva atribuible">intención (AgendaPro)</span>';
+      return '—';
+    }
+
+    function personasPintar(){
+      const t = (perDatos && perDatos.totales) || {};
+      const filas = perFiltradas();
+      let html = seccion('Detalle por persona');
+      html += '<div class="rep-metricas">';
+      html += tarjeta(fmt(t.abrieron), 'Personas que abrieron', { pct: (t.pctAperturaEstimada || 0).toLocaleString('es-CL') + ' %', rotulo:'estimada', sub:'Sobre ' + fmt(t.entregados) + ' entregados' });
+      html += tarjeta(fmt(t.clicaron), 'Personas con clic real', { pct: (t.pctClicsReales || 0).toLocaleString('es-CL') + ' %', rotulo:'exacta', sub: fmt(t.clicsFiltrados) + ' clics de robots filtrados' });
+      html += tarjeta(fmt(t.reservasConfirmadas), 'Reservaron', { destacado:true, rotulo:'estimada', sub:'Ingresos estimados: $' + fmt(t.ingresos) });
+      html += tarjeta(fmt(t.intencionesAgendaPro), 'Intención AgendaPro', { sub:'Clicaron el enlace de agenda' });
+      html += '</div>';
+      html += '<div class="rep-pers-filtros">' + PERS_FILTROS.map(([k, tx])=>
+        '<button type="button" data-f="' + k + '"' + (k === perFiltro ? ' data-activo' : '') + '>' + esc(tx) + '</button>').join('') + '</div>';
+      if(!filas.length){
+        html += '<p class="rep-nota" style="border-top:none;margin-top:0;padding-top:0;">Ninguna persona cumple este filtro.</p>';
+      }else{
+        html += '<div class="rep-pers-scroll"><table class="rep-pers"><thead><tr><th>Persona</th><th>Entrega</th><th>Abrió</th><th>Clics</th><th>Reservó</th></tr></thead><tbody>';
+        for(const f of filas){
+          const enlaces = (f.enlaces || []).join('\n');
+          html += '<tr>'
+            + '<td><b>' + esc(f.nombre || '—') + '</b><span class="pers-sub">' + esc(f.correo) + (f.baja || f.clicBaja ? ' · se dio de baja' : '') + (f.queja ? ' · marcó spam' : '') + '</span></td>'
+            + '<td>' + perEntregaHtml(f) + '</td>'
+            + '<td>' + (N(f.aperturas) > 0 ? fmt(f.aperturas) : '—') + '</td>'
+            + '<td' + (enlaces ? ' title="' + esc(enlaces) + '"' : '') + '>' + (N(f.clicsReales) > 0 ? '<b>' + fmt(f.clicsReales) + '</b>' : '—')
+            + (N(f.clicsFiltrados) > 0 ? '<span class="pers-sub">+' + fmt(f.clicsFiltrados) + ' de robots</span>' : '') + '</td>'
+            + '<td>' + perReservaHtml(f) + '</td>'
+            + '</tr>';
+        }
+        html += '</tbody></table></div>';
+      }
+      html += '<div class="rep-pers-acc">'
+        + '<button type="button" class="btn btn-outline" id="persAudiencia" style="padding:6px 12px;font-size:12.5px;"' + (filas.length ? '' : ' disabled') + '>Crear audiencia con este filtro</button>'
+        + '<button type="button" class="btn btn-outline" id="persCsv" style="padding:6px 12px;font-size:12.5px;"' + (filas.length ? '' : ' disabled') + '>Descargar CSV</button>'
+        + '<span class="rep-pers-cuenta">' + fmt(filas.length) + ' de ' + fmt((perDatos.filas || []).length) + ' personas' + (perDatos.truncado ? ' · lista recortada' : '') + '</span></div>';
+      html += '<p class="rep-nota" style="border-top:none;margin-top:10px;padding-top:0;">Las aperturas son <b>estimadas</b> (Apple Mail y algunos antivirus abren el correo solos). Los clics mostrados son los <b>reales</b>: se filtran los de robots y antivirus (a menos de 10 s de la entrega, o varios enlaces distintos en el mismo segundo). Una reserva con <b>✓</b> llegó con el identificador de la campaña (certeza directa); con <b>✓ ~</b> es estimación por clic + correo.</p>';
+
+      $('repPersonasWrap').innerHTML = html;
+      $('repPersonasWrap').querySelectorAll('.rep-pers-filtros button').forEach((b)=>
+        b.addEventListener('click', ()=>{ perFiltro = b.dataset.f; personasPintar(); }));
+      const bAud = $('persAudiencia'); if(bAud) bAud.addEventListener('click', ()=> personasAudiencia(bAud));
+      const bCsv = $('persCsv'); if(bCsv) bCsv.addEventListener('click', personasCsv);
+    }
+
+    function personasCsv(){
+      const filas = perFiltradas();
+      const cab = ['nombre', 'correo', 'dominio', 'estado_envio', 'entrega', 'motivo_fallo', 'aperturas_estimadas', 'clics_reales', 'clics_filtrados_robots', 'enlaces_clicados', 'se_dio_de_baja', 'marco_spam', 'intencion_agendapro', 'reserva', 'metodo_atribucion', 'monto', 'servicios', 'fecha_cita'];
+      const celda = (v)=> { const s = String(v == null ? '' : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const lineas = [cab.join(';')].concat(filas.map((f)=> [
+        f.nombre, f.correo, f.dominio, f.estado, f.entrega || '', f.motivoFallo || '', f.aperturas, f.clicsReales, f.clicsFiltrados,
+        (f.enlaces || []).join(' '), (f.baja || f.clicBaja) ? 'si' : 'no', f.queja ? 'si' : 'no', f.intencionAgendaPro ? 'si' : 'no',
+        f.reserva ? f.reserva.estado : '', f.reserva ? f.reserva.metodo : '', f.reserva ? f.reserva.monto : '', f.reserva ? f.reserva.servicios : '', f.reserva ? (f.reserva.fechaCita || '') : '',
+      ].map(celda).join(';')));
+      // BOM + ';' = se abre bien directo en Excel con configuración regional de Chile
+      const blob = new Blob(['﻿' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const camp = (perDatos && perDatos.campana) || {};
+      a.download = ('campana-' + (camp.nombre || camp.id || 'reporte') + '-' + perFiltro + '.csv').replace(/[^\w.-]+/g, '-').toLowerCase();
+      document.body.appendChild(a); a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+
+    async function personasAudiencia(btn){
+      const filas = perFiltradas();
+      const emails = [...new Set(filas.map((f)=> String(f.correo || '').trim().toLowerCase()).filter((e)=> EM_RE_EMAIL.test(e)))].slice(0, PERS_MAX_FIJA);
+      if(!emails.length){ await emAviso({ titulo:'Sin correos', texto:'Este filtro no tiene correos válidos para crear una audiencia.' }); return; }
+      const camp = (perDatos && perDatos.campana) || {};
+      const fTxt = (PERS_FILTROS.find(([k])=> k === perFiltro) || [])[1] || perFiltro;
+      const nombre = ('Campaña ' + (camp.nombre || camp.id || '') + ' — ' + fTxt).slice(0, 120);
+      const r = await emAviso({
+        titulo: 'Crear audiencia con este filtro',
+        textos: ['Se guardará una audiencia FIJA llamada «' + nombre + '» con ' + fmt(emails.length) + ' correo' + (emails.length === 1 ? '' : 's') + ' (los del filtro actual).',
+          'Al enviarle una campaña, el sistema volverá a quitar bajas, rebotes y correos sin permiso: guardar esta lista no salta ningún control.'],
+        botones: [{ id:'crear', texto:'Crear audiencia', tipo:'solid' }, { id:'no', texto:'Cancelar', tipo:'outline' }],
+      });
+      if(r !== 'crear') return;
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try{
+        const ts = firebase.firestore.FieldValue.serverTimestamp();
+        await firebase.firestore().collection('emailAudiences').add({
+          name: nombre, type: 'fija', emails, ultimoConteo: emails.length, ultimoConteoAt: ts, createdAt: ts, updatedAt: ts, createdBy: emUid(),
+        });
+        await emAviso({ titulo:'Audiencia creada', texto:'«' + nombre + '» quedó guardada en Audiencias con ' + fmt(emails.length) + ' correo' + (emails.length === 1 ? '' : 's') + '.' });
+      }catch(e){ await emAvisoError('No se pudo guardar la audiencia', e); }
+      finally{ btn.disabled = false; btn.textContent = 'Crear audiencia con este filtro'; }
+    }
 
     return { abrir, metricas };
   })();
@@ -4854,6 +5030,39 @@ ${contenido}
       finally{ btn.disabled = false; btn.textContent = txt0; }
     }
 
+    /* ---------- [v2.3] Validar base: sintaxis + dominios mal escritos + desechables + MX (sin servicio externo) ---------- */
+    function pintarValidacion(r, aplicado){
+      const el = $('auValidarRes');
+      const partes = ['Se revisaron <b>' + fmt(r.revisados) + '</b> correos activos (' + fmt(r.omitidos) + ' omitidos: de relleno o inactivos).',
+        '<b>' + fmt(r.validos) + '</b> válidos · <b>' + fmt(r.invalidos) + '</b> inválidos · <b>' + fmt(r.riesgo) + '</b> con riesgo.'];
+      if(aplicado) partes.push('El resultado quedó guardado (' + fmt(r.escritos) + ' registros).');
+      const det = (r.detalle || []).slice(0, 40);
+      el.innerHTML = '<p style="margin:0 0 6px;">' + partes.join(' ') + '</p>'
+        + (det.length ? '<ul style="margin:0;padding-left:18px;font-size:12px;color:var(--texto-medio);">' + det.map((d)=>
+          '<li>' + esc(d.email) + ' — ' + esc(d.estado) + ' (' + esc(d.motivo || '') + ')' + (d.sugerencia ? ' · ¿quisiste decir ' + esc(d.sugerencia) + '?' : '') + '</li>').join('')
+          + ((r.detalle || []).length > 40 ? '<li>… y ' + fmt((r.detalle || []).length - 40) + ' más.</li>' : '') + '</ul>' : '');
+      el.style.display = '';
+    }
+    async function validarBase(){
+      const btn = $('auValidar'); btn.disabled = true; const txt0 = btn.textContent; btn.textContent = 'Validando…';
+      try{
+        const ens = await emLlamar('emailValidarBase', { modo:'ensayo' });
+        pintarValidacion(ens, false);
+        if(ens.invalidos + ens.riesgo === 0){
+          await emAviso({ titulo:'Base validada', texto:'Los ' + fmt(ens.validos) + ' correos activos pasaron la validación (sintaxis, dominios y MX). No hay nada que corregir.' });
+          return;
+        }
+        const r = await emAviso({ titulo:'Validar base', textos:[
+          'Resultado: ' + fmt(ens.validos) + ' válidos, ' + fmt(ens.invalidos) + ' inválidos y ' + fmt(ens.riesgo) + ' con riesgo (detalle abajo en la página).',
+          '«Guardar resultado» solo deja constancia del veredicto para consultarlo: NO da de baja ni excluye a nadie de las campañas.'],
+          botones:[{ id:'no', texto:'Solo mirar', tipo:'outline' }, { id:'si', texto:'Guardar resultado', tipo:'solid' }] });
+        if(r !== 'si') return;
+        btn.textContent = 'Guardando…';
+        pintarValidacion(await emLlamar('emailValidarBase', { modo:'aplicar' }), true);
+      }catch(e){ emAvisoError('No se pudo validar la base', e); }
+      finally{ btn.disabled = false; btn.textContent = txt0; }
+    }
+
     /* ---------- lista ---------- */
     async function abrirVista(){
       cargarResumen();
@@ -5164,6 +5373,8 @@ ${contenido}
     $('conCerrar').addEventListener('click', cerrarConsentimiento);
     $('modalConsentimiento').addEventListener('click', (ev)=>{ if(ev.target === $('modalConsentimiento')) cerrarConsentimiento(); });
     $('auActualizar').addEventListener('click', actualizarContactos);
+    $('auValidar').addEventListener('click', validarBase);
+    $('audDias365').addEventListener('click', ()=>{ $('audDiasRec').value = '365'; resetResultado(); });   // atajo «Clientes recientes (12 meses)»
     $('audCerrar').addEventListener('click', cerrarModal);
     $('audCancelar').addEventListener('click', cerrarModal);
     $('audCalcular').addEventListener('click', calcular);

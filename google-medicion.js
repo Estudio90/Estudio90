@@ -76,6 +76,9 @@
       var u = {};
       ['utm_source', 'utm_medium', 'utm_campaign'].forEach(function (k) { var v = sp.get(k); if (v) u[k] = String(v).slice(0, 120); });
       var g = sp.get('gclid'); if (g) u.gclid = String(g).slice(0, 160);
+      // ml_r: token OPACO de campañas de correo (hash del destinatario, jamás
+      // el correo). Viaja a la reserva vía registrarOrigenReserva, como el gclid.
+      var r = sp.get('ml_r'); if (r && /^[a-f0-9]{10,64}$/i.test(r)) u.ml_r = r.toLowerCase();
       if (Object.keys(u).length) ssSet(CLAVE_UTM, JSON.stringify(u));
     } catch (e) {}
   })();
