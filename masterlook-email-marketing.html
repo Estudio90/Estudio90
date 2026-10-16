@@ -5030,18 +5030,42 @@ ${contenido}
       finally{ btn.disabled = false; btn.textContent = txt0; }
     }
 
-    /* ---------- [v2.3] Validar base: sintaxis + dominios mal escritos + desechables + MX (sin servicio externo) ---------- */
-    function pintarValidacion(r, aplicado){
+    /* ---------- [v2.3] Validar base: sintaxis + dominios mal escritos + desechables + MX (sin servicio externo) ----------
+       Resultado: resumen COMPACTO de una línea; el detalle queda PLEGADO tras
+       «Ver detalles», paginado de a 20 -- con miles de contactos una lista
+       plana hacía la página interminable (pedido de la dueña, 16-10). */
+    let valUlt = null;          // última respuesta de emailValidarBase + si se aplicó
+    let valVer = false;         // detalle abierto/cerrado
+    let valPag = 0;             // página actual del detalle (desde 0)
+    const VAL_POR_PAG = 20;
+    function pintarValidacion(r, aplicado){ valUlt = { r, aplicado }; valVer = false; valPag = 0; pintarValUI(); }
+    function pintarValUI(){
       const el = $('auValidarRes');
-      const partes = ['Se revisaron <b>' + fmt(r.revisados) + '</b> correos activos (' + fmt(r.omitidos) + ' omitidos: de relleno o inactivos).',
-        '<b>' + fmt(r.validos) + '</b> válidos · <b>' + fmt(r.invalidos) + '</b> inválidos · <b>' + fmt(r.riesgo) + '</b> con riesgo.'];
-      if(aplicado) partes.push('El resultado quedó guardado (' + fmt(r.escritos) + ' registros).');
-      const det = (r.detalle || []).slice(0, 40);
-      el.innerHTML = '<p style="margin:0 0 6px;">' + partes.join(' ') + '</p>'
-        + (det.length ? '<ul style="margin:0;padding-left:18px;font-size:12px;color:var(--texto-medio);">' + det.map((d)=>
-          '<li>' + esc(d.email) + ' — ' + esc(d.estado) + ' (' + esc(d.motivo || '') + ')' + (d.sugerencia ? ' · ¿quisiste decir ' + esc(d.sugerencia) + '?' : '') + '</li>').join('')
-          + ((r.detalle || []).length > 40 ? '<li>… y ' + fmt((r.detalle || []).length - 40) + ' más.</li>' : '') + '</ul>' : '');
-      el.style.display = '';
+      if(!valUlt){ el.style.display = 'none'; return; }
+      const { r, aplicado } = valUlt;
+      const det = r.detalle || [];
+      let html = '<p style="margin:0;">Se revisaron <b>' + fmt(r.revisados) + '</b> correos — <b>' + fmt(r.validos) + '</b> válidos · <b>' + fmt(r.invalidos)
+        + '</b> inválidos · <b>' + fmt(r.riesgo) + '</b> con riesgo · ' + fmt(r.omitidos) + ' omitidos (de relleno o inactivos).'
+        + (aplicado ? ' Resultado guardado (' + fmt(r.escritos) + ' registros).' : '')
+        + (det.length ? ' <button type="button" class="btn-texto" id="auValDet" style="padding:0;">' + (valVer ? 'Ocultar detalles' : 'Ver detalles (' + fmt(det.length) + ')') + '</button>' : '')
+        + '</p>';
+      if(valVer && det.length){
+        const tot = Math.ceil(det.length / VAL_POR_PAG);
+        valPag = Math.max(0, Math.min(valPag, tot - 1));
+        const pag = det.slice(valPag * VAL_POR_PAG, valPag * VAL_POR_PAG + VAL_POR_PAG);
+        html += '<ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--texto-medio);">' + pag.map((d)=>
+          '<li>' + esc(d.email) + ' — ' + esc(d.estado) + (d.motivo ? ' (' + esc(d.motivo) + ')' : '') + (d.sugerencia ? ' · ¿quisiste decir ' + esc(d.sugerencia) + '?' : '') + '</li>').join('') + '</ul>';
+        if(tot > 1){
+          html += '<div style="display:flex;gap:10px;align-items:center;margin-top:6px;font-size:12px;">'
+            + '<button type="button" class="btn-texto" id="auValAnt"' + (valPag === 0 ? ' disabled' : '') + '>‹ Anterior</button>'
+            + '<span style="color:var(--texto-bajo);">' + (valPag + 1) + ' de ' + tot + '</span>'
+            + '<button type="button" class="btn-texto" id="auValSig"' + (valPag === tot - 1 ? ' disabled' : '') + '>Siguiente ›</button></div>';
+        }
+      }
+      el.innerHTML = html; el.style.display = '';
+      const bd = $('auValDet'); if(bd) bd.addEventListener('click', ()=>{ valVer = !valVer; pintarValUI(); });
+      const ba = $('auValAnt'); if(ba) ba.addEventListener('click', ()=>{ valPag -= 1; pintarValUI(); });
+      const bs = $('auValSig'); if(bs) bs.addEventListener('click', ()=>{ valPag += 1; pintarValUI(); });
     }
     async function validarBase(){
       const btn = $('auValidar'); btn.disabled = true; const txt0 = btn.textContent; btn.textContent = 'Validando…';
