@@ -378,15 +378,15 @@
       mas.addEventListener('click', function () { try { if (typeof window.abrirModalLegal === 'function') window.abrirModalLegal('privacidadModal'); } catch (e) {} });
       p.appendChild(mas); p.appendChild(document.createTextNode('.'));
       var f = document.createElement('div'); f.className = 'mla-btns';
-      // Dos botones, mismo comportamiento (cierran el aviso, guardan la
-      // elección y no se vuelve a preguntar); la diferencia es solo la
-      // decisión: Aceptar activa la medición, Solo necesarias la deja
-      // apagada (el sitio funciona igual).
-      var no = document.createElement('button'); no.type = 'button'; no.id = 'mlMetaSoloNecesarias'; no.textContent = 'Solo necesarias';
-      no.addEventListener('click', function () { decidir('denied'); });
+      // Un solo botón, igual que siempre: Aceptar activa la medición
+      // (Google y Meta a la vez). Desactivarla vive en la Política de
+      // privacidad (control Desactivar/Activar). NUNCA agregar un botón
+      // "Solo necesarias" que también active la medición: un botón que
+      // hace lo contrario de lo que dice engaña al cliente y expone al
+      // negocio (Ley 21.719).
       var si = document.createElement('button'); si.type = 'button'; si.id = 'mlMetaAceptar'; si.textContent = 'Aceptar';
       si.addEventListener('click', function () { decidir('granted'); });
-      f.appendChild(no); f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
+      f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
       document.body.appendChild(d); avisoEl = d; document.body.classList.add('ml-aviso-abierto');
       ubicarAviso(); window.addEventListener('resize', ubicarAviso); avisoTimer = setInterval(ubicarAviso, 500);
     } catch (e) {}
