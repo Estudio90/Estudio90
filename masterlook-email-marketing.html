@@ -677,6 +677,27 @@
   .au-res-grid .rs-num{font-size:22px;}
   .au-desglose-det{font-size:12px; color:var(--texto-bajo); line-height:1.7; margin:10px 0 0;}
   .au-aviso{font-size:12.5px; color:var(--pill-programado-fg); background:var(--pill-programado-bg); border-radius:var(--radio-chico); padding:9px 12px; margin-top:10px; line-height:1.5;}
+  /* ---- [v2.3] Resultado de «Validar base»: tarjeta propia (blanca, borde suave), detalle plegable y tabla paginada ---- */
+  .au-val{background:var(--tarjeta); border:1px solid var(--borde-suave); border-radius:var(--radio); box-shadow:var(--sombra); padding:14px 16px; margin-top:12px;}
+  .au-val-cab{display:flex; align-items:flex-start; gap:11px; flex-wrap:wrap;}
+  .au-val-check{width:30px; height:30px; flex:none; border-radius:50%; background:var(--verde-banner-bg); color:var(--verde-banner-fg); display:flex; align-items:center; justify-content:center;}
+  .au-val-txt{min-width:200px; flex:1;}
+  .au-val-tit{font-weight:600; color:var(--texto-alto); font-size:13.5px; line-height:1.35;}
+  .au-val-res{font-size:12.5px; color:var(--texto-medio); margin-top:3px; line-height:1.5; font-variant-numeric:tabular-nums;}
+  .au-val-res b{font-weight:600; color:inherit;}
+  .au-val-res .v-ok{color:#1E7F46;} .au-val-res .v-mal{color:#B23B34;} .au-val-res .v-omit{color:var(--texto-bajo);}
+  .au-val-guardado{font-size:11.5px; color:var(--texto-bajo); margin-top:3px;}
+  .au-val-cab > .btn-texto{margin-left:auto; padding:5px 0; font-size:12.5px; white-space:nowrap;}
+  .au-val-tabla{width:100%; border-collapse:collapse; margin-top:12px; font-size:12.5px;}
+  .au-val-tabla th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--texto-bajo); font-weight:600; padding:6px 10px; border-bottom:1px solid var(--borde-suave);}
+  .au-val-tabla td{padding:7px 10px; border-bottom:1px solid var(--borde-suave); color:var(--texto-medio); vertical-align:top;}
+  .au-val-tabla td:first-child{word-break:break-all; font-variant-numeric:tabular-nums;}
+  .au-val-pill{display:inline-block; padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:600; white-space:nowrap;}
+  .au-val-pill[data-e="invalido"]{background:#FDECEC; color:#B23B34;}
+  .au-val-pill[data-e="riesgo"]{background:var(--pill-programado-bg); color:var(--pill-programado-fg);}
+  .au-val-pie{display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; margin-top:10px; font-size:12px; color:var(--texto-bajo); font-variant-numeric:tabular-nums;}
+  .au-val-pie-nav{margin-left:auto; display:flex; align-items:center; gap:10px;}
+  .au-val-pie .btn-texto{padding:2px 4px; font-size:12px;}
   .au-acc{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
   @media (max-width:700px){ .au-res-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
   .aud-seg label .seg-n{margin-left:auto; padding-left:12px; font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--texto-medio); white-space:nowrap; text-align:right;}
@@ -1023,7 +1044,7 @@
           <button class="btn btn-outline" id="auActualizar">Actualizar contactos</button>
           <button class="btn btn-outline" id="auValidar">Validar base</button>
         </div>
-        <div class="au-aviso" id="auValidarRes" style="display:none;"></div>
+        <div class="au-val" id="auValidarRes" style="display:none;"></div>
       </section>
 
       <div class="rec-tabla-cab">
@@ -5039,28 +5060,44 @@ ${contenido}
     let valPag = 0;             // página actual del detalle (desde 0)
     const VAL_POR_PAG = 20;
     function pintarValidacion(r, aplicado){ valUlt = { r, aplicado }; valVer = false; valPag = 0; pintarValUI(); }
+    /** Motivos del servidor -> texto que recepción/administración entiende sin manual. */
+    const VAL_MOTIVOS = {
+      sintaxis: 'Formato inválido', dominio_sin_mx: 'El dominio no existe o no recibe correo',
+      mx_no_verificable: 'No se pudo verificar el dominio', dominio_mal_escrito: 'Dominio mal escrito',
+      dominio_desechable: 'Correo desechable (temporal)',
+    };
     function pintarValUI(){
       const el = $('auValidarRes');
       if(!valUlt){ el.style.display = 'none'; return; }
       const { r, aplicado } = valUlt;
       const det = r.detalle || [];
-      let html = '<p style="margin:0;">Se revisaron <b>' + fmt(r.revisados) + '</b> correos — <b>' + fmt(r.validos) + '</b> válidos · <b>' + fmt(r.invalidos)
-        + '</b> inválidos · <b>' + fmt(r.riesgo) + '</b> con riesgo · ' + fmt(r.omitidos) + ' omitidos (de relleno o inactivos).'
-        + (aplicado ? ' Resultado guardado (' + fmt(r.escritos) + ' registros).' : '')
-        + (det.length ? ' <button type="button" class="btn-texto" id="auValDet" style="padding:0;">' + (valVer ? 'Ocultar detalles' : 'Ver detalles (' + fmt(det.length) + ')') + '</button>' : '')
-        + '</p>';
+      let html = '<div class="au-val-cab">'
+        + '<div class="au-val-check"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'
+        + '<div class="au-val-txt">'
+        +   '<div class="au-val-tit">Validación completada</div>'
+        +   '<div class="au-val-res">Se revisaron <b>' + fmt(r.revisados) + '</b> correos. '
+        +     '<b class="v-ok">' + fmt(r.validos) + ' válidos</b> · <b class="v-mal">' + fmt(r.invalidos) + ' inválidos</b> · '
+        +     '<b>' + fmt(r.riesgo) + ' con riesgo</b> · <span class="v-omit">' + fmt(r.omitidos) + ' omitidos</span> <span class="v-omit">(de relleno o inactivos)</span></div>'
+        +   (aplicado ? '<div class="au-val-guardado">Resultado guardado (' + fmt(r.escritos) + ' registros).</div>' : '')
+        + '</div>'
+        + (det.length ? '<button type="button" class="btn-texto" id="auValDet">' + (valVer ? 'Ocultar detalles' : 'Ver detalles') + '</button>' : '')
+        + '</div>';
       if(valVer && det.length){
         const tot = Math.ceil(det.length / VAL_POR_PAG);
         valPag = Math.max(0, Math.min(valPag, tot - 1));
-        const pag = det.slice(valPag * VAL_POR_PAG, valPag * VAL_POR_PAG + VAL_POR_PAG);
-        html += '<ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--texto-medio);">' + pag.map((d)=>
-          '<li>' + esc(d.email) + ' — ' + esc(d.estado) + (d.motivo ? ' (' + esc(d.motivo) + ')' : '') + (d.sugerencia ? ' · ¿quisiste decir ' + esc(d.sugerencia) + '?' : '') + '</li>').join('') + '</ul>';
-        if(tot > 1){
-          html += '<div style="display:flex;gap:10px;align-items:center;margin-top:6px;font-size:12px;">'
-            + '<button type="button" class="btn-texto" id="auValAnt"' + (valPag === 0 ? ' disabled' : '') + '>‹ Anterior</button>'
-            + '<span style="color:var(--texto-bajo);">' + (valPag + 1) + ' de ' + tot + '</span>'
-            + '<button type="button" class="btn-texto" id="auValSig"' + (valPag === tot - 1 ? ' disabled' : '') + '>Siguiente ›</button></div>';
-        }
+        const ini = valPag * VAL_POR_PAG;
+        const pag = det.slice(ini, ini + VAL_POR_PAG);
+        html += '<table class="au-val-tabla"><thead><tr><th>Correo electrónico</th><th>Estado</th><th>Motivo</th></tr></thead><tbody>'
+          + pag.map((d)=> '<tr><td>' + esc(d.email) + '</td>'
+            + '<td><span class="au-val-pill" data-e="' + esc(d.estado) + '">' + (d.estado === 'invalido' ? 'Inválido' : 'Riesgo') + '</span></td>'
+            + '<td>' + esc(VAL_MOTIVOS[d.motivo] || d.motivo || '—') + (d.sugerencia ? ' · ¿Quisiste decir <b>' + esc(d.sugerencia) + '</b>?' : '') + '</td></tr>').join('')
+          + '</tbody></table>';
+        html += '<div class="au-val-pie"><span>Mostrando ' + fmt(ini + 1) + '–' + fmt(Math.min(ini + VAL_POR_PAG, det.length)) + ' de ' + fmt(det.length) + '</span>'
+          + '<div class="au-val-pie-nav">'
+          + '<button type="button" class="btn-texto" id="auValAnt"' + (valPag === 0 ? ' disabled' : '') + '>‹ Anterior</button>'
+          + '<span>' + (valPag + 1) + ' de ' + tot + '</span>'
+          + '<button type="button" class="btn-texto" id="auValSig"' + (valPag === tot - 1 ? ' disabled' : '') + '>Siguiente ›</button>'
+          + '</div></div>';
       }
       el.innerHTML = html; el.style.display = '';
       const bd = $('auValDet'); if(bd) bd.addEventListener('click', ()=>{ valVer = !valVer; pintarValUI(); });
