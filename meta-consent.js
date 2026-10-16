@@ -366,7 +366,7 @@
   /** ¿El módulo de Google (google-medicion.js) está activo en este sitio?
    *  El aviso es COMPARTIDO: una sola decisión manda sobre Meta y Google. */
   function googleHabilitado() { try { return !!(window.MLGoogle && window.MLGoogle.habilitado()); } catch (e) { return false; } }
-  var TEXTO_AVISO = 'Usamos cookies para medir visitas y el resultado de nuestros anuncios (Google y Meta). Solo se activan si las aceptas. Consulta nuestra ';
+  var TEXTO_AVISO = 'Utilizamos cookies y almacenamiento local necesarias para el funcionamiento del sitio. Al continuar navegando, aceptas su uso. Consulta nuestra ';
   function mostrarAviso() {
     try {
       if ((!pixelId && !googleHabilitado()) || avisoEl || gpcRechaza()) return;
@@ -378,11 +378,9 @@
       mas.addEventListener('click', function () { try { if (typeof window.abrirModalLegal === 'function') window.abrirModalLegal('privacidadModal'); } catch (e) {} });
       p.appendChild(mas); p.appendChild(document.createTextNode('.'));
       var f = document.createElement('div'); f.className = 'mla-btns';
-      var no = document.createElement('button'); no.type = 'button'; no.id = 'mlMetaSoloNecesarias'; no.textContent = 'Solo necesarias';
-      no.addEventListener('click', function () { decidir('denied'); });
       var si = document.createElement('button'); si.type = 'button'; si.id = 'mlMetaAceptar'; si.textContent = 'Aceptar';
       si.addEventListener('click', function () { decidir('granted'); });
-      f.appendChild(no); f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
+      f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
       document.body.appendChild(d); avisoEl = d; document.body.classList.add('ml-aviso-abierto');
       ubicarAviso(); window.addEventListener('resize', ubicarAviso); avisoTimer = setInterval(ubicarAviso, 500);
     } catch (e) {}
@@ -400,7 +398,7 @@
   function etiquetaControl() {
     if (gpcRechaza()) return { txt: 'Medición publicitaria desactivada: tu navegador envía la señal «Global Privacy Control».', btn: '' };
     var on = leerConsentimiento() === 'granted';
-    return { txt: 'Medición publicitaria (Google y Meta) en este dispositivo: ' + (on ? 'activada.' : 'desactivada.') + ' ', btn: on ? 'Desactivar' : 'Activar' };
+    return { txt: 'Medición publicitaria en este dispositivo: ' + (on ? 'activada.' : 'desactivada.') + ' ', btn: on ? 'Desactivar' : 'Activar' };
   }
   function pintarControl() {
     try {
