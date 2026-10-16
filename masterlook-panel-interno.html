@@ -15048,7 +15048,24 @@
     };
 
     if(MODE !== 'api'){
-      pintar(cxRep.rows.find(r=> r.barberId === tr.dataset.cxid)?.items || []);
+      const rFila = cxRep.rows.find(x=> x.barberId === tr.dataset.cxid);
+      pintar(rFila?.items || []);
+      // Asistidos SIN pago completo: se listan aparte, en rojo, con lo que el
+      // ledger registra de cada uno -- "cobrado real" es dinero efectivo;
+      // un pago de PRUEBA es un anticipo de Webpay en modo Integración
+      // (dinero que nunca entró de verdad) y por eso no genera comisión
+      // aunque la agenda muestre la reserva como pagada.
+      const sinPago = rFila?.sinPagoItems || [];
+      if(sinPago.length){
+        row.querySelector('td').innerHTML +=
+          `<div class="cx-drow" style="margin-top:8px;"><span style="color:#c0392b;font-weight:600;">Asistidos sin pago completo — no generan comisión:</span><span></span></div>` +
+          sinPago.map(i=>{
+            const f = i.date ? new Date(i.date).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}) + ' · ' : '';
+            const prueba = i.pagadoPrueba > 0 ? ` · anticipo de PRUEBA Webpay ${cxClp(i.pagadoPrueba)} (no es dinero real)` : '';
+            return `<div class="cx-drow" style="color:#c0392b;"><span>${escapeHTML(f)}${escapeHTML(i.service)} — ${escapeHTML(i.client)}</span>
+              <span>precio ${cxClp(i.price)} · cobrado real <b>${cxClp(i.pagadoReal)}</b>${escapeHTML(prueba)}</span></div>`;
+          }).join('');
+      }
       return;
     }
     try{
