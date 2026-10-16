@@ -39,7 +39,15 @@ Reglas de negocio, no negociables:
 
 Actualmente en **modo Integración** (pruebas), con las credenciales de producción ya cargadas pero sin activar. **Solo la dueña cambia Integración → Producción, manualmente, en su propio momento.** Nunca debe pasar solo porque se hizo un deploy o por un valor por defecto en el código.
 
+## Medición (GA4/Ads) y Email Marketing — ya construidos, no reinventar
+
+- **Medición GA4 + Google Ads (en producción)**: IDs SOLO en `config-medicion.js`; `google-medicion.js` es el módulo (espejo de meta-consent.js, mismos puntos de evento del Pixel). El aviso de cookies es COMPARTIDO: UN botón «Aceptar» activa Google y Meta a la vez — **jamás un botón «Solo necesarias» que también active medición**, y agregar herramientas nunca cambia el aviso. Sin aceptar: cero peticiones a Google. UTM/gclid/ml_r se capturan en sessionStorage `mlUtm` y `registrarOrigenReserva` (Cloud Function) los escribe una sola vez en la reserva.
+- **Email marketing v2.3 (rama email-tracking-dev, DEV)**: `ml_r` = token opaco por destinatario en los enlaces (hash, NUNCA el correo); detalle por persona en «Ver reporte» (`emailCampanaDestinatarios`); «Validar base» local (`emailValidarBase`); atribución de reservas por token. Tracking de Resend (aperturas/clics + subdominio `masterlook.envios.masterlook.cl`) verificado el 16-10. Aperturas SIEMPRE rotuladas «estimadas»; clics de bots filtrados (<10 s de la entrega o varios enlaces el mismo segundo).
+
 ## Reglas de trabajo con Claude Code
+
+- **A producción (`main` de este repo y `--project estudio90`) se sube SOLO lo que la dueña aprobó explícitamente** — pieza por pieza, nunca "todo lo de la rama".
+- **Reglas de Firestore (incidente 16-10-2026)**: campos opcionales SIEMPRE con `resource.data.get('campo', defecto)` — el acceso directo a un campo ausente es ERROR y deniega. Ningún cambio de reglas va a producción sin pasar `database/tests-reglas/` (en Masterlookpriv).
 
 - **Probar en vivo antes de dar algo por terminado.** No alcanza con que el código "se vea bien" — recargar el panel real (o el de prueba) y confirmar que funciona, revisar la consola por errores, antes de decir que está listo.
 - **No commitear código sin probarlo primero.**
