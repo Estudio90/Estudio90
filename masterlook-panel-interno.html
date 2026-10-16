@@ -5825,6 +5825,9 @@
       <span id="dPrecioModificadoBadge" style="display:none; font-size:11px; font-weight:600; color:#8a6d1f; background:#fdf6e8; border-radius:6px; padding:3px 8px;">Precio ajustado</span>
     </div>
     <div class="drawer-datetime" id="dDateTime">lunes, 24 de agosto - 11:45 a 12:30 hrs</div>
+    <!-- Origen de marketing (UTM/gclid) de la reserva web: solo se muestra
+         si existe; lo escribe el servidor (registrarOrigenReserva). -->
+    <div id="dOrigen" style="display:none; font-size:11.5px; color:#87868f; margin-top:4px;"></div>
 
     <div class="lock-row">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
@@ -8714,6 +8717,9 @@
       montoPagado: r.montoPagado, propina: r.propina, productosVendidos: r.productosVendidos,
       notaAdmin: r.notaAdmin || '',
       notaCliente: r.notaCliente || '',
+      // origen de marketing de la reserva web (registrarOrigenReserva):
+      // qué canal la trajo -- solo lectura, lo escribe el servidor una vez.
+      origenUtm: r.origen_utm || null, gclid: r.gclid || null,
       // comentarioCliente: lo que el cliente escribió al reservar (nunca lo
       // escribimos nosotros, nunca se edita desde acá) -- distinto de
       // notaCliente (lo que NOSOTROS le escribimos a él) y de notaAdmin
@@ -20547,6 +20553,16 @@
     document.getElementById('btnEditarCita').style.display = puedeGestionarCita ? '' : 'none';
     document.getElementById('statusPills').style.opacity = puedeGestionarCita ? '' : '0.5';
     document.getElementById('statusPills').style.pointerEvents = puedeGestionarCita ? '' : 'none';
+
+    // Origen de marketing (si el servidor lo registró): "Origen: google / cpc · campaña"
+    try{
+      const og = document.getElementById('dOrigen');
+      const u = a.origenUtm || {};
+      const partes = [u.utm_source, u.utm_medium, u.utm_campaign].filter(Boolean);
+      if(!partes.length && a.gclid) partes.push('google ads (gclid)');
+      og.style.display = partes.length ? '' : 'none';
+      og.textContent = partes.length ? ('Origen: ' + partes.join(' · ')) : '';
+    }catch(e){}
 
     document.getElementById('dNota').value = a.notaAdmin || '';
     document.getElementById('dNota').readOnly = !puedeGestionarCita;

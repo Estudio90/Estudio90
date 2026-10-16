@@ -363,10 +363,13 @@
     if (avisoEl && avisoEl.parentNode) avisoEl.parentNode.removeChild(avisoEl); avisoEl = null;
     try { document.body.classList.remove('ml-aviso-abierto'); document.documentElement.style.removeProperty('--mla-off'); document.documentElement.style.removeProperty('--mla-h'); window.removeEventListener('resize', ubicarAviso); } catch (e) {}
   }
-  var TEXTO_AVISO = 'Utilizamos cookies y almacenamiento local necesarias para el funcionamiento del sitio. Al continuar navegando, aceptas su uso. Consulta nuestra ';
+  /** ¿El módulo de Google (google-medicion.js) está activo en este sitio?
+   *  El aviso es COMPARTIDO: una sola decisión manda sobre Meta y Google. */
+  function googleHabilitado() { try { return !!(window.MLGoogle && window.MLGoogle.habilitado()); } catch (e) { return false; } }
+  var TEXTO_AVISO = 'Usamos cookies para medir visitas y el resultado de nuestros anuncios (Google y Meta). Solo se activan si las aceptas. Consulta nuestra ';
   function mostrarAviso() {
     try {
-      if (!pixelId || avisoEl || gpcRechaza()) return;
+      if ((!pixelId && !googleHabilitado()) || avisoEl || gpcRechaza()) return;
       estilos();
       var d = document.createElement('div'); d.id = 'mlMetaAviso'; d.setAttribute('role', 'region'); d.setAttribute('aria-label', 'Aviso de cookies');
       var dentro = document.createElement('div'); dentro.className = 'mla-in';
@@ -375,9 +378,11 @@
       mas.addEventListener('click', function () { try { if (typeof window.abrirModalLegal === 'function') window.abrirModalLegal('privacidadModal'); } catch (e) {} });
       p.appendChild(mas); p.appendChild(document.createTextNode('.'));
       var f = document.createElement('div'); f.className = 'mla-btns';
+      var no = document.createElement('button'); no.type = 'button'; no.id = 'mlMetaSoloNecesarias'; no.textContent = 'Solo necesarias';
+      no.addEventListener('click', function () { decidir('denied'); });
       var si = document.createElement('button'); si.type = 'button'; si.id = 'mlMetaAceptar'; si.textContent = 'Aceptar';
       si.addEventListener('click', function () { decidir('granted'); });
-      f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
+      f.appendChild(no); f.appendChild(si); dentro.appendChild(p); dentro.appendChild(f); d.appendChild(dentro);
       document.body.appendChild(d); avisoEl = d; document.body.classList.add('ml-aviso-abierto');
       ubicarAviso(); window.addEventListener('resize', ubicarAviso); avisoTimer = setInterval(ubicarAviso, 500);
     } catch (e) {}
@@ -386,13 +391,16 @@
     guardarConsentimiento(v); cerrarAviso();
     if (v === 'granted') cargarPixel(function () { ultimaPantalla = null; sincronizarPantalla(true); });
     else revocarPixel();
+    // La MISMA decisión manda sobre Google (google-medicion.js escucha este
+    // evento): un solo aviso, un solo «Desactivar / Activar».
+    try { window.dispatchEvent(new CustomEvent('ml-consentimiento', { detail: { valor: v } })); } catch (e) {}
     pintarControl();
   }
   /* ---------- control dentro de la Política de privacidad (sin barra de preferencias aparte): «Desactivar / Activar» la medición publicitaria en este dispositivo ---------- */
   function etiquetaControl() {
     if (gpcRechaza()) return { txt: 'Medición publicitaria desactivada: tu navegador envía la señal «Global Privacy Control».', btn: '' };
     var on = leerConsentimiento() === 'granted';
-    return { txt: 'Medición publicitaria en este dispositivo: ' + (on ? 'activada.' : 'desactivada.') + ' ', btn: on ? 'Desactivar' : 'Activar' };
+    return { txt: 'Medición publicitaria (Google y Meta) en este dispositivo: ' + (on ? 'activada.' : 'desactivada.') + ' ', btn: on ? 'Desactivar' : 'Activar' };
   }
   function pintarControl() {
     try {
@@ -411,7 +419,7 @@
   /* ---------- arranque ---------- */
   function arrancar() {
     try {
-      if (!pixelId) return;                                                          // sin Pixel para este sitio: ni aviso ni nada
+      if (!pixelId && !googleHabilitado()) return;                                   // sin Pixel NI Google para este sitio: ni aviso ni nada
       observarPantallas(); observarReservas(); prepararControl();
       var c = leerConsentimiento();
       if (c === 'granted') cargarPixel(function () { sincronizarPantalla(true); });
