@@ -18637,11 +18637,31 @@
   let pvVentasTodas = [];
   let pvPagina = 1;
 
+  /** Nombre REAL del profesional de una venta (corrección 10-2026: el panel
+   *  solo leía `barberName`, pero las ventas cobradas junto a una cita
+   *  (registrarCobroReserva) y las online con código guardan el nombre en
+   *  `professionalNombre` -- por eso salía el genérico «Barbero»). Cadena de
+   *  respaldo de SOLO LECTURA, sin tocar ningún registro: nombre guardado en
+   *  la venta > nombre por ID contra el catálogo (cfgBarberos) > rótulo
+   *  honesto «Profesional sin identificar» (jamás se inventa ni se asigna
+   *  por suposición). */
+  function pvNombreProfesional(v){
+    const guardado = v.barberName || v.professionalNombre;
+    if(guardado) return guardado;
+    const id = v.professionalId || v.barberId;
+    const cat = id ? (cfgBarberos || []).find(b=> b.id === id) : null;
+    if(cat && cat.name) return cat.name;
+    return 'Profesional sin identificar';
+  }
+
   async function pvCargar(){
     const tbody = document.getElementById('pvTabla');
     tbody.innerHTML = '<tr><td colspan="6" class="cx-empty">Cargando...</td></tr>';
 
     try{
+      // Catálogo primero: pvNombreProfesional() resuelve por ID contra
+      // cfgBarberos los registros históricos que no guardaron el nombre.
+      await cargarCatalogo();
       const snap = await db.collection('productSales').orderBy('createdAt','desc').get();
       pvVentasTodas = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
     }catch(e){
@@ -18674,7 +18694,7 @@
     tbody.innerHTML = ventas.length ? ventas.map(v=>{
       const fecha = v.fecha || (v.createdAt ? v.createdAt.slice(0,10) : '—');
       const origenTxt = v.origen === 'barbero'
-        ? `👤 ${escapeHTML(v.barberName || 'Barbero')}`
+        ? `👤 ${escapeHTML(pvNombreProfesional(v))}`
         : escapeHTML(ORIGEN_LABEL[v.origen] || v.origen);
       return `<tr>
         <td>${escapeHTML(fecha)}</td>
