@@ -5852,6 +5852,11 @@
         </div>
       </div>
       <div class="notes-line" id="dNotes">Sin información</div>
+      <!-- Anulación de venta (corrección 10-2026): reclasifica el ledger en
+           el servidor (anularVentaReserva, anulacionVentas.js) -- nunca
+           borra movimientos ni ajusta totales a mano. Visible solo con pagos
+           registrados; pagada+asistida: solo ADMIN (mismo candado). -->
+      <button class="mg-btn ghost" id="btnAnularVenta" style="display:none; margin-top:8px; font-size:12px; padding:6px 12px; align-self:flex-start;">Anular venta…</button>
     </div>
 
     <!-- Nota del cliente: lo que el cliente escribió al reservar
@@ -20443,8 +20448,19 @@
    *  `depositoPagado` ya vienen en la propia reserva (sincrónico); el/los
    *  método(s) real(es) viven solo en paymentMovements, así que se cargan
    *  aparte y la línea se actualiza sola cuando llegan. */
+  /** ¿Puede este rol anular la venta de esta reserva? Mismo candado que la
+   *  etiqueta y que el backend (anularVentaReserva): pagada+asistida es solo
+   *  de ADMIN; BARBER nunca. */
+  function puedeAnularVenta(a){
+    if(!(a.pagado || a.depositoPagado) || !a.fromWeb || !a.webId) return false;
+    if(userRole === 'ADMIN') return true;
+    if(userRole !== 'RECEPTION') return false;
+    return !(a.pagado && (a.status === 'asistio' || a.status === 'done'));
+  }
+
   function pintarEstadoPagoDrawer(a){
     const el = document.getElementById('dNotes');
+    document.getElementById('btnAnularVenta').style.display = puedeAnularVenta(a) ? '' : 'none';
     if(!a.pagado && !a.depositoPagado){
       el.textContent = 'Sin pagos registrados';
       return;
@@ -20661,6 +20677,31 @@
     if(!a) return;
     if(!(await mgConfirm(`¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`))) return;
 
+    // Reserva CON pagos: decidir el destino de la VENTA antes de borrar la
+    // cita (corrección 10-2026: borrar la cita nunca toca el ledger por sí
+    // solo -- la auditoría del 16-10 encontró un pago de prueba huérfano
+    // inflando el Resumen de Ventas).
+    if(a.fromWeb && a.webId && (a.pagado || a.depositoPagado)){
+      const esAsistida = a.status === 'asistio' || a.status === 'done';
+      if(esAsistida){
+        // Venta legítima (pagada y asistida): eliminar la cita NO la anula,
+        // pero la comisión del profesional se calcula desde la cita y
+        // desaparecería de los reportes -- advertirlo antes.
+        const seguir = await mgConfirm(
+          'Esta reserva tiene una venta PAGADA y ASISTIDA.\n\nSi la eliminas, el ingreso se conserva pero la comisión del profesional desaparece de los reportes (la comisión se calcula desde la cita).\n\nSi la venta fue un error, usa primero «Anular venta…» en la ficha.',
+          { titulo: 'Venta pagada y asistida', textoConfirmar: 'Eliminar igual', textoCancelar: 'No eliminar' });
+        if(!seguir) return;
+      } else {
+        const anular = await mgConfirm(
+          'Esta reserva tiene pagos registrados.\n\n«Anular la venta»: deja de contar como ingreso y comisión (el historial se conserva). Para pruebas o cobros por error.\n\n«Conservar el dinero»: el pago queda como ingreso del negocio (ej. seña retenida) y solo se elimina la cita.',
+          { titulo: 'Reserva con pagos', textoConfirmar: 'Anular la venta', textoCancelar: 'Conservar el dinero' });
+        if(anular){
+          try{ await functions.httpsCallable('anularVentaReserva')({ bookingId: a.webId, motivo: 'anulada al eliminar la reserva desde el panel' }); }
+          catch(e){ showToast('No se pudo anular la venta: ' + e.message); return; }
+        }
+      }
+    }
+
     if(a.fromWeb && a.webId){
       // El correo de cancelación se arma en el servidor (misma plantilla
       // maestra que confirmada/modificada/recordatorio) -- se manda ANTES
@@ -20691,6 +20732,28 @@
 
     closeDrawer();
     showToast('Reserva eliminada');
+  });
+
+  /** Anulación EXPLÍCITA de la venta de la reserva abierta (sin eliminar la
+   *  cita): pruebas, cobros por error, devoluciones autorizadas. Todo lo
+   *  financiero ocurre en el servidor (anularVentaReserva) -- acá solo se
+   *  pide el motivo, se confirma y se repinta el estado de pago. */
+  document.getElementById('btnAnularVenta').addEventListener('click', async ()=>{
+    const a = currentAppt;
+    if(!a || !puedeAnularVenta(a)) return;
+    const motivo = await mgPrompt('Motivo de la anulación (queda en el historial):', '', { titulo: 'Anular venta' });
+    if(motivo === null) return;
+    if(!motivo.trim()) return showToast('Indica el motivo de la anulación');
+    const ok = await mgConfirm(
+      `¿Anular la venta de ${a.client}?\n\nSus pagos dejarán de contar como ingreso y comisión; el historial se conserva y el saldo de la reserva vuelve a quedar pendiente.\n\nEsta acción NO cobra ni devuelve dinero.`,
+      { titulo: 'Anular venta', textoConfirmar: 'Anular venta' });
+    if(!ok) return;
+    try{
+      const r = await functions.httpsCallable('anularVentaReserva')({ bookingId: a.webId, motivo: motivo.trim() });
+      a.pagado = false; a.depositoPagado = false; a._historialPagos = null; a._saldoServicio = undefined;
+      pintarEstadoPagoDrawer(a);
+      showToast(r.data && r.data.yaEstabaAnulada ? 'La venta ya estaba anulada' : 'Venta anulada');
+    }catch(e){ showToast('No se pudo anular la venta: ' + e.message); }
   });
 
   document.getElementById('btnEditarCita').addEventListener('click', async ()=>{

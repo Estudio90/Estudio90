@@ -18,11 +18,25 @@ Si trabajas con Claude Code: pregunta explícitamente a cuál de los dos hay que
 
 ## Fuente única de dinero: `paymentMovements`
 
-Toda plata (abonos, cobros, propinas, ventas de productos/cursos) pasa por la colección `paymentMovements` — `recordType: 'operation' | 'movement' | 'incident'`, idempotente por `operationId`. Reglas duras:
+Toda plata (abonos, cobros, propinas, ventas de productos/cursos) pasa por la colección `paymentMovements` — `recordType: 'operation' | 'movement' | 'incident' | 'movement_anulado'`, idempotente por `operationId`. Reglas duras:
 
 - **Nunca crear una segunda fuente financiera** ni un ledger paralelo por reserva.
-- Solo `recordType:'movement'` cuenta en cualquier total/reporte. `'operation'` es solo el ancla de idempotencia. `'incident'` es dinero dudoso que no se migró a ciegas — vive aparte, nunca se suma al total confirmado.
+- Solo `recordType:'movement'` cuenta en cualquier total/reporte. `'operation'` es solo el ancla de idempotencia. `'incident'` es dinero dudoso que no se migró a ciegas — vive aparte, nunca se suma al total confirmado. `'movement_anulado'` es un movimiento ANULADO: historial conservado, jamás vuelve a contar.
 - `registrarCobroReserva` (Cloud Function) es el único punto de entrada para cobros/abonos presenciales — nunca escribir campos de pago directo a un documento de `bookings`.
+- Dinero de prueba (`paymentEnvironment:'integration'`, Webpay en modo Integración) NUNCA es ingreso ni comisión: lo excluyen `comisionesServicios.js` y `resumenVentas.js`. "Sin campo" cuenta como real.
+
+### Anulación de ventas (regla 10-2026, auditoría de caja del 16-10)
+
+Borrar/cancelar una reserva **no toca el ledger por sí solo** (`cancelarReserva` solo elimina el doc y libera agenda — así quedó huérfano un cobro de prueba de $17.990). El mecanismo correcto vive en `anulacionVentas.js` (repo Masterlookpriv):
+
+- **Anular una venta = reclasificar sus movimientos a `recordType:'movement_anulado'`** (callable `anularVentaReserva`, transaccional e idempotente). Nunca se borra un movimiento ni se ajusta un total a mano. Como todos los agregadores suman `recordType:'movement'`, la venta sale sola de ingresos, saldos y comisiones en todos los reportes. La comisión de servicios jamás se persiste, así que "revertirla" es automático e imposible de duplicar.
+- Roles: ADMIN y RECEPTION anulan; venta pagada+asistida o reserva ya eliminada: **solo ADMIN**. La etiqueta no se toca al anular.
+- Trigger `alEliminarReserva` (onDocumentDeleted de `bookings`): al eliminarse una reserva anula solo dinero de prueba (`integration`); el dinero real se CONSERVA (abono de no-show o seña retenida son ingreso) y queda marcado `reservaEliminada` para auditoría.
+- Panel: al eliminar una cita con pagos, el flujo pregunta si anular la venta o conservar el dinero; una venta pagada+asistida advierte que eliminarla hace desaparecer la comisión. Botón «Anular venta…» en la ficha, mismo candado.
+
+### Zona horaria de reportes
+
+`resumenVentas.js` arma el rango del día en **America/Santiago** (`rangoResumenSantiago` vía `tiempoSantiago.js`, DST automático). Nunca `new Date('YYYY-MM-DDT00:00:00')` en una Cloud Function (el servidor corre en UTC y corría el día 3-4 horas). Serie diaria con `fechaSantiago()`, nunca `toISOString()`. Tests: `database/tests-ventas/` en Masterlookpriv (casos A–H, emulador) — obligatorios antes de publicar cambios a estos módulos.
 
 ## Estados de una reserva
 
