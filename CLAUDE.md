@@ -34,6 +34,10 @@ Borrar/cancelar una reserva **no toca el ledger por sí solo** (`cancelarReserva
 - Trigger `alEliminarReserva` (onDocumentDeleted de `bookings`): al eliminarse una reserva anula solo dinero de prueba (`integration`); el dinero real se CONSERVA (abono de no-show o seña retenida son ingreso) y queda marcado `reservaEliminada` para auditoría.
 - Panel: al eliminar una cita con pagos, el flujo pregunta si anular la venta o conservar el dinero; una venta pagada+asistida advierte que eliminarla hace desaparecer la comisión. Botón «Anular venta…» en la ficha, mismo candado.
 
+### Propinas (regla 10-2026, en producción 18-10)
+
+Las propinas se reportan SOLO desde el ledger vía `obtenerReportePropinas` (`propinas.js`, repo Masterlookpriv): día completo de Chile, 100% al profesional de SU reserva (por `barberId`, jamás un % de comisión), «pendiente de asignación» aparte — nunca se reparte sola. Estado Pendiente/Pagado en `propinaPayments` (solo ADMIN, espejo de `commissionPayments`, doc único por profesional+período = imposible duplicar un pago); registrar un pago guarda monto/método/fecha/responsable + historial y JAMÁS altera el histórico. No volver a calcular propinas client-side (la pantalla vieja usaba el estado legado 'done' → siempre $0).
+
 ### Zona horaria de reportes
 
 `resumenVentas.js` arma el rango del día en **America/Santiago** (`rangoResumenSantiago` vía `tiempoSantiago.js`, DST automático). Nunca `new Date('YYYY-MM-DDT00:00:00')` en una Cloud Function (el servidor corre en UTC y corría el día 3-4 horas). Serie diaria con `fechaSantiago()`, nunca `toISOString()`. Tests: `database/tests-ventas/` en Masterlookpriv (casos A–H, emulador) — obligatorios antes de publicar cambios a estos módulos.
