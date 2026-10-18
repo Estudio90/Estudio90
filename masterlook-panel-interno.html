@@ -2991,20 +2991,22 @@
       </div>
 
       <div class="cx-kpis">
-        <div class="cx-kpi pay"><div class="k">Total propinas</div><div class="v" id="tpTotal">$0</div></div>
+        <div class="cx-kpi pay"><div class="k">Total propinas</div><div class="v" id="tpTotal">$0</div><div class="k2">Recibidas en el período</div></div>
         <div class="cx-kpi"><div class="k">Servicios con propina</div><div class="v" id="tpServicios">0</div></div>
         <div class="cx-kpi"><div class="k">Profesionales activos</div><div class="v" id="tpProfesionales">0</div></div>
+        <div class="cx-kpi net"><div class="k">Propinas pagadas</div><div class="v" id="tpPagadas">$0</div><div class="k2">Marcadas como pagadas</div></div>
+        <div class="cx-kpi"><div class="k">Pendiente de pago</div><div class="v" id="tpPendientes">$0</div><div class="k2">100% para cada profesional</div></div>
       </div>
 
       <h3 class="cx-tbl-title">Propinas por profesional</h3>
       <div class="cx-tablebox">
         <table class="cx-table">
-          <thead><tr><th>Profesional</th><th class="r">Servicios con propina</th><th class="r">Total propinas</th></tr></thead>
+          <thead><tr><th>Profesional</th><th class="r">Servicios con propina</th><th class="r">Total propinas</th><th class="r">Estado</th></tr></thead>
           <tbody id="tpTabla"></tbody>
           <tfoot><tr id="tpTotalesFila"></tr></tfoot>
         </table>
       </div>
-      <p class="mg-note" style="margin-top:14px;">Las propinas son un registro independiente de las comisiones por servicio: nunca se suman entre sí en esta pantalla.</p>
+      <p class="mg-note" style="margin-top:14px;">Las propinas son un registro independiente de las comisiones por servicio: nunca se suman entre sí en esta pantalla, no se les aplica ningún porcentaje, y marcar un pago nunca borra el historial de propinas recibidas.</p>
     </div>
 
     <!-- ===== VISTA: CURSOS (Academy) ===== -->
@@ -15284,51 +15286,133 @@
     sel.dataset.listo = '1';
   }
 
-  function pintarPropinas(){
+  /* Reporte de propinas -- AHORA DEL SERVIDOR (obtenerReportePropinas,
+     corrección 10-2026). La versión anterior calculaba en el navegador
+     sobre `appointments` con TRES fallas: exigía el estado legado 'done'
+     (ningún código lo escribe ya -> siempre $0), solo veía la semana
+     suscrita por el listener acotado (un rango de 15 días era imposible), y
+     leía bookings.propina en vez del ledger. El servidor lee
+     paymentMovements (concepto propina) con el día COMPLETO de Chile y
+     asigna cada propina al profesional de su reserva: 100% para él, sin
+     ningún porcentaje. El estado Pendiente/Pagado por profesional+período
+     vive en `propinaPayments` (mismo patrón que commissionPayments de
+     Comisiones barberos): registrar un pago guarda monto/método/fecha/
+     responsable y nunca borra ni descuenta el histórico de propinas. */
+  function tpIdEstadoPago(barberId, from, to){ return `${barberId}_${from}_${to}`; }
+  async function tpCargarEstados(rows, from, to){
+    const estados = {};
+    await Promise.all(rows.map(async r=>{
+      try{
+        const doc = await db.collection('propinaPayments').doc(tpIdEstadoPago(r.barberId, from, to)).get();
+        estados[r.barberId] = doc.exists ? (doc.data().estado || 'pendiente') : 'pendiente';
+      }catch(e){ estados[r.barberId] = 'pendiente'; }
+    }));
+    return estados;
+  }
+  async function tpRegistrarPago(barberId, name, monto, from, to){
+    if(userRole !== 'ADMIN') return showToast('Solo un administrador puede registrar pagos de propinas');
+    const metodo = await mgPrompt(`Método de pago de las propinas de ${name} (${cxClp(monto)}):`, 'Efectivo', { titulo: 'Registrar pago de propinas' });
+    if(metodo === null) return;
+    const metodoFinal = metodo.trim() || 'Efectivo';
+    const ok = await mgConfirm(
+      `¿Registrar el pago de ${cxClp(monto)} en propinas a ${name}?\n\nPeríodo: ${cxFmtFechaCorta(from)} - ${cxFmtFechaCorta(to)} · Método: ${metodoFinal}\n\nEl historial de propinas recibidas no se modifica.`,
+      { titulo: 'Pago de propinas', textoConfirmar: 'Registrar pago' });
+    if(!ok) return;
+    try{
+      await db.collection('propinaPayments').doc(tpIdEstadoPago(barberId, from, to)).set({
+        barberId, from, to, estado: 'pagado',
+        monto, metodoPago: metodoFinal,
+        pagadoEn: new Date().toISOString(),
+        registradoPor: auth.currentUser?.uid || null,
+        historial: firebase.firestore.FieldValue.arrayUnion({
+          estado: 'pagado', monto, metodoPago: metodoFinal,
+          fecha: new Date().toISOString(), por: auth.currentUser?.uid || null,
+        }),
+      }, { merge:true });
+      showToast('Pago de propinas registrado');
+      pintarPropinas();
+    }catch(e){ showToast('No se pudo registrar: ' + e.message); }
+  }
+  async function tpVolverAPendiente(barberId, name, from, to){
+    if(userRole !== 'ADMIN') return;
+    if(!(await mgConfirm(`¿Volver a dejar PENDIENTES las propinas de ${name} de este período?\n\nEl registro del pago anterior queda guardado en el historial.`, { titulo: 'Propinas', textoConfirmar: 'Dejar pendiente' }))) return;
+    try{
+      await db.collection('propinaPayments').doc(tpIdEstadoPago(barberId, from, to)).set({
+        barberId, from, to, estado: 'pendiente',
+        actualizadoEn: new Date().toISOString(),
+        historial: firebase.firestore.FieldValue.arrayUnion({
+          estado: 'pendiente', fecha: new Date().toISOString(), por: auth.currentUser?.uid || null,
+        }),
+      }, { merge:true });
+      pintarPropinas();
+    }catch(e){ showToast('No se pudo actualizar: ' + e.message); }
+  }
+
+  async function pintarPropinas(){
     const from = document.getElementById('tpDesde').value;
     const to = document.getElementById('tpHasta').value;
+    if(!from || !to) return;
     const soloBarberId = document.getElementById('tpFiltroPro').value;
-    const mapa = new Map();
+    const tb = document.getElementById('tpTabla');
+    tb.innerHTML = '<tr><td colspan="4" class="cx-empty">Calculando...</td></tr>';
 
-    for(const a of appointments){
-      if(a.status !== 'done') continue;
-      if(from && a.fecha && a.fecha < from) continue;
-      if(to && a.fecha && a.fecha > to) continue;
-      const propina = Number(a.propina) || 0;
-      if(propina <= 0) continue;
-      const barbero = profesionalDeCita(a) || { id:'sin-asignar:' + (a.barber || ''), name:(a.barber || 'Sin asignar') + ' (profesional no identificable)' };
-      if(soloBarberId && barbero.id !== soloBarberId) continue;
-      if(!mapa.has(barbero.id)){
-        mapa.set(barbero.id, {
-          barberId: barbero.id, name: barbero.name,
-          initials: (barbero.name||'??').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(),
-          servicios:0, totalPropinas:0,
-        });
-      }
-      const row = mapa.get(barbero.id);
-      row.servicios++;
-      row.totalPropinas += propina;
+    let d;
+    try{
+      const r = await functions.httpsCallable('obtenerReportePropinas')({ desde: from, hasta: to });
+      d = r.data;
+    }catch(e){
+      tb.innerHTML = `<tr><td colspan="4" class="cx-empty">No se pudo calcular el reporte: ${escapeHTML(e.message || String(e))}</td></tr>`;
+      return;
     }
+    const rows = soloBarberId ? d.rows.filter(r=> r.barberId === soloBarberId) : d.rows;
+    const estados = await tpCargarEstados(rows, from, to);
+    tpRep = { from, to, rows, estados, sinAsignar: d.sinAsignar };
 
-    const rows = [...mapa.values()].sort((a,b)=> b.totalPropinas - a.totalPropinas);
-    tpRep = { from, to, rows };
+    const totalAsignadas = rows.reduce((s,r)=> s + r.totalPropinas, 0);
+    const total = totalAsignadas + (soloBarberId ? 0 : (d.sinAsignar?.total || 0));
+    const servicios = rows.reduce((s,r)=> s + r.servicios, 0);
+    const pagadas = rows.reduce((s,r)=> s + ((estados[r.barberId] === 'pagado') ? r.totalPropinas : 0), 0);
 
     document.getElementById('tpPeriodoTxt').textContent = `${cxFmtFechaCorta(from)} - ${cxFmtFechaCorta(to)}`;
-    const total = rows.reduce((s,r)=> s + r.totalPropinas, 0);
-    const servicios = rows.reduce((s,r)=> s + r.servicios, 0);
     document.getElementById('tpTotal').textContent = cxClp(total);
     document.getElementById('tpServicios').textContent = servicios;
     document.getElementById('tpProfesionales').textContent = rows.length;
+    document.getElementById('tpPagadas').textContent = cxClp(pagadas);
+    document.getElementById('tpPendientes').textContent = cxClp(Math.max(0, totalAsignadas - pagadas));
 
     const totales = document.getElementById('tpTotalesFila');
-    totales.innerHTML = `<td><b>Totales</b></td><td class="r">${servicios}</td><td class="r">${cxClp(total)}</td>`;
+    totales.innerHTML = `<td><b>Totales</b></td><td class="r">${servicios}</td><td class="r">${cxClp(total)}</td><td></td>`;
 
-    const tb = document.getElementById('tpTabla');
-    tb.innerHTML = rows.length ? rows.map(r=> `
-      <tr><td><div class="cx-cell"><div class="cx-cav">${escapeHTML(r.initials)}</div><div style="font-weight:600;">${escapeHTML(r.name)}</div></div></td>
+    const esAdmin = userRole === 'ADMIN';
+    const filasHtml = rows.map(r=>{
+      const estado = estados[r.barberId] || 'pendiente';
+      const boton = !esAdmin ? '' : (estado === 'pagado'
+        ? `<button class="ctrl-btn" data-tp-pendiente="${escapeHTML(r.barberId)}">Dejar pendiente</button>`
+        : `<button class="ctrl-btn primary" data-tp-pagar="${escapeHTML(r.barberId)}">Marcar pagado</button>`);
+      return `<tr><td><div class="cx-cell"><div class="cx-cav">${escapeHTML(r.initials)}</div><div style="font-weight:600;">${escapeHTML(r.name)}</div></div></td>
         <td class="r">${escapeHTML(r.servicios)}</td>
         <td class="r cx-pay">${cxClp(r.totalPropinas)}</td>
-      </tr>`).join('') : '<tr><td colspan="3" class="cx-empty">No hay propinas registradas en este período.</td></tr>';
+        <td class="r" style="white-space:nowrap;">${estado === 'pagado' ? 'Pagado' : 'Pendiente'} ${boton}</td>
+      </tr>`;
+    });
+    // Propinas cuya reserva ya no existe o no tiene profesional: se informan
+    // aparte y NUNCA se reparten solas -- decisión manual de la dueña.
+    if(!soloBarberId && d.sinAsignar && d.sinAsignar.cantidad > 0){
+      filasHtml.push(`<tr><td><div class="cx-cell"><div class="cx-cav">?</div><div style="font-weight:600;">Pendiente de asignación</div></div></td>
+        <td class="r">${escapeHTML(d.sinAsignar.cantidad)}</td>
+        <td class="r cx-pay">${cxClp(d.sinAsignar.total)}</td>
+        <td class="r">Sin profesional identificable</td></tr>`);
+    }
+    tb.innerHTML = filasHtml.length ? filasHtml.join('') : '<tr><td colspan="4" class="cx-empty">No hay propinas registradas en este período.</td></tr>';
+
+    tb.querySelectorAll('[data-tp-pagar]').forEach(btn=> btn.addEventListener('click', ()=>{
+      const r = rows.find(x=> x.barberId === btn.dataset.tpPagar);
+      if(r) tpRegistrarPago(r.barberId, r.name, r.totalPropinas, from, to);
+    }));
+    tb.querySelectorAll('[data-tp-pendiente]').forEach(btn=> btn.addEventListener('click', ()=>{
+      const r = rows.find(x=> x.barberId === btn.dataset.tpPendiente);
+      if(r) tpVolverAPendiente(r.barberId, r.name, from, to);
+    }));
   }
 
   document.querySelectorAll('#vistaPropinas .cx-chip').forEach(c=>
