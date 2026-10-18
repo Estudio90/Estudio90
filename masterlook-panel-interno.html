@@ -4101,6 +4101,16 @@
               <tbody id="pvTabla"></tbody>
             </table>
           </div>
+          <!-- Paginación del historial (20 por página). Los KPIs de arriba
+               SIEMPRE suman el historial completo, nunca solo la página. -->
+          <div id="pvPaginacion" style="display:none; margin-top:14px; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <span class="mg-note" id="pvPagInfo" style="margin:0;"></span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button class="ctrl-btn" id="pvPagAnterior">← Anterior</button>
+              <span id="pvPagNum" style="font-size:13px; color:var(--text-low); font-variant-numeric:tabular-nums;"></span>
+              <button class="ctrl-btn" id="pvPagSiguiente">Siguiente →</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -18612,25 +18622,53 @@
   document.getElementById('btnProductos').addEventListener('click', mostrarProductos);
   document.getElementById('pvVolver').addEventListener('click', pvVolverAgenda);
 
+  /* Historial de ventas de Productos -- paginado (corrección 10-2026).
+     Antes: limit(100) y TODO pintado en una lista interminable, con los KPIs
+     sumando solo esos 100 (truncamiento silencioso). Ahora: UNA consulta trae
+     el historial ordenado por fecha descendente, los KPIs suman SIEMPRE el
+     total completo (requisito duro: nunca solo la página visible), y la tabla
+     pinta 20 por página con Anterior/Siguiente -- al venir todas las filas de
+     la misma lista en memoria, no puede haber duplicados ni omisiones al
+     cambiar de página. (Paginación por cursores de Firestore descartada a
+     propósito: el SDK compat del panel no tiene agregados de suma, así que
+     los KPIs exactos exigen leer el historial igual; una sola consulta es la
+     solución simple y correcta para el volumen real de ventas de productos.) */
+  const PV_POR_PAGINA = 20;
+  let pvVentasTodas = [];
+  let pvPagina = 1;
+
   async function pvCargar(){
     const tbody = document.getElementById('pvTabla');
     tbody.innerHTML = '<tr><td colspan="6" class="cx-empty">Cargando...</td></tr>';
 
-    let ventas = [];
     try{
-      const snap = await db.collection('productSales').orderBy('createdAt','desc').limit(100).get();
-      ventas = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+      const snap = await db.collection('productSales').orderBy('createdAt','desc').get();
+      pvVentasTodas = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
     }catch(e){
       tbody.innerHTML = `<tr><td colspan="6" class="cx-empty">No se pudo cargar: ${escapeHTML(e.message)}</td></tr>`;
+      document.getElementById('pvPaginacion').style.display = 'none';
       return;
     }
+    pvPagina = 1;
 
-    const cantidad = ventas.reduce((s,v)=> s + (v.qty||0), 0);
-    const total = ventas.reduce((s,v)=> s + (v.subtotal||0), 0);
-    const comisiones = ventas.reduce((s,v)=> s + (v.comision||0), 0);
+    // KPIs: SIEMPRE sobre el historial completo, nunca sobre la página.
+    const cantidad = pvVentasTodas.reduce((s,v)=> s + (v.qty||0), 0);
+    const total = pvVentasTodas.reduce((s,v)=> s + (v.subtotal||0), 0);
+    const comisiones = pvVentasTodas.reduce((s,v)=> s + (v.comision||0), 0);
     document.getElementById('pvCantidad').textContent = cantidad;
     document.getElementById('pvTotal').textContent = cxClp(total);
     document.getElementById('pvComisiones').textContent = cxClp(comisiones);
+
+    pvPintarPagina();
+  }
+
+  function pvPintarPagina(){
+    const tbody = document.getElementById('pvTabla');
+    const totalRegistros = pvVentasTodas.length;
+    const totalPaginas = Math.max(1, Math.ceil(totalRegistros / PV_POR_PAGINA));
+    pvPagina = Math.min(Math.max(1, pvPagina), totalPaginas);
+    const inicio = (pvPagina - 1) * PV_POR_PAGINA;
+    const ventas = pvVentasTodas.slice(inicio, inicio + PV_POR_PAGINA);
 
     const ORIGEN_LABEL = { local: '🏪 Vendido en local', online: '🌐 Sitio web' };
     tbody.innerHTML = ventas.length ? ventas.map(v=>{
@@ -18647,7 +18685,26 @@
         <td class="r">${v.comision ? cxClp(v.comision) : '—'}</td>
       </tr>`;
     }).join('') : '<tr><td colspan="6" class="cx-empty">Todavía no hay ventas registradas.</td></tr>';
+
+    const barra = document.getElementById('pvPaginacion');
+    if(!totalRegistros){
+      barra.style.display = 'none';
+      return;
+    }
+    barra.style.display = 'flex';
+    document.getElementById('pvPagInfo').textContent =
+      `Mostrando ${inicio + 1}–${inicio + ventas.length} de ${totalRegistros} ventas`;
+    document.getElementById('pvPagNum').textContent = `Página ${pvPagina} de ${totalPaginas}`;
+    document.getElementById('pvPagAnterior').disabled = pvPagina <= 1;
+    document.getElementById('pvPagSiguiente').disabled = pvPagina >= totalPaginas;
   }
+
+  document.getElementById('pvPagAnterior').addEventListener('click', ()=>{
+    if(pvPagina > 1){ pvPagina--; pvPintarPagina(); }
+  });
+  document.getElementById('pvPagSiguiente').addEventListener('click', ()=>{
+    pvPagina++; pvPintarPagina();
+  });
 
   /* "+ Agregar venta" (pestaña Ventas) ya no escribe directo a Firestore --
      productSales es solo-servidor desde el Bloque 1 de comisiones (idempotencia
