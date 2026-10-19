@@ -4079,6 +4079,31 @@
 
       <!-- Panel: Ventas -->
       <div id="pvVentas">
+        <!-- Filtro de período (mismo patrón cx-filtros de Propinas/Comisiones).
+             KPIs, historial y paginación usan SIEMPRE este mismo rango, con el
+             día calendario de CHILE completo en ambos extremos. -->
+        <div class="cx-filtros-box" style="margin-bottom:16px;">
+          <div class="cx-filtros-col">
+            <label class="cx-flabel">Período</label>
+            <div class="cx-chips" id="pvChips">
+              <button class="cx-chip" data-pvr="hoy">Hoy</button>
+              <button class="cx-chip" data-pvr="ayer">Ayer</button>
+              <button class="cx-chip" data-pvr="semana">Esta semana</button>
+              <button class="cx-chip on" data-pvr="mes">Este mes</button>
+              <button class="cx-chip" data-pvr="custom">📅 Personalizado</button>
+            </div>
+            <div class="cx-f" id="pvCustomBox" style="display:none;margin-top:10px;">
+              <div class="cx-f"><label>Desde</label><input type="date" id="pvDesde"></div>
+              <div class="cx-f"><label>Hasta</label><input type="date" id="pvHasta"></div>
+              <button class="ctrl-btn primary" id="pvBuscar">Buscar</button>
+            </div>
+          </div>
+          <div class="cx-filtros-col">
+            <label class="cx-flabel">📅 Período seleccionado</label>
+            <div id="pvPeriodoTxt">—</div>
+          </div>
+        </div>
+
         <div class="cx-kpis">
           <div class="cx-kpi"><div class="k">Productos vendidos</div><div class="v" id="pvCantidad">0</div></div>
           <div class="cx-kpi pay"><div class="k">Total en ventas</div><div class="v" id="pvTotal">$0</div></div>
@@ -18635,7 +18660,59 @@
      solución simple y correcta para el volumen real de ventas de productos.) */
   const PV_POR_PAGINA = 20;
   let pvVentasTodas = [];
+  let pvVentasFiltradas = [];
   let pvPagina = 1;
+
+  /** Rango [desde, hasta] ('YYYY-MM-DD') del chip elegido, SIEMPRE en día
+   *  calendario de CHILE (TiempoSantiago, igual que cxRango -- jamás
+   *  toISOString/UTC). "Esta semana" = lunes a domingo, mismo criterio que
+   *  la agenda. */
+  function pvRango(tipo){
+    const hoy = TiempoSantiago.fechaSantiago();
+    if(tipo === 'hoy') return [hoy, hoy];
+    if(tipo === 'ayer'){ const a = TiempoSantiago.sumarDiasSantiago(hoy, -1); return [a, a]; }
+    if(tipo === 'semana'){
+      const dow = new Date(hoy + 'T12:00:00Z').getUTCDay(); // día de la semana del string calendario (mediodía UTC: sin corrimientos)
+      const lunes = TiempoSantiago.sumarDiasSantiago(hoy, -((dow + 6) % 7));
+      return [lunes, TiempoSantiago.sumarDiasSantiago(lunes, 6)];
+    }
+    if(tipo === 'mes') return [hoy.slice(0, 7) + '-01', hoy];
+    return [document.getElementById('pvDesde').value, document.getElementById('pvHasta').value]; // custom
+  }
+
+  /** Día calendario de CHILE en que ocurrió la venta: soldAt (Timestamp,
+   *  ventas nuevas) > createdAt (ISO) convertidos con TiempoSantiago; como
+   *  último recurso el campo `fecha` guardado (histórico sin timestamp). */
+  function pvDiaChileVenta(v){
+    const ms = (v.soldAt && typeof v.soldAt.toMillis === 'function') ? v.soldAt.toMillis()
+      : (v.createdAt ? Date.parse(v.createdAt) : NaN);
+    if(Number.isFinite(ms) && ms > 0) return TiempoSantiago.fechaSantiago(new Date(ms));
+    return v.fecha || '';
+  }
+
+  /** Aplica el rango vigente: KPIs, historial y paginación usan EXACTAMENTE
+   *  el mismo subconjunto; cambiar de rango vuelve a la página 1. */
+  function pvAplicarFiltro(){
+    const chip = document.querySelector('#pvChips .cx-chip.on');
+    const [desde, hasta] = pvRango(chip ? chip.dataset.pvr : 'mes');
+    if(!desde || !hasta || hasta < desde){
+      showToast('Elige un rango de fechas válido');
+      return;
+    }
+    pvVentasFiltradas = pvVentasTodas.filter(v=>{
+      const dia = pvDiaChileVenta(v);
+      return dia >= desde && dia <= hasta;
+    });
+    pvPagina = 1;
+
+    document.getElementById('pvPeriodoTxt').textContent = `${cxFmtFechaCorta(desde)} - ${cxFmtFechaCorta(hasta)}`;
+    // KPIs: SIEMPRE sobre TODO el período elegido, nunca sobre la página visible.
+    document.getElementById('pvCantidad').textContent = pvVentasFiltradas.reduce((s,v)=> s + (v.qty||0), 0);
+    document.getElementById('pvTotal').textContent = cxClp(pvVentasFiltradas.reduce((s,v)=> s + (v.subtotal||0), 0));
+    document.getElementById('pvComisiones').textContent = cxClp(pvVentasFiltradas.reduce((s,v)=> s + (v.comision||0), 0));
+
+    pvPintarPagina();
+  }
 
   /** Nombre REAL del profesional de una venta (corrección 10-2026: el panel
    *  solo leía `barberName`, pero las ventas cobradas junto a una cita
@@ -18669,26 +18746,16 @@
       document.getElementById('pvPaginacion').style.display = 'none';
       return;
     }
-    pvPagina = 1;
-
-    // KPIs: SIEMPRE sobre el historial completo, nunca sobre la página.
-    const cantidad = pvVentasTodas.reduce((s,v)=> s + (v.qty||0), 0);
-    const total = pvVentasTodas.reduce((s,v)=> s + (v.subtotal||0), 0);
-    const comisiones = pvVentasTodas.reduce((s,v)=> s + (v.comision||0), 0);
-    document.getElementById('pvCantidad').textContent = cantidad;
-    document.getElementById('pvTotal').textContent = cxClp(total);
-    document.getElementById('pvComisiones').textContent = cxClp(comisiones);
-
-    pvPintarPagina();
+    pvAplicarFiltro();
   }
 
   function pvPintarPagina(){
     const tbody = document.getElementById('pvTabla');
-    const totalRegistros = pvVentasTodas.length;
+    const totalRegistros = pvVentasFiltradas.length;
     const totalPaginas = Math.max(1, Math.ceil(totalRegistros / PV_POR_PAGINA));
     pvPagina = Math.min(Math.max(1, pvPagina), totalPaginas);
     const inicio = (pvPagina - 1) * PV_POR_PAGINA;
-    const ventas = pvVentasTodas.slice(inicio, inicio + PV_POR_PAGINA);
+    const ventas = pvVentasFiltradas.slice(inicio, inicio + PV_POR_PAGINA);
 
     const ORIGEN_LABEL = { local: '🏪 Vendido en local', online: '🌐 Sitio web' };
     tbody.innerHTML = ventas.length ? ventas.map(v=>{
@@ -18704,7 +18771,7 @@
         <td class="r">${cxClp(v.subtotal)}</td>
         <td class="r">${v.comision ? cxClp(v.comision) : '—'}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" class="cx-empty">Todavía no hay ventas registradas.</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="cx-empty">No hay ventas de productos en este período.</td></tr>';
 
     const barra = document.getElementById('pvPaginacion');
     if(!totalRegistros){
@@ -18725,6 +18792,24 @@
   document.getElementById('pvPagSiguiente').addEventListener('click', ()=>{
     pvPagina++; pvPintarPagina();
   });
+
+  // Filtro de período del historial de Productos (chips + Desde/Hasta).
+  document.querySelectorAll('#pvChips .cx-chip').forEach(c=>
+    c.addEventListener('click', ()=>{
+      document.querySelectorAll('#pvChips .cx-chip').forEach(x=> x.classList.toggle('on', x===c));
+      document.getElementById('pvCustomBox').style.display = c.dataset.pvr === 'custom' ? 'flex' : 'none';
+      if(c.dataset.pvr === 'custom') return; // espera Desde/Hasta + Buscar
+      const [d,h] = pvRango(c.dataset.pvr);
+      document.getElementById('pvDesde').value = d;
+      document.getElementById('pvHasta').value = h;
+      pvAplicarFiltro();
+    }));
+  document.getElementById('pvBuscar').addEventListener('click', pvAplicarFiltro);
+  (function pvInitFechas(){
+    const [d,h] = pvRango('mes');
+    document.getElementById('pvDesde').value = d;
+    document.getElementById('pvHasta').value = h;
+  })();
 
   /* "+ Agregar venta" (pestaña Ventas) ya no escribe directo a Firestore --
      productSales es solo-servidor desde el Bloque 1 de comisiones (idempotencia
