@@ -7076,11 +7076,35 @@
     }
   }
 
+  /** URLs https de un mensaje del BOT -> enlaces reales clickeables (ej. el
+   *  link de reservas de la sucursal con agenda externa). Se construye por
+   *  nodos DOM, NUNCA innerHTML con el texto -- el texto sigue sin poder
+   *  inyectar HTML. Solo se enlaza https://; todo lo demás queda como texto. */
+  function chatTextoConLinks(div, texto){
+    const RE_URL = /https:\/\/[^\s<>"')\]]+/g;
+    let i = 0, m;
+    while((m = RE_URL.exec(texto))){
+      if(m.index > i) div.appendChild(document.createTextNode(texto.slice(i, m.index)));
+      const url = m[0].replace(/[.,;:!?]+$/, '');   // puntuación pegada al final, fuera del link
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = url;
+      a.style.cssText = 'color:inherit;text-decoration:underline;word-break:break-all;';
+      div.appendChild(a);
+      i = m.index + url.length;
+      RE_URL.lastIndex = i;
+    }
+    div.appendChild(document.createTextNode(texto.slice(i)));
+  }
+
   function chatAgregar(rol, texto){
     const body = document.getElementById('chatBody');
     const div = document.createElement('div');
     div.className = 'chat-msg ' + rol;
-    div.textContent = texto;
+    if(rol === 'bot' && /https:\/\//.test(String(texto))) chatTextoConLinks(div, String(texto));
+    else div.textContent = texto;
     body.appendChild(div);
     body.scrollTop = body.scrollHeight;
     return div;
@@ -7235,6 +7259,16 @@
       chatHistorialIA.push({ rol:'user', texto: textoOriginal }, { rol:'bot', texto: data.respuesta });
       chatHistorialIA = chatHistorialIA.slice(-10);
 
+      // Cambio de sucursal a mitad de la conversación: una propuesta que
+      // quedó pendiente de OTRA sucursal (o el intento de reservar en una con
+      // agenda externa) la invalida -- así un «sí» posterior no puede
+      // ejecutar la propuesta anterior. Lo decide el servidor (candado de
+      // sucursal en preguntarIACliente); acá solo se obedece.
+      if(chatPropuestaPendiente && (
+          data.sucursalBloqueada ||
+          (data.sucursalContexto && chatPropuestaPendiente.sucursalNombre && data.sucursalContexto !== chatPropuestaPendiente.sucursalNombre)
+      )) chatPropuestaPendiente = null;
+
       if(data.propuesta) chatMostrarPropuesta(data.propuesta);
     }catch(e){
       pensando.remove();
@@ -7254,25 +7288,119 @@
    *  visitante confirme antes de pagar -- nunca se paga ni se reserva sin
    *  este paso. "Prefiero elegir en el calendario" queda como respaldo, por
    *  si el visitante prefiere revisarlo en el flujo normal del sitio. */
+  /** Estado del cierre de reserva del chat: la última propuesta mostrada que
+   *  AÚN espera la confirmación del visitante. Permite que una confirmación
+   *  ESCRITA («sí», «confirmo», «dale»…) ejecute la reserva igual que el
+   *  botón, en vez de viajar a Max y provocar que vuelva a proponer lo mismo
+   *  (el bucle de resúmenes repetidos reportado el 21-10). Se limpia al
+   *  confirmar con éxito o al irse al calendario; una propuesta nueva
+   *  simplemente la reemplaza. */
+  let chatPropuestaPendiente = null;
+  /** Segunda capa (el servidor ya no genera propuestas de una sucursal con
+   *  agenda externa): si una propuesta llevara una sucursal así, el chat se
+   *  niega a ejecutarla. */
+  function chatSucursalConAgendaExterna(propuesta){
+    const n = String((propuesta && propuesta.sucursalNombre) || '').trim();
+    return !!n && localesActivos.some(l=> l.nombre === n && l.agendaExterna === true);
+  }
+  function chatBloquearSucursalExterna(propuesta){
+    chatPropuestaPendiente = null;
+    document.getElementById('chatChips').innerHTML = '';
+    chatAgregar('bot', `La sucursal ${propuesta.sucursalNombre} se reserva por su propio sistema, no por este chat. Pídeme su enlace de reservas y te lo comparto.`);
+  }
+  const CHAT_CONFIRMA_REGEX = /^(s[ií]+|s[ií][,.!\s]+(confirmo|confirma|dale|ok(ey)?|perfecto|est[aá] bien|de acuerdo|por favor)|confirmo|confirmar|confirma|confirmada|dale|ok(ey)?|oka|listo|perfecto|est[aá] bien|de acuerdo|correcto|as[ií] es|me parece( bien)?|bueno|ya|s[ií] est[aá]n bien( todos)?( los datos)?)[.!\s]*$/i;
+
   function chatMostrarPropuesta(propuesta){
     const precio = Number(propuesta.precioClp || 0).toLocaleString('es-CL');
     const anticipo = Number(propuesta.anticipoClp || 0).toLocaleString('es-CL');
+    chatPropuestaPendiente = propuesta;
+    // Mismo interruptor real que el calendario (settings/negocio
+    // .reservasSinAnticipo): con él activo, el resumen no habla de anticipo
+    // ni Webpay y la confirmación va por crearReservaSinAnticipo (que
+    // re-verifica el interruptor Y la disponibilidad en el servidor).
+    const sinAnticipo = reservasSinAnticipoActiva();
     const resumen = 'Resumen de tu reserva:\n\n' +
       `Servicio: ${propuesta.servicioNombre}\n` +
       `Profesional: ${propuesta.barberoNombre || '—'}\n` +
       `Fecha: ${fmtFechaLarga(propuesta.fecha)}\n` +
       `Hora: ${propuesta.horaInicio}\n` +
       `Precio: $${precio}\n` +
-      `Anticipo a pagar ahora: $${anticipo}\n\n` +
+      (sinAnticipo ? '' : `Anticipo a pagar ahora: $${anticipo}\n`) + '\n' +
       `A nombre de: ${propuesta.nombreCompleto}\n` +
       `Celular: ${propuesta.telefono}\n` +
       `Correo: ${propuesta.correo}\n\n` +
-      '¿Están bien todos los datos para continuar al pago del anticipo con Webpay?';
+      (sinAnticipo
+        ? '¿Están bien todos los datos? Tu hora queda confirmada de inmediato, sin ningún pago en línea.'
+        : '¿Están bien todos los datos para continuar al pago del anticipo con Webpay?');
     chatAgregar('bot', resumen);
     chatChips([
-      { label:'✅ Confirmar y pagar', accion: ()=> chatConfirmarYPagarIA(propuesta) },
-      { label:'Prefiero elegir en el calendario', accion: ()=> chatIniciarReservaDesdeIA(propuesta) },
+      sinAnticipo
+        ? { label:'✅ Confirmar reserva', accion: ()=> chatConfirmarSinAnticipoIA(propuesta) }
+        : { label:'✅ Confirmar y pagar', accion: ()=> chatConfirmarYPagarIA(propuesta) },
+      { label:'Prefiero elegir en el calendario', accion: ()=>{ chatPropuestaPendiente = null; chatIniciarReservaDesdeIA(propuesta); } },
     ]);
+  }
+
+  /** Confirmación SIN anticipo desde el chat: mismo payload y misma Cloud
+   *  Function (crearReservaSinAnticipo) que el flujo del calendario -- el
+   *  servidor re-verifica el interruptor `reservasSinAnticipo` y la
+   *  disponibilidad real dentro de la transacción del slotLock, así que
+   *  nada de acá puede reservar una hora ocupada ni saltarse el modo. */
+  let chatReservaIaEnCurso = false;
+  async function chatConfirmarSinAnticipoIA(propuesta){
+    if(chatReservaIaEnCurso) return;
+    if(chatSucursalConAgendaExterna(propuesta)){ chatBloquearSucursalExterna(propuesta); return; }
+    chatReservaIaEnCurso = true;
+    document.getElementById('chatChips').innerHTML = '';
+    const msg = chatAgregar('bot', 'Confirmando tu reserva…');
+
+    const [hh, mm] = String(propuesta.horaInicio || '0:0').split(':').map(Number);
+    const startMin = (hh || 0) * 60 + (mm || 0);
+
+    try{
+      const headers = { 'Content-Type': 'text/plain' };
+      if(auth.currentUser){
+        try{ headers['Authorization'] = 'Bearer ' + await auth.currentUser.getIdToken(); }catch(e){}
+      }
+      const resp = await fetch(FUNCTIONS_BASE + '/crearReservaSinAnticipo', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          fecha: propuesta.fecha,
+          client: propuesta.nombreCompleto, phone: propuesta.telefono, email: propuesta.correo,
+          comentarioCliente: 'Reserva realizada por el chat con IA.',
+          citas: [{
+            serviceId: propuesta.servicioId, servicio: propuesta.servicioNombre, price: propuesta.precioClp,
+            barberName: propuesta.barberoNombre, startMin, minutes: propuesta.duracionMin, label: '',
+          }],
+        }),
+      });
+      const res = await resp.json();
+      if(!resp.ok) throw new Error(res.error || 'No se pudo reservar. Intenta de nuevo.');
+      try{ window.MLMeta && MLMeta.reservaConfirmadaSinAnticipo({ ids: res.bookingIds, servicios: [propuesta.servicioNombre] }); }catch(_){}
+      try{ window.MLGoogle && MLGoogle.reservaSinAnticipo({ ids: res.bookingIds, servicios: [propuesta.servicioNombre], citas: [{ servicio: propuesta.servicioNombre, precio: propuesta.precioClp, min: startMin, minutos: propuesta.duracionMin }] }); }catch(_){}
+      try{
+        const utm = window.MLGoogle && MLGoogle.obtenerUtm();
+        if(utm && res.bookingIds && res.bookingIds.length){
+          functions.httpsCallable('registrarOrigenReserva')({ bookingIds: res.bookingIds, utm }).catch(()=>{});
+        }
+      }catch(_){}
+      chatPropuestaPendiente = null;   // reserva REAL creada -- nada que confirmar de nuevo
+      msg.textContent = '¡Listo! Tu hora quedó confirmada ✂️';
+      chatAgregar('bot', `${propuesta.servicioNombre} el ${fmtFechaLarga(propuesta.fecha)} a las ${propuesta.horaInicio}${propuesta.barberoNombre ? ' con ' + propuesta.barberoNombre : ''}. Te enviamos la confirmación a ${propuesta.correo}.`);
+      chatChips([{ label:'Gracias', intent:'gracias' }]);
+    }catch(e){
+      chatReservaIaEnCurso = false;
+      msg.textContent = `No pude completar la reserva: ${e.message}`;
+      // La propuesta sigue pendiente: se puede REINTENTAR sin repetir toda la
+      // conversación (si la hora de verdad se ocupó, el servidor lo vuelve a
+      // decir con claridad -- nunca se crea una reserva sobre una hora tomada).
+      chatAgregar('bot', '¿Quieres que lo intente de nuevo, o buscamos otro horario?');
+      chatChips([
+        { label:'Reintentar', accion: ()=> chatConfirmarSinAnticipoIA(propuesta) },
+        { label:'Ver otra hora', intent: propuesta.servicioNombre },
+      ]);
+    }
   }
 
   /** Al confirmar el resumen: arma EXACTAMENTE el mismo payload que ya arma
@@ -7287,6 +7415,7 @@
   let chatPagoIaEnCurso = false;
   async function chatConfirmarYPagarIA(propuesta){
     if(chatPagoIaEnCurso) return;
+    if(chatSucursalConAgendaExterna(propuesta)){ chatBloquearSucursalExterna(propuesta); return; }
     chatPagoIaEnCurso = true;
     try{ window.MLMeta && MLMeta.checkoutDesdeChat(propuesta); }catch(_){}
     try{ window.MLGoogle && MLGoogle.checkoutDesdeChat(propuesta); }catch(_){}
@@ -7319,6 +7448,7 @@
       });
       const pago = await pagoResp.json();
       if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo reservar ni iniciar el pago. Intenta de nuevo.');
+      chatPropuestaPendiente = null;   // sigue en Webpay -- la propuesta ya cumplió su rol
       redirectToWebpay(pago.url, pago.token);
     }catch(e){
       chatPagoIaEnCurso = false;
@@ -7376,8 +7506,41 @@
       { label:'Otra pregunta', intent:'menu' }
     ]);
   }
+  /** Horario por día de UN local (bloques weekday/startMin/endMin de la
+   *  colección `locales`) -> texto agrupado "Lun a Vie 11:00-21:00, Sáb
+   *  10:00-19:00, Dom cerrado" -- espejo del formatearHorarioLocal del
+   *  servidor (lo que ya ve Max), para que el atajo sin costo del chat
+   *  diga EXACTAMENTE lo mismo que diría Max. */
+  function chatHorarioDeLocal(bloques){
+    const ABREV = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const hhmm = m => String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0');
+    const porDia = [1,2,3,4,5,6,0].map(wd=>{
+      const b = (bloques||[]).find(x=> x.weekday === wd);
+      return { dia: ABREV[wd], texto: b ? `${hhmm(b.startMin)}-${hhmm(b.endMin)}` : 'cerrado' };
+    });
+    const grupos = [];
+    for(const d of porDia){
+      const last = grupos[grupos.length-1];
+      if(last && last.texto === d.texto) last.dias.push(d.dia);
+      else grupos.push({ texto: d.texto, dias: [d.dia] });
+    }
+    return grupos.map(g=> `${g.dias.length>1 ? g.dias[0]+' a '+g.dias[g.dias.length-1] : g.dias[0]} ${g.texto}`).join(', ');
+  }
   function chatRespHorario(){
-    chatAgregar('bot', `Atendemos Lunes a Viernes de ${horarioNegocio.horarioSemana}, y Sábado de ${horarioNegocio.horarioSabado}. Domingo: ${horarioNegocio.horarioDomingo}.`);
+    // Horario POR SUCURSAL desde `locales` (cada local tiene el suyo +
+    // colación opcional). Si ningún local activo tiene horario cargado,
+    // se cae al texto único antiguo de settings/negocio.
+    const conHorario = localesActivos.filter(l=> Array.isArray(l.horario) && l.horario.length);
+    if(conHorario.length){
+      const partes = conHorario.map(l=>{
+        let t = `${l.nombre}: ${chatHorarioDeLocal(l.horario)}`;
+        if(l.colacion) t += `. Colación: ${l.colacion}`;
+        return t;
+      });
+      chatAgregar('bot', (conHorario.length > 1 ? 'Nuestros horarios por sucursal:\n\n' : 'Nuestro horario:\n\n') + partes.join('\n\n'));
+    }else{
+      chatAgregar('bot', `Atendemos Lunes a Viernes de ${horarioNegocio.horarioSemana}, y Sábado de ${horarioNegocio.horarioSabado}. Domingo: ${horarioNegocio.horarioDomingo}.`);
+    }
     chatChips([
       { label:'Reservar hora', accion: ()=>{ chatToggle(); abrirReservas(); } },
       { label:'Otra pregunta', intent:'menu' }
@@ -7482,6 +7645,22 @@
 
   function chatResponder(textoOriginal){
     const t = textoOriginal.toLowerCase();
+
+    // MÁQUINA DE ESTADOS DEL CIERRE (corrección del bucle 21-10): si hay una
+    // propuesta de reserva esperando confirmación y el visitante la confirma
+    // POR ESCRITO («sí», «confirmo», «dale»…), se ejecuta la MISMA acción que
+    // el botón del resumen -- determinista, sin pasar por Max (que volvería a
+    // proponer lo mismo). Cualquier otro texto sigue su camino normal: Max
+    // puede responder dudas o re-armar la propuesta si el visitante pidió un
+    // cambio. El doble clic/doble «sí» no duplica nada: el guard en curso y
+    // la limpieza de la propuesta al confirmar lo impiden, y el servidor
+    // re-verifica la disponibilidad al crear la reserva.
+    if(chatPropuestaPendiente && CHAT_CONFIRMA_REGEX.test(textoOriginal.trim())){
+      const prop = chatPropuestaPendiente;
+      if(reservasSinAnticipoActiva()) chatConfirmarSinAnticipoIA(prop);
+      else chatConfirmarYPagarIA(prop);
+      return;
+    }
 
     if(t === 'menu'){ chatAgregar('bot','¿En qué más te ayudo?'); chatMenuPrincipal(); return; }
     // Intents exactos de los chips (siempre gratis, nunca son un mensaje compuesto).

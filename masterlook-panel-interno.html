@@ -4804,6 +4804,17 @@
         <label class="mg-label" style="margin-top:16px;">Horario de atención</label>
         <p class="mg-note" style="margin-bottom:10px;">Este horario es informativo para tus clientes (sitio, correo, chat) -- no cambia la disponibilidad real de tus profesionales, que se sigue configurando en cada Profesional.</p>
         <div class="mg-week" id="mlHorario"></div>
+
+        <label class="mg-label" style="margin-top:16px;">Colación <span class="mg-opt">(opcional)</span></label>
+        <p class="mg-note" style="margin-bottom:10px;">Si este local hace una pausa de colación, escríbela tal como quieres que Max se la cuente al cliente. Ej: «Lunes a viernes a las 14:00 y sábado a las 13:00». Si queda vacío, Max no menciona ninguna colación.</p>
+        <input type="text" id="mlColacion" class="mg-input" placeholder="Ej: Lunes a viernes a las 14:00 y sábado a las 13:00">
+
+        <label class="mg-label" style="margin-top:16px;">Agenda de reservas</label>
+        <label class="mg-note" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;">
+          <input type="checkbox" id="mlAgendaExterna" style="width:16px;height:16px;flex-shrink:0;">
+          <span>Este local usa una agenda EXTERNA (ej. AgendaPro): Max informará su horario y dirección, pero nunca ofrecerá reservarlo por el chat ni dirá si tiene horas libres.</span>
+        </label>
+        <input type="text" id="mlLinkReservasExternas" class="mg-input" placeholder="Link de reservas externo (opcional, ej. el de AgendaPro)" style="display:none;">
       </div>
 
       <div class="mes-pane" data-mlpane="web">
@@ -13849,6 +13860,10 @@
     document.getElementById('mlCorreo').value = l?.correo || '';
     document.getElementById('mlDescripcion').value = l?.descripcion || '';
     document.getElementById('mlGoogleMapsUrl').value = l?.googleMapsUrl || '';
+    document.getElementById('mlColacion').value = l?.colacion || '';
+    document.getElementById('mlAgendaExterna').checked = l?.agendaExterna === true;
+    document.getElementById('mlLinkReservasExternas').value = l?.linkReservasExternas || '';
+    document.getElementById('mlLinkReservasExternas').style.display = l?.agendaExterna === true ? '' : 'none';
     const mapaThumb = document.getElementById('mlMapaThumb');
     mapaThumb.dataset.mapalocal = id || '';
     mapaThumb.style.backgroundImage = l?.mapaImagenUrl ? `url('${l.mapaImagenUrl}')` : '';
@@ -13867,6 +13882,11 @@
       document.querySelectorAll('#modalEditarLocal .mes-pane').forEach(p=>
         p.classList.toggle('active', p.dataset.mlpane === t.dataset.mltab));
     }));
+
+  // El link de reservas externo solo tiene sentido con la agenda externa marcada.
+  document.getElementById('mlAgendaExterna').addEventListener('change', (e)=>{
+    document.getElementById('mlLinkReservasExternas').style.display = e.target.checked ? '' : 'none';
+  });
 
   function mlSubirImagenMapa(localId){
     const input = document.createElement('input');
@@ -14028,6 +14048,10 @@
       correo,
       descripcion: document.getElementById('mlDescripcion').value.trim(),
       googleMapsUrl: document.getElementById('mlGoogleMapsUrl').value.trim(),
+      colacion: document.getElementById('mlColacion').value.trim(),
+      agendaExterna: document.getElementById('mlAgendaExterna').checked,
+      linkReservasExternas: document.getElementById('mlAgendaExterna').checked
+        ? document.getElementById('mlLinkReservasExternas').value.trim() : '',
       horario,
     };
     cuerpo.direccionCompleta = mlDireccionCompleta(cuerpo);
