@@ -6340,7 +6340,7 @@
     `;
     card.querySelector('.wa-alert-x').addEventListener('click', ()=> card.remove());
     card.querySelector('.wa-alert-btn').addEventListener('click', ()=>{
-      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(urlWA(waNum, msg), '_blank');
       card.remove();
     });
     agregarAlertaFlotante(cont, card);
@@ -22194,7 +22194,7 @@
     const msg = `Hola ${primerNombre}! Te escribimos de MASTER LOOK para coordinar el pago de tu ${currentAppt.service}.\n\n`
       + `Monto pendiente: ${formatCLP(pendiente)}\n\n`
       + `¿Cómo prefieres pagar — efectivo, transferencia o tarjeta al llegar? 🙂`;
-    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`,'_blank');
+    window.open(urlWA(waNumber, msg), '_blank');
   });
 
   document.getElementById('payBack').addEventListener('click', ()=>{
