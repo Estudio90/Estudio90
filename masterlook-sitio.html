@@ -521,6 +521,29 @@
   .svc-precio{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:.94rem;
     background:var(--grafito); border:1px solid var(--linea); padding:8px 15px; border-radius:99px;}
   .svc-dur{font-size:.74rem; color:var(--gris-tenue);}
+  /* «Ver detalles» de las tarjetas: SOLO se muestra en móvil (bloques @media 480px/600px); en escritorio no existe. */
+  .svc-ver, .st-ver{display:none;}
+  /* Ficha de detalle OSCURA de un servicio (y de un producto sin fotos): reutiliza la estructura de la ficha de curso de
+     Academy (.ac-detail-*) con una variante oscura propia (.sv-detalle); la ficha de Academy no cambia. */
+  .ac-detail-modal.sv-detalle{background:rgba(0,0,0,.72); z-index:74;}   /* por debajo de la barra inferior (z 75): «Inicio» y los demás botones siguen a la vista */
+  @media (max-width:899px){
+    /* en móvil la barra inferior queda visible: la ficha termina justo ARRIBA de ella (nunca la tapa) */
+    .ac-detail-modal.sv-detalle{padding:0 12px calc(84px + env(safe-area-inset-bottom, 0px));}
+    .sv-detalle .ac-detail-card{border-radius:18px; max-height:calc(100vh - 120px); max-height:calc(100dvh - 120px);}
+  }
+  .sv-detalle .ac-detail-card{background:#121214; color:#F4F2EE; border:1px solid rgba(255,255,255,.14);
+    padding-bottom:env(safe-area-inset-bottom, 0px);}
+  .sv-detalle .ac-detail-close{background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.22);
+    width:40px; height:40px; font-size:16px;}
+  .sv-detalle .ac-detail-body h3{color:#F4F2EE; line-height:1.3; overflow-wrap:anywhere;}
+  .sv-detalle .ac-detail-body p{color:#B9B4AC; white-space:pre-line; overflow-wrap:anywhere;}
+  .sv-detalle .ac-detail-meta span{color:#9A9691;}
+  .sv-detalle .ac-detail-price{color:#F4F2EE; font-family:var(--font-primary); font-variant-numeric:tabular-nums;}
+  .sv-detalle-btn{display:block; width:100%; padding:14px 16px; border:0; border-radius:99px; cursor:pointer;
+    background:#e9eceb; color:#1A150A; font-family:inherit; font-size:.8rem; font-weight:700;
+    letter-spacing:.06em; text-transform:uppercase;}
+  .sv-detalle-btn:disabled{opacity:.45; cursor:not-allowed;}
+  .sv-detalle .ac-detail-close:focus-visible, .sv-detalle-btn:focus-visible{outline:2px solid #e9eceb; outline-offset:2px;}
 
   /* ===== tienda (vitrina en el inicio) =====
      Reutiliza a propósito las mismas clases .svc-card/.svc-foto/.svc-badge/
@@ -1788,6 +1811,11 @@
     .st-card h4{font-size:.7rem;line-height:1.25;margin-bottom:2px;
       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
     .st-card-desc{display:none;}
+    /* «Ver detalles»: pastilla sobre la foto (no suma altura; las tarjetas conservan sus medidas originales) */
+    .st-ver{display:inline-flex;align-items:center;position:absolute;left:6px;bottom:6px;z-index:3;min-height:26px;
+      padding:3px 9px;border-radius:99px;cursor:pointer;font-family:inherit;font-size:.58rem;letter-spacing:.04em;
+      color:#F4F2EE;background:rgba(10,10,12,.55);border:1px solid rgba(255,255,255,.24);
+      -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
     .st-card-price{font-size:.7rem;}
     .st-add{width:24px;height:24px;font-size:.85rem;}
   }
@@ -2705,8 +2733,15 @@
     .svc-foto{height:108px; padding:9px;}
     .svc-badge{font-size:.54rem; padding:4px 8px;}
     .svc-body{padding:10px 11px 11px;}
-    .svc-nombre{font-size:.72rem; margin-bottom:4px; height:2.3em;}
-    .svc-desc{font-size:.66rem; height:2.3em;}
+    /* MISMAS medidas de siempre (148 px de ancho, 2.3em de alto para nombre y descripción): lo único que cambia es el
+       interlineado (1.15 = exactamente 2 líneas en 2.3em), así el texto largo se resume con «…» en vez de cortarse a media
+       línea. «Ver detalles» es una pastilla sobre la foto: no suma altura. */
+    .svc-nombre{font-size:.72rem; margin-bottom:4px; height:2.3em; line-height:1.15;}
+    .svc-desc{font-size:.66rem; height:2.3em; line-height:1.15;}
+    .svc-ver{display:inline-flex; align-items:center; position:absolute; left:8px; bottom:8px; z-index:3;
+      min-height:26px; padding:3px 10px; border-radius:99px; cursor:pointer; font-family:inherit;
+      font-size:.6rem; letter-spacing:.04em; color:#F4F2EE; background:rgba(10,10,12,.55);
+      border:1px solid rgba(255,255,255,.24); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);}
     .svc-pie{padding-top:4px;}
     .svc-precio{font-size:.72rem; padding:5px 10px;}
     .svc-dur{font-size:.6rem;}
@@ -4714,6 +4749,24 @@
       </div>
       <div class="ac-detail-price" id="acDetailPrecio"></div>
       <button class="ac-course-btn" id="acDetailComprar" style="padding:12px;">Comprar curso</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ficha de detalle OSCURA de un servicio (o de un producto sin fotos): misma estructura que la ficha de curso de Academy -->
+<div class="ac-detail-modal sv-detalle" id="svDetalleModal" role="dialog" aria-modal="true" aria-labelledby="svDetalleNombre"
+     onclick="if(event.target===this) cerrarDetalleServicio()">
+  <div class="ac-detail-card">
+    <button type="button" class="ac-detail-close" id="svDetalleCerrar" aria-label="Cerrar" onclick="cerrarDetalleServicio()">✕</button>
+    <div class="ac-detail-photo" id="svDetalleFoto"></div>
+    <div class="ac-detail-body">
+      <h3 id="svDetalleNombre"></h3>
+      <p id="svDetalleDesc"></p>
+      <div class="ac-detail-meta" id="svDetalleMeta">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 1.9"/></svg><span id="svDetalleDur"></span></span>
+      </div>
+      <div class="ac-detail-price" id="svDetallePrecio"></div>
+      <button type="button" class="sv-detalle-btn" id="svDetalleAccion">Reservar</button>
     </div>
   </div>
 </div>
@@ -9690,6 +9743,99 @@
     document.getElementById('acCourseDetailModal').classList.remove('open');
   }
 
+  /* ---------- Ficha de detalle OSCURA de un servicio / producto sin fotos ("Ver detalles" en móvil) ----------
+     Misma estructura que la ficha de curso (arriba) con variante oscura. NO dispara ningún evento de medición
+     (Meta Pixel): "Reservar" hace exactamente lo mismo que tocar la tarjeta (selectService + abrirReservas +
+     avanzarAFechaHora) y "Agregar al carrito" usa el mismo botón data-buy de siempre. Al cerrar (✕, tocar fuera o
+     Escape) la fila de tarjetas NO se vuelve a pintar, así que el carrusel queda en el mismo punto, y el foco vuelve
+     al enlace que la abrió. */
+  let svDetalleOpener = null;
+  let svDetalleBodyOverflow = '';
+  function abrirFichaOscura({ nombre, descripcion, precio, minutos, fotoUrl, iconoSvg, textoBoton, deshabilitado, alPulsar, opener }){
+    const modal = document.getElementById('svDetalleModal');
+    const foto = document.getElementById('svDetalleFoto');
+    foto.innerHTML = '';
+    if(fotoUrl){
+      const img = document.createElement('img');
+      img.alt = ''; img.loading = 'lazy'; img.src = fotoUrl;
+      foto.appendChild(img);
+    }else if(iconoSvg){
+      foto.innerHTML = iconoSvg;
+    }
+    document.getElementById('svDetalleNombre').textContent = nombre || '';
+    const desc = document.getElementById('svDetalleDesc');
+    desc.textContent = descripcion || '';
+    desc.style.display = descripcion ? '' : 'none';
+    document.getElementById('svDetallePrecio').textContent = precio;
+    const meta = document.getElementById('svDetalleMeta');
+    meta.style.display = minutos ? '' : 'none';
+    document.getElementById('svDetalleDur').textContent = minutos ? dur(minutos) : '';
+    const btn = document.getElementById('svDetalleAccion');
+    btn.textContent = textoBoton;
+    btn.disabled = !!deshabilitado;
+    btn.onclick = alPulsar;
+    modal.scrollTop = 0;
+    modal.querySelector('.ac-detail-card').scrollTop = 0;
+    svDetalleOpener = opener || null;
+    if(!modal.classList.contains('open')){
+      svDetalleBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+    modal.classList.add('open');
+    document.getElementById('svDetalleCerrar').focus({ preventScroll:true });
+  }
+  function cerrarDetalleServicio(){
+    const modal = document.getElementById('svDetalleModal');
+    if(!modal || !modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = svDetalleBodyOverflow;
+    const o = svDetalleOpener; svDetalleOpener = null;
+    if(o && o.isConnected){ try{ o.focus({ preventScroll:true }); }catch(_){} }
+  }
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape') cerrarDetalleServicio();
+  });
+  // La ficha deja ver la barra inferior: al tocar CUALQUIER botón de la barra se cierra primero la ficha y después corre,
+  // sin cambios, la acción propia del botón (fase de captura; no altera a los demás botones).
+  document.querySelector('.bottom-nav')?.addEventListener('click', e=>{
+    if(e.target.closest('.bn-item')) cerrarDetalleServicio();
+  }, true);
+  /** Servicio: "Reservar" = lo mismo que tocar la tarjeta. `card` es la tarjeta del carrusel (sus data-* alimentan selectService). */
+  function abrirDetalleServicio(sv, card, opener){
+    abrirFichaOscura({
+      nombre: sv.name,
+      descripcion: sv.description || '',
+      precio: money(sv.priceClp),
+      minutos: sv.minutes,
+      fotoUrl: sv.photoUrl || '',
+      iconoSvg: sv.photoUrl ? '' : iconoDeServicio(sv),
+      textoBoton: 'Reservar',
+      alPulsar: ()=>{
+        cerrarDetalleServicio();
+        selectService(card.dataset.svc, card.dataset.price, card.dataset.svcId, Number(card.dataset.min));
+        abrirReservas();
+        avanzarAFechaHora();
+      },
+      opener,
+    });
+  }
+  /** Producto: con fotos abre el visor de siempre (#modalGaleriaProducto); sin fotos, esta misma ficha oscura. */
+  function abrirDetalleProducto(p, opener){
+    if(fotosDeProducto(p).length){ abrirGaleriaProducto(p); return; }
+    abrirFichaOscura({
+      nombre: p.name,
+      descripcion: p.description || '',
+      precio: money(p.priceClp),
+      minutos: 0,
+      fotoUrl: '',
+      iconoSvg: '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:.5;">🧴</span>',
+      textoBoton: p.soldOut ? 'Agotado' : 'Agregar al carrito',
+      deshabilitado: !!p.soldOut,
+      alPulsar: ()=>{ cerrarDetalleServicio(); agregarAlCarrito(p.id, p.name, p.priceClp, 'PRODUCT'); },   // la misma función que usa el botón «+» (data-buy); se cierra la ficha para que se vea el carrito
+      opener,
+    });
+  }
+
   /** Sincroniza los puntos indicadores de un carrusel horizontal con la
    *  tarjeta más visible -- reusado por cursos y testimonios, nunca
    *  duplicado. Un clic en un punto desliza suave hasta esa tarjeta. */
@@ -11115,6 +11261,7 @@
     // tonos distintos para que cada tarjeta se distinga sin fotos reales
     const tonos = ['#3B352C','#2E2A25','#42392C','#332F29','#3A342A','#2A2724','#38322A','#302C26'];
 
+    const scrollPrevio = fila.scrollLeft; // un repintado (catálogo en vivo) no debe mover el carrusel
     fila.innerHTML = svcs.map((sv,i)=>`
       <div class="svc-card reveal in" data-svc-id="${sv.id}"
            data-svc="${sv.name}" data-price="${sv.priceClp}" data-min="${sv.minutes}">
@@ -11123,6 +11270,7 @@
           : `background:linear-gradient(158deg,${tonos[i % tonos.length]},#0C0C0D);`}">
           ${sv.photoUrl ? '' : `<div class="svc-inicial">${iconoDeServicio(sv)}</div>`}
           ${sv.featured ? '<span class="svc-badge">Recomendado</span>' : '<span></span>'}
+          <button type="button" class="svc-ver" data-ver-detalle>Ver detalles</button>
         </div>
         <div class="svc-body">
           <div class="svc-nombre">${sv.name}</div>
@@ -11134,9 +11282,17 @@
         </div>
       </div>`).join('');
 
-    // al tocar un servicio entra a reservas con ese servicio elegido
+    fila.scrollLeft = scrollPrevio;
+
+    // al tocar un servicio entra a reservas con ese servicio elegido; «Ver detalles» (solo móvil) abre su ficha
     fila.querySelectorAll('.svc-card').forEach(el=>
-      el.addEventListener('click', ()=>{
+      el.addEventListener('click', e=>{
+        const ver = e.target.closest('[data-ver-detalle]');
+        if(ver){
+          const sv = svcs.find(x=> String(x.id) === el.dataset.svcId);
+          if(sv) abrirDetalleServicio(sv, el, ver);
+          return;
+        }
         selectService(el.dataset.svc, el.dataset.price, el.dataset.svcId, Number(el.dataset.min));
         abrirReservas();
         avanzarAFechaHora();
@@ -11165,6 +11321,7 @@
     const HOME_MAX = 8; // vitrina acotada -- el catálogo completo vive en "Ver todos"
     const lista = productosSiteCache.slice(0, HOME_MAX);
 
+    const scrollPrevioTienda = fila.scrollLeft; // un repintado no debe mover el carrusel
     fila.innerHTML = lista.map((p,i)=>`
       <div class="svc-card reveal in" data-prod-id="${p.id}">
         <div class="svc-foto" data-foto-producto="${p.id}" title="Ver fotos" style="${p.photoUrl
@@ -11172,6 +11329,7 @@
           : `background:linear-gradient(158deg,${tonos[i % tonos.length]},#0C0C0D);`}">
           ${p.photoUrl ? '' : '<div class="svc-inicial"><span style="font-size:2rem;">🧴</span></div>'}
           ${p.soldOut ? '<span class="svc-badge agotado">Agotado</span>' : '<span></span>'}
+          <button type="button" class="svc-ver" data-ver-detalle>Ver detalles</button>
         </div>
         <div class="svc-body">
           <div class="svc-nombre">${escapeHTML(p.name)}</div>
@@ -11190,9 +11348,16 @@
     // siempre para consultar y comprar, sin inventar una vista nueva. El
     // botón + agrega directo al carrito con el mismo mecanismo de la
     // tienda completa.
+    fila.scrollLeft = scrollPrevioTienda;
     fila.querySelectorAll('.svc-card').forEach(el=>
       el.addEventListener('click', e=>{
         if(e.target.closest('[data-buy]')) return;
+        const ver = e.target.closest('[data-ver-detalle]');
+        if(ver){
+          const p = productosSiteCache.find(x=> x.id === el.dataset.prodId);
+          if(p) abrirDetalleProducto(p, ver);
+          return;
+        }
         const foto = e.target.closest('[data-foto-producto]');
         if(foto){
           const p = productosSiteCache.find(x=> x.id === foto.dataset.fotoProducto);
@@ -12473,6 +12638,9 @@
     // las vistas con desdeHistorial=true para NO disparar history.back() (que
     // llevaría a la vista anterior -- p. ej. Academia si veníamos de ahí -- en
     // vez de a la portada). Luego se limpia el hash sin navegar.
+    cerrarSelectorSucursal();   // el selector «Elige una sucursal» es una pantalla completa más: Inicio también la cierra
+    cerrarDetalleServicio();    // fichas de detalle (servicios / productos sin fotos)
+    cerrarGaleriaProducto();    // visor de fotos de un producto
     cerrarReservas(true);
     cerrarTienda(true);
     cerrarAcademia(true);
@@ -12574,6 +12742,7 @@
         <div class="st-card-photo" data-foto-producto="${p.id}" title="Ver fotos" style="cursor:pointer;">
           ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${escapeHTML(p.name)}" loading="lazy">` : '<span class="ph">🧴</span>'}
           ${p.soldOut ? '<span class="st-card-tag agotado">Agotado</span>' : (p.featured ? '<span class="st-card-tag">Bestseller</span>' : '')}
+          <button type="button" class="st-ver" data-ver-detalle="${p.id}">Ver detalles</button>
         </div>
         <h4>${escapeHTML(p.name)}</h4>
         <div class="st-card-desc">${escapeHTML(p.description || '')}</div>
@@ -12591,6 +12760,13 @@
       el.addEventListener('click', ()=>{
         const p = tvProductos.find(x=> x.id === el.dataset.fotoProducto);
         if(p) abrirGaleriaProducto(p);
+      }));
+    // «Ver detalles» (solo móvil): visor de fotos si el producto tiene; si no, la ficha oscura
+    grid.querySelectorAll('[data-ver-detalle]').forEach(b=>
+      b.addEventListener('click', e=>{
+        e.stopPropagation();   // está dentro de la foto: que no dispare además el visor de la foto (un solo evento de siempre)
+        const p = tvProductos.find(x=> x.id === b.dataset.verDetalle);
+        if(p) abrirDetalleProducto(p, b);
       }));
 
     conectarBotonesCompra();
