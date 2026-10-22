@@ -8592,14 +8592,43 @@
    *  sección Locales) para que el recordatorio de WhatsApp tenga el dato listo
    *  aunque el admin nunca haya entrado a esa sección. Preparado para 1 o
    *  varias sucursales a la vez. */
-  let localesActivosPanel = [];
-  db.collection('locales').where('active', '==', true).onSnapshot(snap=>{
-    localesActivosPanel = snap.docs.map(d=> d.data());
+  let localesPanel = []; // TODAS las sucursales: la cita puede apuntar a una que hoy esté inactiva
+  db.collection('locales').onSnapshot(snap=>{
+    localesPanel = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
   });
-  function direccionParaWhatsApp(){
-    if(!localesActivosPanel.length) return '';
-    if(localesActivosPanel.length === 1) return localesActivosPanel[0].direccionCompleta || '';
-    return localesActivosPanel.map(l=> `${l.nombre}: ${l.direccionCompleta}`).join(' / ');
+  /** Dirección de la sucursal de UNA cita (21-10-2026) -- MISMA regla que los correos del
+   *  servidor: (1) la sucursal de la propia cita (localId); (2) si la cita no trae localId,
+   *  la ÚNICA sucursal activa con agenda propia (agendaExterna !== true: una sucursal con
+   *  agenda externa, como Providencia/AgendaPro, no tiene citas en este panel); (3) si hay
+   *  0 o 2+ candidatas, o falta el dato, devuelve '' -- NUNCA la dirección de otra sucursal,
+   *  ni una lista de todas. El mensaje sale sin la línea «¿Dónde?» y el panel avisa. */
+  function sucursalDeCita(a){
+    if(a && a.localId) return localesPanel.find(x=> x.id === String(a.localId)) || null;
+    const propios = localesPanel.filter(l=> l.active === true && l.agendaExterna !== true);
+    return propios.length === 1 ? propios[0] : null;
+  }
+  function direccionDeCita(a){
+    const l = sucursalDeCita(a);
+    return l && l.direccionCompleta ? l.direccionCompleta : '';
+  }
+
+
+  /** Enlace de WhatsApp de UNA cita CON el mensaje automático de recordatorio (dirección de SU sucursal,
+   *  ver direccionDeCita). Lo usa el botón «Hablar por WhatsApp» de la ficha de la reserva. Sin teléfono
+   *  devuelve '#'. Si la cita no trae lo mínimo para armar el mensaje (p. ej. una cita manual sin servicio),
+   *  abre el chat sin texto -- como antes -- en vez de fallar. */
+  /** Enlace de WhatsApp con texto: usa api.whatsapp.com/send y NO wa.me. Con wa.me la app de escritorio de WhatsApp
+   *  (Mac) perdía los emojis y los mostraba como «rombo con ?»; api.whatsapp.com/send los entrega bien (probado 21-10-2026). */
+  function urlWA(num, texto){
+    return `https://api.whatsapp.com/send?phone=${num}` + (texto ? `&text=${encodeURIComponent(texto)}` : '');
+  }
+
+  function urlWhatsAppCita(a){
+    const num = ((a && a.phone) || '').replace(/[^0-9]/g,'');
+    if(!num) return '#';
+    let texto = '';
+    try{ if(a.start && a.service) texto = construirMensajeWhatsApp(a); }catch(e){ texto = ''; }
+    return urlWA(num, texto);
   }
 
   /** Mensaje de recordatorio/condiciones para WhatsApp, con los datos reales de la reserva. */
@@ -8607,8 +8636,30 @@
     const hora = String(a.start[0]).padStart(2,'0')+':'+String(a.start[1]).padStart(2,'0');
     const [y,m,d] = (a.fecha || currentDate).split('-');
     const fechaCorta = `${d}-${m}-${y.slice(2)}`;
-    return `Hola ${a.client}!\n\nTe queremos recordar tu cita de ${a.service.toUpperCase()} en MASTER LOOK\n\n⏰¿Cuándo?: ${fechaCorta} a las ${hora}\n📌¿Dónde?: ${direccionParaWhatsApp()}\n👱🏼‍♀️¿Con quién?: ${a.barber}\n\n🚨 RECUERDA! SOLO ESPERAMOS 15 MINUTOS POR CLIENTE\nDE LO CONTRARIO TU HORA SERIA CANCELADA Y PERDERIAS TU ABONO😢\n\n🚨TEN PRESENTE QUE SOMOS UN ESTUDIO DE BELLEZA UBICADO EN UNA OFICINA POR LO CUAL SOLO ACEPTAMOS (1) ACOMPAÑANTE🙏\n\n¡Te esperamos!`;
+    // Emojis escritos como escapes \u{...}: así NINGÚN cambio de codificación del archivo (guardado, hosting, copia)
+    // puede dañarlos (los «rombo con ?» que se veían en WhatsApp). Todos son emojis de uso común, visibles en cualquier WhatsApp.
+    const E = { cal:'\u{1F4C5}', pin:'\u{1F4CD}', tijeras:'\u2702\uFE0F', reloj:'\u23F0', brillo:'\u2728', alarma:'\u{1F6A8}', rezo:'\u{1F64F}' };
+    const dir = direccionDeCita(a);
+    // El párrafo final depende de la sucursal: Ñuñoa es un local comercial a la calle. Solo si la cita pertenece a OTRA
+    // sucursal ya identificada (p. ej. Providencia, que sí es una oficina) se conserva el texto de «oficina».
+    const suc = sucursalDeCita(a);
+    const nombreSuc = String((suc && suc.nombre) || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const esOtraSucursal = !!suc && !/nunoa/.test(nombreSuc);
+    const parrafoFinal = esOtraSucursal
+      ? `${E.alarma}TEN PRESENTE QUE SOMOS UN ESTUDIO DE BELLEZA UBICADO EN UNA OFICINA POR LO CUAL SOLO ACEPTAMOS (1) ACOMPAÑANTE${E.rezo}`
+      : `${E.brillo} Para brindarte una experiencia cómoda y mantener el ambiente exclusivo de MASTERLOOK, permitimos un máximo de un acompañante por cliente.`;
+    return [
+      `Hola ${a.client}!`,
+      `Te queremos recordar tu cita de ${a.service.toUpperCase()} en MASTER LOOK`,
+      `${E.cal} ¿Cuándo?: ${fechaCorta} a las ${hora}`,
+      dir ? `${E.pin} ¿Dónde?: ${dir}` : null,
+      `${E.tijeras} ¿Con quién?: ${a.barber}`,
+      `${E.reloj} ¡RECUERDA! SOLO ESPERAMOS 15 MINUTOS POR CLIENTE.\nDE LO CONTRARIO TU HORA SERÍA CANCELADA.`,
+      parrafoFinal,
+      '¡Te esperamos!',
+    ].filter(Boolean).join('\n\n');
   }
+
 
   /** Aviso flotante con un botón para mandar el WhatsApp de una reserva nueva, sin tener que buscarla. */
   const SERVICE_TYPE = [
@@ -8745,7 +8796,7 @@
     const precioMostrado = typeof r.precioFinal === 'number' ? r.precioFinal : Number(r.price) || 0;
 
     return {
-      webId: r.id, barberId: r.barberId || null, col, fecha: r.fecha,
+      webId: r.id, barberId: r.barberId || null, localId: r.localId || null, col, fecha: r.fecha,
       client: r.client || 'Cliente web',
       service: r.svc,
       price: '$' + precioMostrado.toLocaleString('es-CL'),
@@ -20524,11 +20575,17 @@
   }
 
   /** Adapta un documento crudo de Firestore al formato que usan las plantillas de correo/WhatsApp. */
+  document.getElementById('dWhatsapp').addEventListener('click', ()=>{
+    if(currentAppt && currentAppt.phone && !direccionDeCita(currentAppt)){
+      showToast('No se pudo determinar la dirección de la sucursal de esta cita: el mensaje se abrió sin la línea «¿Dónde?». Revisa la sección Locales.');
+    }
+  });
+
   function bookingParaAviso(r){
     return {
       client: r.client, service: r.svc, price: r.price,
       start: [Math.floor((r.startMin||0)/60), (r.startMin||0)%60],
-      fecha: r.fecha, barber: r.barber, phone: r.phone, email: r.email, id: r.id,
+      fecha: r.fecha, barber: r.barber, phone: r.phone, email: r.email, id: r.id, localId: r.localId || null,
     };
   }
 
@@ -20601,7 +20658,9 @@
         const r = reservas.find(x=> x.id === btn.dataset.wa);
         if(!r) return;
         const waNum = (r.phone || '').replace(/[^0-9]/g,'');
-        window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(construirMensajeWhatsApp(bookingParaAviso(r)))}`, '_blank');
+        const aviso = bookingParaAviso(r);
+        if(!direccionDeCita(aviso)) showToast('No se pudo determinar la dirección de la sucursal de esta cita: el mensaje se abrió sin la línea «¿Dónde?». Revisa la sección Locales.');
+        window.open(urlWA(waNum, construirMensajeWhatsApp(aviso)), '_blank');
       });
     });
   }
@@ -20829,7 +20888,7 @@
       dNotaClienteBlock.style.display = 'none';
     }
     const waNumber = (a.phone || '').replace(/[^0-9]/g,'');
-    document.getElementById('dWhatsapp').href = waNumber ? `https://wa.me/${waNumber}` : '#';
+    document.getElementById('dWhatsapp').href = urlWhatsAppCita(a);
     document.getElementById('dWhatsapp').style.display = verContacto ? '' : 'none';
     document.getElementById('btnFicha').style.display = verContacto ? '' : 'none';
     document.getElementById('menuWa').style.display = verContacto ? '' : 'none';
@@ -20902,8 +20961,7 @@
       if(currentAppt === a){ // el admin no cambió a otra reserva mientras cargaba
         document.getElementById('dPhone').textContent = a.phone || '—';
         document.getElementById('dEmail').textContent = a.email || '—';
-        const nuevoWaNumber = (a.phone || '').replace(/[^0-9]/g,'');
-        document.getElementById('dWhatsapp').href = nuevoWaNumber ? `https://wa.me/${nuevoWaNumber}` : '#';
+        document.getElementById('dWhatsapp').href = urlWhatsAppCita(a);
       }
     }
   }
