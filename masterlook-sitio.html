@@ -6831,7 +6831,8 @@
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     if(!email) return showErr('loginErr', 'Escribe tu correo arriba y vuelve a intentar.');
     try{
-      await auth.sendPasswordResetEmail(email);
+      try{ await functions.httpsCallable('enviarCorreoClave')({ tipo:'recuperar', email }); }   // correo MASTERLOOK (enlace oficial de Firebase, envío por Resend)
+      catch(_){ await auth.sendPasswordResetEmail(email); }   // respaldo: correo estándar de Firebase
       showErr('loginErr', '');
       toast('Te enviamos un correo para restablecer tu contraseña');
     }catch(e){ showErr('loginErr', 'No pudimos enviar el correo: revisa que esté bien escrito.'); }

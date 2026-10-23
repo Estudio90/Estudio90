@@ -6735,13 +6735,19 @@
    * secundaria de Firebase solo para ese momento y la descarta después.
    * Le manda un correo para que la persona defina su propia contraseña.
    */
+  /** Correo de contraseña con la identidad MASTERLOOK (función `enviarCorreoClave`: enlace oficial de Firebase, envío por Resend).
+   *  tipo: 'crear' (invitación, solo administración) | 'recuperar'. Si la función no responde, cae al correo estándar de Firebase (`respaldo`) para no dejar a nadie sin correo. */
+  async function enviarCorreoClave(tipo, email, respaldo){
+    try{ await functions.httpsCallable('enviarCorreoClave')({ tipo, email }); }
+    catch(e){ if(!respaldo) throw e; await respaldo(); }
+  }
   async function crearCuentaDeAcceso(email){
     const secApp = firebase.initializeApp(firebaseConfig, 'crearAcceso-' + Date.now());
     try{
       const tempPass = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + 'Aa1!';
       const cred = await secApp.auth().createUserWithEmailAndPassword(email, tempPass);
       const uid = cred.user.uid;
-      await secApp.auth().sendPasswordResetEmail(email);
+      await enviarCorreoClave('crear', email, ()=> secApp.auth().sendPasswordResetEmail(email));
       await secApp.auth().signOut();
       return { ok:true, uid };
     }catch(e){
@@ -17436,7 +17442,7 @@
   });
   document.getElementById('mpCambiarClave').addEventListener('click', async ()=>{
     try{
-      await auth.sendPasswordResetEmail(auth.currentUser.email);
+      await enviarCorreoClave('recuperar', auth.currentUser.email, ()=> auth.sendPasswordResetEmail(auth.currentUser.email));
       showToast('Te mandamos un correo para cambiar tu contraseña');
     }catch(e){ showToast('No se pudo enviar el correo: ' + (e.message || 'error')); }
   });
@@ -21722,7 +21728,7 @@
       return;
     }
     try{
-      await auth.sendPasswordResetEmail(u.email);
+      await enviarCorreoClave('recuperar', u.email, ()=> auth.sendPasswordResetEmail(u.email));
       showToast(`Le enviamos un correo a ${u.email} para definir su nueva contraseña`);
     }catch(e){ showToast('No se pudo enviar: ' + e.message); }
   }
