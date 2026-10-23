@@ -229,6 +229,271 @@
     text-transform:uppercase;color:var(--text-low);padding:11px 4px 4px;
   }
   .nav-section-label:first-child{padding-top:0;}
+
+  /* ===== Calendario del BARBER -- copia de weekly-calendar.tsx del programador (23-oct). Solo lectura. COLORES = los del panel. ===== */
+  #bcRoot{--bd-fg:var(--text-hi);--bd-surface:var(--panel);--bd-surface2:var(--panel-2);--bd-border:var(--border);--bd-accent:var(--accent);--bd-ink:var(--text-mid);
+    background:var(--bg);color:var(--bd-fg);font-family:ui-sans-serif,system-ui,sans-serif;padding:24px;border-radius:14px;line-height:1.5;}
+  #bcRoot *{box-sizing:border-box;}
+  #bcRoot .bd-ico{flex:none;display:inline-block;vertical-align:middle;}
+  #bcRoot button{font-family:inherit;}
+  #bcRoot .bc-bread{display:flex;align-items:center;gap:8px;margin-bottom:24px;font-size:14px;color:var(--bd-ink);}
+  #bcRoot .bc-bread .a{color:var(--bd-accent);}
+  #bcRoot .bc-bread .s{opacity:.6;}
+  #bcRoot .bc-bread b{font-weight:600;color:var(--bd-fg);}
+  #bcRoot .bc-head{margin-bottom:32px;border-bottom:1px solid var(--bd-border);padding-bottom:24px;}
+  #bcRoot .bc-h1{margin:0;display:flex;align-items:center;gap:12px;font-size:30px;line-height:36px;font-weight:600;letter-spacing:-.025em;color:var(--bd-fg);}
+  #bcRoot .bc-h1 .bd-ico{color:var(--bd-accent);}
+  #bcRoot .bc-sub{margin:4px 0 0;font-size:14px;line-height:20px;color:var(--bd-ink);}
+  #bcRoot .bc-aviso{margin:0 0 16px;border:1px solid #f3d4d1;background:#fbeceb;border-radius:12px;padding:12px 16px;font-size:13px;color:var(--no);}
+  #bcRoot .bc-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;}
+  #bcRoot .bc-side{border:1px solid var(--bd-border);border-radius:16px;background:var(--bd-surface);padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+  #bcRoot .bc-nav{display:flex;align-items:center;gap:6px;margin-bottom:16px;}
+  #bcRoot .bc-btn{border:1px solid var(--bd-border);border-radius:10px;background:var(--bd-surface2);padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--bd-fg);cursor:pointer;transition:border-color .15s;}
+  #bcRoot .bc-btn:hover{border-color:var(--border-strong);}
+  #bcRoot .bc-ib{display:flex;width:32px;height:32px;align-items:center;justify-content:center;border:1px solid var(--bd-border);border-radius:10px;background:var(--bd-surface2);color:var(--bd-ink);cursor:pointer;padding:0;transition:color .15s;}
+  #bcRoot .bc-ib:hover{color:var(--bd-fg);}
+  #bcRoot .bc-mes{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  #bcRoot .bc-mes p{margin:0;font-size:13px;font-weight:600;color:var(--bd-fg);}
+  #bcRoot .bc-mes button{border:0;background:none;border-radius:4px;padding:2px 6px;font-size:16px;line-height:1;color:var(--bd-ink);cursor:pointer;}
+  #bcRoot .bc-mes button:hover{color:var(--bd-fg);}
+  #bcRoot .bc-mini{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:16px;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;}
+  #bcRoot .bc-mini .d{padding-bottom:4px;color:var(--bd-ink);}
+  #bcRoot .bc-mini button{border:0;background:none;border-radius:5px;padding:6px 0;font:inherit;color:var(--bd-ink);cursor:pointer;transition:background .15s;}
+  #bcRoot .bc-mini button:hover{background:var(--bd-surface2);}
+  #bcRoot .bc-mini button.fuera{opacity:.4;}
+  #bcRoot .bc-mini button.hoy{background:color-mix(in srgb,var(--bd-accent) 18%,transparent);font-weight:600;color:var(--bd-accent);}
+  #bcRoot .bc-mini button.sel{background:var(--text-hi);font-weight:600;color:#fff;opacity:1;}
+  #bcRoot .bc-lbl{margin:0 0 6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--bd-ink);}
+  #bcRoot .bc-sel{display:block;width:100%;margin-bottom:16px;appearance:none;-webkit-appearance:none;border:1px solid var(--bd-border);border-radius:10px;background:var(--bd-surface);padding:8px 10px;font:inherit;font-size:13px;color:var(--bd-fg);}
+  #bcRoot .bc-serv{display:flex;flex-direction:column;gap:8px;}
+  #bcRoot .bc-serv div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--bd-ink);}
+  #bcRoot .bc-serv i{width:10px;height:10px;flex:none;border-radius:3px;}
+  #bcRoot .bc-serv span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #bcRoot .bc-card{position:relative;display:flex;min-width:0;flex-direction:column;overflow:hidden;border:1px solid var(--bd-border);border-radius:16px;background:var(--bd-surface);box-shadow:0 1px 2px rgba(0,0,0,.05);max-height:750px;}
+  #bcRoot .bc-card.lista{height:750px;}
+  #bcRoot .bc-ch{position:relative;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--bd-border);background:var(--bd-surface);padding:16px;}
+  #bcRoot .bc-ch-l{display:flex;align-items:center;gap:16px;}
+  #bcRoot .bc-ch-ic{border:1px solid var(--bd-border);border-radius:12px;background:var(--bd-surface2);padding:10px;color:var(--bd-accent);}
+  #bcRoot .bc-ch h2{margin:0;font-size:18px;line-height:28px;font-weight:900;letter-spacing:-.025em;text-transform:uppercase;color:var(--bd-fg);}
+  #bcRoot .bc-ch-s{display:flex;align-items:center;gap:8px;margin-top:2px;white-space:nowrap;}
+  #bcRoot .bc-ch-s .a{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:var(--bd-accent);opacity:.9;}
+  #bcRoot .bc-ch-s .p{font-size:10px;color:var(--bd-border);}
+  #bcRoot .bc-ch-s .m{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--bd-ink);}
+  #bcRoot .bc-ch-r{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;}
+  #bcRoot .bc-fecha{display:flex;align-items:center;gap:6px;border:1px solid var(--bd-border);border-radius:12px;background:var(--bd-surface2);padding:4px;}
+  #bcRoot .bc-fecha .g{display:flex;align-items:center;gap:2px;}
+  #bcRoot .bc-fecha .g button{display:flex;border:0;background:none;border-radius:8px;padding:4px;color:var(--bd-ink);cursor:pointer;transition:all .15s;}
+  #bcRoot .bc-fecha .g button:hover{background:var(--bd-surface);color:var(--bd-fg);}
+  #bcRoot .bc-fecha input{width:96px;cursor:pointer;border:0;background:transparent;padding:0 4px;text-align:center;font-size:10px;font-weight:900;color:var(--bd-fg);font-family:inherit;}
+  #bcRoot .bc-fecha .v{width:1px;height:12px;margin:0 2px;background:var(--bd-border);}
+  #bcRoot .bc-fecha .h{border:0;border-radius:8px;background:var(--bd-surface);padding:6px 10px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--bd-ink);cursor:pointer;transition:all .15s;}
+  #bcRoot .bc-fecha .h:hover{color:var(--bd-fg);}
+  #bcRoot .bc-modos{display:flex;border:1px solid var(--bd-border);border-radius:12px;background:var(--bd-surface2);padding:4px;box-shadow:inset 0 2px 4px rgba(0,0,0,.05);}
+  #bcRoot .bc-modos button{border:0;background:none;border-radius:8px;padding:6px 12px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:color-mix(in srgb,var(--bd-fg) 80%,transparent);cursor:pointer;transition:all .15s;}
+  #bcRoot .bc-modos button:hover{background:color-mix(in srgb,var(--bd-fg) 8%,transparent);color:var(--bd-fg);}
+  #bcRoot .bc-modos button.on{background:var(--text-hi);color:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);}
+  #bcRoot .bc-60{display:none;border:1px solid var(--bd-border);border-radius:99px;background:var(--bd-surface2);padding:6px 12px;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:var(--bd-ink);}
+  #bcRoot .bc-dias{display:grid;grid-template-columns:80px minmax(0,1fr);border-bottom:1px solid var(--bd-border);background:var(--bd-surface2);}
+  #bcRoot .bc-dias .rel{display:flex;align-items:center;justify-content:center;border-right:1px solid var(--bd-border);color:var(--bd-ink);}
+  #bcRoot .bc-dias .cols{display:grid;}
+  #bcRoot .bc-col{display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid var(--bd-border);padding:16px 0;text-align:center;}
+  #bcRoot .bc-col:last-child{border-right:0;}
+  #bcRoot .bc-col.hoy{background:color-mix(in srgb,var(--bd-accent) 8%,transparent);}
+  #bcRoot .bc-col .n{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--bd-ink);}
+  #bcRoot .bc-col.hoy .n{color:var(--bd-accent);}
+  #bcRoot .bc-col .num{margin-top:2px;font-size:20px;line-height:28px;font-weight:900;color:var(--bd-fg);}
+  #bcRoot .bc-col.hoy .num{display:flex;width:36px;height:36px;align-items:center;justify-content:center;border-radius:50%;background:var(--bd-accent);color:#fff;}
+  #bcRoot .bc-uno{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 0;text-align:center;}
+  #bcRoot .bc-uno .ap{margin-bottom:4px;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:var(--bd-accent);}
+  #bcRoot .bc-av{position:relative;}
+  #bcRoot .bc-av .f{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid color-mix(in srgb,var(--bd-accent) 30%,transparent);box-shadow:0 0 15px color-mix(in srgb,var(--bd-accent) 20%,transparent);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;background-color:var(--bd-surface);color:var(--bd-ink);}
+  #bcRoot .bc-av .on{position:absolute;right:-4px;bottom:-4px;display:flex;width:20px;height:20px;align-items:center;justify-content:center;border-radius:50%;border:2px solid var(--bd-surface);background:var(--ok);}
+  #bcRoot .bc-av .on i{width:8px;height:8px;border-radius:50%;background:#fff;animation:bcPulso 2s cubic-bezier(.4,0,.6,1) infinite;}
+  @keyframes bcPulso{50%{opacity:.5;}}
+  #bcRoot .bc-uno .nom{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:-.05em;color:var(--bd-fg);}
+  #bcRoot .bc-scroll{position:relative;overflow-x:hidden;overflow-y:auto;background:var(--bd-surface2);}
+  #bcRoot .bc-body{display:grid;grid-template-columns:72px minmax(0,1fr);}
+  #bcRoot .bc-horas{border-right:1px solid var(--bd-border);background:var(--bd-surface2);}
+  #bcRoot .bc-hora{display:flex;align-items:flex-start;justify-content:center;border-bottom:1px solid var(--bd-border);padding-top:2px;}
+  #bcRoot .bc-hora span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:-.025em;font-variant-numeric:tabular-nums;color:var(--bd-ink);}
+  #bcRoot .bc-area{position:relative;height:100%;background:var(--bd-surface);}
+  #bcRoot .bc-lh{pointer-events:none;position:absolute;inset:0;display:grid;}
+  #bcRoot .bc-lh div{border-bottom:1px solid var(--bd-border);}
+  #bcRoot .bc-lv{pointer-events:none;position:absolute;inset:0;display:grid;}
+  #bcRoot .bc-lv div{border-right:1px solid var(--bd-border);}
+  #bcRoot .bc-lv div:last-child{border-right:0;}
+  #bcRoot .bc-ahora{position:absolute;left:0;right:0;z-index:20;height:1px;background:var(--bd-accent);box-shadow:0 0 8px color-mix(in srgb,var(--bd-accent) 70%,transparent);pointer-events:none;}
+  #bcRoot .bc-ahora b{position:absolute;top:-10px;left:0;padding:0 4px;border-radius:2px;background:var(--bd-accent);color:#fff;font-size:9px;font-weight:700;line-height:15px;}
+  #bcRoot .bc-hoycol{position:absolute;top:0;bottom:0;pointer-events:none;background:color-mix(in srgb,var(--bd-accent) 4%,transparent);border-left:1px solid color-mix(in srgb,var(--bd-accent) 18%,transparent);border-right:1px solid color-mix(in srgb,var(--bd-accent) 18%,transparent);}
+  #bcRoot .bc-items{pointer-events:none;position:absolute;inset:0;z-index:2;}
+  #bcRoot .bc-it{pointer-events:auto;position:absolute;box-sizing:border-box;cursor:pointer;overflow:hidden;border:1px solid var(--bd-border);border-left-width:3px;border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:all .15s;margin-left:2px;}
+  #bcRoot .bc-it:hover{z-index:30!important;transform:translateY(-1px);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);}
+  #bcRoot .bc-it .in{position:relative;display:flex;height:100%;flex-direction:column;gap:4px;overflow:hidden;padding:8px 10px 10px;color:var(--bd-fg);}
+  #bcRoot .bc-it .t{display:flex;flex:none;align-items:baseline;justify-content:space-between;gap:6px;}
+  #bcRoot .bc-it h4{margin:0;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700;line-height:1;letter-spacing:-.025em;}
+  #bcRoot .bc-it .hr{flex:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;font-weight:500;line-height:1;color:var(--bd-ink);}
+  #bcRoot .bc-it .sv{margin:0;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;font-weight:500;line-height:1;color:var(--bd-ink);}
+  #bcRoot .bc-it .st{margin-top:auto;display:flex;flex:none;align-items:center;gap:6px;padding-bottom:2px;}
+  #bcRoot .bc-it .st i{width:6px;height:6px;flex:none;border-radius:50%;}
+  #bcRoot .bc-it .st span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;font-weight:500;line-height:1;color:var(--bd-ink);}
+  #bcRoot .bc-leyenda{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;border-top:1px solid var(--bd-border);background:var(--bd-surface2);padding:12px 16px;}
+  #bcRoot .bc-leyenda div{display:flex;align-items:center;gap:6px;}
+  #bcRoot .bc-leyenda i{width:8px;height:8px;border-radius:50%;}
+  #bcRoot .bc-leyenda span{font-size:10.5px;font-weight:600;color:var(--bd-ink);}
+  #bcRoot .bc-lista{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;background:var(--bd-surface2);}
+  #bcRoot .bc-lista .in{padding:12px 12px 32px;}
+  #bcRoot .bc-lista section{margin-bottom:20px;}
+  #bcRoot .bc-lista .dh{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bd-border);padding-bottom:8px;margin-bottom:8px;color:var(--bd-ink);}
+  #bcRoot .bc-lista .dh.hoy{color:var(--bd-accent);}
+  #bcRoot .bc-lista .dh .w{width:40px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;}
+  #bcRoot .bc-lista .dh h3{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;}
+  #bcRoot .bc-lista .vacio{margin:0;padding:8px 0 8px 12px;font-size:11px;font-style:italic;color:var(--bd-ink);}
+  #bcRoot .bc-lista ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  #bcRoot .bc-li{display:block;width:100%;cursor:pointer;border:1px solid;border-left-width:4px;border-radius:12px;padding:10px 12px;text-align:left;transition:background .15s;color:var(--bd-fg);}
+  #bcRoot .bc-li:hover{background:color-mix(in oklab,var(--bd-fg) 5%,transparent);}
+  #bcRoot .bc-li .l1{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;}
+  #bcRoot .bc-li .l1 .h{font-size:14px;font-weight:900;color:var(--bd-accent);font-variant-numeric:tabular-nums;}
+  #bcRoot .bc-li .l1 .c{font-size:14px;font-weight:900;}
+  #bcRoot .bc-li .l1 .s{font-size:11px;font-weight:600;letter-spacing:.025em;}
+  #bcRoot .bc-li .l2{margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+  #bcRoot .bc-li .b{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--bd-accent);}
+  #bcRoot .bc-li .e{border:1px solid var(--bd-border);border-radius:6px;background:var(--bd-surface2);padding:2px 8px;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--bd-ink);}
+  #bcRoot .bc-li .p{margin-left:auto;font-size:10px;font-weight:700;color:var(--bd-ink);font-variant-numeric:tabular-nums;}
+  /* tooltip al pasar el mouse + resumen lateral (fuera de #bcRoot: se agregan al body) */
+  .bc-tip{pointer-events:none;position:fixed;z-index:215;display:flex;width:208px;flex-direction:column;gap:4px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:8px;background:rgba(17,17,19,.95);padding:10px;font-size:11px;color:#e4e4e7;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);font-family:ui-sans-serif,system-ui,sans-serif;}
+  .bc-tip p{margin:0;} .bc-tip .n{font-weight:700;color:#fff;} .bc-tip .g{color:#a1a1aa;} .bc-tip .m{font-weight:600;color:#c7cdfa;}
+  .bc-vel{position:fixed;inset:0;z-index:219;background:rgba(23,23,23,.3);-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);opacity:0;transition:opacity .2s;}
+  .bc-vel.on{opacity:1;}
+  .bc-peek{position:fixed;top:0;right:0;bottom:0;z-index:220;display:flex;width:min(380px,92vw);flex-direction:column;overflow-y:auto;border-left:1px solid var(--border);background:var(--panel);color:var(--text-hi);box-shadow:0 25px 50px -12px rgba(0,0,0,.25);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);font-family:ui-sans-serif,system-ui,sans-serif;}
+  .bc-peek.on{transform:translateX(0);}
+  .bc-peek .h{display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid var(--border);background:var(--panel-2);padding:14px 16px;}
+  .bc-peek .h .c{min-width:0;flex:1;}
+  .bc-peek .h .n{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:900;}
+  .bc-peek .h .s{margin:2px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;color:var(--text-mid);}
+  .bc-peek .h .s b{margin-left:6px;font-weight:600;color:var(--accent);}
+  .bc-peek .h button{display:flex;border:0;background:none;border-radius:8px;padding:6px;color:var(--text-mid);cursor:pointer;}
+  .bc-peek .h button:hover{background:var(--panel);color:var(--text-hi);}
+  .bc-peek .cu{flex:1;padding:14px 16px;font-size:12.5px;display:flex;flex-direction:column;gap:12px;}
+  .bc-peek .cu p{margin:0;}
+  .bc-peek .cu .mu{color:var(--text-mid);}
+  .bc-peek .cu .ac{font-weight:600;color:var(--accent);}
+  .bc-peek .cu .bx{border:1px solid var(--border);border-radius:8px;background:var(--panel-2);padding:8px;}
+  .bc-peek .cu .bx .k{margin-bottom:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-mid);}
+  .bc-peek .cu .bx li{display:flex;justify-content:space-between;gap:8px;font-size:11px;}
+  .bc-peek .cu .bx ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+  .bc-peek .cu .nota{border-radius:8px;background:#fdf6e8;padding:8px 10px;font-size:12px;color:#8a6d1f;}
+  .bc-peek .cu .fb{align-self:flex-start;border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:6px 12px;font:inherit;font-size:11.5px;font-weight:600;color:var(--text-hi);cursor:pointer;}
+  .bc-peek .cu .fb:hover{background:var(--panel-2);}
+  .bc-peek .cu .fc-tit{margin:2px 0 -4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--accent);}
+  .bc-peek .fc{border:1px solid var(--border);border-radius:12px;background:var(--panel-2);overflow:hidden;}
+  .bc-peek .fc>button.t{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;border:0;background:none;padding:11px 12px;min-height:44px;font:inherit;text-align:left;color:var(--text-mid);cursor:pointer;}
+  .bc-peek .fc>button.t:hover{background:rgba(0,0,0,.02);}
+  .bc-peek .fc>button.t .l{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;}
+  .bc-peek .fc>button.t .n{border-radius:999px;background:var(--accent-tint);padding:1px 7px;font-size:10px;font-weight:700;letter-spacing:0;color:var(--accent);}
+  .bc-peek .fc>button.t .chev{flex:none;transition:transform .2s;}
+  .bc-peek .fc.on>button.t .chev{transform:rotate(180deg);}
+  .bc-peek .fc .b{display:none;border-top:1px solid var(--border);padding:10px 12px;}
+  .bc-peek .fc.on .b{display:block;}
+  .bc-peek .fc .vac{margin:6px 0;font-size:11.5px;color:var(--text-mid);}
+  .bc-peek .fc .nt{margin:0 0 10px;font-size:11px;line-height:1.5;color:var(--text-mid);}
+  .bc-peek .fc ul.hs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:210px;overflow-y:auto;}
+  .bc-peek .fc ul.hs li{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:7px 9px;font-size:11.5px;}
+  .bc-peek .fc ul.hs .r1{display:flex;justify-content:space-between;gap:8px;font-weight:600;color:var(--text-hi);}
+  .bc-peek .fc ul.hs .r1 b{font-weight:600;color:var(--accent);}
+  .bc-peek .fc ul.hs .r2{margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-mid);}
+  .bc-peek .fc .gr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+  .bc-peek .fc .gr .it{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .bc-peek .fc .gr .th{position:relative;display:block;width:100%;aspect-ratio:1;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:0;cursor:pointer;}
+  .bc-peek .fc .gr .th img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s;}
+  .bc-peek .fc .gr .th:hover img{transform:scale(1.05);}
+  .bc-peek .fc .gr .f{font-size:10px;line-height:1.3;color:var(--text-mid);overflow-wrap:anywhere;}
+  .bc-peek .fc .up{display:flex;flex-direction:column;gap:8px;}
+  .bc-peek .fc .up label.ar{display:flex;align-items:center;gap:10px;border:1px dashed var(--border);border-radius:10px;background:var(--panel);padding:8px 10px;min-height:48px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-hi);}
+  .bc-peek .fc .up label.ar:hover{border-color:var(--accent);}
+  .bc-peek .fc .up label.ar input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+  .bc-peek .fc .up label.ar img{width:40px;height:40px;flex:none;border-radius:6px;object-fit:cover;border:1px solid var(--border);}
+  .bc-peek .fc .up label.ar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bc-peek .fc .up button.gu{width:100%;min-height:44px;border:1px solid var(--accent);border-radius:10px;background:var(--accent-tint);padding:9px 12px;font:inherit;font-size:12px;font-weight:700;color:var(--text-hi);cursor:pointer;transition:background .15s;}
+  .bc-peek .fc .up button.gu:hover:not(:disabled){background:var(--accent);color:#fff;}
+  .bc-peek .fc .up button.gu:disabled{opacity:.5;cursor:default;}
+  .bc-lb{position:fixed;inset:0;z-index:230;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.88);padding:16px;}
+  .bc-lb img{max-width:100%;max-height:86vh;object-fit:contain;border-radius:6px;}
+  .bc-lb button{position:absolute;top:14px;right:14px;display:flex;border:0;border-radius:999px;background:rgba(255,255,255,.14);padding:9px;color:#fff;cursor:pointer;}
+  .bc-lb button:hover{background:rgba(255,255,255,.26);}
+  /* v7: duplicados ocultos para el BARBER (reversible; el DOM y la carga de datos siguen igual) */
+  #bmGrupoRes{display:none !important;}
+  body.rol-barbero #btnRecordatorios{display:none !important;}
+  #cxBarbero #cbContenido{display:none !important;}
+  /* v11: sin «Volver a la agenda» y calendario mas arriba (solo BARBER) */
+  body.rol-barbero #vistaComisiones .cx-head{display:none !important;}
+  body.rol-barbero .app > .content{padding-top:14px;}
+  body.rol-barbero #bcRoot{padding-top:12px;}
+  body.rol-barbero #bcRoot .bc-bread{margin-bottom:10px;}
+  body.rol-barbero #bcRoot .bc-head{margin-bottom:14px;padding-bottom:12px;}
+  @media (min-width:640px){ #bcRoot .bc-body{grid-template-columns:80px minmax(0,1fr);} #bcRoot .bc-hora{padding-top:4px;} #bcRoot .bc-hora span{font-size:10px;} }
+  @media (min-width:768px){ #bcRoot .bc-ch{flex-direction:row;} }
+  @media (min-width:1024px){ #bcRoot .bc-wrap{grid-template-columns:240px minmax(0,1fr);align-items:start;} #bcRoot .bc-60{display:flex;} }
+  #bcRoot .bc-hx{min-height:0;}
+  @media (max-width:639px){
+    #bcRoot .bc-hx{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;}
+    #bcRoot .bc-hxin{min-width:max(100%, calc(72px + var(--bc-n, 1) * 136px));}
+    #bcRoot .bc-dias .rel,#bcRoot .bc-horas{position:sticky;left:0;z-index:6;background:var(--bd-surface2);}
+    #bcRoot .bc-it .in{padding:7px 8px 8px;}
+    #bcRoot .bc-it h4{font-size:12.5px;}
+    #bcRoot .bc-it .hr{font-size:10px;}
+    #bcRoot .bc-it .sv{font-size:11px;}
+    #bcRoot .bc-it .st span{font-size:10px;}
+    #bcRoot .bc-col .n{font-size:11px;}
+    #bcRoot .bc-modos button{padding:6px 14px;}
+    #bcRoot .bc-ch-r{width:100%;}
+  }
+  @media (max-width:560px){ #bcRoot{padding:16px;} #bcRoot .bc-ch-s{flex-wrap:wrap;white-space:normal;} #bcRoot .bc-h1{font-size:24px;} #bcRoot .bc-dias{grid-template-columns:72px minmax(0,1fr);} }
+
+  /* ===== Menú hamburguesa del BARBER -- copia del menú del programador (23-oct). Solo con body.rol-barbero: ADMIN/RECEPCIÓN no cambian. ===== */
+  .bm-busca,.bm-grupo,.bm-extra,.bm-dot{display:none;}
+  .bm-oculto{display:none!important;}
+  body.rol-barbero .menu-overlay{top:52px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+  body.rol-barbero .menu-panel{top:52px;width:256px;max-width:86vw;padding:24px;background:var(--panel);border-right:1px solid var(--border);
+    box-shadow:inset -1px 0 0 rgba(15,15,20,.08),8px 0 36px -14px rgba(0,0,0,.45);color:var(--text-mid);font-family:ui-sans-serif,system-ui,sans-serif;overflow-y:auto;}
+  body.rol-barbero .menu-panel .menu-top{display:none;}
+  body.rol-barbero .menu-links{flex:none;overflow:visible;gap:4px;margin-bottom:40px;position:relative;z-index:1;}
+  body.rol-barbero .menu-panel-item{border:1px solid transparent;border-radius:6px;padding:10px 12px;gap:12px;font-size:14px;line-height:20px;font-weight:500;color:var(--text-mid);transition:all .3s;}
+  body.rol-barbero .menu-panel-item .bd-ico{flex:none;}
+  body.rol-barbero .menu-panel-item:hover{background:var(--panel-2);color:var(--text-hi);}
+  body.rol-barbero .menu-panel-item.bm-act{background:var(--accent-tint);color:var(--text-hi);box-shadow:0 4px 18px -3px color-mix(in srgb,var(--accent) 35%,transparent);}
+  body.rol-barbero .nav-section-label{margin:0 0 8px 12px;padding:0;font-family:inherit;font-size:10px;line-height:15px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);}
+  body.rol-barbero #btnAgendaNav{order:1;} body.rol-barbero #btnMiDashboard{order:2;} body.rol-barbero #btnComisiones{order:3;}
+  body.rol-barbero .bm-grupo{display:block;order:4;} body.rol-barbero #btnRecordatorios{order:5;}
+  body.rol-barbero .bm-busca{display:block;position:relative;margin-bottom:16px;z-index:1;}
+  .bm-busca .bd-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-mid);pointer-events:none;}
+  .bm-busca input{width:100%;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);padding:10px 12px 10px 36px;font:inherit;font-size:14px;color:var(--text-hi);outline:none;}
+  .bm-busca input::placeholder{color:var(--text-mid);}
+  .bm-busca input:focus{border-color:var(--accent);}
+  body.rol-barbero .bm-dot{display:block;position:absolute;left:8px;top:0;z-index:2;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 15px color-mix(in srgb,var(--accent) 60%,transparent);pointer-events:none;opacity:0;transition:transform .3s,opacity .3s;}
+  .bm-grupo-btn{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;border:0;background:none;padding:8px 12px;font:inherit;font-size:14px;font-weight:500;color:var(--accent);cursor:pointer;margin-top:8px;}
+  .bm-grupo-btn span{display:flex;align-items:center;gap:8px;}
+  .bm-grupo-btn .bm-chev{transition:transform .2s;}
+  .bm-grupo.open .bm-chev{transform:rotate(90deg);}
+  .bm-sub{display:none;}
+  .bm-grupo.open .bm-sub{display:block;}
+  .bm-sublink{display:flex;width:100%;margin-left:32px;max-width:calc(100% - 32px);align-items:center;gap:8px;border:0;border-radius:6px;background:none;padding:8px 8px 8px 12px;text-align:left;font:inherit;font-size:14px;color:var(--text-mid);cursor:pointer;transition:color .2s;}
+  .bm-sublink:hover{color:var(--accent);}
+  .bm-sublink.bm-act{font-weight:600;color:var(--text-hi);background:var(--accent-tint);box-shadow:0 2px 12px -2px color-mix(in srgb,var(--accent) 30%,transparent);}
+  body.rol-barbero .bm-extra{display:block;position:relative;z-index:1;}
+  .bm-lbl{margin:0 0 12px 12px;font-size:10px;line-height:15px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--text-mid);}
+  .bm-cuenta{margin-bottom:40px;}
+  .bm-cuenta .menu-panel-item{margin-bottom:4px;}
+  body.rol-barbero .menu-panel-item.bm-salir{margin-top:8px;color:var(--no);}
+  body.rol-barbero .menu-panel-item.bm-salir:hover{background:#fbeceb;color:var(--no);}
+  .bm-redes{display:flex;gap:16px;padding:0 12px;}
+  .bm-redes a{color:var(--text-mid);transition:color .2s;}
+  .bm-redes a:hover{color:var(--text-hi);}
+  .bm-sig{margin-top:auto;}
+  body.rol-barbero .menu-panel{display:flex;flex-direction:column;}
+  body.rol-barbero.bm-abierto .mlhdr-burger span:nth-child(1){transform:translateY(4.5px) rotate(45deg);}
+  body.rol-barbero.bm-abierto .mlhdr-burger span:nth-child(2){opacity:0;}
+  body.rol-barbero.bm-abierto .mlhdr-burger span:nth-child(3){transform:translateY(-4.5px) rotate(-45deg);}
+  body.rol-barbero .mlhdr-burger span{transition:transform .2s,opacity .2s;}
   .nav-group{border-bottom:1px solid var(--border);}
   .nav-group-head{
     display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;
@@ -884,6 +1149,123 @@
   #cxPeriodoTxt,#tpPeriodoTxt{font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
   .cx-tbl-title{font-size:15px;font-weight:600;margin:4px 0 12px;}
   .cx-badge-hoy{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#8a6d1a;background:#fdf1d0;border:1px solid #eddca0;border-radius:99px;padding:2px 9px;margin-left:8px;vertical-align:middle;}
+
+  /* ===== "Mi dashboard" y "Mis comisiones" del BARBER -- diseño del programador TAL CUAL (23-oct). Solo presentación. =====
+     Estructura/medidas del programador; COLORES = los del panel de Masterlook (variables --bg, --panel, --panel-2, --border, --text-hi, --text-mid, --accent), ink-soft #5b564c. */
+  #cxBarbero.bd-on{background:transparent;border:0;box-shadow:none;padding:0;}
+  #bdRoot{--bd-fg:var(--text-hi);--bd-surface:var(--panel);--bd-surface2:var(--panel-2);--bd-border:var(--border);--bd-accent:var(--accent);--bd-accent2:var(--accent);--bd-ink:var(--text-mid);
+    background:var(--bg);color:var(--bd-fg);font-family:ui-sans-serif,system-ui,sans-serif;padding:24px;border-radius:14px;line-height:1.5;}
+  #bdRoot *{box-sizing:border-box;}
+  #bdRoot .bd-ico{flex:none;display:inline-block;vertical-align:middle;}
+  #bdRoot .bd-head{display:flex;flex-direction:column;gap:24px;justify-content:space-between;margin-bottom:40px;}
+  #bdRoot .bd-head.bd-head-com{flex-direction:row;align-items:center;margin-bottom:32px;}
+  #bdRoot .bd-h1{margin:0;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;color:var(--bd-fg);}
+  #bdRoot .bd-h1.light{font-weight:300;display:flex;align-items:center;gap:12px;letter-spacing:0;}
+  #bdRoot .bd-h1.light .bd-ico{color:var(--bd-accent);}
+  #bdRoot .bd-sub{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-filtro{display:flex;flex-direction:column;gap:12px;width:100%;border:1px solid var(--bd-border);border-radius:8px;background:var(--bd-surface);padding:8px;}
+  #bdRoot .bd-sel{position:relative;min-width:min(100%,14rem);}
+  #bdRoot .bd-sel-btn{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--bd-border);border-radius:8px;background:var(--bd-surface2);padding:10px 16px;font:inherit;font-size:14px;color:var(--bd-fg);cursor:pointer;transition:border-color .15s;}
+  #bdRoot .bd-sel-btn:hover{border-color:color-mix(in oklab,var(--bd-fg) 25%,var(--bd-border));}
+  #bdRoot .bd-sel-btn span{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #bdRoot .bd-sel-btn .bd-ico{color:var(--bd-ink);transition:transform .15s;}
+  #bdRoot .bd-sel.open .bd-sel-btn .bd-ico{transform:rotate(180deg);}
+  #bdRoot .bd-sel-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:400;max-height:240px;overflow-y:auto;border:1px solid var(--bd-border);border-radius:8px;background:var(--bd-surface);box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);}
+  #bdRoot .bd-sel.open .bd-sel-menu{display:block;}
+  #bdRoot .bd-sel-op{display:block;width:100%;border:0;background:transparent;padding:10px 16px;text-align:left;font:inherit;font-size:14px;color:var(--bd-ink);cursor:pointer;}
+  #bdRoot .bd-sel-op:hover{background:var(--bd-surface2);color:var(--bd-fg);}
+  #bdRoot .bd-sel-op.on{background:color-mix(in srgb,var(--bd-accent) 18%,transparent);font-weight:600;color:var(--accent);}
+  #bdRoot .bd-fechas{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-top:1px solid var(--bd-border);padding-top:8px;}
+  #bdRoot .bd-fechas input{min-height:36px;flex:1;border:1px solid var(--bd-border);border-radius:6px;background:var(--bd-surface2);padding:6px 8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;color:var(--bd-fg);}
+  #bdRoot .bd-fechas span{color:var(--bd-ink);}
+  #bdRoot .bd-aviso{margin:0 0 24px;border:1px solid #f3d4d1;background:#fbeceb;border-radius:12px;padding:12px 16px;font-size:13px;color:var(--no);}
+  #bdRoot .bd-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:40px;}
+  #bdRoot .bd-stat{border:1px solid var(--bd-border);border-radius:16px;background:var(--bd-surface);padding:16px;transition:border-color .3s;}
+  #bdRoot .bd-stat:hover{border-color:color-mix(in srgb,var(--bd-accent) 35%,transparent);}
+  #bdRoot .bd-stat-ic{display:inline-flex;margin-bottom:16px;border:1px solid var(--bd-border);border-radius:8px;background:var(--bd-surface2);padding:8px;transition:transform .3s;}
+  #bdRoot .bd-stat:hover .bd-stat-ic{transform:scale(1.1);}
+  #bdRoot .bd-stat-k{margin:0 0 4px;font-size:10px;line-height:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-stat-v{margin:0;font-size:18px;line-height:1.25;font-weight:900;color:var(--bd-fg);font-variant-numeric:tabular-nums;}
+  #bdRoot .bd-stat-n{margin:4px 0 0;font-size:12px;line-height:16px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--bd-fg);opacity:.85;}
+  #bdRoot .bd-stat-s{margin:8px 0 0;font-size:10px;line-height:15px;color:var(--bd-ink);}
+  #bdRoot .bd-sec{overflow:hidden;border:1px solid var(--bd-border);border-radius:16px;background:var(--bd-surface);box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);}
+  #bdRoot .bd-sec-h{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--bd-border);padding:24px;}
+  #bdRoot .bd-sec-h h2{display:flex;align-items:center;gap:8px;margin:0;font-size:20px;line-height:28px;font-weight:700;color:var(--bd-fg);}
+  #bdRoot .bd-sec-h h2 .bd-ico{color:var(--bd-accent);}
+  #bdRoot .bd-sec-h .bd-cnt{font-size:12px;line-height:16px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);text-align:right;}
+  #bdRoot .bd-tw{overflow-x:auto;}
+  #bdRoot table.bd-t{width:100%;border-collapse:collapse;text-align:left;color:var(--bd-fg);font-size:14px;}
+  #bdRoot .bd-t thead tr{border-bottom:1px solid var(--bd-border);background:var(--panel-2);font-size:10px;line-height:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-t.gris thead tr{background:var(--panel-2);}
+  #bdRoot .bd-t th{padding:16px 24px;font-weight:600;white-space:nowrap;}
+  #bdRoot .bd-t th.r,#bdRoot .bd-t td.r{text-align:right;}
+  #bdRoot .bd-t tbody tr{border-top:1px solid var(--bd-border);transition:background .15s;}
+  #bdRoot .bd-t tbody tr:hover{background:rgba(0,0,0,.03);}
+  #bdRoot .bd-t td{padding:16px 24px;vertical-align:middle;}
+  #bdRoot .bd-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:16px;color:var(--bd-ink);}
+  #bdRoot .bd-cli{display:flex;align-items:center;gap:12px;}
+  #bdRoot .bd-av{display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border:1px solid var(--bd-border);border-radius:50%;background:var(--bd-surface2);font-size:10px;font-weight:700;color:var(--bd-accent);}
+  #bdRoot .bd-cli b{font-size:14px;font-weight:500;color:var(--bd-fg);}
+  #bdRoot .bd-hora{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--bd-ink);}
+  #bdRoot .bd-hora .bd-ico{color:var(--bd-ink);}
+  #bdRoot .bd-b{font-size:14px;font-weight:700;color:var(--bd-fg);}
+  #bdRoot .bd-pp{display:flex;flex-direction:column;gap:4px;}
+  #bdRoot .bd-pp .p{font-size:10px;font-weight:700;letter-spacing:-.025em;text-transform:uppercase;color:var(--ok);}
+  #bdRoot .bd-pp .x{font-size:12px;color:var(--bd-ink);}
+  #bdRoot .bd-tot{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  #bdRoot .bd-tot b{font-size:14px;font-weight:900;color:var(--bd-accent);}
+  #bdRoot .bd-tot .bd-chev{color:var(--bd-ink);transition:color .15s;}
+  #bdRoot tr:hover .bd-chev{color:var(--bd-accent);}
+  #bdRoot .bd-vacio{padding:80px 24px;text-align:center;font-size:14px;font-style:italic;color:var(--bd-ink);}
+  #bdRoot .bd-exp{display:flex;align-items:center;gap:8px;border:1px solid var(--bd-border);border-radius:8px;background:var(--bd-surface);padding:8px 16px;font:inherit;font-size:14px;font-weight:700;color:var(--bd-fg);cursor:pointer;transition:background .15s;}
+  #bdRoot .bd-exp:hover{background:var(--panel-2);}
+  #bdRoot .bd-card-f{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;margin-bottom:32px;border:1px solid var(--bd-border);border-radius:12px;background:var(--bd-surface);padding:16px;}
+  #bdRoot .bd-card-f label{display:block;margin-bottom:8px;font-size:12px;line-height:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-card-f .bd-fechas{border:0;padding:0;}
+  #bdRoot .bd-buscar{display:flex;align-items:center;gap:8px;height:40px;margin-left:auto;border:0;border-radius:8px;background:var(--text-hi);padding:10px 24px;font:inherit;font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:filter .15s;}
+  #bdRoot .bd-buscar:hover{filter:brightness(1.25);}
+  #bdRoot .bd-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:32px;}
+  #bdRoot .bd-card{border-radius:12px;padding:24px;border:1px solid;}
+  #bdRoot .bd-card p{margin:0;}
+  #bdRoot .bd-card .k{margin-bottom:4px;font-size:12px;line-height:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+  #bdRoot .bd-card .v{font-size:24px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums;}
+  #bdRoot .bd-card .s{margin-top:6px;font-size:11px;line-height:15px;}
+  #bdRoot .bd-card.oro{border-color:color-mix(in srgb,var(--accent) 25%,transparent);background:var(--accent-tint);color:var(--accent);}
+  #bdRoot .bd-card.cielo{border-color:color-mix(in srgb,var(--reservado) 30%,transparent);background:var(--ap-reservado-tint);color:var(--reservado);}
+  #bdRoot .bd-card.verde{border-color:color-mix(in srgb,var(--ok) 30%,transparent);background:var(--cejas-tint);color:var(--ok);}
+  #bdRoot .bd-card.rojo{border-color:#f3d4d1;background:#fbeceb;color:var(--no);}
+  #bdRoot .bd-card .s{color:inherit;opacity:.85;}
+  #bdRoot .bd-total{margin-bottom:24px;border:1px solid var(--bd-border);border-radius:12px;background:var(--bd-surface);padding:16px;}
+  #bdRoot .bd-total .k{margin:0;font-size:12px;line-height:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-total .v{margin:4px 0 0;font-size:30px;line-height:36px;font-weight:900;color:var(--bd-accent);font-variant-numeric:tabular-nums;}
+  #bdRoot .bd-total .s{margin:4px 0 0;font-size:12px;line-height:16px;color:var(--bd-ink);}
+  #bdRoot .bd-card-t{overflow:hidden;border:1px solid var(--bd-border);border-radius:12px;background:var(--bd-surface);}
+  #bdRoot .bd-card-t-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--bd-border);background:var(--panel-2);padding:16px;}
+  #bdRoot .bd-pills{display:flex;gap:8px;flex-wrap:wrap;}
+  #bdRoot .bd-pill{border:1px solid var(--bd-border);border-radius:99px;background:transparent;padding:4px 12px;font:inherit;font-size:10px;line-height:16px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);cursor:pointer;transition:all .15s;}
+  #bdRoot .bd-pill:hover{border-color:var(--bd-fg);color:var(--bd-fg);}
+  #bdRoot .bd-pill.on{border-color:var(--text-hi);background:var(--text-hi);color:#fff;}
+  #bdRoot .bd-card-t-h .bd-cnt{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-mono-v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;}
+  #bdRoot .bd-accent{color:var(--bd-accent);font-weight:700;}
+  #bdRoot .bd-cielo{color:var(--reservado);}
+  #bdRoot .bd-est{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ok);}
+  #bdRoot .bd-ec{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--bd-ink);}
+  #bdRoot .bd-nota{margin:16px 0 0;font-size:12px;line-height:16px;color:var(--bd-ink);}
+  #bdRoot .bd-foot td{border-top:1px solid var(--bd-border);background:var(--panel-2);font-weight:700;}
+  #cbContenido{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:24px;}
+  @media (min-width:768px){
+    #bdRoot .bd-head{flex-direction:row;align-items:center;}
+    #bdRoot .bd-filtro{width:auto;flex-direction:row;align-items:center;gap:8px;}
+    #bdRoot .bd-fechas{border-top:0;border-left:1px solid var(--bd-border);padding:0 0 0 16px;}
+    #bdRoot .bd-stats{gap:24px;}
+    #bdRoot .bd-stat{padding:24px;}
+    #bdRoot .bd-stat-v{font-size:24px;}
+    #bdRoot .bd-cards{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
+  @media (min-width:1024px){ #bdRoot .bd-stats{grid-template-columns:repeat(4,minmax(0,1fr));} }
+  @media (min-width:1280px){ #bdRoot .bd-cards{grid-template-columns:repeat(4,minmax(0,1fr));} }
+  @media (max-width:560px){ #bdRoot{padding:16px;} #bdRoot .bd-head.bd-head-com{flex-direction:column;align-items:flex-start;gap:16px;} #bdRoot .bd-sec-h{padding:16px;} #bdRoot .bd-t th,#bdRoot .bd-t td{padding:12px 14px;} }
   select.mg-input#cxFiltroPro,select.mg-input#tpFiltroPro{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:#fff;}
 
   /* botón "Descargar cartola" con menú desplegable PDF/Excel */
@@ -2427,6 +2809,8 @@
       <div class="wordmark"><span class="dot"></span>Master Look</div>
       <button class="x-round" id="cerrarMenuLateral" aria-label="Cerrar menú">×</button>
     </div>
+    <div class="bm-busca"><svg class="bd-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input id="bmBuscar" type="search" placeholder="Buscar sección..." aria-label="Buscar en el menú" autocomplete="off"></div>
+    <div class="bm-dot" id="bmDot"></div>
     <nav class="menu-links" id="menuLinks">
       <button class="btn-ordenar-menu" id="btnOrdenarMenu" type="button" style="display:none;">↕ Ordenar menú</button>
       <div class="nav-section-label">Panel</div>
@@ -2435,6 +2819,7 @@
       <!-- Reporte personal del barbero (solo BARBER -- lo revela
            mostrarControlesAdmin). Antes vivía dentro del grupo "Equipo
            barberos", que no corresponde mostrarle a un barbero. -->
+      <button class="menu-panel-item" id="btnMiDashboard" style="display:none;">Mi dashboard</button>
       <button class="menu-panel-item" id="btnComisiones" style="display:none;">Mis comisiones</button>
 
       <div class="nav-section-label">Vista cliente</div>
@@ -2526,7 +2911,24 @@
           <button class="menu-panel-item" id="btnSuscripciones">Suscripciones y servicios<span class="sus-menu-badge" id="susMenuBadge" style="display:none;" title="Hay pagos próximos"></span></button>
         </div>
       </div>
+      <!-- Grupo «Reservas» del menú del barbero (copia del programador): su único destino es «Mis agendamientos asignados» (la lista de SUS reservas). -->
+      <div class="bm-grupo" id="bmGrupoRes">
+        <button class="bm-grupo-btn" id="bmGrupoBtn" type="button"><span><svg class="bd-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Reservas</span><svg class="bd-ico bm-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <div class="bm-sub"><button class="bm-sublink" id="bmMisAgend" type="button">Mis agendamientos asignados</button></div>
+      </div>
     </nav>
+    <div class="bm-extra bm-cuenta">
+      <p class="bm-lbl">Cuenta</p>
+      <button class="menu-panel-item" id="bmPerfil" type="button"><svg class="bd-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Mi perfil</button>
+      <button class="menu-panel-item bm-salir" id="bmSalir" type="button"><svg class="bd-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg> Cerrar sesión</button>
+    </div>
+    <div class="bm-extra bm-sig">
+      <p class="bm-lbl" style="margin-bottom:16px;">Síguenos</p>
+      <div class="bm-redes">
+        <a href="https://instagram.com/masterlook.cl" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><svg class="bd-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg></a>
+        <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg></a>
+      </div>
+    </div>
   </aside>
 
   <div class="content">
@@ -2819,8 +3221,125 @@
         <div class="cx-regla" id="cbSinVincular" style="display:none;">
           Tu cuenta todavía no está vinculada a un profesional. Pídele a un administrador que la vincule para poder ver tus comisiones.
         </div>
+
+        <!-- ===== "Mi dashboard" / "Mis comisiones" del BARBER -- diseño del programador TAL CUAL (23-oct). SOLO presentación: cada monto
+             viene de obtenerMisComisiones (por mes) y obtenerMisPropinas (por rango); el servidor decide la identidad
+             (staff/{uid}.barberId) y aplica la regla pago completo + asistencia. Acá solo se filtra por fecha y se suma. ===== -->
+        <div id="bdRoot">
+          <div class="bd-aviso" id="bdAviso" style="display:none;"></div>
+
+          <div id="bdVistaDash">
+            <header class="bd-head">
+              <div><h1 class="bd-h1">Mi Dashboard</h1><p class="bd-sub">Resumen de desempeño y ganancias</p></div>
+              <div class="bd-filtro">
+                <div class="bd-sel" data-bdsel></div>
+                <div class="bd-fechas" id="bdFechasD" style="display:none;"><input type="date" id="bdDesdeD"><span>—</span><input type="date" id="bdHastaD"></div>
+              </div>
+            </header>
+            <div class="bd-stats">
+              <div class="bd-stat"><div class="bd-stat-ic"><svg class="bd-ico" style="color:var(--accent)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg></div><div><p class="bd-stat-k">Mis Ganancias</p><h4 class="bd-stat-v" id="bdGanancias">$0</h4><p class="bd-stat-s">Comisión + propinas</p></div></div>
+              <div class="bd-stat"><div class="bd-stat-ic"><svg class="bd-ico" style="color:var(--reservado)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><p class="bd-stat-k">Comisión servicios</p><h4 class="bd-stat-v" id="bdDServ">$0</h4><p class="bd-stat-n" id="bdDServN"></p><p class="bd-stat-s">Porcentaje sobre precio del servicio</p></div></div>
+              <div class="bd-stat"><div class="bd-stat-ic"><svg class="bd-ico" style="color:var(--peinado)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></div><div><p class="bd-stat-k">Productos vendidos</p><h4 class="bd-stat-v" id="bdDProd">0</h4><p class="bd-stat-s" id="bdDProdS">Unidades vendidas en el período</p></div></div>
+              <div class="bd-stat"><div class="bd-stat-ic"><svg class="bd-ico" style="color:var(--ok)" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg></div><div><p class="bd-stat-k">Propinas</p><h4 class="bd-stat-v" id="bdDProp">$0</h4><p class="bd-stat-s">Total de propinas</p></div></div>
+            </div>
+            <section class="bd-sec">
+              <div class="bd-sec-h"><h2><svg class="bd-ico " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> Detalle por Cliente</h2><span class="bd-cnt" id="bdDCnt"></span></div>
+              <div class="bd-tw"><table class="bd-t">
+                <thead><tr><th>Fecha servicio</th><th>Cliente</th><th>Hora</th><th>Servicio</th><th>Comisión servicio</th><th>Propina</th><th>Total ganancia</th></tr></thead>
+                <tbody id="bdDTabla"></tbody>
+              </table></div>
+            </section>
+          </div>
+
+          <div id="bdVistaCom" style="display:none;">
+            <header class="bd-head bd-head-com">
+              <div><h1 class="bd-h1 light"><svg class="bd-ico " width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Mis Comisiones</h1><p class="bd-sub">Reporte personal de ganancias</p></div>
+              <button class="bd-exp" id="bdExportar" type="button"><svg class="bd-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg> Exportar</button>
+            </header>
+            <div class="bd-card-f">
+              <div style="min-width:min(100%,14rem);"><label>Período</label><div class="bd-sel" data-bdsel></div></div>
+              <div class="bd-fechas" id="bdFechasC" style="display:none;"><input type="date" id="bdDesdeC"><span>—</span><input type="date" id="bdHastaC"></div>
+              <button class="bd-buscar" id="bdBuscar" type="button"><svg class="bd-ico " width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg> <span id="bdBuscarTxt">Buscar</span></button>
+            </div>
+            <div class="bd-cards">
+              <div class="bd-card oro"><p class="k">Comisión servicios</p><p class="v" id="bdCServ">$0</p><p class="s">Servicio pagado completo y con asistencia</p></div>
+              <div class="bd-card cielo"><p class="k">Propinas</p><p class="v" id="bdCProp">$0</p><p class="s">Registradas en tus reservas</p></div>
+              <div class="bd-card verde"><p class="k">Productos vendidos</p><p class="v" id="bdCProd">0</p><p class="s">Unidades vendidas en el período</p></div>
+              <div class="bd-card rojo"><p class="k">Pendiente de cobro</p><p class="v" id="bdCPend">—</p><p class="s" id="bdCPendTxt"></p></div>
+            </div>
+            <div class="bd-total">
+              <p class="k">Total ganancia en período</p>
+              <p class="v" id="bdTotal">$0</p>
+              <p class="s">Comisión del servicio + propinas</p>
+            </div>
+            <div class="bd-card-t">
+              <div class="bd-card-t-h">
+                <div class="bd-pills" id="bdPills">
+                  <button class="bd-pill on" data-bdt="servicios" type="button">Servicios</button>
+                  <button class="bd-pill" data-bdt="propinas" type="button">Propinas</button>
+                  <button class="bd-pill" data-bdt="productos" type="button">Productos</button>
+                </div>
+                <span class="bd-cnt" id="bdCCnt"></span>
+              </div>
+              <div class="bd-tw"><table class="bd-t gris">
+                <thead><tr id="bdCHead"></tr></thead>
+                <tbody id="bdCTabla"></tbody>
+                <tfoot><tr class="bd-foot" id="bdCFoot"></tr></tfoot>
+              </table></div>
+            </div>
+            <p class="bd-nota">La comisión de un servicio cuenta solo cuando administración o recepción registran el pago completo y confirman la asistencia. Cada monto es el que calcula el sistema: aquí no se recalcula nada.</p>
+          </div>
+        </div>
+
+        <!-- ===== Calendario del BARBER (copia del programador, solo lectura): lee SOLO sus reservas de la semana visible con la misma consulta acotada por barberId que ya usa la agenda. ===== -->
+        <div id="bcRoot" style="display:none;">
+          <nav class="bc-bread" aria-label="Ruta"><span class="a">Panel</span><span class="s">›</span><b>Agenda</b></nav>
+          <header class="bc-head">
+            <h1 class="bc-h1"><svg class="bd-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Calendario</h1>
+            <p class="bc-sub">Tu agenda profesional</p>
+          </header>
+          <div class="bc-aviso" id="bcAviso" style="display:none;"></div>
+          <div class="bc-wrap">
+            <aside class="bc-side">
+              <div class="bc-nav">
+                <button class="bc-btn" id="bcHoyLado" type="button">Hoy</button>
+                <button class="bc-ib" id="bcPrevLado" type="button" aria-label="Anterior"><svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+                <button class="bc-ib" id="bcNextLado" type="button" aria-label="Siguiente"><svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+              </div>
+              <div class="bc-mes"><p id="bcMesTxt"></p><div><button id="bcMesPrev" type="button" aria-label="Mes anterior">‹</button><button id="bcMesNext" type="button" aria-label="Mes siguiente">›</button></div></div>
+              <div class="bc-mini" id="bcMini"></div>
+              <p class="bc-lbl">Estado de la reserva</p>
+              <select class="bc-sel" id="bcEstado" aria-label="Estado de la reserva"></select>
+              <div id="bcServBox" style="display:none;"><p class="bc-lbl" style="margin-bottom:8px;">Servicios</p><div class="bc-serv" id="bcServ"></div></div>
+            </aside>
+            <div class="bc-card" id="bcCard">
+              <header class="bc-ch">
+                <div class="bc-ch-l">
+                  <div class="bc-ch-ic"><svg class="bd-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></div>
+                  <div><h2>Calendario</h2><div class="bc-ch-s"><span class="a" id="bcSubA"></span><span class="p">|</span><span class="m" id="bcSubM"></span></div></div>
+                </div>
+                <div class="bc-ch-r">
+                  <div class="bc-fecha">
+                    <div class="g"><button id="bcPrev" type="button" aria-label="Anterior"><svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><input type="date" id="bcFecha" aria-label="Fecha"><button id="bcNext" type="button" aria-label="Siguiente"><svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div>
+                    <span class="v"></span><button class="h" id="bcHoy" type="button">Hoy</button>
+                  </div>
+                  <div class="bc-modos" id="bcModos"><button data-m="semana" type="button">Semana</button><button data-m="dia" type="button" class="on">Día</button><button data-m="lista" type="button">Lista</button></div>
+                  <div class="bc-60">60 min</div>
+                </div>
+              </header>
+              <div class="bc-hx" id="bcHx"><div class="bc-hxin" id="bcHxIn">
+                <div class="bc-dias"><div class="rel"><svg class="bd-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div id="bcDias"></div></div>
+                <div class="bc-scroll" id="bcScroll"><div class="bc-body" id="bcBody"></div></div>
+              </div></div>
+              <div class="bc-lista" id="bcLista" style="display:none;"><div class="in" id="bcListaIn"></div></div>
+              <div class="bc-leyenda" id="bcLeyenda"></div>
+            </div>
+          </div>
+        </div>
+
         <div id="cbContenido">
 
+          <div id="cbLegacyServPropinas" style="display:none;">
           <!-- ===== Servicios -- regla pago completo + asistencia, 100%
                servidor (obtenerMisComisiones): hoy y el mes elegido en el
                selector de Productos (abajo). Un servicio asistido sin pago
@@ -2876,6 +3395,7 @@
             </table>
           </div>
 
+          </div><!-- /cbLegacyServPropinas -->
           <!-- ===== Productos + Código promocional -- mes COMPARTIDO, SOLO
                lectura, snapshot congelado de cada venta (nunca recalculado
                con el % vigente hoy) ===== -->
@@ -6356,9 +6876,9 @@
   // ---------- Menú lateral (hamburguesa: secciones del negocio) ----------
   const menuLateralOverlay = document.getElementById('menuLateralOverlay');
   const menuLateralPanel = document.getElementById('menuLateralPanel');
-  function abrirMenuLateral(){ menuLateralOverlay.classList.add('open'); menuLateralPanel.classList.add('open'); }
-  function cerrarMenuLateral(){ menuLateralOverlay.classList.remove('open'); menuLateralPanel.classList.remove('open'); }
-  document.getElementById('btnMenuLateral').addEventListener('click', abrirMenuLateral);
+  function abrirMenuLateral(){ menuLateralOverlay.classList.add('open'); menuLateralPanel.classList.add('open'); document.body.classList.add('bm-abierto'); bmPosDot(); }
+  function cerrarMenuLateral(){ menuLateralOverlay.classList.remove('open'); menuLateralPanel.classList.remove('open'); document.body.classList.remove('bm-abierto'); }
+  document.getElementById('btnMenuLateral').addEventListener('click', ()=>{ (userRole === 'BARBER' && menuLateralPanel.classList.contains('open')) ? cerrarMenuLateral() : abrirMenuLateral(); });
   document.getElementById('cerrarMenuLateral').addEventListener('click', cerrarMenuLateral);
   menuLateralOverlay.addEventListener('click', cerrarMenuLateral);
 
@@ -6420,6 +6940,7 @@
   /** Oculta TODAS las vistas de sección. Cada mostrarX() la llama y después
    *  muestra solo la suya (y ajusta lo suyo: kpiRow, tarjeta flotante, etc.). */
   function ocultarVistasPanel(){
+    if(typeof bcDetener === 'function') bcDetener();
     VISTAS_PANEL.forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.style.display = 'none';
@@ -6779,7 +7300,7 @@
   }
 
   // ---------- Destinos nuevos del menú (rediseño estilo AgendaPro) ----------
-  document.getElementById('btnAgendaNav').addEventListener('click', irAlInicio);
+  document.getElementById('btnAgendaNav').addEventListener('click', ()=>{ if(userRole === 'BARBER'){ cerrarModales(); cerrarMenuLateral(); mostrarComisiones('agenda'); } else irAlInicio(); });
   // Antes esta entrada del menú (bajo "Servicios" -> "Panel · catálogo")
   // abría por error la página de Horarios (bug preexistente, no de este
   // bloque -- "Horarios" se sigue alcanzando igual que siempre desde el
@@ -8355,6 +8876,8 @@
     // no usa este botón, usa el grupo "Comisiones" de abajo (información de
     // TODOS los profesionales). Recepción no ve ninguno de los dos.
     document.getElementById('btnComisiones').style.display = (userRole === 'BARBER') ? '' : 'none';
+    document.getElementById('btnMiDashboard').style.display = (userRole === 'BARBER') ? '' : 'none';
+    bmActivarRol(userRole === 'BARBER');
 
     // Comisiones (grupo administrativo): información financiera de todos los
     // profesionales -- únicamente administrador, nunca un barbero ni recepción,
@@ -9326,9 +9849,9 @@
   /* ---------- Modales ---------- */
   const mgOverlay = document.getElementById('mgOverlay');
   // Modales que son pantallas administrativas: un BARBER no los abre por
-  // ninguna vía (los legítimos para él -- Mi perfil, Recordatorios, fotos de
+  // ninguna vía (los legítimos para él -- Mi perfil, fotos de
   // cliente, WhatsApp por cliente -- no están en la lista).
-  const MODALES_ADMIN = ['modalArco', 'modalPromos', 'modalMensajeriaWhatsapp', 'modalCodigoBarbero'];
+  const MODALES_ADMIN = ['modalArco', 'modalPromos', 'modalMensajeriaWhatsapp', 'modalCodigoBarbero', 'modalRecordatorios'];
   function abrirModal(id){
     if(userRole === 'BARBER' && MODALES_ADMIN.indexOf(id) > -1){
       if(typeof showToast === 'function') showToast('Esta sección no está disponible para tu cuenta');
@@ -14292,8 +14815,12 @@
       document.getElementById('cxReporte').style.display = 'none';
       document.getElementById('cxBarbero').style.display = '';
       pintarResumenBarbero();
+      bdAbrir(ver === 'dashboard' ? 'dashboard' : (ver === 'agenda' ? 'agenda' : 'comisiones'));
     } else {
       document.getElementById('cxBarbero').style.display = 'none';
+      document.getElementById('cxBarbero').classList.remove('bd-on');
+      document.getElementById('cxTitulo').style.display = '';
+      document.getElementById('cxSub').style.display = '';
       document.getElementById('cxTitulo').textContent = 'Comisiones';
       document.getElementById('cxSub').textContent = 'Define cuánto gana cada profesional por servicio.';
       cxIrA(ver || 'config');
@@ -14588,19 +15115,889 @@
     if(abrir) pintarDetallePropinasBarbero();
   });
 
+  /* ---------------------------------------------------------------------
+     "Mi dashboard" y "Mis comisiones" del BARBER -- diseño del programador (23-oct).
+     SOLO presentación: ningún monto se calcula acá. Todo sale de las MISMAS
+     callables de siempre -- obtenerMisComisiones (por mes) y obtenerMisPropinas
+     (por rango) --, que toman la identidad de staff/{uid}.barberId en el
+     servidor (el navegador nunca manda un id de profesional) y aplican la
+     regla pago completo + asistencia. Este bloque solo filtra por fecha lo
+     que ya viene calculado y lo suma. Sin escrituras. Todo texto dinámico
+     pasa por escapeHTML.
+     --------------------------------------------------------------------- */
+  const BD = { vista:'dashboard', preset:'30', desde:'', hasta:'', tipo:'servicios', datos:null, epoch:0, memo:new Map() };
+  const BD_MAX_MESES = 13;
+  const BD_OPCIONES = [
+    { label:'Hoy', value:'1' }, { label:'Ayer', value:'ayer' }, { label:'Últimos 7 días', value:'7' }, { label:'Últimos 30 días', value:'30' },
+    { label:'Este mes', value:'mes' }, { label:'Mes anterior', value:'mesant' },
+    { label:'Últimos 90 días', value:'90' }, { label:'Últimos 180 días', value:'180' }, { label:'1 año', value:'365' }, { label:'Rango personalizado', value:'custom' },
+  ];
+  const BD_CLOCK = '<svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  const BD_CHEV = '<svg class="bd-ico bd-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+  const BD_OK = '<svg class="bd-ico " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>';
+  const bdF10 = (x)=> String(x == null ? '' : x).slice(0, 10);
+  const bdNorm = (t)=> String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  const bdN = (n)=> Number(n) || 0;
+
+  /** Mismos períodos que el sitio del programador (Hoy, Ayer, N días atrás hasta hoy), en día calendario de Santiago. */
+  function bdRangoPreset(p){
+    const hoy = TiempoSantiago.fechaSantiago();
+    const S = (n)=> TiempoSantiago.sumarDiasSantiago(hoy, n);
+    if(p === '1') return [hoy, hoy];
+    if(p === 'ayer') return [S(-1), S(-1)];
+    if(p === 'mes') return [hoy.slice(0, 8) + '01', hoy];
+    if(p === 'mesant'){
+      const fin = TiempoSantiago.sumarDiasSantiago(hoy.slice(0, 8) + '01', -1);
+      return [fin.slice(0, 8) + '01', fin];
+    }
+    return [S(-(Number(p) || 30)), hoy];
+  }
+  /** Meses 'YYYY-MM' que toca el rango (inclusive). */
+  function bdMeses(desde, hasta){
+    const out = [];
+    let [y, m] = desde.slice(0, 7).split('-').map(Number);
+    const [yh, mh] = hasta.slice(0, 7).split('-').map(Number);
+    while((y < yh || (y === yh && m <= mh)) && out.length < 40){
+      out.push(y + '-' + String(m).padStart(2, '0'));
+      m++; if(m > 12){ m = 1; y++; }
+    }
+    return out;
+  }
+  async function bdLeerMes(mes){
+    const memo = BD.memo.get(mes);
+    if(memo && Date.now() - memo.t < 60000) return memo.d;   // evita repetir lecturas al cambiar de pantalla en 1 minuto
+    const r = await functions.httpsCallable('obtenerMisComisiones')({ mes });
+    BD.memo.set(mes, { t: Date.now(), d: r.data });
+    return r.data;
+  }
+  function bdAvisar(txt){
+    const a = document.getElementById('bdAviso');
+    a.textContent = txt;
+    a.style.display = '';
+  }
+
+  /** Selector de período con el mismo aspecto y comportamiento que el CustomSelect del programador. */
+  function bdMontarSelects(){
+    document.querySelectorAll('#bdRoot [data-bdsel]').forEach(box=>{
+      box.innerHTML = '<button type="button" class="bd-sel-btn"><span></span><svg class="bd-ico " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="bd-sel-menu"></div>';
+      const btn = box.querySelector('.bd-sel-btn');
+      const menu = box.querySelector('.bd-sel-menu');
+      BD_OPCIONES.forEach(o=>{
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'bd-sel-op'; b.dataset.v = o.value; b.textContent = o.label;
+        b.addEventListener('click', ()=>{ box.classList.remove('open'); bdElegirPreset(o.value); });
+        menu.appendChild(b);
+      });
+      btn.addEventListener('click', ()=> box.classList.toggle('open'));
+    });
+    document.addEventListener('mousedown', (e)=>{
+      document.querySelectorAll('#bdRoot .bd-sel.open').forEach(b=>{ if(!b.contains(e.target)) b.classList.remove('open'); });
+    });
+    window.addEventListener('resize', ()=> document.querySelectorAll('#bdRoot .bd-sel.open').forEach(b=> b.classList.remove('open')));
+  }
+  function bdSincronizarSelects(){
+    const op = BD_OPCIONES.find(o=> o.value === BD.preset) || BD_OPCIONES[3];
+    document.querySelectorAll('#bdRoot [data-bdsel]').forEach(box=>{
+      box.querySelector('.bd-sel-btn span').textContent = op.label;
+      box.querySelectorAll('.bd-sel-op').forEach(b=> b.classList.toggle('on', b.dataset.v === BD.preset));
+    });
+    const custom = BD.preset === 'custom';
+    document.getElementById('bdFechasD').style.display = custom ? 'flex' : 'none';
+    document.getElementById('bdFechasC').style.display = custom ? 'flex' : 'none';
+  }
+  function bdElegirPreset(v){
+    BD.preset = v;
+    bdSincronizarSelects();
+    if(v === 'custom') return;   // espera las fechas (Dashboard: al completarlas; Comisiones: «Buscar»)
+    bdCargar(false);
+  }
+  /** Fechas del rango personalizado: las de la pantalla visible. */
+  function bdFechasCustom(){
+    const dash = BD.vista === 'dashboard';
+    return [document.getElementById(dash ? 'bdDesdeD' : 'bdDesdeC').value, document.getElementById(dash ? 'bdHastaD' : 'bdHastaC').value];
+  }
+
+  async function bdCargar(forzar){
+    const mio = ++BD.epoch;
+    document.getElementById('bdAviso').style.display = 'none';
+    if(forzar) BD.memo.clear();
+    if(BD.preset !== 'custom'){
+      [BD.desde, BD.hasta] = bdRangoPreset(BD.preset);
+    } else {
+      [BD.desde, BD.hasta] = bdFechasCustom();
+    }
+    const { desde, hasta } = BD;
+    if(!desde || !hasta) return;   // rango personalizado incompleto
+    if(desde > hasta){ bdAvisar('La fecha «Desde» no puede ser posterior a «Hasta».'); return; }
+    const meses = bdMeses(desde, hasta);
+    if(meses.length > BD_MAX_MESES){ bdAvisar('El rango máximo es de 1 año.'); return; }
+    document.getElementById('bdBuscarTxt').textContent = 'Actualizando...';
+    try{
+      // De a 4 meses por vez para no abrir decenas de llamadas juntas.
+      const respMeses = [];
+      for(let i = 0; i < meses.length; i += 4){
+        respMeses.push(...await Promise.all(meses.slice(i, i + 4).map(bdLeerMes)));
+        if(mio !== BD.epoch) return;
+      }
+      const prop = (await functions.httpsCallable('obtenerMisPropinas')({ desde, hasta })).data;
+      if(mio !== BD.epoch) return;   // llegó una respuesta de una búsqueda anterior
+      if(respMeses.some(d=> d && d.sinVincular) || (prop && prop.sinVincular)){
+        bdAvisar('Tu cuenta todavía no está vinculada a un profesional. Pídele a un administrador que la vincule para poder ver tus comisiones.');
+        return;
+      }
+      const servicios = [], productos = [];
+      let pendientes = 0;
+      respMeses.forEach(d=>{
+        const sp = d.serviciosPeriodo || {};
+        (sp.detalle || []).forEach(x=>{ const f = bdF10(x.fecha); if(f >= desde && f <= hasta) servicios.push(x); });
+        pendientes += bdN(sp.pendientesPago);
+        (d.detalle || []).forEach(v=>{ const f = bdF10(v.fecha || v.soldAt); if(f >= desde && f <= hasta) productos.push(v); });
+      });
+      servicios.sort((a, b)=> bdF10(b.fecha).localeCompare(bdF10(a.fecha)) || String(b.hora || '').localeCompare(String(a.hora || '')));
+      productos.sort((a, b)=> bdF10(b.fecha || b.soldAt).localeCompare(bdF10(a.fecha || a.soldAt)));
+      const propinas = ((prop && prop.detalle) || []).slice().sort((a, b)=> bdF10(b.fecha).localeCompare(bdF10(a.fecha)));
+      // La propina de cada fila del detalle por cliente: misma fecha + mismo cliente + mismo servicio (si hay filas idénticas se muestra una sola vez).
+      const propPorClave = new Map();
+      propinas.forEach(p=>{ const k = bdF10(p.fecha) + '|' + bdNorm(p.cliente) + '|' + bdNorm(p.servicio); propPorClave.set(k, (propPorClave.get(k) || 0) + bdN(p.propina)); });
+      const usadas = new Map();
+      const filas = servicios.map(x=>{
+        const k = bdF10(x.fecha) + '|' + bdNorm(x.cliente) + '|' + bdNorm(x.servicio);
+        const ya = usadas.get(k) || 0;
+        usadas.set(k, ya + 1);
+        return { ...x, propina: ya ? 0 : (propPorClave.get(k) || 0) };
+      });
+      const comServ = servicios.reduce((s, x)=> s + bdN(x.comision), 0);
+      const bdQty = (v)=> (bdN(v.qty) > 0 ? bdN(v.qty) : 1);
+      const nProd = productos.reduce((s, v)=> s + bdQty(v), 0);   // unidades vendidas (la comision por producto no se muestra por ahora)
+      const totProp = propinas.reduce((s, p)=> s + bdN(p.propina), 0);
+      BD.datos = {
+        filas, servicios, productos, propinas, comServ, nProd, totProp,
+        total: comServ + totProp,
+        pendientes,
+      };
+      bdPintar();
+    }catch(e){
+      if(mio !== BD.epoch) return;
+      bdAvisar('No se pudo cargar tu resumen: ' + (e && e.message ? e.message : String(e)));
+    }finally{
+      if(mio === BD.epoch) document.getElementById('bdBuscarTxt').textContent = 'Buscar';
+    }
+  }
+
+  const bdPlural = (n, uno, varios)=> n + ' ' + (n === 1 ? uno : varios);
+  function bdPintar(){
+    const d = BD.datos;
+    if(!d) return;
+    // Dashboard
+    document.getElementById('bdGanancias').textContent = cxClp(d.total);
+    document.getElementById('bdDServ').textContent = cxClp(d.comServ);
+    document.getElementById('bdDServN').textContent = bdPlural(d.servicios.length, 'servicio realizado', 'servicios realizados');
+    document.getElementById('bdDProd').textContent = String(d.nProd);
+    document.getElementById('bdDProp').textContent = cxClp(d.totProp);
+    document.getElementById('bdDCnt').textContent = bdPlural(d.filas.length, 'servicio', 'servicios') + ' en el período';
+    document.getElementById('bdDTabla').innerHTML = d.filas.length
+      ? d.filas.map(x=>{
+          const nombre = String(x.cliente || '');
+          const total = bdN(x.comision) + bdN(x.propina);
+          return `<tr>
+            <td><span class="bd-mono">${escapeHTML(bdF10(x.fecha) || '—')}</span></td>
+            <td><div class="bd-cli"><span class="bd-av">${escapeHTML(nombre.trim().charAt(0).toUpperCase())}</span><b>${escapeHTML(nombre)}</b></div></td>
+            <td><div class="bd-hora">${BD_CLOCK}${escapeHTML(x.hora || '')}</div></td>
+            <td>${escapeHTML(x.servicio || '')}</td>
+            <td><span class="bd-b">${escapeHTML(cxClp(x.comision))}</span></td>
+            <td><div class="bd-pp">${x.propina ? `<span class="p">+ ${escapeHTML(cxClp(x.propina))} Propina</span>` : '<span class="x">-</span>'}</div></td>
+            <td><div class="bd-tot"><b>${escapeHTML(cxClp(total))}</b>${BD_CHEV}</div></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" class="bd-vacio">No se registraron ingresos detallados para el período seleccionado.</td></tr>';
+    // Mis comisiones
+    document.getElementById('bdTotal').textContent = cxClp(d.total);
+    document.getElementById('bdCServ').textContent = cxClp(d.comServ);
+    document.getElementById('bdCProp').textContent = cxClp(d.totProp);
+    document.getElementById('bdCProd').textContent = String(d.nProd);
+    // El servidor entrega «asistió sin pago completo» solo por mes completo: se muestra con «Este mes» y «Mes anterior».
+    const esMes = BD.preset === 'mes' || BD.preset === 'mesant';
+    document.getElementById('bdCPend').textContent = esMes ? String(d.pendientes) : '—';
+    document.getElementById('bdCPendTxt').textContent = esMes
+      ? (d.pendientes === 1 ? 'servicio con asistencia marcada, esperando el registro del cobro' : 'servicios con asistencia marcada, esperando el registro del cobro')
+      : 'Elige «Este mes» o «Mes anterior» para verlo';
+    bdPintarTabla();
+  }
+
+  /** Filas de la tabla activa de "Mis comisiones" como arreglos de texto (se usan para pintar y para exportar). */
+  function bdTablaActiva(){
+    const d = BD.datos || { servicios:[], propinas:[], productos:[] };
+    if(BD.tipo === 'propinas'){
+      return {
+        cab: [['Fecha reserva'], ['Cliente'], ['Servicio'], ['Propina', 'r']],
+        filas: d.propinas.map(p=> [bdF10(p.fecha), p.cliente || '', p.servicio || '', cxClp(p.propina)]),
+        total: ['Total propinas', cxClp(d.totProp || 0)],
+      };
+    }
+    if(BD.tipo === 'productos'){
+      return {
+        cab: [['Fecha venta'], ['Producto'], ['Canal'], ['Cantidad', 'r']],
+        filas: d.productos.map(v=> [bdF10(v.fecha || v.soldAt), v.productName || '', cbCanalTxt(v.saleChannel), String(bdN(v.qty) > 0 ? bdN(v.qty) : 1)]),
+        total: ['Total productos vendidos', String(d.nProd || 0)],
+      };
+    }
+    return {
+      cab: [['Fecha reserva'], ['Hora'], ['Cliente'], ['Servicio'], ['Monto cobrado', 'r'], ['% comisión', 'r'], ['Comisión', 'r'], ['Estado']],
+      filas: d.servicios.map(x=> [bdF10(x.fecha), x.hora || '', x.cliente || '', x.servicio || '', cxClp(x.monto), bdN(x.comisionPct) + '%', cxClp(x.comision), 'Confirmada']),
+      total: ['Total comisión por servicios', cxClp(d.comServ || 0)],
+    };
+  }
+  function bdPintarTabla(){
+    const t = bdTablaActiva();
+    const nc = t.cab.length;
+    const ultimaNum = BD.tipo === 'servicios' ? nc - 2 : nc - 1;   // columna del total
+    document.getElementById('bdCHead').innerHTML = t.cab.map(c=> c[1] === 'r' ? `<th class="r">${escapeHTML(c[0])}</th>` : `<th>${escapeHTML(c[0])}</th>`).join('');
+    document.getElementById('bdCTabla').innerHTML = t.filas.length
+      ? t.filas.map(f=> '<tr>' + f.map((c, i)=>{
+          if(i === 0) return `<td><span class="bd-mono">${escapeHTML(c)}</span></td>`;
+          if(t.cab[i][0] === 'Estado') return `<td><div class="bd-est">${BD_OK}${escapeHTML(c)}</div></td>`;
+          if(t.cab[i][0] === 'Propina') return `<td class="r"><span class="bd-mono-v bd-cielo">${escapeHTML(c)}</span></td>`;
+          if(i === ultimaNum) return `<td class="r"><span class="bd-mono-v bd-accent">${escapeHTML(c)}</span></td>`;
+          if(t.cab[i][1] === 'r') return `<td class="r"><span class="bd-mono-v">${escapeHTML(c)}</span></td>`;
+          return `<td>${escapeHTML(c)}</td>`;
+        }).join('') + '</tr>').join('')
+      : `<tr><td colspan="${escapeHTML(String(nc))}" class="bd-vacio">No hay registros en el período seleccionado.</td></tr>`;
+    document.getElementById('bdCFoot').innerHTML = t.filas.length
+      ? `<td colspan="${escapeHTML(String(ultimaNum))}">${escapeHTML(t.total[0])}</td><td class="r"><span class="bd-mono-v bd-accent">${escapeHTML(t.total[1])}</span></td>${BD.tipo === 'servicios' ? '<td></td>' : ''}`
+      : '';
+    document.getElementById('bdCCnt').textContent = bdPlural(t.filas.length, 'registro', 'registros');
+    document.querySelectorAll('#bdPills [data-bdt]').forEach(c=> c.classList.toggle('on', c.dataset.bdt === BD.tipo));
+  }
+  /** CSV de la tabla activa. Una celda que empiece con = + - @ se neutraliza (inyección de fórmulas en Excel). */
+  function bdExportarCsv(){
+    const t = bdTablaActiva();
+    if(!t.filas.length){ showToast('No hay registros para exportar'); return; }
+    const celda = (v)=>{
+      let x = String(v == null ? '' : v);
+      if(/^[=+\-@\t\r]/.test(x)) x = "'" + x;
+      return '"' + x.replace(/"/g, '""') + '"';
+    };
+    const lineas = [t.cab.map(c=> celda(c[0])).join(',')].concat(t.filas.map(f=> f.map(celda).join(',')));
+    const blob = new Blob(['﻿' + lineas.join('\r\n')], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mis_comisiones_${BD.tipo}_${BD.desde}_${BD.hasta}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 1500);
+  }
+
+  function bdVerVista(v){
+    BD.vista = v === 'dashboard' ? 'dashboard' : 'comisiones';
+    document.getElementById('cxBarbero').classList.add('bd-on');
+    document.getElementById('bdRoot').style.display = '';
+    bmMarcar(BD.vista === 'dashboard' ? 'btnMiDashboard' : 'btnComisiones');
+    document.getElementById('bdVistaDash').style.display = BD.vista === 'dashboard' ? '' : 'none';
+    document.getElementById('bdVistaCom').style.display = BD.vista === 'comisiones' ? '' : 'none';
+    // El título lo pone la propia pantalla (como en el sitio del programador): se oculta el del panel.
+    document.getElementById('cxTitulo').style.display = 'none';
+    document.getElementById('cxSub').style.display = 'none';
+    bdSincronizarSelects();
+  }
+  function bdAbrir(v){
+    if(v === 'agenda'){ bcAbrir(); return; }
+    bcDetener();
+    bdVerVista(v);
+    bdCargar(false);
+  }
+  bdMontarSelects();
+  bdSincronizarSelects();
+  ['bdDesdeD', 'bdHastaD'].forEach(id=> document.getElementById(id).addEventListener('change', ()=>{ if(BD.preset === 'custom') bdCargar(false); }));
+  document.getElementById('bdBuscar').addEventListener('click', ()=> bdCargar(true));
+  document.querySelectorAll('#bdPills [data-bdt]').forEach(c=> c.addEventListener('click', ()=>{ BD.tipo = c.dataset.bdt; bdPintarTabla(); }));
+  document.getElementById('bdExportar').addEventListener('click', bdExportarCsv);
+
+  /* ---------------------------------------------------------------------
+     Menú hamburguesa del BARBER -- copia del menú del programador (23-oct).
+     Solo presentación y atajos: cada botón reutiliza el que ya existía (Mi perfil =
+     #btnMiPerfil, Cerrar sesión = #btnSalir, Agenda = #btnAgendaNav, etc.); nada nuevo
+     lee ni escribe datos. Solo se activa con rol BARBER (body.rol-barbero).
+     --------------------------------------------------------------------- */
+  const BM_ICONOS = { btnAgendaNav:'<svg class="bd-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>', btnMiDashboard:'<svg class="bd-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>', btnComisiones:'<svg class="bd-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>', btnRecordatorios:'<svg class="bd-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>' };
+  let bmListo = false;
+  function bmMarcar(id){
+    document.querySelectorAll('#menuLateralPanel .bm-act').forEach(b=> b.classList.remove('bm-act'));
+    const b = id && document.getElementById(id);
+    if(b) b.classList.add('bm-act');
+    if(id === 'bmMisAgend'){ const g = document.getElementById('bmGrupoRes'); if(g) g.classList.add('open'); }   // el grupo «Reservas» se abre para mostrar su destino activo
+    bmPosDot();
+  }
+  /** El punto dorado se coloca junto al elemento activo (el programador lo anima con translateY). */
+  function bmPosDot(){
+    const dot = document.getElementById('bmDot');
+    const panel = document.getElementById('menuLateralPanel');
+    const act = panel && panel.querySelector('.bm-act');
+    if(!dot || !act || !act.offsetParent || !document.body.classList.contains('rol-barbero')){ if(dot) dot.style.opacity = '0'; return; }
+    const y = act.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop + (act.offsetHeight - 16) / 2;
+    dot.style.transform = 'translateY(' + Math.round(y) + 'px)';
+    dot.style.opacity = '1';
+  }
+  function bmFiltrar(q){
+    const n = (t)=> String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const k = n(q).trim();
+    document.querySelectorAll('#menuLinks > .menu-panel-item, #menuLinks > .bm-grupo').forEach(el=>{
+      el.classList.toggle('bm-oculto', !!k && !n(el.textContent).includes(k));
+    });
+  }
+  /** Se llama desde mostrarControlesAdmin() con true solo para BARBER. */
+  function bmActivarRol(esBarbero){
+    document.body.classList.toggle('rol-barbero', !!esBarbero);
+    if(!esBarbero || bmListo) return;
+    bmListo = true;
+    Object.keys(BM_ICONOS).forEach(id=>{
+      const b = document.getElementById(id);
+      if(b && !b.querySelector('.bd-ico')) b.insertAdjacentHTML('afterbegin', BM_ICONOS[id]);
+    });
+    const primero = document.querySelector('#menuLinks > .nav-section-label');
+    if(primero) primero.textContent = 'Sitio';
+    document.getElementById('bmBuscar').addEventListener('input', (e)=> bmFiltrar(e.target.value));
+    document.getElementById('bmGrupoBtn').addEventListener('click', ()=>{
+      document.getElementById('bmGrupoRes').classList.toggle('open');
+      setTimeout(bmPosDot, 0);
+    });
+    document.getElementById('bmMisAgend').addEventListener('click', ()=>{ cerrarMenuLateral(); mostrarVistaBarbero(); });
+    document.getElementById('bmPerfil').addEventListener('click', ()=>{ cerrarMenuLateral(); const b = document.getElementById('btnMiPerfil'); if(b) b.click(); });
+    document.getElementById('bmSalir').addEventListener('click', ()=>{ cerrarMenuLateral(); const b = document.getElementById('btnSalir'); if(b) b.click(); });
+  }
+
+  /* ---------------------------------------------------------------------
+     Calendario del BARBER -- copia de weekly-calendar.tsx del programador (23-oct). SOLO LECTURA:
+     sin botones de asistencia, cobro, edición, cancelación ni creación; el barbero nunca marca nada.
+     Datos: sus propias reservas de la semana visible, con la MISMA consulta acotada por barberId que usa
+     suscribirBookingsSemana (la regla de Firestore la exige); se vuelve a filtrar por barberId en el
+     navegador. Un listener propio (no toca firestoreBookings ni currentDate): se corta al salir de la vista.
+     Reutiliza appointmentDesdeBooking() (mismo objeto de cita que la agenda) y abrirFotosCliente().
+     --------------------------------------------------------------------- */
+  const BC = { modo:'dia', fecha:'', mes:'', estado:'all', docs:[], unsub:null, semana:'', epoch:0, timer:null, tip:null, peek:null, scrollKey:'' };
+  const BC_ESTADOS = [
+    { v:'all', t:'Activo, todos' }, { v:'reservado', t:'Reservado' }, { v:'confirmado', t:'Confirmada' }, { v:'pend', t:'Pendiente' },
+    { v:'asistio', t:'Asistió' }, { v:'no', t:'No asistió' }, { v:'en_espera', t:'En espera' },
+  ];
+  /* colores de estado = los --ap-* del panel */
+  const BC_ESTADO_COLOR = { reservado:'var(--ap-reservado)', confirmado:'var(--ap-confirmado)', pend:'var(--ap-pendiente)', asistio:'var(--ap-asiste)', no:'var(--ap-no-asistio)', en_espera:'var(--ap-en-espera)' };
+  const BC_ESTADO_TINT = { reservado:'var(--ap-reservado-tint)', confirmado:'var(--ap-confirmado-tint)', pend:'var(--ap-pendiente-tint)', asistio:'var(--ap-asiste-tint)', no:'var(--ap-no-asistio-tint)', en_espera:'var(--ap-en-espera-tint)' };
+  const BC_ESTADO_TXT = { reservado:'Reservado', confirmado:'Confirmada', pend:'Pendiente', asistio:'Asistió', no:'No asistió', en_espera:'En espera' };
+  const BC_PALETA = ['#4a5cf0', '#189d79', '#d85a43', '#7a4fd8', '#b8862a', '#c98a2e', '#d14545', '#2f6fed'];   // = SERVICE_LEGEND_COLORS del programador (la paleta del panel)
+  const BC_MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  /** Estado normalizado de una cita del panel (valores viejos incluidos). */
+  function bcEstadoDe(a){
+    const x = String(a.status || '');
+    if(x === 'asistio' || x === 'done') return 'asistio';
+    if(x === 'no') return 'no';
+    if(x === 'pend') return 'pend';
+    if(x === 'confirmado' || x === 'ok') return 'confirmado';
+    if(x === 'en_espera') return 'en_espera';
+    return 'reservado';
+  }
+  function bcColorServicio(nombre){
+    const k = String(nombre || 'servicio').trim().toLowerCase();
+    let h = 0;
+    for(let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) >>> 0;
+    return BC_PALETA[h % BC_PALETA.length];
+  }
+  const bcMin = (a)=> a.start[0] * 60 + a.start[1];
+  const bcDur = (a)=> Math.max(15, (a.end[0] * 60 + a.end[1]) - bcMin(a));
+  const bcHH = (a)=> String(a.start[0]).padStart(2, '0') + ':' + String(a.start[1]).padStart(2, '0');
+  const bcF = (iso, op)=> new Date(iso + 'T12:00:00').toLocaleDateString(op.l || 'es-CL', op);
+  const bcDiaSem = (iso)=> TiempoSantiago.diaSemanaNumero(iso);          // 0=domingo
+  const bcMas = (iso, n)=> TiempoSantiago.sumarDiasSantiago(iso, n);
+  const bcFilaPx = ()=> (window.innerWidth <= 639 ? 64 : 72);
+
+  /** Citas de la semana visible, ya como objetos de cita del panel, solo del propio barbero, sin rechazadas. */
+  function bcCitas(){
+    return BC.docs
+      .filter(r=> r && r.decision !== 'rechazada' && r.barberId && r.barberId === userBarberId)
+      .map(r=> appointmentDesdeBooking(r));
+  }
+  /** Días de la semana a mostrar: los del horario del profesional (o lunes a sábado) más cualquier día con reservas. */
+  function bcDiasSemana(lunes, citas){
+    const cb = (typeof cfgBarberos !== 'undefined' && userBarberId) ? cfgBarberos.find(b=> b.id === userBarberId) : null;
+    const trabaja = new Set(((cb && cb.schedules) || []).map(x=> Number(x.weekday)).filter(n=> n >= 0 && n <= 6));
+    if(!trabaja.size) [1, 2, 3, 4, 5, 6].forEach(n=> trabaja.add(n));
+    const out = [];
+    for(let i = 0; i < 7; i++){
+      const iso = bcMas(lunes, i);
+      if(trabaja.has(bcDiaSem(iso)) || citas.some(a=> a.fecha === iso)) out.push(iso);
+    }
+    return out;
+  }
+  function bcHoras(citas){
+    let ini = START_HOUR, fin = END_HOUR - 1;
+    citas.forEach(a=>{
+      ini = Math.min(ini, a.start[0]);
+      fin = Math.max(fin, Math.ceil((a.end[0] * 60 + a.end[1]) / 60) - 1);
+    });
+    const out = [];
+    for(let h = ini; h <= Math.min(fin, 23); h++) out.push(h);
+    return out;
+  }
+  /** Reparte en carriles las citas que se solapan (misma idea del programador: apiladas una al lado de la otra). */
+  function bcCarriles(lista){
+    const orden = lista.slice().sort((a, b)=> bcMin(a) - bcMin(b) || bcMin(b) - bcMin(a));
+    const res = [];
+    let grupo = [], finGrupo = -1;
+    const cerrar = ()=>{
+      const lanes = [];
+      grupo.forEach(a=>{
+        let k = lanes.findIndex(fin=> fin <= bcMin(a));
+        if(k === -1){ k = lanes.length; lanes.push(0); }
+        lanes[k] = bcMin(a) + bcDur(a);
+        a.__lane = k;
+      });
+      grupo.forEach(a=> res.push({ a, lane:a.__lane, lanes:lanes.length }));
+      grupo = []; finGrupo = -1;
+    };
+    orden.forEach(a=>{
+      if(grupo.length && bcMin(a) >= finGrupo) cerrar();
+      grupo.push(a);
+      finGrupo = Math.max(finGrupo, bcMin(a) + bcDur(a));
+    });
+    if(grupo.length) cerrar();
+    return res;
+  }
+
+  /* ------------------------------ datos ------------------------------ */
+  function bcAvisar(txt){
+    const a = document.getElementById('bcAviso');
+    a.textContent = txt || '';
+    a.style.display = txt ? '' : 'none';
+  }
+  function bcSuscribir(){
+    const lunes = lunesISO(BC.fecha);
+    if(BC.semana === lunes && BC.unsub) return;
+    if(BC.unsub){ try{ BC.unsub(); }catch(e){} BC.unsub = null; }
+    BC.semana = lunes;
+    BC.docs = [];
+    const mio = ++BC.epoch;
+    if(!userBarberId){
+      bcAvisar('Tu cuenta todavía no está vinculada a un profesional. Pídele a un administrador que la vincule para ver tu agenda.');
+      return;
+    }
+    bcAvisar('');
+    // MISMA consulta acotada que suscribirBookingsSemana: sin AGENDA_TODOS la regla exige el filtro por barberId.
+    let q = db.collection('bookings').where('fecha', '>=', lunes).where('fecha', '<=', domingoISO(lunes));
+    if(!userPermissions.includes('AGENDA_TODOS')) q = q.where('barberId', '==', userBarberId);
+    BC.unsub = q.onSnapshot(snap=>{
+      if(mio !== BC.epoch) return;
+      BC.docs = snap.docs.map(d=> ({ id:d.id, ...d.data() }));
+      bcPintar();
+    }, ()=>{
+      if(mio !== BC.epoch) return;
+      BC.docs = [];
+      bcAvisar('No se pudo cargar tu agenda. Revisa tu conexión e intenta de nuevo.');
+      bcPintar();
+    });
+  }
+
+  /* ------------------------------ pintado ------------------------------ */
+  function bcPintarMini(){
+    const hoy = TiempoSantiago.fechaSantiago();
+    const [y, m] = BC.mes.split('-').map(Number);
+    document.getElementById('bcMesTxt').textContent = BC_MESES[m - 1].replace(/^./, c=> c.toUpperCase()) + ' De ' + y;
+    const primero = BC.mes + '-01';
+    const inicio = bcMas(primero, -((bcDiaSem(primero) + 6) % 7));
+    let html = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d=> `<div class="d">${escapeHTML(d)}</div>`).join('');
+    for(let i = 0; i < 42; i++){
+      const iso = bcMas(inicio, i);
+      const clases = [iso.slice(0, 7) !== BC.mes ? 'fuera' : '', iso === hoy ? 'hoy' : '', iso === BC.fecha ? 'sel' : ''].filter(Boolean).join(' ');
+      html += `<button type="button" data-f="${escapeHTML(iso)}"${clases ? ` class="${escapeHTML(clases)}"` : ''}>${escapeHTML(String(Number(iso.slice(8))))}</button>`;
+    }
+    document.getElementById('bcMini').innerHTML = html;
+  }
+  function bcEstadoFiltro(citas){ return BC.estado === 'all' ? citas : citas.filter(a=> bcEstadoDe(a) === BC.estado); }
+
+  function bcPintar(){
+    const lunes = lunesISO(BC.fecha);
+    const todas = bcCitas();
+    const citas = bcEstadoFiltro(todas);
+    const dias = bcDiasSemana(lunes, todas);
+    const esDia = BC.modo === 'dia';
+    const columnas = esDia ? [BC.fecha] : dias;
+    const hoy = TiempoSantiago.fechaSantiago();
+
+    // cabecera de la tarjeta
+    document.getElementById('bcSubA').textContent = BC.modo === 'semana' ? 'Semanal' : (BC.modo === 'lista' ? 'Lista' : 'Por profesional');
+    document.getElementById('bcSubM').textContent = esDia
+      ? bcF(BC.fecha, { l:'es-ES', weekday:'long', day:'numeric', month:'long', year:'numeric' })
+      : bcF(lunes, { l:'es-ES', day:'numeric', month:'long' }) + ' - ' + bcF(bcMas(lunes, 6), { l:'es-ES', day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('bcFecha').value = BC.fecha;
+    document.querySelectorAll('#bcModos button').forEach(b=> b.classList.toggle('on', b.dataset.m === BC.modo));
+    document.getElementById('bcCard').classList.toggle('lista', BC.modo === 'lista');
+    bcPintarMini();
+
+    // servicios visibles (leyenda lateral)
+    const visibles = new Set(columnas);
+    const servicios = [];
+    const vistos = new Set();
+    citas.filter(a=> visibles.has(a.fecha) || BC.modo === 'lista').forEach(a=>{
+      const k = String(a.service || '').trim().toLowerCase();
+      if(!k || vistos.has(k)) return;
+      vistos.add(k);
+      servicios.push({ nombre:String(a.service), color:bcColorServicio(a.service) });
+    });
+    servicios.sort((a, b)=> a.nombre.localeCompare(b.nombre, 'es'));
+    document.getElementById('bcServBox').style.display = servicios.length ? '' : 'none';
+    document.getElementById('bcServ').innerHTML = servicios.map(sv=> `<div><i style="background:${escapeHTML(sv.color)}"></i><span>${escapeHTML(sv.nombre)}</span></div>`).join('');
+
+    // fila de encabezados de columna
+    const cb = (typeof cfgBarberos !== 'undefined' && userBarberId) ? cfgBarberos.find(b=> b.id === userBarberId) : null;
+    const nombre = (cb && cb.name) || userBarberName || 'Profesional';
+    const dias_el = document.getElementById('bcDias');
+    if(esDia){
+      dias_el.className = '';
+      dias_el.innerHTML = `<div class="bc-uno"><span class="ap">Agenda Personal</span><div class="bc-av">${cb && cb.photoUrl ? `<div class="f" style="background-image:url('${cssUrlSegura(cb.photoUrl)}')"></div>` : '<div class="f"><svg class="bd-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'}<div class="on"><i></i></div></div><span class="nom">${escapeHTML(nombre)}</span></div>`;
+      dias_el.style.display = '';
+    } else {
+      dias_el.className = 'cols';
+      dias_el.style.gridTemplateColumns = `repeat(${columnas.length}, minmax(0, 1fr))`;
+      dias_el.innerHTML = columnas.map(iso=>{
+        const corto = bcF(iso, { weekday:'short' }).replace('.', '').trim().toLowerCase();
+        return `<div class="bc-col${iso === hoy ? ' hoy' : ''}"><span class="n">${escapeHTML(corto)}</span><span class="num">${escapeHTML(String(Number(iso.slice(8))))}</span></div>`;
+      }).join('');
+    }
+
+    document.getElementById('bcHxIn').style.setProperty('--bc-n', String(esDia ? 1 : Math.max(1, columnas.length)));
+    const lista = BC.modo === 'lista';
+    document.getElementById('bcScroll').style.display = lista ? 'none' : '';
+    document.getElementById('bcLista').style.display = lista ? '' : 'none';
+    document.getElementById('bcLeyenda').style.display = lista ? 'none' : '';
+    if(lista) bcPintarLista(columnas.length ? dias : [], citas, hoy);
+    else bcPintarCuadricula(columnas, citas, todas, hoy);
+
+    document.getElementById('bcLeyenda').innerHTML = ['confirmado', 'pend', 'asistio', 'reservado', 'en_espera', 'no'].map(k=>
+      `<div><i style="background:${escapeHTML(BC_ESTADO_COLOR[k])}"></i><span>${escapeHTML(BC_ESTADO_TXT[k])}</span></div>`).join('');
+  }
+
+  function bcPintarCuadricula(columnas, citas, todas, hoy){
+    const filaPx = bcFilaPx();
+    const horas = bcHoras(todas);
+    const base = horas[0] * 60;
+    const alto = horas.length * filaPx;
+    const esDia = BC.modo === 'dia';
+    const n = columnas.length;
+    const scroll = document.getElementById('bcScroll');
+    scroll.style.height = Math.min(alto, 560) + 'px';
+    document.getElementById('bcBody').style.height = alto + 'px';
+    document.getElementById('bcBody').innerHTML =
+      `<div class="bc-horas">${horas.map(h=> `<div class="bc-hora" style="height:${escapeHTML(String(filaPx))}px"><span>${escapeHTML(String(h).padStart(2, '0'))}:00</span></div>`).join('')}</div>` +
+      `<div class="bc-area">` +
+        `<div class="bc-lh" style="grid-template-rows:repeat(${escapeHTML(String(horas.length))}, ${escapeHTML(String(filaPx))}px)">${horas.map(()=> `<div></div>`).join('')}</div>` +
+        `<div class="bc-lv" style="grid-template-columns:repeat(${escapeHTML(String(n))}, minmax(0, 1fr))">${columnas.map(()=> `<div></div>`).join('')}</div>` +
+        `<div id="bcAhora"></div><div class="bc-items" id="bcItems"></div>` +
+      `</div>`;
+    // tarjetas
+    let html = '';
+    columnas.forEach((iso, ci)=>{
+      const delDia = citas.filter(a=> a.fecha === iso);
+      bcCarriles(delDia).forEach(({ a, lane, lanes })=>{
+        const dur = bcDur(a);
+        const altoItem = (dur / 60) * filaPx;
+        const top = ((bcMin(a) - base) / 60) * filaPx + 2;
+        const ancho = 100 / n / lanes;
+        const left = ci * (100 / n) + lane * ancho;
+        const color = bcColorServicio(a.service);
+        const est = bcEstadoDe(a);
+        const h = Math.max(altoItem - 4, 36);
+        html += `<div class="bc-it" data-id="${escapeHTML(a.webId)}" style="top:${escapeHTML(String(top))}px;left:${escapeHTML(String(left))}%;width:calc(${escapeHTML(String(ancho))}% - 4px);height:${escapeHTML(String(h))}px;z-index:${escapeHTML(String(10 + lane))};border-left-color:${escapeHTML(color)};background-color:color-mix(in srgb, ${escapeHTML(color)} 16%, var(--panel));">` +
+          `<div class="in"><div class="t"><h4>${escapeHTML(a.client || 'Cliente')}</h4><span class="hr">${escapeHTML(bcHH(a))}</span></div>` +
+          (altoItem >= 44 ? `<p class="sv">${escapeHTML(a.service)}${(lanes === 1 || ancho > 50) ? ' · ' + escapeHTML(a.barber || '') : ''}</p>` : '') +
+          (altoItem >= 56 ? `<div class="st"><i style="background:${escapeHTML(BC_ESTADO_COLOR[est])}"></i><span>${escapeHTML(BC_ESTADO_TXT[est])}</span></div>` : '') +
+          `</div></div>`;
+      });
+    });
+    document.getElementById('bcItems').innerHTML = html;
+    bcPintarAhora(columnas, horas, filaPx, hoy);
+    // posición inicial: cerca de la hora actual (como el programador), una vez por día/modo
+    const clave = BC.modo + ':' + BC.fecha;
+    if(BC.scrollKey !== clave){
+      BC.scrollKey = clave;
+      const t = new Date(new Date().toLocaleString('en-US', { timeZone:'America/Santiago' }));
+      const px = ((t.getHours() * 60 + t.getMinutes() - base) / 60) * filaPx;
+      scroll.scrollTop = Math.max(0, px - 120);
+    }
+  }
+  function bcPintarAhora(columnas, horas, filaPx, hoy){
+    const el = document.getElementById('bcAhora');
+    if(!el) return;
+    const idx = columnas.indexOf(hoy);
+    if(idx < 0){ el.innerHTML = ''; return; }
+    const t = new Date(new Date().toLocaleString('en-US', { timeZone:'America/Santiago' }));
+    const rel = t.getHours() * 60 + t.getMinutes() - horas[0] * 60;
+    if(rel < 0 || rel > horas.length * 60){ el.innerHTML = ''; return; }
+    const top = (rel / 60) * filaPx;
+    const hhmm = t.getHours() + ':' + String(t.getMinutes()).padStart(2, '0');
+    el.innerHTML = `<div class="bc-ahora" style="top:${escapeHTML(String(top))}px"><b>${escapeHTML(hhmm)}</b></div>` +
+      (BC.modo === 'semana' ? `<div class="bc-hoycol" style="left:${escapeHTML(String(idx * 100 / columnas.length))}%;width:${escapeHTML(String(100 / columnas.length))}%"></div>` : '');
+  }
+  function bcPintarLista(dias, citas, hoy){
+    const lunes = lunesISO(BC.fecha);
+    const semana = dias.length ? dias : [BC.fecha];
+    document.getElementById('bcListaIn').innerHTML = semana.map(iso=>{
+      const items = citas.filter(a=> a.fecha === iso).sort((a, b)=> bcMin(a) - bcMin(b));
+      const corto = bcF(iso, { weekday:'short' }).replace('.', '').trim().toLowerCase();
+      const titulo = bcF(iso, { weekday:'long', day:'numeric', month:'short' }).replace(/(^|\s)(\S)/g, (m0, a1, a2)=> a1 + a2.toUpperCase());
+      const filas = items.length ? '<ul>' + items.map(a=>{
+        const est = bcEstadoDe(a);
+        return `<li><button type="button" class="bc-li" data-id="${escapeHTML(a.webId)}" style="background:${escapeHTML(BC_ESTADO_TINT[est])};border-color:${escapeHTML(BC_ESTADO_COLOR[est])};">` +
+          `<div class="l1"><span class="h">${escapeHTML(bcHH(a))}</span><span class="c">${escapeHTML(a.client || 'Cliente')}</span><span class="s">· ${escapeHTML(a.service)}</span></div>` +
+          `<div class="l2"><span class="b">${escapeHTML(a.barber || '')}</span><span class="e">${escapeHTML(BC_ESTADO_TXT[est])}</span><span class="p">${escapeHTML(a.price || '')}</span></div></button></li>`;
+      }).join('') + '</ul>' : '<p class="vacio">Sin citas este día.</p>';
+      return `<section><div class="dh${iso === hoy ? ' hoy' : ''}"><span class="w">${escapeHTML(corto)}</span><svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg><h3>${escapeHTML(titulo)}</h3></div>${filas}</section>`;
+    }).join('');
+  }
+
+  /* ------------------------------ tooltip y resumen lateral ------------------------------ */
+  function bcCita(id){ return bcCitas().find(a=> a.webId === id) || null; }
+  function bcOcultarTip(){ if(BC.tip){ BC.tip.remove(); BC.tip = null; } }
+  function bcMostrarTip(a, x, y){
+    if(!a) return;
+    if(!BC.tip){ BC.tip = document.createElement('div'); BC.tip.className = 'bc-tip'; BC.tip.setAttribute('role', 'tooltip'); document.body.appendChild(BC.tip); }
+    const prods = a.productosVendidos || [];
+    const totalProd = prods.reduce((s, p)=> s + (Number(p.subtotal) || 0), 0);
+    BC.tip.innerHTML = `<p class="n">${escapeHTML(a.client || 'Cliente')}</p><p>${escapeHTML(a.service)}</p><p class="g">${escapeHTML(bcHH(a))} · ${escapeHTML(BC_ESTADO_TXT[bcEstadoDe(a)])}</p><p class="g">${escapeHTML(a.barber || '')}</p><p class="m">${escapeHTML(a.price || '')}</p>` +
+      (prods.length ? `<p class="g">+${escapeHTML(String(prods.length))} prod. (${escapeHTML(cxClp(totalProd))})</p>` : '');
+    const w = 208, pad = 10, off = 12, alto = BC.tip.offsetHeight || 160;
+    let left = x + off, top = y - 8;
+    if(left + w > window.innerWidth - pad) left = Math.max(pad, x - w - off);
+    if(top + alto > window.innerHeight - pad) top = Math.max(pad, window.innerHeight - alto - pad);
+    BC.tip.style.left = Math.max(pad, left) + 'px'; BC.tip.style.top = Math.max(pad, top) + 'px';
+  }
+  /* ------------------------------ ficha del cliente: historial + fotos del corte ------------------------------ */
+  const BC_FC = { n: 0 };
+  const BC_FC_CHEV = '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  function bcFcVigente(tok){ return !!(BC.peek && BC.peek.tok === tok); }
+  function bcFcFecha(v){
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? String(v || '').slice(0, 10) : d.toLocaleString('es-CL', { dateStyle:'short', timeStyle:'short' });
+  }
+  function bcFcLightbox(url){
+    const u = urlSegura(url);
+    if(!u) return;
+    const lb = document.createElement('div'); lb.className = 'bc-lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true');
+    const x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', 'Cerrar vista ampliada');
+    x.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+    const im = document.createElement('img'); im.alt = ''; im.src = u;
+    const cerrar = ()=>{ lb.remove(); document.removeEventListener('keydown', esc, true); };
+    const esc = (e)=>{ if(e.key === 'Escape'){ e.stopPropagation(); cerrar(); } };
+    lb.addEventListener('click', cerrar); im.addEventListener('click', (e)=> e.stopPropagation()); x.addEventListener('click', cerrar);
+    document.addEventListener('keydown', esc, true);
+    lb.appendChild(im); lb.appendChild(x); document.body.appendChild(lb);
+  }
+  /** Visitas anteriores del cliente. El BARBER (sin AGENDA_TODOS) solo ve las SUYAS: misma consulta acotada que exigen las reglas. */
+  async function bcFcHistorial(a, tok){
+    const cont = BC.peek.panel.querySelector('#bcFcHistCont');
+    cont.innerHTML = '<p class="vac">Cargando historial…</p>';
+    if(!a.client){ cont.innerHTML = '<p class="vac">Sin nombre de cliente para cargar historial.</p>'; return; }
+    try{
+      let q = db.collection('bookings').where('client', '==', a.client);
+      if(!userPermissions.includes('AGENDA_TODOS')) q = q.where('barberId', '==', userBarberId);
+      const snap = await q.get();
+      if(!bcFcVigente(tok)) return;
+      const filas = snap.docs.map(d=> Object.assign({ id: d.id }, d.data()))
+        .filter(r=> r.id !== a.webId)
+        .filter(r=> userPermissions.includes('AGENDA_TODOS') || r.barberId === userBarberId)   // el BARBER solo ve SUS reservas con este cliente (segunda capa; la primera es la consulta + reglas)
+        .sort((x, y)=> (String(y.fecha || '') + String(y.slot || '')).localeCompare(String(x.fecha || '') + String(x.slot || '')))
+        .slice(0, 12);
+      cont.innerHTML = filas.length ? '<ul class="hs">' + filas.map(r=>
+        `<li><div class="r1"><span>${escapeHTML(r.fecha || '')} · ${escapeHTML(String(r.slot || '').slice(0, 5))}</span><b>${escapeHTML(cxClp(typeof r.precioFinal === 'number' ? r.precioFinal : (Number(r.price) || 0)))}</b></div>` +
+        `<div class="r2">${escapeHTML(r.svc || '')}${r.barber ? ' · ' + escapeHTML(r.barber) : ''}</div></li>`).join('') + '</ul>'
+        : '<p class="vac">Sin reservas anteriores registradas.</p>';
+    }catch(e){
+      if(bcFcVigente(tok)) cont.innerHTML = `<p class="vac">No se pudo cargar el historial: ${escapeHTML(e.message || 'error')}</p>`;
+    }
+  }
+  async function bcFcFotos(a, tok){
+    const grid = BC.peek.panel.querySelector('#bcFcGrid');
+    const nBadge = BC.peek.panel.querySelector('#bcFcN');
+    if(!a.client){ grid.innerHTML = '<p class="vac" style="grid-column:1/-1;">Sin nombre de cliente para cargar fotos.</p>'; return; }
+    try{
+      const snap = await db.collection('clientPhotos').where('clientName', '==', a.client).get();
+      if(!bcFcVigente(tok)) return;
+      const fotos = snap.docs.map(d=> d.data()).filter(f=> urlSegura(f.photoUrl))
+        .sort((x, y)=> String(y.createdAt || '').localeCompare(String(x.createdAt || '')));
+      nBadge.textContent = String(fotos.length); nBadge.style.display = fotos.length ? '' : 'none';
+      grid.innerHTML = fotos.length ? fotos.map((f, i)=>
+        `<div class="it"><button type="button" class="th" data-i="${i}" aria-label="Ver foto ampliada"><img src="${urlSegura(f.photoUrl)}" loading="lazy" alt=""></button>` +
+        `<span class="f">${escapeHTML(bcFcFecha(f.createdAt))}</span><span class="f">${escapeHTML(f.barberName || '')}${f.visitaFecha ? ' · visita ' + escapeHTML(String(f.visitaFecha)) : ''}</span></div>`).join('')
+        : '<p class="vac" style="grid-column:1/-1;">Todavía no hay fotos de este cliente.</p>';
+      grid.querySelectorAll('.th').forEach(b=> b.addEventListener('click', ()=> bcFcLightbox(fotos[Number(b.dataset.i)].photoUrl)));
+    }catch(e){
+      if(bcFcVigente(tok)) grid.innerHTML = `<p class="vac" style="grid-column:1/-1;">No se pudieron cargar las fotos: ${escapeHTML(e.message || 'error')}</p>`;
+    }
+  }
+  /** Sube la foto del corte (misma ruta y documento que el flujo existente de fotos) y la liga a esta visita. */
+  async function bcFcSubir(a, tok, file){
+    const blob = await redimensionarImagen(file);
+    const nombreSeguro = String(a.client).replace(/[^a-zA-Z0-9]/g, '_').slice(0, 60) || 'cliente';
+    const ruta = `clientPhotos/${nombreSeguro}/${Date.now()}.jpg`;
+    const ref = storage.ref(ruta);
+    await ref.put(blob, { contentType:'image/jpeg', cacheControl: FOTO_CACHE_CONTROL });
+    const url = await ref.getDownloadURL();
+    await db.collection('clientPhotos').add({
+      clientName: a.client, photoUrl: url, path: ruta,
+      barberName: userBarberName || (userRole === 'ADMIN' ? 'Administración' : 'Recepción'),
+      createdAt: new Date().toISOString(),
+      bookingId: a.webId || null, visitaFecha: a.fecha || null,
+    });
+  }
+  function bcFcActivar(a, tok){
+    const panel = BC.peek.panel;
+    let hist = false;
+    panel.querySelectorAll('.fc > button.t').forEach(b=> b.addEventListener('click', ()=>{
+      const fc = b.parentElement; const abre = !fc.classList.contains('on');
+      fc.classList.toggle('on', abre); b.setAttribute('aria-expanded', String(abre));
+      if(abre && fc.id === 'bcFcHist' && !hist){ hist = true; bcFcHistorial(a, tok); }
+    }));
+    const inp = panel.querySelector('#bcFcArchivo'); const nom = panel.querySelector('#bcFcNom');
+    const guardar = panel.querySelector('#bcFcGuardar'); const lbl = panel.querySelector('#bcFcLbl');
+    let miniatura = null;
+    const limpiar = ()=>{
+      inp.value = ''; guardar.disabled = true; nom.textContent = 'Tomar o elegir foto del corte';
+      if(miniatura){ URL.revokeObjectURL(miniatura.src); miniatura.remove(); miniatura = null; }
+    };
+    inp.addEventListener('change', ()=>{
+      const f = inp.files && inp.files[0];
+      if(!f) return limpiar();
+      if(!/^image\//.test(f.type)){ showToast('Elige una imagen'); return limpiar(); }
+      nom.textContent = f.name; guardar.disabled = false;
+      if(miniatura){ URL.revokeObjectURL(miniatura.src); miniatura.remove(); }
+      miniatura = document.createElement('img'); miniatura.alt = ''; miniatura.src = URL.createObjectURL(f);
+      lbl.insertBefore(miniatura, nom);
+    });
+    guardar.addEventListener('click', async ()=>{
+      const f = inp.files && inp.files[0];
+      if(!f || guardar.disabled) return;
+      guardar.disabled = true; guardar.textContent = 'Subiendo…';
+      try{
+        await bcFcSubir(a, tok, f);
+        showToast('Foto añadida al historial del cliente');
+        if(bcFcVigente(tok)){ limpiar(); await bcFcFotos(a, tok); }
+      }catch(e){
+        showToast('No se pudo subir la foto: ' + (e && e.message ? e.message : 'error'));
+        if(bcFcVigente(tok)) guardar.disabled = false;
+      }
+      if(bcFcVigente(tok)) guardar.textContent = 'Guardar foto de esta visita';
+    });
+    bcFcFotos(a, tok);
+  }
+
+  function bcCerrarPeek(){
+    if(!BC.peek) return;
+    const { vel, panel } = BC.peek;
+    BC.peek = null;
+    vel.classList.remove('on'); panel.classList.remove('on');
+    setTimeout(()=>{ vel.remove(); panel.remove(); }, 300);
+  }
+  function bcAbrirPeek(a){
+    bcOcultarTip();
+    bcCerrarPeek();
+    const vel = document.createElement('div'); vel.className = 'bc-vel';
+    const panel = document.createElement('div'); panel.className = 'bc-peek'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Resumen de reserva');
+    const prods = a.productosVendidos || [];
+    panel.innerHTML = `<div class="h"><div class="c"><p class="n">${escapeHTML(a.client || 'Cliente')}</p><p class="s">${escapeHTML(a.service)}<b>${escapeHTML(a.price || '')}</b></p></div><button type="button" id="bcPeekX" aria-label="Cerrar"><svg class="bd-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>` +
+      `<div class="cu"><p class="mu">${escapeHTML(a.fecha)} · ${escapeHTML(bcHH(a))} hrs</p>` +
+      `<p>Se atenderá con: <span class="ac">${escapeHTML(a.barber || '')}</span></p>` +
+      `<p class="mu">Monto: ${escapeHTML(a.price || '')} · ${escapeHTML(BC_ESTADO_TXT[bcEstadoDe(a)])}</p>` +
+      (prods.length ? `<div class="bx"><p class="k">Productos</p><ul>${prods.map(p=> `<li><span>${escapeHTML(p.nombre || p.name || 'Producto')} ×${escapeHTML(String(p.cantidad || p.quantity || 1))}</span><span class="ac">${escapeHTML(cxClp(p.subtotal || 0))}</span></li>`).join('')}</ul></div>` : '') +
+      (a.notaAdmin ? `<p class="nota">${escapeHTML(a.notaAdmin)}</p>` : '') +
+      `<p class="fc-tit">Ficha del cliente</p>` +
+      `<div class="fc" id="bcFcHist"><button type="button" class="t" aria-expanded="false"><span class="l">Historial del cliente</span>${BC_FC_CHEV}</button><div class="b" id="bcFcHistCont"></div></div>` +
+      `<div class="fc on" id="bcFcFotos"><button type="button" class="t" aria-expanded="true"><span class="l">Historial de fotos del cliente<span class="n" id="bcFcN" style="display:none;"></span></span>${BC_FC_CHEV}</button><div class="b">` +
+        `<p class="nt">Las fotos quedan en la ficha del cliente y las ve todo el equipo, para guiarse del corte anterior.</p>` +
+        `<div class="gr" id="bcFcGrid"><p class="vac" style="grid-column:1/-1;">Cargando fotos…</p></div>` +
+        `<div class="up"><label class="ar" id="bcFcLbl"><input type="file" id="bcFcArchivo" accept="image/*" capture="environment"><span id="bcFcNom">Tomar o elegir foto del corte</span></label>` +
+        `<button type="button" class="gu" id="bcFcGuardar" disabled>Guardar foto de esta visita</button></div>` +
+      `</div></div></div>`;
+    document.body.appendChild(vel); document.body.appendChild(panel);
+    requestAnimationFrame(()=>{ vel.classList.add('on'); panel.classList.add('on'); });
+    BC.peek = { vel, panel, tok: ++BC_FC.n };
+    vel.addEventListener('click', bcCerrarPeek);
+    panel.querySelector('#bcPeekX').addEventListener('click', bcCerrarPeek);
+    bcFcActivar(a, BC.peek.tok);
+  }
+
+  /* ------------------------------ navegación ------------------------------ */
+  function bcIrA(iso, cambiarMes){
+    BC.fecha = iso;
+    if(cambiarMes !== false) BC.mes = iso.slice(0, 7);
+    BC.scrollKey = '';
+    bcSuscribir();
+    bcPintar();
+  }
+  function bcMover(dir){ bcIrA(bcMas(BC.fecha, (BC.modo === 'dia' ? 1 : 7) * dir)); }
+  function bcAbrir(){
+    document.getElementById('bdRoot').style.display = 'none';
+    document.getElementById('bcRoot').style.display = '';
+    document.getElementById('cxBarbero').classList.add('bd-on');
+    document.getElementById('cxTitulo').style.display = 'none';
+    document.getElementById('cxSub').style.display = 'none';
+    bmMarcar('btnAgendaNav');
+    const sel = document.getElementById('bcEstado');
+    if(!sel.options.length) sel.innerHTML = BC_ESTADOS.map(o=> `<option value="${escapeHTML(o.v)}">${escapeHTML(o.t)}</option>`).join('');
+    BC.fecha = TiempoSantiago.fechaSantiago();
+    BC.mes = BC.fecha.slice(0, 7);
+    BC.scrollKey = '';
+    if(BC.timer) clearInterval(BC.timer);
+    BC.timer = setInterval(()=>{ if(document.getElementById('bcRoot').style.display !== 'none') bcPintar(); }, 60000);
+    cargarCatalogo().catch(()=>{}).then(()=>{ bcSuscribir(); bcPintar(); });
+  }
+  /** Se llama al salir de la vista (ocultarVistasPanel): corta el listener y el reloj. */
+  function bcDetener(){
+    if(BC.unsub){ try{ BC.unsub(); }catch(e){} BC.unsub = null; }
+    BC.semana = ''; BC.docs = [];
+    if(BC.timer){ clearInterval(BC.timer); BC.timer = null; }
+    bcOcultarTip(); bcCerrarPeek();
+    const r = document.getElementById('bcRoot');
+    if(r) r.style.display = 'none';
+  }
+  document.getElementById('bcHoy').addEventListener('click', ()=> bcIrA(TiempoSantiago.fechaSantiago()));
+  document.getElementById('bcHoyLado').addEventListener('click', ()=> bcIrA(TiempoSantiago.fechaSantiago()));
+  document.getElementById('bcPrev').addEventListener('click', ()=> bcMover(-1));
+  document.getElementById('bcNext').addEventListener('click', ()=> bcMover(1));
+  document.getElementById('bcPrevLado').addEventListener('click', ()=> bcMover(-1));
+  document.getElementById('bcNextLado').addEventListener('click', ()=> bcMover(1));
+  document.getElementById('bcFecha').addEventListener('change', (e)=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) bcIrA(e.target.value); });
+  document.getElementById('bcMesPrev').addEventListener('click', ()=>{ BC.mes = bcMas(BC.mes + '-01', -1).slice(0, 7); bcPintarMini(); });
+  document.getElementById('bcMesNext').addEventListener('click', ()=>{ BC.mes = bcMas(BC.mes + '-28', 5).slice(0, 7); bcPintarMini(); });
+  document.getElementById('bcMini').addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-f]');
+    if(!b) return;
+    if(BC.modo !== 'dia') BC.modo = 'dia';
+    bcIrA(b.dataset.f, false);
+  });
+  document.getElementById('bcModos').addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-m]');
+    if(!b) return;
+    BC.modo = b.dataset.m; BC.scrollKey = '';
+    bcPintar();
+  });
+  document.getElementById('bcEstado').addEventListener('change', (e)=>{ BC.estado = e.target.value; bcPintar(); });
+  document.getElementById('bcRoot').addEventListener('mouseover', (e)=>{ const it = e.target.closest('.bc-it'); if(it) bcMostrarTip(bcCita(it.dataset.id), e.clientX, e.clientY); });
+  document.getElementById('bcRoot').addEventListener('mousemove', (e)=>{ const it = e.target.closest('.bc-it'); if(it) bcMostrarTip(bcCita(it.dataset.id), e.clientX, e.clientY); else bcOcultarTip(); });
+  document.getElementById('bcRoot').addEventListener('mouseleave', bcOcultarTip);
+  document.getElementById('bcRoot').addEventListener('click', (e)=>{
+    const it = e.target.closest('.bc-it, .bc-li');
+    if(it){ const a = bcCita(it.dataset.id); if(a) bcAbrirPeek(a); }
+  });
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') bcCerrarPeek(); });
+
   /**
    * Página propia y simple para las cuentas de barbero: reemplaza por completo
    * el calendario. Solo ve sus propias horas de hoy, su comisión y las notas
    * que le haya dejado el administrador — nunca las reservas de otros barberos.
    */
   function mostrarVistaBarbero(){
-    ocultarVistasPanel();
-    sbCerrarVistaSemana();
-    document.getElementById('kpiRow').style.display = 'none';
+    // El inicio antiguo ("Hola, <nombre> / Tus horas de hoy") quedo duplicado por el Calendario y Mi dashboard:
+    // el inicio del barbero es ahora su Calendario (misma vista que Agenda). #vistaBarbero ya no se muestra.
     const nav = document.querySelector('.panel-nav');
     if(nav) nav.style.display = 'none';
-    document.getElementById('vistaBarbero').style.display = '';
-    pintarVistaBarbero();
+    mostrarComisiones('agenda');
   }
 
   /**
@@ -14713,7 +16110,8 @@
     ocultarFlotante(false);
   }
 
-  document.getElementById('btnComisiones').addEventListener('click', ()=> mostrarComisiones('config'));
+  document.getElementById('btnComisiones').addEventListener('click', ()=> mostrarComisiones(userRole === 'BARBER' ? 'comisiones' : 'config'));
+  document.getElementById('btnMiDashboard').addEventListener('click', ()=> mostrarComisiones('dashboard'));
   document.getElementById('cxVolver').addEventListener('click', volverAgenda);
 
   document.querySelectorAll('.cx-navbtn').forEach(b=>
@@ -20332,6 +21730,7 @@
 
   /* ---------- Recordatorios ---------- */
   document.getElementById('btnRecordatorios').addEventListener('click', async ()=>{
+    if(userRole === 'BARBER') return showToast('Esta sección no está disponible para tu cuenta');   // Recordatorios: solo Recepción y Administración
     abrirModal('modalRecordatorios');
     await cargarRecordatorios();
   });
@@ -20590,6 +21989,7 @@
   }
 
   async function cargarRecordatorios(){
+    if(userRole === 'BARBER') return;   // Recordatorios: solo Recepción y Administración
     const lista = document.getElementById('rcLista');
     lista.innerHTML = '<div class="rc-empty">Cargando...</div>';
 
@@ -20666,6 +22066,7 @@
   }
 
   document.getElementById('rcEnviar').addEventListener('click', async ()=>{
+    if(userRole === 'BARBER') return;   // Recordatorios: solo Recepción y Administración
     const btn = document.getElementById('rcEnviar');
 
     if(MODE === 'api'){
