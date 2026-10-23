@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex,nofollow">
+<!-- El enlace del correo trae un código de un solo uso: que no viaje a ningún otro sitio. -->
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#000000">
+<title>Restablece tu contraseña | MASTERLOOK</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+  :root{
+    --negro:#000; --tarjeta:#111112; --borde:#26262a; --borde-boton:#6b6b70; --borde-campo:#3a3a3f;
+    --blanco:#fff; --texto:#b9b9be; --suave:#8c8c92; --sub:#c9c9c3; --error:#ff8f8f;
+    --fuente:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--negro);}
+  body{min-height:100vh;font-family:var(--fuente);color:var(--texto);-webkit-text-size-adjust:100%;}
+  .pagina{width:100%;max-width:560px;margin:0 auto;padding:44px 16px 40px;}
+  .wordmark{text-align:center;color:var(--blanco);font-weight:600;font-size:36px;letter-spacing:3px;line-height:1.1;}
+  .wordmark sup{font-size:13px;letter-spacing:0;vertical-align:super;}
+  .wordmark-sub{text-align:center;color:var(--sub);font-size:12px;letter-spacing:9px;padding-left:9px;margin-top:14px;}
+  .tarjeta{margin-top:38px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:40px 36px 42px;}
+  h1{margin:0 0 30px;color:var(--blanco);font-size:36px;font-weight:600;line-height:1.14;letter-spacing:-.4px;text-wrap:balance;}
+  p{margin:18px 0 0;font-size:17px;line-height:1.55;}
+  p:first-of-type{margin-top:0;}
+  .oculto{display:none !important;}
+  label{display:block;margin:24px 0 8px;color:var(--suave);font-size:12px;letter-spacing:1.6px;text-transform:uppercase;}
+  .campo{position:relative;}
+  input[type=password],input[type=text]{width:100%;background:#0a0a0b;border:1px solid var(--borde-campo);border-radius:11px;color:var(--blanco);font:inherit;font-size:16px;padding:16px 84px 16px 16px;outline:none;}
+  input:focus{border-color:#a0a0a6;}
+  .ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--suave);font:inherit;font-size:13px;letter-spacing:.4px;padding:10px;cursor:pointer;}
+  .ayuda{margin:10px 0 0;font-size:14px;color:var(--suave);}
+  .msg{min-height:22px;margin:16px 0 0;font-size:15px;color:var(--error);}
+  .boton{display:block;width:100%;margin-top:26px;background:transparent;border:1px solid var(--borde-boton);border-radius:11px;color:var(--blanco);font:inherit;font-size:14px;font-weight:600;letter-spacing:2.2px;text-align:center;text-decoration:none;text-transform:uppercase;padding:19px 16px;cursor:pointer;}
+  .boton:hover,.boton:focus-visible{border-color:var(--blanco);outline:none;}
+  .boton[disabled]{opacity:.45;cursor:default;}
+  .nota{margin-top:30px;}
+  .pie{margin-top:40px;padding-top:34px;border-top:1px solid #222225;text-align:center;}
+  .pie .wordmark{font-size:27px;letter-spacing:2.5px;}
+  .pie .wordmark sup{font-size:10px;}
+  .pie .wordmark-sub{font-size:10px;letter-spacing:8px;padding-left:8px;margin-top:10px;}
+  .pie p{margin-top:26px;font-size:14px;line-height:1.6;color:var(--suave);}
+  .pie a{color:inherit;text-decoration:none;}
+  @media (max-width:520px){ .tarjeta{padding:34px 22px 36px;} h1{font-size:30px;} }
+</style>
+</head>
+<body>
+<main class="pagina">
+  <div class="wordmark">MASTERLOOK<sup>®</sup></div>
+  <div class="wordmark-sub">BARBERÍA</div>
+
+  <section class="tarjeta" aria-live="polite">
+    <!-- 1. Verificando el enlace -->
+    <div id="estCargando">
+      <h1>Un momento</h1>
+      <p>Estamos verificando tu enlace…</p>
+    </div>
+
+    <!-- 2. Formulario -->
+    <form id="estFormulario" class="oculto" novalidate>
+      <h1 id="titulo">Restablece tu contraseña</h1>
+      <p id="paraCuenta"></p>
+      <label for="clave1">Nueva contraseña</label>
+      <div class="campo"><input id="clave1" type="password" autocomplete="new-password" minlength="6" required><button type="button" class="ver" data-ver="clave1">Mostrar</button></div>
+      <p class="ayuda">Mínimo 6 caracteres.</p>
+      <label for="clave2">Repite la contraseña</label>
+      <div class="campo"><input id="clave2" type="password" autocomplete="new-password" minlength="6" required><button type="button" class="ver" data-ver="clave2">Mostrar</button></div>
+      <p class="msg" id="msgForm" role="alert"></p>
+      <button type="submit" class="boton" id="btnGuardar">Guardar contraseña &rarr;</button>
+    </form>
+
+    <!-- 3. Listo -->
+    <div id="estExito" class="oculto">
+      <h1>Contraseña actualizada</h1>
+      <p>Ya puedes iniciar sesión en MASTERLOOK con tu nueva contraseña.</p>
+      <a class="boton" id="btnEntrar" href="masterlook-sitio.html">Iniciar sesión &rarr;</a>
+    </div>
+
+    <!-- 4. Enlace no válido / caducado / usado -->
+    <div id="estError" class="oculto">
+      <h1 id="errTitulo">Este enlace ya no es válido</h1>
+      <p id="errTexto"></p>
+      <a class="boton" id="btnNuevo" href="masterlook-sitio.html">Solicitar un enlace nuevo &rarr;</a>
+      <button type="button" class="boton oculto" id="btnReintentar">Reintentar &rarr;</button>
+      <p class="nota" id="errAyuda">En el sitio, entra a «Iniciar sesión» y elige «¿Olvidaste tu contraseña?».</p>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <div class="wordmark">MASTERLOOK<sup>®</sup></div>
+    <div class="wordmark-sub">BARBERÍA</div>
+    <p>Este es un proceso de seguridad.<br>Si tienes alguna duda, contáctanos en <a href="https://masterlook.cl">masterlook.cl</a></p>
+  </footer>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script>
+(function(){
+  'use strict';
+  // Mismo criterio que masterlook-sitio.html: producción solo en los dominios reales; cualquier otro (pruebas, localhost) usa el proyecto de pruebas.
+  const ES_STAGING = !['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname);
+  const CONFIG_PROD = { apiKey:'AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc', authDomain:'estudio90.firebaseapp.com', projectId:'estudio90', appId:'1:420826163402:web:d5020ca2069637e193ec33' };
+  const CONFIG_STAGING = { apiKey:'AIzaSyDUPboJlJIUdR36JNN3CkPeiZ0WYsvXeiI', authDomain:'estudio90-dev.firebaseapp.com', projectId:'estudio90-dev', appId:'1:892931716452:web:97b93c65e782e1521ab671' };
+  firebase.initializeApp(ES_STAGING ? CONFIG_STAGING : CONFIG_PROD);
+  const auth = firebase.auth();
+  auth.languageCode = 'es';
+
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const modo = params.get('mode');
+  const codigo = params.get('oobCode');          // código OFICIAL de Firebase Authentication (un solo uso, caduca en 1 hora)
+  const esCreacion = params.get('flujo') === 'crear';
+
+  function mostrar(id){ ['estCargando','estFormulario','estExito','estError'].forEach((x)=> $(x).classList.toggle('oculto', x !== id)); }
+  const TEXTOS_ERROR = {
+    caducado: ['Este enlace caducó', 'Por seguridad, cada enlace dura 1 hora. Pide uno nuevo para continuar.'],
+    invalido: ['Este enlace ya no es válido', 'El enlace no es correcto o ya se usó. Cada enlace sirve una sola vez.'],
+    desactivada: ['No pudimos continuar', 'Esta cuenta está desactivada. Escríbenos desde masterlook.cl y te ayudamos.'],
+    red: ['No pudimos verificar el enlace', 'Revisa tu conexión a internet e inténtalo de nuevo.'],
+  };
+  function mostrarError(tipo){
+    const [t, p] = TEXTOS_ERROR[tipo] || TEXTOS_ERROR.invalido;
+    $('errTitulo').textContent = t; $('errTexto').textContent = p;
+    const red = tipo === 'red';
+    $('btnReintentar').classList.toggle('oculto', !red);
+    $('btnNuevo').classList.toggle('oculto', red || tipo === 'desactivada');
+    $('errAyuda').classList.toggle('oculto', red || tipo === 'desactivada');
+    document.title = t + ' | MASTERLOOK';
+    mostrar('estError');
+  }
+  function tipoDeError(e){
+    const c = e && e.code;
+    if (c === 'auth/expired-action-code') return 'caducado';
+    if (c === 'auth/user-disabled') return 'desactivada';
+    if (c === 'auth/network-request-failed') return 'red';
+    return 'invalido';   // invalid-action-code (incluye enlace ya usado), user-not-found, etc.
+  }
+  function ocultarCorreo(c){ const [u, d] = String(c || '').split('@'); return d ? `${u.slice(0, 1)}•••@${d}` : ''; }
+
+  function verificar(){
+    if (modo !== 'resetPassword' || !codigo) return mostrarError('invalido');
+    mostrar('estCargando');
+    auth.verifyPasswordResetCode(codigo).then((correo)=>{
+      $('titulo').textContent = esCreacion ? 'Crea tu contraseña' : 'Restablece tu contraseña';
+      document.title = $('titulo').textContent + ' | MASTERLOOK';
+      $('paraCuenta').textContent = `Elige la contraseña de tu cuenta ${ocultarCorreo(correo)}.`;
+      mostrar('estFormulario'); $('clave1').focus();
+    }).catch((e)=> mostrarError(tipoDeError(e)));
+  }
+
+  document.querySelectorAll('.ver').forEach((b)=> b.addEventListener('click', ()=>{
+    const i = $(b.dataset.ver); const ver = i.type === 'password';
+    i.type = ver ? 'text' : 'password'; b.textContent = ver ? 'Ocultar' : 'Mostrar';
+  }));
+
+  $('estFormulario').addEventListener('submit', (ev)=>{
+    ev.preventDefault();
+    const a = $('clave1').value, b = $('clave2').value, msg = $('msgForm');
+    msg.textContent = '';
+    if (a.length < 6) { msg.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return $('clave1').focus(); }
+    if (a !== b) { msg.textContent = 'Las contraseñas no coinciden.'; return $('clave2').focus(); }
+    const btn = $('btnGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
+    auth.confirmPasswordReset(codigo, a).then(()=>{
+      document.title = 'Contraseña actualizada | MASTERLOOK';
+      mostrar('estExito');
+    }).catch((e)=>{
+      btn.disabled = false; btn.innerHTML = 'Guardar contraseña &rarr;';
+      if (e && e.code === 'auth/weak-password') { msg.textContent = 'Esa contraseña es muy débil. Elige otra más larga.'; return; }
+      if (e && e.code === 'auth/network-request-failed') { msg.textContent = 'Sin conexión. Revisa tu internet e inténtalo de nuevo.'; return; }
+      mostrarError(tipoDeError(e));
+    });
+  });
+  $('btnReintentar').addEventListener('click', verificar);
+  verificar();
+})();
+</script>
+</body>
+</html>
