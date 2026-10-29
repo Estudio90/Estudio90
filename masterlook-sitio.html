@@ -2134,6 +2134,14 @@
   .rv-barbero-aviso{background:#fdf3ea; border:1px solid #e3c6a1; color:#8a562a; border-radius:12px;
     padding:12px 14px; font-size:.82rem; line-height:1.5; margin-top:14px;}
   .barbers > .rv-barbero-aviso{grid-column:1 / -1; margin-top:0;}
+  /* 28-oct: estado del catálogo real (cargando / error / vacío) -- nunca datos de ejemplo */
+  .rv-cat-estado{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; text-align:center; padding:22px 14px; color:#6b6760; font-size:.85rem; line-height:1.5;}
+  .barbers > .rv-cat-estado, .svc-pick > .rv-cat-estado, .svc-fila > .rv-cat-estado{grid-column:1 / -1; width:100%;}
+  .rv-cat-estado.error{color:#8a562a;}
+  .rv-cat-spin{width:16px; height:16px; border-radius:50%; border:2px solid currentColor; border-right-color:transparent; animation:rvCatSpin .8s linear infinite; flex:none;}
+  @keyframes rvCatSpin{to{transform:rotate(360deg);}}
+  .rv-cat-reintentar{border:1px solid currentColor; background:transparent; color:inherit; border-radius:999px; padding:8px 16px; font:inherit; font-weight:600; cursor:pointer;}
+  @media (prefers-reduced-motion: reduce){ .rv-cat-spin{animation:none;} }
 
   /* servicios elegidos */
   .rv-elegidos{background:var(--panel-2); border:1px solid var(--border); border-radius:14px;
@@ -5029,6 +5037,8 @@
   let accessToken = null;     // token en memoria, nunca en localStorage
   let sessionUser = null;     // usuario de la sesión activa
   let catalog = { services: [], barbers: [] };
+  /* 28-oct-2026: estado del catálogo REAL: 'cargando' (hasta que lleguen los servicios y profesionales de Firestore) | 'listo' | 'error' (no se pudo leer tras varios intentos). */
+  let catalogoEstado = 'cargando';
 
   async function api(path, options = {}){
     const res = await fetch(API_BASE + path, {
@@ -5235,7 +5245,7 @@
      state.servicios guarda la lista; el precio y la duración son la suma. */
   function selectService(name, priceStr, id, minutes, sumar){
     state.servicios = state.servicios || [];
-    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    const lista = catalog.services;
     const svc = lista.find(x=> x.id === id);
     // Spread completo del servicio normalizado (barberIds, photos, etc. --
     // ver normalizarServicio()) en vez de listar campos a mano: así un
@@ -5849,8 +5859,8 @@
 
   /** Catálogo de servicios y barberos: se actualiza solo cuando el panel edita algo. */
   let catalogoListo = false;
-  db.collection('services').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
-  db.collection('barbers').onSnapshot(()=>{ if(catalogoListo) loadCatalog(); });
+  db.collection('services').onSnapshot(()=>{ if(catalogoListo) refrescarCatalogo(); });
+  db.collection('barbers').onSnapshot(()=>{ if(catalogoListo) refrescarCatalogo(); });
 
   /** Cursos de la Academy, editados desde el panel, en vivo. */
   let cursosCache = [];
@@ -7201,7 +7211,8 @@
   }
 
   function chatListaPrecios(){
-    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    const lista = catalog.services;
+    if(!lista.length) return 'Por ahora no puedo mostrarte los precios. Intenta de nuevo en unos segundos o escríbenos por WhatsApp.';   // 28-oct: nunca precios de ejemplo
     return lista.slice(0,6).map(s=> `• ${s.name} — ${money(s.priceClp)}`).join('\n');
   }
 
@@ -7514,7 +7525,7 @@
 
   /** Pre-llena el servicio (y barbero, si la IA lo sugirió) y deja al cliente justo en la fecha sugerida, listo para elegir la hora. */
   function chatIniciarReservaDesdeIA(propuesta){
-    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    const lista = catalog.services;
     const svc = lista.find(s=> s.name === propuesta.servicioNombre);
     if(!svc){
       chatToggle();
@@ -7528,7 +7539,7 @@
     selectService(svc.name, Number(svc.priceClp).toLocaleString('es-CL'), svc.id, svc.minutes, false);
 
     if(propuesta.barberoNombre){
-      const barberos = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
+      const barberos = catalog.barbers;
       const b = barberos.find(x=> x.name === propuesta.barberoNombre);
       // la IA solo sugiere un profesional puntual, nunca "cualquiera" --
       // por eso esta sí cuenta como elección previa real.
@@ -8224,7 +8235,7 @@
     const servicio = reserva && reserva.serviceId
       ? (catalog.services || []).find(s=> s.id === reserva.serviceId) : null;
     const lista = filtrarPorElegibilidad(
-      (catalog.barbers && catalog.barbers.length ? catalog.barbers : BARB_DEMO),
+      (catalog.barbers || []),
       [{ barberIds: servicio?.barberIds }]
     );
     const num = (v)=>{ const n = Number(v); return Number.isFinite(n) ? n : Infinity; };
@@ -9909,32 +9920,9 @@
   /* ==========================================================
      RESERVAS — flujo nuevo
      ========================================================== */
-  const SVC_DEMO = [
-    { id:'s1', name:'Corte de cabello', priceClp:14000, minutes:45, featured:true, cat:'Cortes',
-      description:'Corte a máquina y tijera con lavado incluido. Terminamos con peinado y productos de fijación.' },
-    { id:'s2', name:'Corte de cabello + perfilado de cejas', priceClp:18000, minutes:60, featured:true, cat:'Cortes',
-      description:'Corte completo más diseño y depilación de cejas para enmarcar la mirada.' },
-    { id:'s3', name:'Corte + barba premium', priceClp:26000, minutes:120, featured:true, cat:'Barba',
-      description:'Corte más perfilado de barba con toalla caliente, vaporización y productos para un acabado limpio y relajante.' },
-    { id:'s4', name:'Barba premium + perfilado de cejas', priceClp:16000, minutes:60, featured:false, cat:'Barba',
-      description:'Rebaje de volumen, degradé de barba, toalla caliente, afeitado y productos de hidratación.' },
-    { id:'s5', name:'Corte + limpieza facial', priceClp:26000, minutes:120, featured:false, cat:'Facial',
-      description:'Corte de cabello más limpieza facial profunda con exfoliación e hidratación.' },
-    { id:'s6', name:'Corte de cabello para niño', priceClp:16000, minutes:60, featured:false, cat:'Cortes',
-      description:'Para niños hasta 10 años. Incluye lavado y aplicación de productos para peinar.' },
-    { id:'s7', name:'Peinado especial', priceClp:22000, minutes:45, featured:false, cat:'Cortes',
-      description:'Ideal para eventos: styling y fijación de larga duración.' },
-    { id:'s8', name:'Ondulación permanente zona superior', priceClp:45000, minutes:180, featured:false, cat:'Ondulación',
-      description:'Textura y volumen de larga duración en la zona superior. Incluye tratamiento post-servicio.' },
-  ];
-
-  const BARB_DEMO = [
-    { id:'b1', name:'Jhoover Peñaranda', initials:'JP' },
-    { id:'b2', name:'Diego Colina',      initials:'DC' },
-    { id:'b3', name:'Raúl Chourio',      initials:'RC' },
-    { id:'b4', name:'Luis Barrios',      initials:'LB' },
-    { id:'b5', name:'Carlos Garcés',     initials:'CG' },
-  ];
+  /* 28-oct-2026: ELIMINADAS las listas de ejemplo (SVC_DEMO / BARB_DEMO). Eran el respaldo cuando el catálogo real todavía no cargaba o fallaba y mostraban
+     profesionales y precios que NO son de MASTERLOOK. Ahora solo se muestran los servicios y profesionales reales de Firestore; mientras cargan hay un indicador
+     y, si falla, un mensaje con «Reintentar». */
 
   let rvCat = 'Todos';
 
@@ -9949,7 +9937,13 @@
   let rvCatsCerradas = null;
 
   function paintServices(){
-    const lista = catalog.services.length ? catalog.services : SVC_DEMO;
+    const lista = catalog.services;
+    if(catalogoEstado !== 'listo' || !lista.length){   // 28-oct: cargando / error / sin servicios: nunca datos inventados
+      const c = document.getElementById('svcCats'); if(c) c.innerHTML = '';
+      const p = document.getElementById('svcPick'); if(p) p.innerHTML = estadoCatalogoHTML('servicios');
+      const pop = document.getElementById('svcPopulares'); if(pop){ pop.innerHTML = ''; pop.style.display = 'none'; }
+      return;
+    }
 
     const cats = ['Todos', ...new Set(lista.map(categoriaDe))];
     if(!rvCatsCerradas) rvCatsCerradas = new Set(cats.filter(c=> c !== 'Todos'));
@@ -10137,8 +10131,9 @@
     }
   }
 
-  document.getElementById('svcBuscar')?.addEventListener('input', ()=>
-    pintarListaServicios(catalog.services.length ? catalog.services : SVC_DEMO));
+  document.getElementById('svcBuscar')?.addEventListener('input', ()=>{
+    if(catalogoEstado === 'listo' && catalog.services.length) pintarListaServicios(catalog.services);
+  });
 
   /* ---------- paso 3: profesional ----------
      La fecha y hora ya quedaron elegidas en el paso anterior, así que
@@ -10170,7 +10165,7 @@
    *  siquiera aparece en la ficha (misma fuente de verdad que el backend:
    *  ocupacionDelDia vía obtenerOcupacionDia, nunca un cálculo propio). */
   function barberosDisponiblesAhora(){
-    const lista = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
+    const lista = catalog.barbers;
     const ocupacion = state.fecha ? ocupacionDelDia(state.fecha) : {};
     const durTotal = state.duracion || 45;
     return lista.filter(b=>{
@@ -10182,6 +10177,7 @@
 
   function paintBarbers(){
     const row = document.getElementById('barberPick');
+    if(row && (catalogoEstado !== 'listo' || !catalog.barbers.length)){ row.innerHTML = estadoCatalogoHTML('profesionales'); return; }   // 28-oct: cargando / error / sin profesionales
     const disponibles = barberosDisponiblesAhora();
 
     // "Cualquiera" solo se ofrece si de verdad queda al menos un
@@ -10476,7 +10472,7 @@
     await asegurarOcupacion(fecha);
     // Mismo filtro de elegibilidad que el Paso 3 (barberoElegiblePara)
     const barberos = filtrarPorElegibilidad(
-      (catalog.barbers.length ? catalog.barbers : BARB_DEMO), state.servicios);
+      (catalog.barbers), state.servicios);
     const ocupacion = ocupacionDelDia(fecha);
 
     // cuántas citas necesita esta reserva a la vez
@@ -10979,9 +10975,10 @@
     b.addEventListener('click', ()=> cambiarModo(b.dataset.modo)));
 
   function pintarBarberosArriba(){
-    const lista = catalog.barbers.length ? catalog.barbers : BARB_DEMO;
+    const lista = catalog.barbers;
     const row = document.getElementById('barberPickTop');
     if(!row) return;
+    if(catalogoEstado !== 'listo' || !lista.length){ row.innerHTML = estadoCatalogoHTML('profesionales'); return; }   // 28-oct: nunca profesionales inventados
 
     const opciones = [
       { id:'any', name:'Cualquiera', initials:'★', nota:'El primero libre' },
@@ -11085,7 +11082,7 @@
     });
     if(!unidades.length) return [];
 
-    const barberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO);
+    const barberos = (catalog.barbers);
     // si el cliente pidió un barbero concreto, ese va primero
     const preferido = state.barberId && state.barberId !== 'any'
       ? barberos.find(b=> b.id === state.barberId) : null;
@@ -11147,7 +11144,7 @@
     const horas = [...new Set(validas.map(p=> p.label))];
     const paralelo = horas.length === 1;
 
-    const barberos = (catalog.barbers.length ? catalog.barbers : BARB_DEMO);
+    const barberos = (catalog.barbers);
     const ocupacion = ocupacionDelDia(fecha);
 
     cont.style.display = '';
@@ -11240,7 +11237,7 @@
     'default': ICONO_SVC.s7,
   };
   function iconoDeServicio(sv){
-    // el catálogo puede venir del propio sitio (SVC_DEMO) o de lo que
+    // el catálogo viene SIEMPRE de lo real (Firestore); ya no existe un catálogo de ejemplo en el sitio
     // publique el panel de administración, con otros ids — por eso el
     // ícono se elige por palabras clave del nombre, no por id.
     const n = (sv.name || '').toLowerCase();
@@ -11255,9 +11252,10 @@
   }
 
   function pintarPortada(){
-    const svcs = catalog.services.length ? catalog.services : SVC_DEMO;
+    const svcs = catalog.services;
     const fila = document.getElementById('svcFila');
     if(!fila) return;
+    if(catalogoEstado !== 'listo' || !svcs.length){ fila.innerHTML = catalogoEstado === 'listo' ? '' : estadoCatalogoHTML('servicios'); return; }   // 28-oct: nunca servicios inventados en la portada
 
     // tonos distintos para que cada tarjeta se distinga sin fotos reales
     const tonos = ['#3B352C','#2E2A25','#42392C','#332F29','#3A342A','#2A2724','#38322A','#302C26'];
@@ -11524,7 +11522,7 @@
    *  explícito (descripción del catálogo demo, tipos). Único punto de
    *  entrada del catálogo: usarla en vez de reconstruir el objeto a mano. */
   function normalizarServicio(x, baseDemo){
-    const base = baseDemo !== undefined ? baseDemo : SVC_DEMO.find(d=> d.name === x.name);
+    const base = baseDemo;   // 28-oct: ya no hay catálogo de ejemplo del cual copiar descripciones
     return {
       ...x,
       // si el panel no guardó descripción, usamos la del catálogo base
@@ -11547,34 +11545,84 @@
     };
   }
 
-  async function loadCatalog(){
-    if(MODE === 'api'){
-      try{
-        const [sv, ba] = await Promise.all([api('/services'), api('/barbers')]);
-        catalog.services = sv.services;
-        catalog.barbers = ba.barbers;
-      }catch(e){}
-    } else {
-      // sin servidor propio, leemos directo de Firestore
-      try{
-        const [svcSnap, barSnap] = await Promise.all([
-          db.collection('services').get(),
-          db.collection('barbers').get()
-        ]);
-        if(!svcSnap.empty){
-          catalog.services = svcSnap.docs.map(d=> d.data()).filter(x=> x.active !== false).map(x=> normalizarServicio(x));
-        }
-        if(!barSnap.empty){
-          catalog.barbers = barSnap.docs.map(d=> d.data()).filter(x=> x.active !== false);
-        }
-      }catch(e){}
+  /* ---- Catálogo real: estados, plazo, reintentos (28-oct-2026) ----
+     Antes, mientras el catálogo no llegaba (o si fallaba en silencio) el sitio mostraba listas de ejemplo con profesionales y precios que no son de MASTERLOOK.
+     Ahora: «cargando» muestra un indicador; «error» un mensaje con «Reintentar» (y se reintenta solo cada 10 s); nunca se muestran datos inventados. */
+  const CATALOGO_PLAZO_MS = 12000;
+  let catalogoReintentoTimer = null;
+  function conPlazo(promesa, ms){
+    return new Promise((ok, mal)=>{
+      const t = setTimeout(()=> mal(new Error('plazo')), ms);
+      promesa.then(v=>{ clearTimeout(t); ok(v); }, e=>{ clearTimeout(t); mal(e); });
+    });
+  }
+  function estadoCatalogoHTML(que){   // que: 'servicios' | 'profesionales'
+    const nombre = que === 'servicios' ? 'los servicios' : 'los profesionales';
+    if(catalogoEstado === 'error'){
+      return `<div class="rv-cat-estado error" role="alert"><span>No pudimos cargar ${nombre}. Revisa tu conexión.</span><button type="button" class="rv-cat-reintentar" data-reintentar-catalogo>Reintentar</button></div>`;
     }
+    if(catalogoEstado !== 'listo'){
+      return `<div class="rv-cat-estado" role="status" aria-live="polite"><span class="rv-cat-spin" aria-hidden="true"></span><span>Cargando ${nombre}…</span></div>`;
+    }
+    return `<div class="rv-cat-estado" role="status">Por ahora no hay ${que === 'servicios' ? 'servicios disponibles' : 'profesionales disponibles'} para reservar en línea.</div>`;
+  }
+  /** Una lectura del catálogo REAL. Lanza si falla o si se pasa del plazo. */
+  async function leerCatalogo(){
+    if(MODE === 'api'){
+      const [sv, ba] = await conPlazo(Promise.all([api('/services'), api('/barbers')]), CATALOGO_PLAZO_MS);
+      catalog.services = sv.services;
+      catalog.barbers = ba.barbers;
+      return;
+    }
+    // sin servidor propio, leemos directo de Firestore
+    const par = Promise.all([db.collection('services').get({ source: 'server' }), db.collection('barbers').get({ source: 'server' })]);   // source:'server': sin conexión se rechaza en vez de devolver una lectura vacía de la memoria local
+    const [svcSnap, barSnap] = await conPlazo(par, CATALOGO_PLAZO_MS);
+    catalog.services = svcSnap.docs.map(d=> d.data()).filter(x=> x.active !== false).map(x=> normalizarServicio(x));
+    catalog.barbers = barSnap.docs.map(d=> d.data()).filter(x=> x.active !== false);
+  }
+  function repintarCatalogo(){
     paintServices();
     paintBarbers();
     pintarBarberosArriba();
     pintarDias();
     pintarPortada();
   }
+  async function loadCatalog(){
+    catalogoEstado = 'cargando';
+    repintarCatalogo();   // indicador de carga desde el primer instante (nunca datos de ejemplo)
+    for(let intento = 1; intento <= 3; intento++){
+      try{
+        await leerCatalogo();
+        catalogoEstado = 'listo';
+        repintarCatalogo();
+        return;
+      }catch(e){
+        console.warn('[catálogo] intento ' + intento + ':', e && e.message);
+        if(intento < 3) await new Promise(r=> setTimeout(r, intento * 1500));
+      }
+    }
+    catalogoEstado = 'error';
+    repintarCatalogo();
+    programarReintentoCatalogo(1);
+  }
+  /** Tras un error, reintenta sola cada 10 s (hasta 6 veces) y repinta apenas llega el catálogo real. */
+  function programarReintentoCatalogo(n){
+    clearTimeout(catalogoReintentoTimer);
+    if(n > 6) return;
+    catalogoReintentoTimer = setTimeout(async ()=>{
+      if(catalogoEstado === 'listo') return;
+      try{ await leerCatalogo(); catalogoEstado = 'listo'; repintarCatalogo(); }
+      catch(e){ programarReintentoCatalogo(n + 1); }
+    }, 10000);
+  }
+  function reintentarCatalogo(){ clearTimeout(catalogoReintentoTimer); loadCatalog(); }
+  /** Refresco SILENCIOSO cuando algo cambia en Firestore: sin indicador y sin borrar lo ya cargado; si falla, se queda con lo que tenía. */
+  async function refrescarCatalogo(){
+    try{ await leerCatalogo(); catalogoEstado = 'listo'; repintarCatalogo(); }catch(e){ /* se conserva lo cargado */ }
+  }
+  document.addEventListener('click', (e)=>{
+    if(e.target && e.target.closest && e.target.closest('[data-reintentar-catalogo]')) reintentarCatalogo();
+  });
 
   /* En una vista previa o iframe restringido el navegador puede bloquear el
      historial. Lo envolvemos para que un bloqueo no rompa la navegación. */
