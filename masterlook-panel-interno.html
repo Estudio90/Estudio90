@@ -2878,6 +2878,14 @@
   .wv-estado.malo{color:var(--rv-terracotta);}
   .wm-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:4px 0 16px;}
   .wm-title{font-family:var(--font-primary);font-size:27px;font-weight:700;margin:0;letter-spacing:-.015em;color:var(--rv-ink);}
+  .wm-av-fila{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-top:1px solid var(--rv-line);}
+  .wm-av-fila:first-of-type{border-top:0;}
+  .wm-av-fila b{display:block;font-size:13.5px;}
+  .wm-av-fila small{display:block;margin-top:2px;font-size:12px;color:var(--rv-ink-soft);line-height:1.4;}
+  .wm-sw{flex:0 0 auto;min-width:92px;padding:7px 12px;border-radius:20px;border:1px solid var(--rv-line);background:#fff;font:700 12px var(--font-body);color:var(--rv-ink-soft);cursor:pointer;}
+  .wm-sw[aria-checked="true"]{background:var(--rv-ink);border-color:var(--rv-ink);color:#fff;}
+  .wm-sw:disabled{opacity:.5;cursor:not-allowed;}
+  .wm-sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .wm-sub{font-size:13px;color:var(--rv-ink-soft);margin:4px 0 0;}
   .wm-head .ctrl-btn{display:inline-flex;align-items:center;gap:6px;}
   .wm-head .ctrl-btn svg{width:14px;height:14px;}
@@ -15666,12 +15674,58 @@
     await wmEjecutar({ accion:'entenderVoz', transcribir:nuevo }, nuevo ? 'MAX ahora entiende notas de voz' : 'MAX ya no entiende notas de voz');
   }
 
+  /* ----- Avisos de reserva por WhatsApp (30-oct): interruptores SOLO para Administración; todo apagado por defecto; no tocan los correos ni sus recordatorios ----- */
+  const WM_AVISOS = [
+    { clave:'avisosActivos', rotulo:'Interruptor general', det:'Mientras esté apagado no sale ningún aviso, aunque los de abajo estén encendidos.' },
+    { clave:'recordatorioActivo', rotulo:'Recordatorio de cita', det:'Sale unas 5 horas antes de la cita, nunca de madrugada. Si el equipo ya mandó el recordatorio por correo, no se repite por WhatsApp.' },
+    { clave:'confirmacionActiva', rotulo:'Confirmación de reserva', det:'Cuando una reserva hecha en la web queda confirmada. Las que toma Max por el chat ya se confirman ahí mismo.' },
+    { clave:'cambioActivo', rotulo:'Cambio de hora o profesional', det:'Cuando una reserva confirmada cambia de fecha, hora, profesional o sucursal.' },
+    { clave:'cancelacionActiva', rotulo:'Cancelación', det:'Cuando se cancela una reserva confirmada y futura.' },
+    { clave:'recordatorioAunConCorreo', rotulo:'Recordar por WhatsApp aunque ya se mandó por correo', det:'Apagado = no se duplica el recordatorio. Enciéndelo solo si quieres ambos.' },
+  ];
+  function wmAvisosHTML(d){
+    const av = d.avisos; if(!av) return '';
+    const fecha = av.optInWebDesde ? new Date(av.optInWebDesde).toLocaleString('es-CL', { dateStyle:'long', timeStyle:'short', timeZone:'America/Santiago' }) : null;
+    const filas = WM_AVISOS.map(f=> {
+      const on = av[f.clave] === true;
+      const bloq = !av.consentimientoWeb && !on || WM.enCurso;
+      return `<div class="wm-av-fila"><div><b>${escapeHTML(f.rotulo)}</b><small>${escapeHTML(f.det)}</small></div>
+        <button class="wm-sw" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}" aria-label="${escapeHTML(f.rotulo)}" data-wm-accion="avisos-toggle" data-clave="${escapeHTML(f.clave)}"${bloq ? ' disabled' : ''}>${on ? 'Encendido' : 'Apagado'}</button></div>`;
+    }).join('');
+    return `<section class="wm-card" aria-labelledby="wmTAv">
+        <h3 class="wm-card-t" id="wmTAv">${WM_ICONS.ajustes}Avisos de reserva por WhatsApp<span class="wm-cuenta">${av.avisosActivos ? 'Encendido' : 'Apagado'}</span></h3>
+        <p class="wm-card-s">Confirmaciones, recordatorios, cambios y cancelaciones por WhatsApp. Es un canal aparte: <b>no cambia los correos ni los recordatorios por correo</b> que ya funcionan. Solo reciben avisos las personas que reservaron en la web después de aceptar el aviso del sitio, y se respeta quien pidió no recibir mensajes.</p>
+        <div class="wm-av-consent">${av.consentimientoWeb
+          ? `<p class="wm-card-s" style="margin-top:6px;">Consentimiento de la web registrado desde <b>${escapeHTML(fecha || '')}</b>.</p>`
+          : `<p class="wm-card-s" style="margin-top:6px;">Antes de encender cualquier aviso hay que registrar el consentimiento de la web. Hazlo <b>solo cuando el sitio ya muestre</b> el texto «Al reservar aceptas recibir la confirmación y los recordatorios… por WhatsApp». El sistema lo comprueba.</p>
+             <button class="wm-btn wm-btn-tinta" type="button" data-wm-accion="avisos-consentimiento"${WM.enCurso ? ' disabled' : ''}>Registrar consentimiento web</button>`}</div>
+        <div class="wm-sub">Avisos</div>
+        ${filas}
+      </section>`;
+  }
+  async function wmAvisosCambiar(clave){
+    const av = WM.datos && WM.datos.avisos; const f = WM_AVISOS.find(x=> x.clave === clave);
+    if(!av || !f || WM.enCurso) return;
+    const nuevo = av[clave] !== true;
+    if(nuevo){
+      const ok = await mgConfirm('Se enviará por WhatsApp: ' + f.rotulo.toLowerCase() + '.\n\n' + f.det + '\n\nLos correos actuales no cambian. Puedes apagarlo cuando quieras.', { titulo:'Encender aviso', textoConfirmar:'Encender' });
+      if(!ok) return;
+    }
+    await wmEjecutar({ accion:'avisos', [clave]:nuevo }, nuevo ? 'Aviso encendido' : 'Aviso apagado');
+  }
+  async function wmAvisosConsentimiento(){
+    if(WM.enCurso) return;
+    const ok = await mgConfirm('Se registrará AHORA como fecha del consentimiento de la web. Solo reciben avisos quienes reserven desde este momento. El sistema revisa que el sitio ya muestre el aviso de WhatsApp.', { titulo:'Registrar consentimiento web', textoConfirmar:'Registrar' });
+    if(!ok) return;
+    await wmEjecutar({ accion:'avisos', registrarConsentimientoWeb:true }, 'Consentimiento registrado');
+  }
+
   function wmPintar(){
     const cont = wmEl('wmContenido'); const wrap = wmEl('wmTopesWrap');
     if(!cont || !wrap) return;
     if(WM.modo === 'datos' && WM.datos){
       const d = WM.datos;
-      cont.innerHTML = wmHeroHTML(d) + wmAlertasHTML(d) + wmTarjetasHTML(d) + wmPendientesHTML(d) + wmReservasHTML(d) + wmPoliticasHTML(d) + wmVozHTML(d);
+      cont.innerHTML = wmHeroHTML(d) + wmAlertasHTML(d) + wmTarjetasHTML(d) + wmPendientesHTML(d) + wmReservasHTML(d) + wmPoliticasHTML(d) + wmVozHTML(d) + wmAvisosHTML(d);
       // El formulario de topes se vuelve a pintar solo si la persona no está editando (así una actualización automática no le borra lo escrito).
       if(!WM.topesSucios || !wrap.firstChild) wrap.innerHTML = wmTopesHTML(d);
     }else{
@@ -17322,6 +17376,8 @@
     }
     else if(a === 'wc-reintentar-hilo'){ WC.hiloError = ''; WC.hiloCargando = true; wcPintarHilo(); wcCargarHilo(false); }
     else if(a === 'voz-entender') wmVozEntenderCambiar();
+    else if(a === 'avisos-toggle') wmAvisosCambiar(b.getAttribute('data-clave'));
+    else if(a === 'avisos-consentimiento') wmAvisosConsentimiento();
     else if(a === 'topes-guardar') wmGuardarTopes();
     else if(a === 'topes-descartar'){ WM.topesSucios = false; if(WM.datos) wmEl('wmTopesWrap').innerHTML = wmTopesHTML(WM.datos); }
   });
