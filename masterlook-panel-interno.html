@@ -2616,6 +2616,7 @@
   .wx-b .wx-tx{white-space:pre-wrap;}
   .wx-b .wx-t{display:block;margin-top:2px;text-align:right;font-size:10.5px;opacity:.6;font-variant-numeric:tabular-nums;}
   .wx-b .wx-t .malo{color:var(--rv-rose);opacity:1;font-weight:700;}
+  .wx-b.per .wx-t .malo{color:#ffb3a3;}   /* 28-oct: «No entregado» legible sobre la burbuja oscura del equipo */
   .wx-b.per .wc-media{background:rgba(255,255,255,.12);} .wx-b.per .wc-media small,.wx-b.per .wc-media svg{color:rgba(255,255,255,.75);}
   .wx-b .wc-ver{color:inherit;opacity:.8;}
   .wx-b .wv-btn{margin-top:6px;margin-bottom:6px;display:flex;width:max-content;max-width:100%;}
@@ -2659,6 +2660,11 @@
   .wx-adj-barra i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s;}
   .wx-arrastre .wx-chat{outline:2px dashed var(--accent);outline-offset:-6px;}
   .wv-doc{display:flex;gap:8px;flex-wrap:wrap;}
+  .wx-aviso{flex:0 0 auto;padding:10px 14px;font-size:12.5px;line-height:1.45;border-bottom:1px solid var(--rv-line);background:var(--accent-tint);color:var(--text);}
+  .wx-aviso b{display:block;font-weight:700;margin-bottom:1px;}
+  .wx-aviso.malo{background:var(--rv-rose-soft);color:var(--rv-rose);}
+  .wx-aviso.info{background:var(--panel-2);color:var(--rv-ink-soft);}
+  .wx-aviso[hidden]{display:none;}
   .wx-bajar[hidden],.wx-nota[hidden]{display:none;}
   .wvz-intro{font-size:13px;color:var(--text-mid);line-height:1.5;margin:0 0 14px;}
   .wvz-gasto{font-size:12px;color:var(--text-low);margin:0 0 12px;font-variant-numeric:tabular-nums;}
@@ -2744,7 +2750,129 @@
   /* Ver el video o la imagen que envió el cliente (24-oct-2026) */
   .wv-btn{margin-top:8px;padding:8px 14px;font-size:12.5px;}
   .wv-media{display:block;width:min(420px,100%);max-width:100%;max-height:520px;border-radius:12px;margin-top:8px;background:#111;object-fit:contain;}
+  .wv-media.wv-sticker{width:170px;max-width:100%;max-height:170px;background:transparent;border-radius:0;}
+  .wx-b.wx-ficha{min-width:min(280px,100%);padding:9px 12px 6px;}
+  .wx-ficha-n{font-weight:600;margin:3px 0 2px;}
+  .wx-ficha-c{font-size:12px;color:var(--text-mid);font-variant-numeric:tabular-nums;margin-bottom:4px;}
+  .wx-ficha-b{display:inline-flex;margin:4px 0 2px;padding:6px 12px;font-size:12px;text-decoration:none;}
+  .wx-contacto{display:flex;gap:10px;align-items:center;margin:6px 0 2px;}
+  .wx-contacto-av{flex:none;width:38px;height:38px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--rv-ink);}
+  .wx-contacto-d{min-width:0;}
+  .wx-contacto-t{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-variant-numeric:tabular-nums;}
+  .wx-b.wx-sticker{background:transparent;border:0;box-shadow:none;padding:2px 0 0;}
+  .wx-b.wx-sticker .wv-media{margin-top:0;}
+  .wx-b.wx-sticker .wx-t{text-align:left;opacity:.55;margin-top:1px;}
+  .wx-b.wx-foto .wv-media{margin-top:0;margin-bottom:4px;width:min(460px,100%);}
+  /* ubicación tipo WhatsApp (29-oct) */
+  .wx-b.wx-ubic{width:min(380px,100%);padding:4px 4px 6px;}
+  .wx-mapa{position:relative;display:block;height:210px;border-radius:12px;overflow:hidden;background:#e4e4e8;}
+  .wx-mapa-t{position:absolute;left:calc(50% - var(--px));top:calc(105px - var(--py));width:768px;height:768px;}
+  .wx-mapa-t img{position:absolute;width:256px;height:256px;filter:grayscale(.85) contrast(.96);user-select:none;-webkit-user-drag:none;}
+  .wx-mapa-pin{position:absolute;left:50%;top:105px;width:26px;height:34px;transform:translate(-50%,-100%);filter:drop-shadow(0 2px 2px rgba(26,24,21,.3));}
+  .wx-ubic-n{margin:8px 10px 0;font-weight:700;font-size:15px;line-height:1.3;}
+  .wx-ubic-d{display:block;margin:2px 10px 0;font-size:13px;line-height:1.35;color:inherit;opacity:.8;text-decoration:underline;overflow-wrap:anywhere;}
+  .wx-b.wx-ubic .wx-t{margin:2px 10px 0;}
+  .wx-b.wx-foto .wx-et + .wv-media{margin-top:4px;}
+
+  /* ===== REDISEÑO del chat de WhatsApp·Max (29-oct-2026): pantalla completa tipo WhatsApp Web, blanco / negro / grises suaves.
+     SOLO estilos: no cambia datos, envíos, MAX, notas de voz ni reservas. Todo con alcance #vistaWhatsappMax.wx-modo-chat (otras pantallas intactas). Para revertir: borrar este bloque. ===== */
+  body:has(#vistaWhatsappMax.wx-modo-chat){overflow:hidden;}
+  body:has(#vistaWhatsappMax.wx-modo-chat) #mlHeader,
+  body:has(#vistaWhatsappMax.wx-modo-chat) #mlNavBar{display:none!important;}
+  body:has(#vistaWhatsappMax.wx-modo-chat) .app{max-width:none;padding-bottom:0;}
+  body:has(#vistaWhatsappMax.wx-modo-chat) .app > .content{padding:0!important;}   /* masterlook-estilos-comunes.css fuerza 28px 32px con !important */
+  #vistaWhatsappMax.wx-modo-chat{position:fixed;inset:0;z-index:20;overflow:hidden;--wx-strip:52px;--wx-gris:#f2f2f4;--wx-gris-2:#e3e3e8;background:#fff;}   /* ocupa la ventana completa: no depende de los márgenes de los contenedores */
+  /* barra superior única: pestañas a la izquierda, «Actualizar / Volver» a la derecha */
+  #vistaWhatsappMax.wx-modo-chat .wm-head{position:absolute;top:0;right:18px;height:var(--wx-strip);margin:0;z-index:2;display:flex;align-items:center;flex-wrap:nowrap;}
+  #vistaWhatsappMax.wx-modo-chat .wm-head .cx-nav{display:flex;gap:8px;align-items:center;}
+  #vistaWhatsappMax.wx-modo-chat .wm-tabs{height:var(--wx-strip);margin:0;padding:0 0 0 22px;width:calc(100% - 340px);box-sizing:border-box;align-items:flex-end;gap:4px;background:#fff;border-bottom:none;overflow-x:auto;scrollbar-width:none;white-space:nowrap;}
+  #vistaWhatsappMax.wx-modo-chat .wm-tabs::-webkit-scrollbar{display:none;}
+  #vistaWhatsappMax.wx-modo-chat .wm-tab{padding:0 4px 15px;font-size:14.5px;flex:0 0 auto;}
+  #vistaWhatsappMax.wx-modo-chat .wm-tab[aria-selected="true"]{color:var(--rv-ink);border-bottom-color:var(--rv-ink);}
+  /* el espacio completo: la altura la fija el navegador (gana sobre la medida que calcula wxAjustar) */
+  #vistaWhatsappMax.wx-modo-chat .wx-grid{height:calc(100vh - var(--wx-strip))!important;height:calc(100dvh - var(--wx-strip))!important;grid-template-columns:clamp(330px,30vw,470px) minmax(0,1fr);border:0;border-top:1px solid var(--rv-line);border-radius:0;box-shadow:none;}
+  /* lista de conversaciones */
+  #vistaWhatsappMax.wx-modo-chat .wx-lista-cab{padding:14px 16px 10px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-lista-cab .wc-buscar .wm-input{height:42px;border-radius:21px;font-size:14.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-chips{margin-top:11px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-chips .wc-chip{padding:7px 14px;font-size:13px;}
+  #vistaWhatsappMax.wx-modo-chat .wc-chip[aria-pressed="true"]{background:var(--rv-ink);border-color:var(--rv-ink);color:#fff;}
+  #vistaWhatsappMax.wx-modo-chat .wx-item{grid-template-columns:52px minmax(0,1fr) auto;column-gap:14px;row-gap:3px;padding:13px 16px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-item.sel{background:var(--wx-gris);}
+  #vistaWhatsappMax.wx-modo-chat .wx-item:hover{background:#f7f7f9;}
+  #vistaWhatsappMax.wx-modo-chat .wx-item.sel:hover{background:var(--wx-gris);}
+  #vistaWhatsappMax.wx-modo-chat .wx-av{width:52px;height:52px;font-size:16px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-nom{font-size:15.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-nom .wx-tel{font-size:12.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-hora{font-size:12.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-pre{font-size:13.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-punto{width:12px;height:12px;background:var(--rv-ink);}
+  #vistaWhatsappMax.wx-modo-chat .wx-pill{padding:3px 10px;font-size:11px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-pill.es{background:var(--wx-gris-2);color:var(--rv-ink);}
+  /* conversación */
+  #vistaWhatsappMax.wx-modo-chat .wx-chat{background:var(--wx-gris);}
+  #vistaWhatsappMax.wx-modo-chat .wx-cab{min-height:68px;padding:10px 24px;gap:14px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-cab .wx-av{width:46px;height:46px;font-size:15px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-cab-q b{font-size:17px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-cab-q span{font-size:13.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-btn{padding:8px 17px;font-size:13.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-btn.t{background:var(--rv-ink);border-color:var(--rv-ink);}
+  #vistaWhatsappMax.wx-modo-chat .wx-btn.t:hover:not(:disabled){background:#35322d;border-color:#35322d;}
+  #vistaWhatsappMax.wx-modo-chat .wx-msgs{padding:22px clamp(18px,5vw,88px) 16px;}
+  #vistaWhatsappMax.wx-modo-chat #wcHilo{gap:7px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-dia{margin:16px 0 8px;padding:5px 14px;font-size:12.5px;background:#fff;box-shadow:0 1px 2px rgba(26,24,21,.07);}
+  #vistaWhatsappMax.wx-modo-chat .wx-b{max-width:min(72%,780px);padding:9px 14px 6px;border-radius:16px;font-size:15.5px;line-height:1.5;}
+  #vistaWhatsappMax.wx-modo-chat .wx-b.cli{border-color:transparent;box-shadow:0 1px 2px rgba(26,24,21,.08);border-top-left-radius:5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-b.max{background:var(--wx-gris-2);border-top-right-radius:5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-b.per{border-top-right-radius:5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-b .wx-t,#vistaWhatsappMax.wx-modo-chat .wx-b .wx-et{font-size:11.5px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-b.wx-sticker{box-shadow:none;}
+  #vistaWhatsappMax.wx-modo-chat .wx-b.wx-ficha{min-width:min(320px,100%);}
+  #vistaWhatsappMax.wx-modo-chat .wx-bajar{right:28px;bottom:16px;padding:9px 16px;font-size:13px;background:var(--rv-ink);}
+  /* barra para escribir: siempre abajo, cómoda */
+  #vistaWhatsappMax.wx-modo-chat .wx-comp,#vistaWhatsappMax.wx-modo-chat .wx-voz{padding:14px 24px calc(14px + env(safe-area-inset-bottom,0px));gap:12px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-comp textarea{min-height:48px;max-height:180px;padding:12px 20px;border-radius:24px;font-size:15.5px;line-height:1.45;background:var(--wx-gris);}
+  #vistaWhatsappMax.wx-modo-chat .wx-comp textarea:focus{border-color:var(--rv-ink);background:#fff;}
+  #vistaWhatsappMax.wx-modo-chat .wx-clip,#vistaWhatsappMax.wx-modo-chat .wx-mic,#vistaWhatsappMax.wx-modo-chat .wx-env{width:48px;height:48px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-clip svg,#vistaWhatsappMax.wx-modo-chat .wx-mic svg{width:22px;height:22px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-env{background:var(--rv-ink);}
+  #vistaWhatsappMax.wx-modo-chat .wx-env:hover:not(:disabled){background:#35322d;}
+  #vistaWhatsappMax.wx-modo-chat .wx-env svg{width:21px;height:21px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-mic:hover:not(:disabled){border-color:var(--rv-ink);color:var(--rv-ink);}
+  #vistaWhatsappMax.wx-modo-chat .wx-menu{bottom:58px;}
+  #vistaWhatsappMax.wx-modo-chat .wx-comp textarea::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}   /* el texto de ayuda no se parte en varias líneas (la barra no crece) */
+  #vistaWhatsappMax.wx-modo-chat .wx-contacto{align-items:flex-start;}   /* la inicial queda junto al nombre, no centrada frente a los botones */
+  @media (min-width:761px) and (max-width:1100px){   /* tabletas y pantallas angostas: lista más angosta y encabezado del chat que se acomoda en dos filas */
+    #vistaWhatsappMax.wx-modo-chat .wx-grid{grid-template-columns:clamp(290px,34vw,360px) minmax(0,1fr);}
+    #vistaWhatsappMax.wx-modo-chat .wx-cab{flex-wrap:wrap;row-gap:8px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-cab-q{flex:1 1 150px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-cab-r{flex:1 1 100%;justify-content:flex-start;flex-wrap:wrap;}
+  }
+  @media (max-width:760px){
+    #vistaWhatsappMax.wx-modo-chat{--wx-strip:46px;}
+    #vistaWhatsappMax.wx-modo-chat .wm-head{right:8px;}
+    #vistaWhatsappMax.wx-modo-chat #wmActualizar{display:none;}
+    #vistaWhatsappMax.wx-modo-chat #wmVolver{font-size:0;padding:7px 12px;}
+    #vistaWhatsappMax.wx-modo-chat #wmVolver::before{content:"← Agenda";font-size:12.5px;}
+    #vistaWhatsappMax.wx-modo-chat .wm-tabs{padding:0 0 0 12px;width:calc(100% - 112px);}
+    #vistaWhatsappMax.wx-modo-chat .wx-cab-r{flex-wrap:wrap;gap:6px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-btn{padding:7px 12px;font-size:12.5px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-comp textarea{min-height:52px;padding:8px 16px;font-size:14px;line-height:1.25;}
+    #vistaWhatsappMax.wx-modo-chat .wx-comp textarea::placeholder{font-size:12.5px;line-height:1.25;}
+    #vistaWhatsappMax.wx-modo-chat .wm-tab{font-size:13.5px;margin-right:8px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-grid{grid-template-columns:minmax(0,1fr);}
+    #vistaWhatsappMax.wx-modo-chat .wx-item{padding:12px 14px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-cab{padding:8px 12px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-msgs{padding:14px 12px 8px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-b{max-width:88%;font-size:15px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-comp,#vistaWhatsappMax.wx-modo-chat .wx-voz{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));gap:8px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-clip,#vistaWhatsappMax.wx-modo-chat .wx-mic,#vistaWhatsappMax.wx-modo-chat .wx-env{width:44px;height:44px;}
+    #vistaWhatsappMax.wx-modo-chat .wx-bajar{right:14px;}
+  }
+  .wv-sticker-ph{display:block;width:170px;height:170px;border-radius:14px;background:rgba(0,0,0,.05);}   /* 29-oct: el sticker se ve del tamaño de WhatsApp, sin fondo oscuro */
   .wv-err{margin:6px 0 0;font-size:12px;color:var(--rv-terracotta);line-height:1.4;}
+  .wv-estado{display:block;margin:6px 0 2px;font-size:12px;line-height:1.4;color:var(--text-mid);}
+  .wv-estado.malo{color:var(--rv-terracotta);}
   .wm-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:4px 0 16px;}
   .wm-title{font-family:var(--font-primary);font-size:27px;font-weight:700;margin:0;letter-spacing:-.015em;color:var(--rv-ink);}
   .wm-sub{font-size:13px;color:var(--rv-ink-soft);margin:4px 0 0;}
@@ -15234,12 +15362,22 @@
     presupuesto:'Se acabó el presupuesto de WhatsApp', pausa:'Max estaba en pausa', limite:'Llegó al límite diario del chat',
     no_sabe:'Max no supo responder', dato_inexistente:'Pidió un dato que Max no tiene', queja:'Queja o reclamo', pedido_cliente:'Pidió hablar con una persona',
     sucursal_distinta:'Consulta de otra sucursal', telefono_invalido:'Teléfono no válido', tope_intentos:'Varios intentos fallidos',
-    reserva_creada_sin_aviso:'Reserva creada: falta avisar al cliente', otro:'Otro motivo',
+    reserva_creada_sin_aviso:'Reserva creada: falta avisar al cliente', 'error:sin_respuesta_reintentos':'Sin respuesta tras varios intentos: escríbele tú', 'error:envio_incierto':'Respuesta posiblemente no enviada: revisa el chat', video:'Envió un video: revísalo', imagen:'Envió una imagen: revísala', documento:'Envió un documento: revísalo', ubicacion:'Envió una ubicación', contacto:'Envió un contacto', archivo_no_recuperado:'Un archivo no se pudo descargar: pídele que lo reenvíe', limitado_antiabuso:'Limitado por protección anti abuso: revisa el chat', atrasado:'Mensaje que llegó con retraso: respóndele tú', cliente_sin_ficha:'Reserva creada: falta completar la ficha del cliente', otro:'Otro motivo',
   };
   const WM_ESTADOS_RESERVA = { reservado:'Reservado', confirmado:'Confirmado', pend:'Pendiente', asistio:'Asistió', no:'No asistió', en_espera:'En espera', ok:'Confirmada', done:'Completada' };
   const WM = { datos:null, modo:'cargando', mensajeError:'', pistaNoActivado:false, seq:0, enCurso:false, topesAbiertos:false, topesSucios:false, timer:null };
 
   const wmEl = (id)=> document.getElementById(id);
+  /* Tono del rótulo: rojo = el mensaje NO se pudo responder; ámbar = la entrega no se pudo confirmar o quedó limitado por protección; gris = Max pasó el chat a una persona. */
+  function wmMotivoClase(m){
+    const k = String(m || '');
+    if(k === 'error:sin_respuesta_reintentos') return 'malo';
+    if(k === 'error:envio_incierto' || k === 'limitado_antiabuso' || k === 'atrasado' || k === 'archivo_no_recuperado') return 'aviso';
+    return 'info';
+  }
+  /* Motivos que recepción debe ver de inmediato en la bandeja (con rótulo corto) */
+  function wmMotivoEspecial(m){ return m === 'error:sin_respuesta_reintentos' || m === 'error:envio_incierto' || m === 'limitado_antiabuso' || m === 'atrasado' || m === 'archivo_no_recuperado'; }
+  function wmMotivoCorto(m){ return ({ 'error:sin_respuesta_reintentos':'Sin respuesta', 'error:envio_incierto':'Entrega sin confirmar', limitado_antiabuso:'Limitado', atrasado:'Atrasado', archivo_no_recuperado:'Archivo sin descargar' })[m] || 'Esperando'; }
   function wmMotivoTexto(m){
     const k = String(m || '');
     if(WM_MOTIVOS[k]) return WM_MOTIVOS[k];
@@ -15395,7 +15533,7 @@
             <span class="wm-avatar">${WM_ICONS.persona}</span>
             <div class="wm-chat-quien"><span class="wm-tel">${escapeHTML(c.telefonoMasc)}</span>${c.nombre ? ` <span class="wm-nombre">· ${escapeHTML(c.nombre)}</span>` : ''}</div>
             <div class="wm-chat-hace${wmNum(c.antiguedadMin) >= 1440 ? ' largo' : ''}">${escapeHTML(wmHace(c.antiguedadMin))}</div>
-            <div class="wm-chat-motivo"><span class="wm-pill info">${escapeHTML(wmMotivoTexto(c.motivo))}</span></div>
+            <div class="wm-chat-motivo"><span class="wm-pill ${wmMotivoClase(c.motivo)}">${escapeHTML(wmMotivoTexto(c.motivo))}</span></div>
             ${c.ultimoTexto ? `<div class="wm-chat-texto">${escapeHTML('“' + c.ultimoTexto + '”')}</div>` : ''}
           </li>`).join('')}</ul>` : ''}
         ${pe.hayMas ? `<p class="wm-nota">${escapeHTML('Se muestran los ' + wmEntero(pe.lista.length) + ' que más llevan esperando; hay ' + wmEntero(pe.total - pe.lista.length) + ' más.')}</p>` : ''}
@@ -15798,6 +15936,7 @@
     const i = c.intervencion;
     if(c.estado === 'optout') return '<span class="wx-pill nc">No contactar</span>';
     if(i && i.activa) return `<span class="wx-pill eq">${escapeHTML(i.esMia ? 'Tú' : (i.nombre || 'Equipo'))}</span>`;
+    if(c.pendiente && wmMotivoEspecial(c.motivo)) return `<span class="wx-pill ${c.motivo === 'error:sin_respuesta_reintentos' ? 'nc' : 'es'}">${escapeHTML(wmMotivoCorto(c.motivo))}</span>`;   /* fallido / entrega sin confirmar / limitado / atrasado: recepción lo ve de inmediato aunque el chat esté en manos de una persona */
     if(c.estado === 'persona' || c.estado === 'pausado') return '<span class="wx-pill eq">Equipo</span>';
     if(c.pendiente) return '<span class="wx-pill es">Esperando</span>';
     return '<span class="wx-pill">Max</span>';
@@ -15823,13 +15962,64 @@
     const ini = wxIniciales(c);
     return `<button class="wx-volver" type="button" data-wm-accion="wc-volver" aria-label="Volver a los chats">${WC_ICONS.atras}</button>
       <span class="wx-av">${ini ? escapeHTML(ini) : WM_ICONS.persona}</span>
-      <div class="wx-cab-q"><b>${escapeHTML(wcNombre(c))}</b><span>${escapeHTML((c.telefonoCompleto || c.telefonoMasc) + (c.pendiente ? ' · esperando respuesta' : ''))}</span></div>
+      <div class="wx-cab-q"><b>${escapeHTML(wcNombre(c))}</b><span>${escapeHTML((c.telefonoCompleto || c.telefonoMasc) + (c.pendiente ? ' · ' + (wmMotivoEspecial(c.motivo) ? wmMotivoTexto(c.motivo) : 'esperando respuesta') : ''))}</span></div>
       <div class="wx-cab-r">${estado}${accion}</div>`;
+  }
+  function wxTelFormato(d){
+    const t = String(d || '').replace(/\D/g, '');
+    if(/^569\d{8}$/.test(t)) return '+56 9 ' + t.slice(3, 7) + ' ' + t.slice(7);
+    return t ? '+' + t : '';
+  }
+  /* Mapa de la ubicación (29-oct): 3×3 teselas de OpenStreetMap (zoom 16) centradas en el punto; sin claves ni cuentas. El navegador pide las imágenes directo a tile.openstreetmap.org (le llega la zona aproximada, no el nombre ni el teléfono del cliente). */
+  function wxMapaTeselas(lat, lng){
+    const z = 16, n = Math.pow(2, z), rad = lat * Math.PI / 180;
+    const x = (lng + 180) / 360 * n, y = (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * n;
+    const tx = Math.floor(x), ty = Math.floor(y), px = 256 * (1 + (x - tx)), py = 256 * (1 + (y - ty));
+    let img = '';
+    for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){
+      const X = ((tx + dx) % n + n) % n, Y = ty + dy; if(Y < 0 || Y >= n) continue;
+      img += `<img alt="" loading="lazy" decoding="async" width="256" height="256" src="https://tile.openstreetmap.org/${z}/${X}/${Y}.png" style="left:${(dx + 1) * 256}px;top:${(dy + 1) * 256}px">`;
+    }
+    return `<span class="wx-mapa-t" style="--px:${px.toFixed(1)}px;--py:${py.toFixed(1)}px">${img}</span>`;
+  }
+  function wxFichaHTML(m, sep, clase){
+    if(!m || m.direccion !== 'in' || typeof m.texto !== 'string') return '';
+    const k = escapeHTML(m.k); const hora = escapeHTML(wcHora(m.ts));
+    if(m.tipo === 'location'){
+      const mm = /\((-?\d{1,3}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)\)\]?\s*$/.exec(m.texto);
+      if(!mm) return '';
+      const lat = Number(mm[1]); const lng = Number(mm[2]);
+      if(!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return '';
+      const lugar = ((/ubicaci[oó]n:\s*(.*?)\s*\(-?\d/.exec(m.texto) || [])[1] || '').trim();
+      const enlace = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+      /* 29-oct: la ubicación se ve como en WhatsApp: mapa arriba, nombre del lugar en negrita, dirección subrayada (abre Google Maps) y la hora. El texto guardado trae «nombre, dirección»: lo anterior a la primera coma es el nombre. */
+      const partes = lugar.split(/,\s+/); const nombreL = partes.length > 1 ? partes[0] : lugar; const dirL = partes.length > 1 ? partes.slice(1).join(', ') : '';
+      const linea = dirL || (nombreL ? '' : lat.toFixed(6) + ', ' + lng.toFixed(6));
+      return `${sep}<div class="wx-b ${clase} wx-ficha wx-ubic" data-wx-k="${k}"><a class="wx-mapa" href="${escapeHTML(enlace)}" target="_blank" rel="noopener noreferrer" aria-label="Abrir la ubicación en Google Maps">${wxMapaTeselas(lat, lng)}<svg class="wx-mapa-pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 0C5.4 0 0 5.3 0 11.8 0 20.6 12 32 12 32s12-11.4 12-20.2C24 5.3 18.6 0 12 0z" fill="#1A1815"/><circle cx="12" cy="11.5" r="4.2" fill="#fff"/></svg></a>${nombreL ? `<div class="wx-ubic-n">${escapeHTML(nombreL)}</div>` : ''}${linea ? `<a class="wx-ubic-d" href="${escapeHTML(enlace)}" target="_blank" rel="noopener noreferrer">${escapeHTML(linea)}</a>` : ''}<span class="wx-t">${hora}</span></div>`;
+    }
+    if(m.tipo === 'contacts'){
+      const cuerpo = (/contactos?:\s*(.*?)\]?\s*$/.exec(m.texto) || [])[1];
+      if(!cuerpo) return '';
+      const items = cuerpo.split('; ').map(x=>{ const q = /^(.*?)(?:\s*\(([0-9, ]+)\))?$/.exec(x.trim()); return q ? { nombre: (q[1] || '').trim(), tels: (q[2] || '').split(/[ ,]+/).filter(t=> /^\d{8,15}$/.test(t)) } : null; }).filter(x=> x && (x.nombre || x.tels.length));
+      if(!items.length) return '';
+      const tarjetas = items.map(x=> `<div class="wx-contacto"><span class="wx-contacto-av" aria-hidden="true">${escapeHTML((x.nombre || '?').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 1).toUpperCase() || '?')}</span><div class="wx-contacto-d"><b>${escapeHTML(x.nombre || 'Sin nombre')}</b>${x.tels.map(t=> `<div class="wx-contacto-t"><span>${escapeHTML(wxTelFormato(t))}</span><button type="button" class="wm-btn wm-btn-suave wx-ficha-b" data-wm-accion="wc-copiar-tel" data-tel="${escapeHTML(t)}">Copiar número</button>${WX.esAdmin ? `<button type="button" class="wm-btn wx-ficha-b wx-ficha-iniciar" data-wm-accion="wc-iniciar-conv" data-tel="${escapeHTML(t)}">Iniciar conversación</button>` : ''}</div>`).join('')}</div></div>`).join('');
+      return `${sep}<div class="wx-b ${clase} wx-ficha" data-wx-k="${k}"><span class="wx-et">${items.length === 1 ? 'Contacto' : 'Contactos'}</span>${tarjetas}<span class="wx-t">${hora}</span></div>`;
+    }
+    return '';
   }
   function wxBurbujaHTML(m, diaPrevio){
     const dia = wcDia(m.ts);
     const sep = dia !== diaPrevio ? `<div class="wx-dia">${escapeHTML(dia)}</div>` : '';
     const clase = m.autor === 'cliente' ? 'cli' : (m.autor === 'persona' ? 'per' : 'max');
+    /* 29-oct: un STICKER ya guardado se ve como en WhatsApp: solo la imagen y la hora, sin burbuja, sin «Imagen recibida», sin nombre de archivo ni texto de marcador. Mientras carga, un cuadro tenue; si falla, el botón de siempre. */
+    if(m.tipo === 'sticker' && m.media && m.media.estado === 'listo' && WV_RE_ARCHIVO.test(String(m.media.archivo || ''))){
+      const urlSt = WV.urls.get(m.k);
+      const cuerpoSt = urlSt ? `<img class="wv-media wv-sticker" alt="Sticker enviado por el cliente" src="${escapeHTML(urlSt)}">` : (WV.errores.get(m.k) ? wvVisorHTML(m) : '<span class="wv-sticker-ph" role="img" aria-label="Cargando sticker"></span>');
+      return { dia, html:`${sep}<div class="wx-b wx-sticker ${clase}" data-wx-k="${escapeHTML(m.k)}">${cuerpoSt}<span class="wx-t">${escapeHTML(wcHora(m.ts))}</span></div>` };
+    }
+    /* 29-oct: UBICACIÓN y CONTACTO que envía el cliente se ven como tarjetas (como WhatsApp): lugar, coordenadas y enlace a Google Maps; nombre, número y «Copiar número». Se arman con el texto que ya guarda el sistema; si no se reconoce, se ve el mensaje de siempre. */
+    const fichaSt = wxFichaHTML(m, sep, clase);
+    if(fichaSt) return { dia, html: fichaSt };
     const etiqueta = m.autor === 'cliente' ? '' : (m.autor === 'persona' ? 'Equipo' + (m.autorNombre ? ' · ' + m.autorNombre + (m.autorRol ? ' (' + (WK_ROL[m.autorRol] || m.autorRol) + ')' : '') : '') : (m.autor === 'sistema' ? 'Sistema' : 'Max'));
     const largo = (m.texto || '').length > WC_LARGO;
     const media = m.media ? `<div class="wc-media">${WC_ICONS.adjunto}<span>${escapeHTML(m.direccion === 'out' ? ({ imagen:'Imagen enviada', video:'Video enviado', documento:'Documento enviado', audio:'Nota de voz' }[m.media.tipo] || 'Archivo enviado') : (m.media.tipo === 'audio' ? 'Nota de voz recibida' : (WC_MEDIA[m.media.tipo] || 'Archivo')))}${((m.media.nombre || m.media.archivo) && m.media.tipo !== 'audio') ? `<small>${escapeHTML(m.media.nombre || m.media.archivo)}</small>` : ''}${m.media.leyenda ? `<small>${escapeHTML('“' + m.media.leyenda + '”')}</small>` : ''}</span></div>${wvVisorHTML(m)}` : '';
@@ -15837,7 +16027,11 @@
       ? `<span class="wx-tx wc-txt${WC.expandidos.has(m.k) ? ' abierto' : ''}" data-wc-txt="${escapeHTML(m.k)}">${escapeHTML(WC.expandidos.has(m.k) ? m.texto : wcVista(m.texto))}</span><button class="wc-ver" type="button" data-wm-accion="wc-ver-completo" data-wc-k="${escapeHTML(m.k)}" aria-expanded="${WC.expandidos.has(m.k) ? 'true' : 'false'}">${WC.expandidos.has(m.k) ? 'Ocultar mensaje completo' : 'Ver mensaje completo (' + wmEntero(m.texto.length) + ' caracteres)'}</button>`
       : (m.texto ? `<span class="wx-tx">${escapeHTML(m.texto)}</span>` : (m.media ? '' : '<span class="wx-tx">(sin texto)</span>'));
     const tipo = m.tipo && m.tipo !== 'text' && !m.media ? `<span class="wx-et">${escapeHTML(WC_TIPOS[m.tipo] || 'Otro tipo')}</span>` : '';
-    return { dia, html:`${sep}<div class="wx-b ${clase}" data-wx-k="${escapeHTML(m.k)}">${etiqueta ? `<span class="wx-et">${escapeHTML(etiqueta)}</span>` : ''}${tipo}${media}${texto}<span class="wx-t">${escapeHTML(wcHora(m.ts))}${m.entrega ? ` · <span class="${m.entrega === 'fallido' ? 'malo' : ''}">${escapeHTML(WC_ENTREGA[m.entrega] || '')}</span>` : ''}</span></div>` };
+    /* 29-oct: una FOTO se ve como en WhatsApp: solo la imagen (y su texto, si lo trae) y la hora; sin la etiqueta «Imagen recibida / enviada», sin el nombre del archivo y sin el marcador «[el cliente envió una imagen]». Si la foto aún no se puede abrir, se ve el estado de siempre (descargando / no se pudo recuperar). */
+    const esFoto = !!(m.media && m.media.tipo === 'imagen');
+    const mediaVista = esFoto ? wvVisorHTML(m) : media;
+    const textoVista = (esFoto && /^\[el cliente envió una imagen\]$/.test(String(m.texto || '').trim())) ? (m.media.leyenda ? `<span class="wx-tx">${escapeHTML(m.media.leyenda)}</span>` : '') : texto;
+    return { dia, html:`${sep}<div class="wx-b ${clase}${esFoto ? ' wx-foto' : ''}" data-wx-k="${escapeHTML(m.k)}">${etiqueta ? `<span class="wx-et">${escapeHTML(etiqueta)}</span>` : ''}${tipo}${mediaVista}${textoVista}<span class="wx-t">${escapeHTML(wcHora(m.ts))}${m.entrega ? ` · <span class="${m.entrega === 'fallido' ? 'malo' : ''}">${escapeHTML(WC_ENTREGA[m.entrega] || '')}</span>` : ''}</span></div>` };
   }
   function wxMensajesHTML(){
     const h = WC.hilo;
@@ -15853,6 +16047,7 @@
   function wcHiloHTML(){
     if(!WC.abierta) return `<div class="wx-vacio-chat">${WM_ICONS.chat}<p>Elige una conversación para verla y responder.</p></div>`;
     return `<header class="wx-cab" id="wxCab"></header>
+      <div class="wx-aviso" id="wxAviso" hidden></div>
       <div class="wx-msgs-wrap"><div class="wx-msgs" id="wxMsgs" tabindex="0" aria-label="Mensajes de la conversación"></div><button class="wx-bajar" id="wxBajar" type="button" data-wm-accion="wx-bajar" hidden></button></div>
       <div class="wx-nota" id="wxNota" hidden></div>
       <div class="wx-adj" id="wxAdj" hidden></div>
@@ -15873,7 +16068,24 @@
     const c = wmEl('wxMsgs'); if(!c) return;
     c.scrollTop = c.scrollHeight; WX.nuevos = 0; wxPintarNuevos(); wxMarcarVisto(WC.idAbierto); wcPintarLista();
   }
-  function wxPintarCabecera(){ const e = wmEl('wxCab'); if(e) e.innerHTML = wxCabeceraHTML(); }
+  /* Aviso dentro del chat: le dice a recepción QUÉ pasó y QUÉ hacer (solo mientras el chat espera a una persona y no lo está atendiendo quien mira). */
+  const WX_AVISOS = {
+    'error:sin_respuesta_reintentos':{ clase:'malo', t:'Este mensaje no se pudo responder', x:'Max no logró responder tras varios intentos y el cliente recibió un aviso de espera. Toma la conversación y respóndele.' },
+    'error:envio_incierto':{ clase:'', t:'No se pudo confirmar la entrega de la última respuesta', x:'Revisa que el cliente haya recibido la respuesta de Max; si no, vuelve a escribirle.' },
+    limitado_antiabuso:{ clase:'', t:'Mensajes detenidos por protección anti abuso', x:'Este número envió muchos mensajes seguidos y Max no los procesó. Revisa si es un cliente real antes de responder.' },
+    atrasado:{ clase:'', t:'Mensaje recibido con retraso', x:'Llegó con más de 3 horas de demora, por eso Max no lo respondió. Respóndele tú.' },
+    pedido_cliente:{ clase:'info', t:'El cliente pidió hablar con una persona', x:'Toma la conversación para responderle.' },
+    queja:{ clase:'info', t:'Queja o reclamo', x:'Atiéndelo con prioridad: Max ya lo pasó al equipo.' },
+  };
+  function wxPintarAviso(){
+    const e = wmEl('wxAviso'); if(!e) return;
+    const c = WC.hilo ? WC.hilo.conv : (WC.lista.find(x=> x.id === WC.idAbierto) || null);
+    const a = c && c.pendiente && c.estado !== 'optout' ? WX_AVISOS[c.motivo] : null;
+    const mia = !!(c && c.intervencion && c.intervencion.activa && c.intervencion.esMia);
+    if(!a || mia){ e.hidden = true; e.className = 'wx-aviso'; e.innerHTML = ''; return; }
+    e.className = 'wx-aviso' + (a.clase ? ' ' + a.clase : ''); e.innerHTML = '<b>' + escapeHTML(a.t) + '</b>' + escapeHTML(a.x); e.hidden = false;
+  }
+  function wxPintarCabecera(){ const e = wmEl('wxCab'); if(e) e.innerHTML = wxCabeceraHTML(); wxPintarAviso(); }
   /** modo: 'abajo' (al abrir), 'mantener' (mismo punto de lectura), 'previos' (se cargaron anteriores: no salta). */
   function wxPintarMensajes(modo){
     const cont = wmEl('wxMsgs'); if(!cont) return;
@@ -15885,6 +16097,7 @@
     else if(modo === 'previos') cont.scrollTop = cont.scrollHeight - altura + top;
     else cont.scrollTop = top;
     WX.nuevos = modo === 'abajo' ? 0 : WX.nuevos; wxPintarNuevos();
+    try{ wvAutoAbrir(); }catch(e){ /* nunca rompe el chat */ }
   }
   function wxPintarComposer(){
     const ta = wmEl('wxTexto'); const env = wmEl('wxEnviar'); const nota = wmEl('wxNota'); if(!ta || !env) return;
@@ -15970,8 +16183,14 @@
       if(id !== WC.idAbierto || !WC.hilo || !d || d.ok !== true || !Array.isArray(d.mensajes) || !d.conversacion) return;
       const conocidas = new Map(WC.hilo.mensajes.map(m=> [m.k, m]));
       const nuevos = d.mensajes.filter(m=> !conocidas.has(m.k));
-      let cambioEntrega = false;
-      d.mensajes.forEach(m=>{ const p = conocidas.get(m.k); if(p && p.entrega !== m.entrega){ p.entrega = m.entrega; cambioEntrega = true; } });
+      /* 28-oct: se mezclan los cambios de lo ya mostrado SIN recargar la página: estado de entrega (enviado/entregado/leído/no entregado) y estado/archivo de las fotos, videos, documentos y notas de voz (aparecen cuando el servidor termina de guardarlos). */
+      const cambiosEntrega = []; const cambiosMedia = [];
+      d.mensajes.forEach(m=>{
+        const p = conocidas.get(m.k); if(!p) return;
+        if(p.entrega !== m.entrega){ p.entrega = m.entrega; cambiosEntrega.push(p.k); }
+        const firma = (x)=> JSON.stringify(x && x.media ? [x.media.archivo || null, x.media.estado || null, x.media.motivo || null, x.media.segundos || null] : null);
+        if(firma(p) !== firma(m)){ p.media = m.media; cambiosMedia.push(p.k); }
+      });
       const antes = JSON.stringify([WC.hilo.conv.estado, WC.hilo.conv.pendiente, WC.hilo.conv.intervencion || null, WC.hilo.conv.ultimoEntranteEl]);
       WC.hilo.conv = d.conversacion;
       const despues = JSON.stringify([d.conversacion.estado, d.conversacion.pendiente, d.conversacion.intervencion || null, d.conversacion.ultimoEntranteEl]);
@@ -15985,14 +16204,19 @@
           if(alFinal){ cont.scrollTop = cont.scrollHeight; WX.nuevos = 0; wxPintarNuevos(); wxMarcarVisto(id); }
           else { WX.nuevos += nuevos.filter(m=> m.autor === 'cliente').length; wxPintarNuevos(); }
         }else wxPintarMensajes('abajo');
-      }else if(cambioEntrega){
+      }
+      if(cambiosEntrega.length || cambiosMedia.length){
         document.querySelectorAll('#wcHilo [data-wx-k]').forEach(el=>{
-          const m = WC.hilo.mensajes.find(x=> x.k === el.getAttribute('data-wx-k')); if(!m) return;
-          const t = el.querySelector('.wx-t'); if(t) t.innerHTML = escapeHTML(wcHora(m.ts)) + (m.entrega ? ' · <span class="' + (m.entrega === 'fallido' ? 'malo' : '') + '">' + escapeHTML(WC_ENTREGA[m.entrega] || '') + '</span>' : '');
+          const k = el.getAttribute('data-wx-k'); const m = WC.hilo.mensajes.find(x=> x.k === k); if(!m) return;
+          if(cambiosMedia.includes(k)){ el.outerHTML = wxBurbujaHTML(m, wcDia(m.ts)).html; return; }   // solo cuando cambió el archivo: no se toca un video que se está viendo
+          if(cambiosEntrega.includes(k)){
+            const t = el.querySelector('.wx-t'); if(t) t.innerHTML = escapeHTML(wcHora(m.ts)) + (m.entrega ? ' · <span class="' + (m.entrega === 'fallido' ? 'malo' : '') + '">' + escapeHTML(WC_ENTREGA[m.entrega] || '') + '</span>' : '');
+          }
         });
       }
       if(antes !== despues){ wxPintarCabecera(); wxPintarComposer(); }
       if(nuevos.length || antes !== despues) wcPintarLista();
+      try{ wvAutoAbrir(); }catch(e2){ /* nunca rompe el refresco */ }
     }catch(e){ /* silencioso: se reintenta en el próximo ciclo */ }
     finally{ WX.refrescando = false; }
   }
@@ -16860,15 +17084,28 @@
   /* ----- Ver el video o la imagen que envió el cliente (24-oct-2026) -----
      El archivo está en Storage PRIVADO. whatsappPanelMedia lo entrega solo a ADMIN/RECEPTION con la sesión del panel y deja registro de cada apertura. Aquí se pide con el token,
      se recibe como blob y se muestra en el hilo; al salir del hilo se liberan. Sin enlaces públicos y sin descargas a disco. */
-  const WV = { urls:new Map(), cargando:new Set(), errores:new Map() };
+  const WV = { urls:new Map(), cargando:new Set(), errores:new Map(), auto:new Set() };
   const WV_RE_ARCHIVO = /^[a-f0-9]{40}\.(mp4|3gp|mov|jpg|jpeg|png|webp|pdf|docx|xlsx|pptx|doc|xls|ppt|txt|ogg|m4a|mp3|aac|amr)$/;
   function wvLimpiar(){
     WV.urls.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} });
-    WV.urls.clear(); WV.cargando.clear(); WV.errores.clear();
+    WV.urls.clear(); WV.cargando.clear(); WV.errores.clear(); WV.auto.clear();
     WVT.abiertos.clear(); WVT.textos.clear(); WVT.cargando.clear(); WVT.errores.clear();
+  }
+  /* 28-oct: estado del archivo del cliente cuando todavía no se puede abrir: se descarga (se reintenta solo), se rechazó por tipo/tamaño, no se recuperó, o es un mensaje antiguo sin archivo. Nunca se muestra como recibido lo que no se guardó. */
+  const WV_ESTADOS = {
+    pendiente:'Descargando el archivo… se reintenta solo.',
+    fallido:'No se pudo recuperar el archivo. Se avisó al equipo: pídele al cliente que lo envíe de nuevo.',
+    sin_archivo:'Este archivo no quedó guardado. Pídele al cliente que lo envíe de nuevo.',
+  };
+  function wvEstadoHTML(m){
+    const e = m && m.media && m.media.estado;
+    if(!e || e === 'listo') return '';
+    const texto = e === 'rechazado' ? (m.media.motivo === 'muy_pesado' ? 'El archivo es demasiado pesado y no se guardó. Pídele al cliente que lo envíe más liviano.' : 'Este tipo de archivo no se admite y no se guardó. Pídele al cliente que lo envíe como foto, video o PDF.') : WV_ESTADOS[e];
+    return texto ? `<span class="wv-estado${e === 'pendiente' ? '' : ' malo'}" data-wv-estado="${escapeHTML(e)}">${escapeHTML(texto)}</span>` : '';
   }
   function wvVisorHTML(m){
     const a = m && m.media && m.media.archivo;
+    if(m && m.media && m.media.estado && m.media.estado !== 'listo' && !(a && WV_RE_ARCHIVO.test(String(a)))) return wvEstadoHTML(m);
     if(!a || !WV_RE_ARCHIVO.test(String(a)) || (m.media.tipo !== 'video' && m.media.tipo !== 'imagen' && m.media.tipo !== 'documento' && m.media.tipo !== 'audio')) return '';
     const esVideo = m.media.tipo === 'video';
     const esDoc = m.media.tipo === 'documento';
@@ -16881,18 +17118,36 @@
     if(url){
       return esVideo
         ? `<video class="wv-media" controls playsinline preload="metadata" src="${escapeHTML(url)}"></video>`
-        : `<img class="wv-media" alt="Imagen enviada por el cliente" src="${escapeHTML(url)}">`;
+        : `<img class="wv-media${m.tipo === 'sticker' ? ' wv-sticker' : ''}" alt="${m.tipo === 'sticker' ? 'Sticker enviado por el cliente' : 'Imagen enviada por el cliente'}" src="${escapeHTML(url)}">`;
     }
     const cargando = WV.cargando.has(m.k);
     const err = WV.errores.get(m.k);
     return `<button class="wm-btn wm-btn-suave wv-btn" type="button" data-wm-accion="wv-ver" data-wc-k="${escapeHTML(m.k)}"${cargando ? ' disabled' : ''}>${escapeHTML(cargando ? 'Abriendo…' : (esVideo ? 'Ver video' : (esDoc ? 'Abrir documento' : 'Ver imagen')))}</button>${err ? `<p class="wv-err">${escapeHTML(err)}</p>` : ''}`;
   }
-  async function wvAbrir(k){
+  /* 29-oct: las FOTOS y los STICKERS del cliente se abren solos al mostrarse el chat (como en WhatsApp Web), sin pulsar «Ver imagen». Los videos, documentos y notas de voz siguen bajo demanda por su tamaño.
+     Hasta 20 por chat (las más recientes), 3 a la vez; si una falla no se reintenta sola (queda el botón). Cada apertura queda en el registro de acceso como siempre. */
+  function wvAutoAbrir(){
+    if(!WC.abierta || !WC.hilo || !WC.idAbierto) return;
+    const idConv = WC.idAbierto;
+    const lista = WC.hilo.mensajes.filter(m=> m && m.media && m.media.tipo === 'imagen' && WV_RE_ARCHIVO.test(String(m.media.archivo || '')) && !WV.urls.has(m.k) && !WV.cargando.has(m.k) && !WV.auto.has(m.k)).slice(-20).reverse();
+    if(!lista.length) return;
+    lista.forEach(m=> WV.auto.add(m.k));
+    let i = 0;
+    const siguiente = async ()=>{
+      while(i < lista.length){
+        const m = lista[i++];
+        if(WC.idAbierto !== idConv || !WC.abierta) return;
+        await wvAbrir(m.k, true);
+      }
+    };
+    siguiente(); siguiente(); siguiente();
+  }
+  async function wvAbrir(k, auto){
     if(!/^[0-9a-f]{12}$/.test(String(k)) || !WC.hilo || !WC.idAbierto || WV.cargando.has(k) || WV.urls.has(k)) return;
     const m = WC.hilo.mensajes.find(x=> x.k === k);
     if(!m || !m.media || !WV_RE_ARCHIVO.test(String(m.media.archivo || ''))) return;
     const idConv = WC.idAbierto;
-    WV.cargando.add(k); WV.errores.delete(k); wcPintarHilo('conservar');
+    WV.cargando.add(k); WV.errores.delete(k); if(!auto) wcPintarHilo('conservar');
     try{
       const u = auth.currentUser; if(!u) throw new Error('sesion');
       const token = await u.getIdToken();
@@ -16987,6 +17242,29 @@
     else if(a === 'wc-reintentar') wcCargarLista(false);
     else if(a === 'wc-volver') wcVolverALista();
     else if(a === 'wc-anteriores') wcCargarHilo(true);
+    else if(a === 'wc-copiar-tel'){
+      const t = String(b.getAttribute('data-tel') || '');
+      if(!/^\d{8,15}$/.test(t)) return;
+      const ok = ()=> showToast('Número copiado'); const mal = ()=> showToast('No se pudo copiar el número');
+      try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('+' + t).then(ok, mal); else mal(); }catch(e){ mal(); }
+    }
+    else if(a === 'wc-iniciar-conv'){
+      /* 29-oct: «Iniciar conversación» con el número de un contacto compartido: solo Administración; sale la plantilla oficial «inicio_conversacion» (WhatsApp no permite otra cosa con un número que no escribió en las últimas 24 h). El servidor repite todas las reglas. */
+      const t = String(b.getAttribute('data-tel') || '');
+      if(!/^\d{8,15}$/.test(t) || !WX.esAdmin) return;
+      (async ()=>{
+        const ok = await mgConfirm('Se enviará este mensaje por WhatsApp, con la plantilla oficial, a ' + wxTelFormato(t) + ':\n\n«Hola, te escribimos de MASTERLOOK. Si quieres información, precios o reservar una hora, responde a este mensaje y te ayudamos por aquí. Si prefieres no recibir mensajes nuestros, responde NO.»\n\nWhatsApp solo permite escribirle por primera vez con una plantilla aprobada. Hazlo solo si esa persona espera tu mensaje: si pide no recibir más, no se le vuelve a escribir. Solo se envía una vez cada 30 días por número.', { titulo:'Iniciar conversación', textoConfirmar:'Enviar mensaje' });
+        if(!ok) return;
+        b.disabled = true; const txt = b.textContent; b.textContent = 'Enviando…';
+        try{
+          const r = await functions.httpsCallable('whatsappPanelIntervencion')({ accion:'iniciar', telefono:t }).then(x=> x.data);
+          showToast((r && r.mensaje) || 'Mensaje enviado');
+          try{ wxRefrescarLista(); }catch(e){ /* la lista se actualiza sola */ }
+        }catch(e){
+          showToast('No se pudo iniciar la conversación: ' + ((e && e.message) ? e.message : 'inténtalo de nuevo'));
+        }finally{ b.disabled = false; b.textContent = txt; }
+      })();
+    }
     else if(a === 'wc-ver-completo'){
       const k = b.getAttribute('data-wc-k');
       if(!/^[0-9a-f]{12}$/.test(String(k)) || !WC.hilo) return;
