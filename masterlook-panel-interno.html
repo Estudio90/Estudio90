@@ -2665,6 +2665,9 @@
   .wx-aviso.malo{background:var(--rv-rose-soft);color:var(--rv-rose);}
   .wx-aviso.info{background:var(--panel-2);color:var(--rv-ink-soft);}
   .wx-aviso[hidden]{display:none;}
+  .wx-espera{display:flex;flex-direction:column;gap:6px;}
+  .wx-espera-i{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px;border:1px solid var(--rv-line);border-radius:8px;background:var(--panel);}
+  .wx-espera-i span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .wx-bajar[hidden],.wx-nota[hidden]{display:none;}
   .wvz-intro{font-size:13px;color:var(--text-mid);line-height:1.5;margin:0 0 14px;}
   .wvz-gasto{font-size:12px;color:var(--text-low);margin:0 0 12px;font-variant-numeric:tabular-nums;}
@@ -15643,12 +15646,32 @@
       </section>`;
   }
 
+  /* ----- Notas de voz de los clientes (30-oct): MAX ENTIENDE (transcribe) las notas de voz y responde por TEXTO. Solo Administración. Independiente de «MAX responde con voz», que sigue apagada. ----- */
+  function wmVozHTML(d){
+    const v = d.voz; if(!v) return '';
+    const on = v.transcribir === true;
+    return `<section class="wm-card" aria-labelledby="wmTVoz">
+        <h3 class="wm-card-t" id="wmTVoz">${WM_ICONS.chat}Notas de voz de los clientes<span class="wm-cuenta">${on ? 'MAX las entiende' : 'Apagado'}</span></h3>
+        <p class="wm-card-s">${on ? 'MAX transcribe las notas de voz que escriben los clientes y les responde <b>por texto</b>.' : 'Hoy MAX no entiende las notas de voz: les pide a los clientes que escriban.'} Cuesta ≈ US$0,0045 por minuto de audio y cuenta dentro del tope de WhatsApp (si se alcanza, MAX pide escribir). <b>MAX no responde hablando</b>${v.respondeHablando ? ' (la voz de MAX está encendida en «Voz de MAX»)' : ''}; eso se maneja aparte.</p>
+        <button class="wm-btn ${on ? 'wm-btn-suave' : 'wm-btn-tinta'}" type="button" data-wm-accion="voz-entender"${WM.enCurso ? ' disabled' : ''}>${on ? 'Apagar' : 'Encender'} «Entender notas de voz»</button>
+      </section>`;
+  }
+  async function wmVozEntenderCambiar(){
+    const v = WM.datos && WM.datos.voz; if(!v || WM.enCurso) return;
+    const nuevo = v.transcribir !== true;
+    if(nuevo){
+      const ok = await mgConfirm('MAX transcribirá las notas de voz de los clientes y responderá por texto. Cuesta ≈ US$0,0045 por minuto y cuenta dentro del tope de WhatsApp. MAX NO responderá hablando. Puedes apagarlo cuando quieras.', { titulo:'Entender notas de voz', textoConfirmar:'Encender' });
+      if(!ok) return;
+    }
+    await wmEjecutar({ accion:'entenderVoz', transcribir:nuevo }, nuevo ? 'MAX ahora entiende notas de voz' : 'MAX ya no entiende notas de voz');
+  }
+
   function wmPintar(){
     const cont = wmEl('wmContenido'); const wrap = wmEl('wmTopesWrap');
     if(!cont || !wrap) return;
     if(WM.modo === 'datos' && WM.datos){
       const d = WM.datos;
-      cont.innerHTML = wmHeroHTML(d) + wmAlertasHTML(d) + wmTarjetasHTML(d) + wmPendientesHTML(d) + wmReservasHTML(d) + wmPoliticasHTML(d);
+      cont.innerHTML = wmHeroHTML(d) + wmAlertasHTML(d) + wmTarjetasHTML(d) + wmPendientesHTML(d) + wmReservasHTML(d) + wmPoliticasHTML(d) + wmVozHTML(d);
       // El formulario de topes se vuelve a pintar solo si la persona no está editando (así una actualización automática no le borra lo escrito).
       if(!WM.topesSucios || !wrap.firstChild) wrap.innerHTML = wmTopesHTML(d);
     }else{
@@ -16104,20 +16127,30 @@
     const c = WC.hilo ? WC.hilo.conv : null;
     let bloqueo = '';
     if(!c) bloqueo = 'cargando';
-    else if(c.estado === 'optout') bloqueo = 'Este cliente pidió no recibir más mensajes.';
-    else if(c.ultimoEntranteEl && Date.now() - Date.parse(c.ultimoEntranteEl) > 24 * 3600 * 1000) bloqueo = 'Pasaron más de 24 horas desde el último mensaje del cliente: WhatsApp solo permite responder dentro de ese plazo.';
+    else if(c.estado === 'optout' && !c.consultaPosBaja) bloqueo = 'Este cliente pidió no recibir más mensajes. Podrás responderle si vuelve a escribir (durante 24 horas desde su mensaje).';
     else if(c.intervencion && c.intervencion.activa && !c.intervencion.esMia && !WX.esAdmin) bloqueo = 'La atiende ' + (c.intervencion.nombre || 'otra persona del equipo') + '. Podrás escribir cuando la devuelva.';
     const mia = !!(c && c.intervencion && c.intervencion.activa && c.intervencion.esMia);
     ta.disabled = !!bloqueo || WX.enviando;
     env.disabled = !!bloqueo || WX.enviando;
-    ta.placeholder = bloqueo && bloqueo !== 'cargando' ? 'No puedes escribir en este chat' : (mia ? 'Escribe un mensaje' : 'Escribe un mensaje (Max se silencia al enviar)');
+    /* 30-oct: bandeja simple. Fuera de las 24 h ya no se bloquea: el servidor abre la conversación con una plantilla aprobada y el texto sale cuando el cliente responde. */
+    const fuera = !!(c && (!c.ultimoEntranteEl || Date.now() - Date.parse(c.ultimoEntranteEl) > 24 * 3600 * 1000));
+    ta.placeholder = bloqueo && bloqueo !== 'cargando' ? 'No puedes escribir en este chat' : (fuera ? 'Escribe un mensaje (fuera de las 24 h se abre con una plantilla)' : (mia ? 'Escribe un mensaje' : 'Escribe un mensaje (Max se silencia al enviar)'));
     const clip = wmEl('wxClip'); if(clip) clip.disabled = !!bloqueo || WX.enviando;
     if(bloqueo && WX.menu) wxMenu(false);
     if(!bloqueo && WX.adjunto && WX.adjunto.conv === WC.idAbierto) ta.placeholder = 'Añade un mensaje (opcional)';
     wxPintarAdjunto();
     const mic = wmEl('wxMic'); if(mic) mic.disabled = !!bloqueo || WX.enviando || !!WX.adjunto || !!WXV.estado;
     wxvPintar();
-    if(nota){ nota.hidden = !bloqueo || bloqueo === 'cargando'; nota.textContent = bloqueo === 'cargando' ? '' : bloqueo; }
+    if(nota){
+      const espera = (!bloqueo && c && Array.isArray(c.enEspera)) ? c.enEspera : [];
+      if(bloqueo && bloqueo !== 'cargando'){ nota.hidden = false; nota.textContent = bloqueo; }
+      else if(c && c.estado === 'optout' && c.consultaPosBaja){ nota.hidden = false; nota.textContent = 'Pidió no recibir mensajes de MASTERLOOK, pero volvió a escribir: puedes responderle durante 24 horas desde su último mensaje. Su baja sigue vigente para mensajes que iniciemos nosotros.'; }
+      else if(espera.length){
+        nota.hidden = false;
+        nota.innerHTML = '<div class="wx-espera"><b>' + (espera.length === 1 ? 'Un mensaje espera' : espera.length + ' mensajes esperan') + ' la respuesta del cliente</b> — saldrá solo cuando conteste.' +
+          espera.map(x=> '<div class="wx-espera-i"><span>' + escapeHTML(x.texto) + '</span><button type="button" class="wm-btn wm-btn-suave" data-wm-accion="wx-cancelar-espera" data-k="' + escapeHTML(x.k) + '">Cancelar</button></div>').join('') + '</div>';
+      } else { nota.hidden = true; nota.textContent = ''; }
+    }
   }
   function wxAutoAltura(ta){
     ta.style.height = 'auto';
@@ -16261,12 +16294,12 @@
     WX.enviando = true; wxPintarComposer();
     const llamar = (datos)=> functions.httpsCallable('whatsappPanelIntervencion')(datos).then(x=> x.data);
     try{
-      if(!(c.intervencion && c.intervencion.activa && c.intervencion.esMia)){
-        const t = await llamar({ accion:'tomar', id });
-        if(!t || t.ok !== true) throw new Error('respuesta');
-      }
-      const r = await llamar({ accion:'responder', id, texto });
+      /* 30-oct: UNA sola llamada. El servidor decide con lo que ya sabe del cliente: dentro de las 24 h sale directo; fuera, abre con una plantilla aprobada y el texto espera la respuesta; sin autorización no envía y explica. */
+      if(!WX.claveEnvio || WX.claveEnvio.id !== id || WX.claveEnvio.texto !== texto) WX.claveEnvio = { id, texto, clave: wxClave() };
+      const r = await llamar({ accion:'enviar', id, texto, clave: WX.claveEnvio.clave });
       if(!r || r.ok !== true) throw new Error('respuesta');
+      WX.claveEnvio = null;
+      if(r.modo === 'plantilla' || r.modo === 'en_espera') showToast(r.mensaje || 'Se abrió la conversación; tu mensaje saldrá cuando el cliente responda.');
       if(id === WC.idAbierto){ ta.value = ''; wxAutoAltura(ta); }
       WX.borradores.delete(id); wxGuardarBorradores();
       WX.enviando = false;
@@ -17249,21 +17282,32 @@
       try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText('+' + t).then(ok, mal); else mal(); }catch(e){ mal(); }
     }
     else if(a === 'wc-iniciar-conv'){
-      /* 29-oct: «Iniciar conversación» con el número de un contacto compartido: solo Administración; sale la plantilla oficial «inicio_conversacion» (WhatsApp no permite otra cosa con un número que no escribió en las últimas 24 h). El servidor repite todas las reglas. */
+      /* 30-oct: bandeja simple. Sin ventanas de consentimiento: el servidor revisa solo la evidencia que ya existe (el cliente escribió antes, tiene una reserva, o un permiso registrado). Si Meta no permite escribirle, se explica y se ofrece una alternativa permitida. */
       const t = String(b.getAttribute('data-tel') || '');
       if(!/^\d{8,15}$/.test(t) || !WX.esAdmin) return;
       (async ()=>{
-        const ok = await mgConfirm('Se enviará este mensaje por WhatsApp, con la plantilla oficial, a ' + wxTelFormato(t) + ':\n\n«Hola, te escribimos de MASTERLOOK. Si quieres información, precios o reservar una hora, responde a este mensaje y te ayudamos por aquí. Si prefieres no recibir mensajes nuestros, responde NO.»\n\nWhatsApp solo permite escribirle por primera vez con una plantilla aprobada. Hazlo solo si esa persona espera tu mensaje: si pide no recibir más, no se le vuelve a escribir. Solo se envía una vez cada 30 días por número.', { titulo:'Iniciar conversación', textoConfirmar:'Enviar mensaje' });
-        if(!ok) return;
         b.disabled = true; const txt = b.textContent; b.textContent = 'Enviando…';
         try{
           const r = await functions.httpsCallable('whatsappPanelIntervencion')({ accion:'iniciar', telefono:t }).then(x=> x.data);
           showToast((r && r.mensaje) || 'Mensaje enviado');
           try{ wxRefrescarLista(); }catch(e){ /* la lista se actualiza sola */ }
         }catch(e){
-          showToast('No se pudo iniciar la conversación: ' + ((e && e.message) ? e.message : 'inténtalo de nuevo'));
+          const det = (e && e.details && typeof e.details === 'object') ? e.details : null;
+          if(det && det.alternativa){
+            const copiar = await mgConfirm(String(e.message || '').slice(0, 600), { titulo:'No se puede escribir a este contacto', textoConfirmar:'Copiar invitación', textoCancelar:'Cerrar' });
+            if(copiar){
+              const inv = 'Hola, te habla MASTERLOOK. Escríbenos por WhatsApp a este número cuando quieras y te ayudamos con tu hora o tus consultas.';
+              try{ await navigator.clipboard.writeText(inv); showToast('Invitación copiada'); }catch(e2){ showToast('No se pudo copiar'); }
+            }
+          } else showToast('No se pudo iniciar la conversación: ' + ((e && e.message) ? e.message : 'inténtalo de nuevo'));
         }finally{ b.disabled = false; b.textContent = txt; }
       })();
+    }
+    else if(a === 'wx-cancelar-espera'){
+      const k = String(b.getAttribute('data-k') || ''); const id = WC.idAbierto;
+      if(!k || !id) return;
+      b.disabled = true;
+      functions.httpsCallable('whatsappPanelIntervencion')({ accion:'cancelarEnEspera', id, k }).then(()=>{ showToast('Mensaje cancelado'); return wxRefrescarHilo(true); }).catch((e)=>{ showToast(wiTextoError(e)); b.disabled = false; });
     }
     else if(a === 'wc-ver-completo'){
       const k = b.getAttribute('data-wc-k');
@@ -17277,6 +17321,7 @@
       b.setAttribute('aria-expanded', abre ? 'true' : 'false');
     }
     else if(a === 'wc-reintentar-hilo'){ WC.hiloError = ''; WC.hiloCargando = true; wcPintarHilo(); wcCargarHilo(false); }
+    else if(a === 'voz-entender') wmVozEntenderCambiar();
     else if(a === 'topes-guardar') wmGuardarTopes();
     else if(a === 'topes-descartar'){ WM.topesSucios = false; if(WM.datos) wmEl('wmTopesWrap').innerHTML = wmTopesHTML(WM.datos); }
   });
