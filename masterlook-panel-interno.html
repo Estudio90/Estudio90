@@ -10053,6 +10053,23 @@
     const m = String(slot).match(/(\d{1,2}):(\d{2})/);
     return m ? [parseInt(m[1],10), parseInt(m[2],10)] : [10,0];
   }
+  /* 3-nov-2026 (incidente «MAX confirma 17:00 y la agenda muestra 10:00»): la hora REAL de una reserva es `startMin` (minutos desde medianoche, hora de Chile, lo que guarda el
+     servidor y con lo que se bloquea la agenda). El texto `slot` es solo respaldo de compatibilidad para reservas antiguas sin `startMin`: NUNCA pisa una hora real válida.
+     Antes se leía solo `slot` y, si venía vacío (reservas hechas por el chat de MAX), se dibujaba a las 10:00 por defecto. */
+  function minutosRealesDeReserva(r){
+    if(r && typeof r.startMin === 'number' && Number.isFinite(r.startMin) && r.startMin >= 0 && r.startMin < 1440) return Math.floor(r.startMin);
+    const m = String((r && r.slot) || '').match(/(\d{1,2}):(\d{2})/);
+    return m ? parseInt(m[1],10) * 60 + parseInt(m[2],10) : null;
+  }
+  function inicioDeReserva(r){
+    const t = minutosRealesDeReserva(r);
+    return t === null ? [10,0] : [Math.floor(t / 60), t % 60];   // sin ninguna hora: se conserva la posición histórica (10:00), pero la tarjeta lo avisa (ver reservaSinHora)
+  }
+  function reservaSinHora(r){ return minutosRealesDeReserva(r) === null; }
+  function horaTextoDeReserva(r){
+    const t = minutosRealesDeReserva(r);
+    return t === null ? '' : String(Math.floor(t / 60)).padStart(2,'0') + ':' + String(t % 60).padStart(2,'0');
+  }
 
   function addMinutes(hh, mm, mins){
     const total = hh*60 + mm + mins;
@@ -10076,7 +10093,7 @@
     // POR ID del profesional (inmutable); el nombre solo se usa para
     // reservas antiguas sin barberId y solo si es inequívoco.
     const col = columnaDeReserva(r);
-    const start = parseSlot(r.slot);
+    const start = inicioDeReserva(r);
     const end = addMinutes(start[0], start[1], duracionReal);
     // Nombre MOSTRADO: el de la ficha del profesional dueño del ID; si no hay
     // ficha, el nombre con que quedó guardada la reserva -- nunca el de otra columna.
@@ -11968,7 +11985,7 @@
       if(r.decision === 'rechazada') return false;
       if(!nombresBarbero.includes(r.barber)) return false;
       const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : serviceMeta(r.svc).mins;
-      const [sh,sm] = parseSlot(r.slot);
+      const [sh,sm] = inicioDeReserva(r);
       const s = sh*60+sm, e = s + duracionReal;
       return s < hastaMin && e > desdeMin;
     });
@@ -13195,7 +13212,7 @@
       sbCitasDelDia(iso, b.name, (cfgBarberos.find(x=> (x.calId != null ? x.calId : x.id) === b.id) || {}).id).forEach(r=>{
         const meta = serviceMeta(r.svc);
         const duracionReal = Number(r.duracion) > 0 ? Number(r.duracion) : meta.mins;
-        const start = parseSlot(r.slot);
+        const start = inicioDeReserva(r);
         const end = addMinutes(start[0], start[1], duracionReal);
         const top = timeToTop(start[0], start[1]);
         const bottom = timeToTop(end[0], end[1]);
@@ -13209,7 +13226,7 @@
           <div class="appt-top">
             <span class="appt-client">${escapeHTML(stripEmoji(r.client || 'Cliente web'))}</span>
             <span class="appt-service">${escapeHTML(stripEmoji(r.svc || ''))}</span>
-            <span class="appt-time">${String(start[0]).padStart(2,'0')}:${String(start[1]).padStart(2,'0')}</span>
+            <span class="appt-time">${reservaSinHora(r) ? 'Hora sin definir' : String(start[0]).padStart(2,'0') + ':' + String(start[1]).padStart(2,'0')}</span>
           </div>
           <div class="appt-bottom"><div class="appt-bottom-left"><span class="status-dot ${escapeHTML(apptDotClass(status))}"></span></div></div>`;
         col.appendChild(el);
@@ -18865,10 +18882,10 @@
       const filas = snap.docs.map(d=> Object.assign({ id: d.id }, d.data()))
         .filter(r=> r.id !== a.webId)
         .filter(r=> userPermissions.includes('AGENDA_TODOS') || r.barberId === userBarberId)   // el BARBER solo ve SUS reservas con este cliente (segunda capa; la primera es la consulta + reglas)
-        .sort((x, y)=> (String(y.fecha || '') + String(y.slot || '')).localeCompare(String(x.fecha || '') + String(x.slot || '')))
+        .sort((x, y)=> (String(y.fecha || '') + horaTextoDeReserva(y)).localeCompare(String(x.fecha || '') + horaTextoDeReserva(x)))
         .slice(0, 12);
       cont.innerHTML = filas.length ? '<ul class="hs">' + filas.map(r=>
-        `<li><div class="r1"><span>${escapeHTML(r.fecha || '')} · ${escapeHTML(String(r.slot || '').slice(0, 5))}</span><b>${escapeHTML(cxClp(typeof r.precioFinal === 'number' ? r.precioFinal : (Number(r.price) || 0)))}</b></div>` +
+        `<li><div class="r1"><span>${escapeHTML(r.fecha || '')} · ${escapeHTML(horaTextoDeReserva(r))}</span><b>${escapeHTML(cxClp(typeof r.precioFinal === 'number' ? r.precioFinal : (Number(r.price) || 0)))}</b></div>` +
         `<div class="r2">${escapeHTML(r.svc || '')}${r.barber ? ' · ' + escapeHTML(r.barber) : ''}</div></li>`).join('') + '</ul>'
         : '<p class="vac">Sin reservas anteriores registradas.</p>';
     }catch(e){
