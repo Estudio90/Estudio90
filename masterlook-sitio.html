@@ -7,25 +7,38 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>MASTERLOOK — Barbería</title>
+<!-- Vista previa al compartir (WhatsApp/Facebook/Instagram) de los enlaces antiguos a este archivo (…/masterlook-sitio.html#tienda).
+     La imagen va con dirección absoluta del dominio real (los rastreadores no aceptan rutas relativas); es un archivo estático público.
+     Las direcciones nuevas (/tienda/, /academy/, fichas...) llevan sus propios metadatos en su página de entrada. -->
+<meta name="description" content="Barbería y grooming studio. Reservas simples, resultados de maestro.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MASTERLOOK">
+<meta property="og:title" content="MASTERLOOK — Barbería">
+<meta property="og:description" content="Barbería y grooming studio. Reservas simples, resultados de maestro.">
+<meta property="og:image" content="https://masterlook.cl/icons/icon-512.png">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MASTERLOOK — Barbería">
+<meta name="twitter:description" content="Barbería y grooming studio. Reservas simples, resultados de maestro.">
+<meta name="twitter:image" content="https://masterlook.cl/icons/icon-512.png">
 <!-- Ícono de la marca (M sobre placa de vidrio) -- favicon, apple-touch-icon
      y manifest, para que "Agregar a inicio" en iPad/iPhone/Android use este
-     ícono real en vez de una captura automática de la página. Rutas
-     relativas (sin "/" inicial) a propósito: el mismo archivo sirve tanto
-     desde la raíz de Firebase Hosting (estudio90-dev.web.app) como desde el
-     subdirectorio de GitHub Pages (estudio90.github.io/Estudio90/) -- ver
-     config-comun.js para el mismo patrón. -->
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
-<link rel="icon" type="image/png" sizes="48x48" href="icons/icon-48.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
-<link rel="manifest" href="manifest.webmanifest">
+     ícono real en vez de una captura automática de la página. Rutas DESDE LA
+     RAÍZ ("/"): este mismo archivo se sirve ahora también desde /tienda/,
+     /academy/, /servicios/... (ver "RUTAS REALES" más abajo), y una ruta
+     relativa se rompería en esas carpetas. -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/icons/icon-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Master Look">
@@ -53,16 +66,16 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script>
-<script src="config-comun.js"></script>
-<script src="tiempo-santiago.js"></script>
+<script src="/config-comun.js"></script>
+<script src="/tiempo-santiago.js"></script>
 <!-- Medición de Google (GA4 + Ads): config-medicion.js tiene los IDs;
      google-medicion.js define el consentimiento por defecto DENEGADO
      (Consent Mode v2) ANTES de cualquier etiqueta y solo carga gtag.js
      tras aceptar el aviso compartido de meta-consent.js (que va después
      para que el aviso sepa que Google existe). -->
-<script src="config-medicion.js"></script>
-<script src="google-medicion.js"></script>
-<script src="meta-consent.js"></script>
+<script src="/config-medicion.js"></script>
+<script src="/google-medicion.js"></script>
+<script src="/meta-consent.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" defer></script>
 <style>
   /* ==========================================================
@@ -1357,6 +1370,49 @@
   }
 
   /* ===== vista de tienda ===== */
+  /* ---- páginas con dirección propia (fichas, servicios, sucursales, contacto) ---- */
+  a.suc-card{text-decoration:none; color:inherit; display:block;}
+  .pg-lnk{color:inherit; text-decoration:none;}
+  .pg-lnk:hover{text-decoration:underline; text-underline-offset:3px;}
+  .pg-ficha{display:grid; grid-template-columns:1fr; gap:26px; max-width:980px; margin:0 auto; padding-bottom:50px;}
+  @media (min-width:820px){ .pg-ficha{grid-template-columns:1fr 1fr; gap:44px; align-items:start;} }
+  .pg-media{border-radius:18px; overflow:hidden; background:var(--panel); border:1px solid var(--border);}
+  .pg-media-in{position:relative;}
+  .pg-foto{display:block; width:100%; aspect-ratio:1/1; object-fit:cover;}
+  .pg-curso-media{aspect-ratio:16/10; background:linear-gradient(150deg,#3a3a3a,#0c0c0c);}
+  .pg-curso-media video, .pg-curso-media .pg-foto{position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; object-fit:cover;}
+  .pg-media-vacio{display:flex; align-items:center; justify-content:center; aspect-ratio:4/3; color:var(--text-mid);}
+  .pg-media-vacio svg{width:90px; height:90px; opacity:.6;}
+  .pg-minis{display:flex; gap:8px; padding:10px; overflow-x:auto;}
+  .pg-mini{flex:0 0 auto; width:56px; height:56px; border-radius:10px; overflow:hidden; border:2px solid transparent; padding:0; background:none; cursor:pointer;}
+  .pg-mini.on{border-color:var(--text-hi);}
+  .pg-mini img{width:100%; height:100%; object-fit:cover; display:block;}
+  .pg-info h1, .pg-local h1{font-family:var(--font-primary); font-size:clamp(1.6rem,4vw,2.2rem); line-height:1.2; color:var(--text-hi); margin:4px 0 10px; overflow-wrap:anywhere;}
+  .pg-cat{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-mid); margin:0;}
+  .pg-precio{font-family:var(--font-primary); font-variant-numeric:tabular-nums; font-size:1.6rem; font-weight:700; color:var(--text-hi); margin:6px 0 14px;}
+  .pg-meta{display:flex; gap:14px; flex-wrap:wrap; color:var(--text-mid); font-size:.85rem; margin-bottom:6px;}
+  .pg-desc{color:var(--text-mid); line-height:1.6; white-space:pre-line; overflow-wrap:anywhere; margin:0 0 20px;}
+  .pg-btn{display:block; width:100%; padding:14px 18px; border:0; border-radius:99px; cursor:pointer; text-align:center; text-decoration:none; background:var(--text-hi); color:var(--bg); font-family:inherit; font-size:.82rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+  .pg-btn:disabled{opacity:.45; cursor:not-allowed;}
+  .pg-acciones{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+  .pg-btn-sec{display:inline-block; padding:10px 16px; border-radius:99px; border:1px solid var(--border-strong,var(--border)); background:transparent; color:var(--text-hi); cursor:pointer; text-decoration:none; font-family:inherit; font-size:.8rem;}
+  .pg-btn-sec:hover{background:var(--panel-2);}
+  .pg-estado{text-align:center; padding:70px 10px; color:var(--text-mid);}
+  .pg-estado .pg-btn-sec{margin-top:14px;}
+  .pg-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; padding-bottom:50px; margin-top:26px;}
+  .pg-card{display:flex; flex-direction:column; gap:8px; padding:18px; border-radius:16px; background:var(--panel); border:1px solid var(--border); text-decoration:none; color:var(--text-hi);}
+  .pg-card:hover{border-color:var(--border-strong,var(--border)); transform:translateY(-2px);}
+  .pg-card b{font-family:var(--font-primary); font-size:1rem;}
+  .pg-card-desc{color:var(--text-mid); font-size:.85rem; line-height:1.45; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .pg-card-pie{display:flex; justify-content:space-between; align-items:center; margin-top:auto;}
+  .pg-card-precio{font-variant-numeric:tabular-nums; font-weight:700;}
+  .pg-card-min{color:var(--text-mid); font-size:.8rem;}
+  .pg-local{max-width:640px; margin:0 auto; padding-bottom:50px;}
+  .pg-datos{margin:0 0 22px; display:grid; gap:4px;}
+  .pg-datos dt{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mid); margin-top:14px;}
+  .pg-datos dd{margin:0; color:var(--text-hi); line-height:1.5; overflow-wrap:anywhere;}
+  .pg-datos a{color:inherit;}
+
   .tienda-vista{position:fixed; inset:0; background:var(--bg); z-index:70; overflow-y:auto; display:none;}
   .tienda-vista.open{display:block;}
 
@@ -3391,6 +3447,7 @@
 </style>
 </head>
 <body>
+<div id="rutaCargando" aria-live="polite">Cargando…</div>
 <script>
   /* Modo "Modificar mi reserva" (?reagendar=<id>&token=<token>): antes del
      primer pintado, si la URL trae esos parámetros, oculta TODO el
@@ -3407,12 +3464,25 @@
     var pReag = new URLSearchParams(location.search);
     if(pReag.get('reagendar') && pReag.get('token')) document.documentElement.classList.add('ml-boot-reagendar');
   }catch(e){}
+  /* Dirección directa (/tienda/, /academy/curso...): se tapa el inicio con un aviso de carga hasta que la vista
+     correspondiente se abre, para que no se vea la portada "de paso". Plazo máximo de 15 s por si algo falla. */
+  try{
+    var rutaIni = (location.pathname || '/').toLowerCase().replace(/\/index\.html$/, '/').replace(/\/+$/, '');
+    var esReag = document.documentElement.classList.contains('ml-boot-reagendar');
+    if(rutaIni && rutaIni !== '/masterlook-sitio.html' && !esReag){
+      document.documentElement.classList.add('ml-boot-ruta');
+      setTimeout(function(){ document.documentElement.classList.remove('ml-boot-ruta'); }, 15000);
+    }
+  }catch(e){}
 </script>
 <style>
   /* #rescheduleModal ya es display:none por defecto y solo se muestra con
      su propia clase .open -- esta regla la fuerza a verse ANTES de esa
      clase, únicamente mientras dura el arranque en modo reagendamiento.
      Todo lo demás en <body> se oculta por completo. */
+  #rutaCargando{display:none;}
+  html.ml-boot-ruta #rutaCargando{display:flex; position:fixed; inset:0; z-index:100000; align-items:center; justify-content:center;
+    background:var(--bg,#0c0c0d); color:var(--text-mid,#9a9691); font:13px/1.4 system-ui,-apple-system,sans-serif; letter-spacing:.1em; text-transform:uppercase;}
   html.ml-boot-reagendar body > *:not(#rescheduleModal){display:none !important;}
   html.ml-boot-reagendar #rescheduleModal{display:block !important;}
 </style>
@@ -3512,13 +3582,15 @@
     <button class="x-round" id="cerrarMenu">×</button>
   </div>
   <nav class="menu-links">
-    <a href="#" onclick="cerrarMenu();abrirReservas();return false;">Reservar hora</a>
-    <a href="#servicios" onclick="cerrarMenu();">Servicios</a>
-    <a href="#" onclick="cerrarMenu();abrirAcademia();return false;">Academy</a>
+    <a href="/reservar/" onclick="cerrarMenu();abrirReservas();return false;">Reservar hora</a>
+    <a href="/servicios/" onclick="cerrarMenu();irAPagina('/servicios/');return false;">Servicios</a>
+    <a href="/locales/" onclick="cerrarMenu();irAPagina('/locales/');return false;">Sucursales</a>
+    <a href="/academy/" onclick="cerrarMenu();abrirAcademia();return false;">Academy</a>
     <a href="#" id="misCursosMenuLink" onclick="cerrarMenu();abrirMisCursos();return false;" style="display:none;">Mis cursos</a>
     <a href="#" id="misProductosMenuLink" onclick="cerrarMenu();abrirMisProductos();return false;" style="display:none;">Mis productos</a>
-    <a href="#" onclick="cerrarMenu();abrirTienda();return false;">Tienda</a>
+    <a href="/tienda/" onclick="cerrarMenu();abrirTienda();return false;">Tienda</a>
     <a href="#promos" onclick="cerrarMenu();">Promociones</a>
+    <a href="/contacto/" onclick="cerrarMenu();irAPagina('/contacto/');return false;">Contacto</a>
     <a href="#" onclick="cerrarMenu();onAccountChipClick();return false;">Mi cuenta</a>
   </nav>
   <div class="menu-pie">
@@ -3839,10 +3911,12 @@
       <div>
         <h4>Navegación</h4>
         <ul>
-          <li><a href="#servicios">Servicios</a></li>
-          <li><a href="#reservas" onclick="abrirReservas();return false;">Reservas</a></li>
-          <li><a href="#" onclick="abrirAcademia();return false;">Academy</a></li>
-          <li><a href="#tienda" onclick="abrirTienda();return false;">Tienda</a></li>
+          <li><a href="/servicios/" onclick="irAPagina('/servicios/');return false;">Servicios</a></li>
+          <li><a href="/reservar/" onclick="abrirReservas();return false;">Reservas</a></li>
+          <li><a href="/locales/" onclick="irAPagina('/locales/');return false;">Sucursales</a></li>
+          <li><a href="/academy/" onclick="abrirAcademia();return false;">Academy</a></li>
+          <li><a href="/tienda/" onclick="abrirTienda();return false;">Tienda</a></li>
+          <li><a href="/contacto/" onclick="irAPagina('/contacto/');return false;">Contacto</a></li>
         </ul>
       </div>
       <div>
@@ -4415,6 +4489,24 @@
   </div>
 </div>
 
+<!-- ===== Páginas con dirección propia: fichas de producto, curso, servicio y sucursal, y las páginas de Servicios,
+     Sucursales y Contacto. Una sola vista; su contenido lo arma pintarPagina() según la URL (ver "RUTAS REALES"). ===== -->
+<div id="vistaPagina" class="tienda-vista">
+  <header class="tv-head">
+    <div class="tv-head-in">
+      <button class="tv-back" id="pgVolver">← Volver</button>
+      <div class="wordmark" onclick="irAInicio()">MASTER LOOK<sup>®</sup></div>
+      <button class="icon-btn cart-wrap" aria-label="Carrito" onclick="abrirCarrito()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
+        <span class="cart-badge" id="cartBadge5" style="display:none;">0</span>
+      </button>
+    </div>
+  </header>
+  <div class="tv-body">
+    <div class="wrap" id="pgContenido"></div>
+  </div>
+</div>
+
 <!-- ===== Tienda (página completa dentro del sitio) ===== -->
 <div id="vistaTienda" class="tienda-vista">
   <header class="tv-head">
@@ -4884,7 +4976,7 @@
 <div class="chat-panel" id="chatPanel">
   <div class="chat-head">
     <div class="chat-head-info">
-      <video id="chatAvatarVideo" class="chat-avatar" src="chat-avatar-max.mp4" muted loop playsinline preload="auto"></video>
+      <video id="chatAvatarVideo" class="chat-avatar" src="/chat-avatar-max.mp4" muted loop playsinline preload="auto"></video>
       <div><h4>MAX</h4><span>Suele responder al instante</span></div>
     </div>
     <button class="chat-close" id="chatClose" aria-label="Cerrar chat">✕</button>
@@ -5638,6 +5730,7 @@
   }
   db.collection('locales').where('active', '==', true).onSnapshot(snap=>{
     localesActivos = snap.docs.map(d=> d.data());
+    pgListos.locales = true; paginaRefrescar();
     pintarDireccionesFooter();
   });
   /**
@@ -5868,6 +5961,7 @@
   db.collection('courses').onSnapshot(snap=>{
     cursosCache = snap.docs.map(d=> d.data()).filter(c=> c.active !== false).map(c=>
       ({ ...c, lessons: (c.lessons || []).filter(l=> l.active !== false) }));
+    pgListos.cursos = true; paginaRefrescar();
     if(!cursosListos) return;
     cargarTienda();
     if(document.getElementById('vistaAcademia')?.classList.contains('open')) pintarCursosAcademia();
@@ -5895,6 +5989,7 @@
          // cualquier campo de descuento/comisión de la Tienda; solo lo lee
          // descuentoEfectivoProductoUI() del carril de checkout de reservas.
          descuentoReservaModo:p.descuentoReservaModo || 'general', descuentoReservaPct:p.descuentoReservaPct ?? null }));
+    pgListos.productos = true; paginaRefrescar();
     pintarTiendaHome();
     if(!cursosListos) return;
     cargarTienda();
@@ -6501,7 +6596,7 @@
       if(dest === 'panel'){
         redirigiendoAlPanel = true;
         if(resolverAuthListo){ resolverAuthListo(); resolverAuthListo = null; }
-        location.href = 'masterlook-panel-interno.html';
+        location.href = '/masterlook-panel-interno.html';
         return;
       }
       if(dest === 'inactivo'){
@@ -6795,7 +6890,7 @@
       if(dest === 'panel' && window.self === window.top){
         closeAuth();
         redirigiendoAlPanel = true;
-        location.href = 'masterlook-panel-interno.html';
+        location.href = '/masterlook-panel-interno.html';
         return;
       }
     }
@@ -8760,7 +8855,7 @@
     cdPintarCaja();
 
     const unidades = carrito.reduce((s,i)=> s + i.qty, 0);
-    ['cartBadge','cartBadge2','cartBadge3','cartBadge4'].forEach(id=>{
+    ['cartBadge','cartBadge2','cartBadge3','cartBadge4','cartBadge5'].forEach(id=>{
       const b = document.getElementById(id);
       if(b){ b.textContent = unidades; b.style.display = unidades ? 'flex' : 'none'; }
     });
@@ -9161,7 +9256,7 @@
    *  cumplió su único uso) para poder recargar/volver a esta misma
    *  pantalla más tarde. */
   async function abrirComprobante(buyOrder, actualizarUrl, token, datosPrevios){
-    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true);
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarPagina();
     document.getElementById('vistaComprobante').classList.add('open');
     document.body.style.overflow = 'hidden';
 
@@ -9264,7 +9359,7 @@
    *  verlo. Sin token válido, el backend devuelve `comprobante:null` y acá
    *  se muestra un aviso genérico -- nunca una pista de por qué falló. */
   async function abrirComprobanteReserva(bookingId, token){
-    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true);
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarPagina();
     document.getElementById('vistaComprobanteReserva').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('crxContenido').innerHTML = '<div class="crx-loader">Verificando tu comprobante…</div>';
@@ -9398,7 +9493,7 @@
    *  comprobante (vistaComprobante), así al confirmar abrirComprobante() solo
    *  reemplaza el contenido, sin parpadeo ni un diseño nuevo. */
   function mostrarConfirmandoPago(txt){
-    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true);
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarPagina();
     document.getElementById('vistaComprobante').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('cpContenido').innerHTML = '<div class="cp-loader">' + txt + '</div>';
@@ -9689,7 +9784,7 @@
               return videoIdReal ? `<video class="ac-course-video" data-src="${bunnyPlaylistUrl(videoIdReal)}" muted loop playsinline preload="none"></video>` : (c.photoUrl ? '' : iconoDeCurso(c));
             })()}</div>
         <div class="ac-course-body">
-          <h3>${c.name}</h3>
+          <h3><a class="pg-lnk" data-pg-nav href="${urlCurso(c)}">${c.name}</a></h3>
           <p>${c.description || 'Curso online, a tu ritmo.'}</p>
           <div class="ac-course-meta">
             <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 5v14l11-7z"/></svg>${clases.length ? clases.length + ' clase' + (clases.length>1?'s':'') + ' en video' : 'Clases en video'}</span>
@@ -9723,6 +9818,9 @@
   function abrirDetalleCurso(id){
     const c = acCursosActuales.find(x=> String(x.id) === String(id));
     if(!c) return;
+    // «Ver detalle» lleva a la PÁGINA del curso (dirección propia, compartible), no a una ventana emergente. El código de la
+    // ventana de abajo queda sin uso desde las direcciones reales.
+    irAPagina(urlCurso(c)); return;
     try{ window.MLMeta && MLMeta.viewContent('Curso', c.id, c.name, c.priceClp); }catch(_){}
     const clases = (c.lessons || []).filter(l=> l.active !== false);
     const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
@@ -9814,6 +9912,7 @@
   }, true);
   /** Servicio: "Reservar" = lo mismo que tocar la tarjeta. `card` es la tarjeta del carrusel (sus data-* alimentan selectService). */
   function abrirDetalleServicio(sv, card, opener){
+    irAPagina(urlServicio(sv)); return;   // página propia del servicio (ver «RUTAS REALES»); la ficha emergente queda sin uso
     abrirFichaOscura({
       nombre: sv.name,
       descripcion: sv.description || '',
@@ -9833,6 +9932,7 @@
   }
   /** Producto: con fotos abre el visor de siempre (#modalGaleriaProducto); sin fotos, esta misma ficha oscura. */
   function abrirDetalleProducto(p, opener){
+    irAPagina(urlProducto(p)); return;   // página propia del producto (con su galería de fotos); el visor emergente queda sin uso aquí
     if(fotosDeProducto(p).length){ abrirGaleriaProducto(p); return; }
     abrirFichaOscura({
       nombre: p.name,
@@ -11272,7 +11372,7 @@
           <button type="button" class="svc-ver" data-ver-detalle>Ver detalles</button>
         </div>
         <div class="svc-body">
-          <div class="svc-nombre">${sv.name}</div>
+          <div class="svc-nombre"><a class="pg-lnk" data-pg-nav href="${urlServicio(sv)}">${sv.name}</a></div>
           <div class="svc-desc">${sv.description || ''}</div>
           <div class="svc-pie">
             <span class="svc-precio">${money(sv.priceClp)}</span>
@@ -11331,7 +11431,7 @@
           <button type="button" class="svc-ver" data-ver-detalle>Ver detalles</button>
         </div>
         <div class="svc-body">
-          <div class="svc-nombre">${escapeHTML(p.name)}</div>
+          <div class="svc-nombre"><a class="pg-lnk" data-pg-nav href="${urlProducto(p)}">${escapeHTML(p.name)}</a></div>
           <div class="svc-desc">${escapeHTML(p.description || '')}</div>
           <div class="svc-pie">
             <span class="svc-precio">${money(p.priceClp)}</span>
@@ -11581,6 +11681,7 @@
     catalog.barbers = barSnap.docs.map(d=> d.data()).filter(x=> x.active !== false);
   }
   function repintarCatalogo(){
+    paginaRefrescar();
     paintServices();
     paintBarbers();
     pintarBarberosArriba();
@@ -11630,17 +11731,437 @@
   function irHistorial(accion, hash){
     if(!historialOk) return;
     try{
-      if(accion === 'push') history.pushState({ vista:hash }, '', '#' + hash);
+      if(accion === 'push'){
+        const ruta = PATH_DE_VISTA[hash];
+        history.pushState({ vista:hash }, '', ruta ? ruta + (location.search || '') : '#' + hash);
+      }
       else if(accion === 'back') history.back();
       else if(accion === 'limpiar') history.replaceState({}, '', location.pathname);
+      else if(accion === 'inicio') history.replaceState({}, '', '/');
+      if(accion === 'push' || accion === 'inicio' || accion === 'limpiar') actualizarMetaRuta();
     }catch(e){
       historialOk = false;   // no insistimos: la navegación funciona igual
     }
   }
 
+  /** "Hash virtual" de la vista actual. Sale de la RUTA (/tienda/ -> '#tienda'); si la ruta no es de una vista, vale el
+      # de la URL, así los enlaces antiguos (…#tienda) y el comprobante (#comprobante=…) siguen igual. */
   function hashActual(){
-    try{ return location.hash; }catch(e){ return ''; }
+    try{
+      const h = location.hash || '';
+      if(h.indexOf('#comprobante=') === 0) return h;
+      return rutaWebActual().hash || h;
+    }catch(e){ return ''; }
   }
+
+  /* =====================================================================================================================
+     RUTAS REALES (mejora de navegación pública)
+     Cada sección tiene su propia dirección: /tienda/, /academy/, /reservar/, /servicios/, /locales/, /contacto/ y la
+     ficha de un producto, curso, servicio o sucursal (/tienda/producto/<id>, /academy/<curso>, /servicios/<servicio>,
+     /locales/<sucursal>). Funciona IGUAL en GitHub Pages (producción, sin reescrituras) y en Firebase Hosting (DEV):
+       - las secciones fijas tienen una carpeta real con un index.html mínimo (carga ESTE archivo, no lo copia);
+       - cualquier otra dirección cae en 404.html, que carga este mismo archivo, y acá se resuelve según la URL.
+     Las vistas y funciones de siempre (abrirTienda, abrirAcademia, abrirReservas, abrirMisCursos...) NO cambian: el
+     enrutador solo traduce la URL a la vista que corresponda. hashActual() devuelve un "hash virtual" calculado desde
+     la ruta, así todo el código existente que compara '#tienda', '#reservas', etc. sigue funcionando. Los enlaces
+     antiguos con # (…/masterlook-sitio.html#tienda) siguen abriendo y se convierten solos a la ruta limpia.
+     Las zonas privadas (mis cursos, mis productos, comprobantes) mantienen su control de sesión: la URL no da acceso
+     a nada, solo intenta abrir la vista que ya exigía iniciar sesión.
+     ===================================================================================================================== */
+  const PATH_DE_VISTA = {
+    'tienda':'/tienda/', 'reservas':'/reservar/', 'academia':'/academy/',
+    'mis-cursos':'/academy/mis-cursos/', 'mis-productos':'/mis-productos/'
+  };
+  const HASH_LEGACY_A_VISTA = { '#tienda':'tienda', '#reservas':'reservas', '#academia':'academia', '#mis-cursos':'mis-cursos', '#mis-productos':'mis-productos' };
+
+  function slugTexto(s){
+    return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'item';
+  }
+  /** Interpreta location.pathname. `param` conserva mayúsculas (los ids de Firestore las distinguen). */
+  function rutaWebActual(){
+    let raw = '/';
+    try{ raw = decodeURIComponent(location.pathname || '/'); }catch(e){ raw = location.pathname || '/'; }
+    raw = raw.replace(/\/index\.html$/i, '/').replace(/\/+$/, '') || '/';
+    const seg = raw.split('/').filter(Boolean);
+    const vacio = { tipo:'', hash:'', param:'' };
+    if(!seg.length) return vacio;
+    const a = seg[0].toLowerCase(), b = (seg[1] || '').toLowerCase();
+    if(a === 'masterlook-sitio.html') return vacio;
+    if(a === 'tienda'){
+      if(b === 'producto' && seg[2]) return { tipo:'producto', hash:'#pagina', param:seg[2] };
+      return { tipo:'tienda', hash:'#tienda', param:'' };
+    }
+    if(a === 'reservar') return { tipo:'reservar', hash:'#reservas', param:'' };
+    if(a === 'academy'){
+      if(!b) return { tipo:'academia', hash:'#academia', param:'' };
+      if(b === 'cursos') return { tipo:'academia', hash:'#academia', param:'', ancla:true };
+      if(b === 'mis-cursos') return { tipo:'mis-cursos', hash:'#mis-cursos', param:'' };
+      return { tipo:'curso', hash:'#pagina', param:seg[1] };
+    }
+    if(a === 'mis-productos') return { tipo:'mis-productos', hash:'#mis-productos', param:'' };
+    if(a === 'servicios') return seg[1] ? { tipo:'servicio', hash:'#pagina', param:seg[1] } : { tipo:'servicios', hash:'#pagina', param:'' };
+    if(a === 'locales') return seg[1] ? { tipo:'local', hash:'#pagina', param:seg[1] } : { tipo:'locales', hash:'#pagina', param:'' };
+    if(a === 'contacto') return { tipo:'contacto', hash:'#pagina', param:'' };
+    return { tipo:'', hash:'', param:'', desconocida:true };
+  }
+  function esRutaPagina(){ return rutaWebActual().hash === '#pagina'; }
+
+  /* Enlaces de las fichas: el id de Firestore va al final para que un cambio de nombre no rompa el enlace. */
+  function urlProducto(p){ return '/tienda/producto/' + slugTexto(p.name) + '-' + encodeURIComponent(p.id) + '/'; }
+  function urlCurso(c){ return '/academy/' + slugTexto(c.name) + '-' + encodeURIComponent(c.id) + '/'; }
+  function slugLocal(l){ return slugTexto(String(l.nombre || '').replace(/master\s*look\s*\|?/i, '')); }
+  function urlLocal(l){ return '/locales/' + slugLocal(l) + '/'; }
+  function urlServicio(sv){
+    const lista = (catalog && catalog.services) || [];
+    const igual = lista.filter(x=> slugTexto(x.name) === slugTexto(sv.name)).length;
+    return '/servicios/' + slugTexto(sv.name) + (igual > 1 ? '-' + encodeURIComponent(sv.id) : '') + '/';
+  }
+  function urlAbsoluta(path){ try{ return location.origin + path; }catch(e){ return path; } }
+  /** Busca por el id al final del tramo (`nombre-ID`), por el id solo o, si no hay id, por el nombre. */
+  function resolverPorTramo(lista, tramo, nombreDe){
+    const t = String(tramo || '');
+    const tl = t.toLowerCase();
+    return lista.find(x=> x.id != null && (t === String(x.id) || t.endsWith('-' + String(x.id)))) ||
+           lista.find(x=> slugTexto(nombreDe(x)) === tl) || null;
+  }
+
+  /* ---- datos listos: la vista de una ficha espera a que lleguen de Firestore ---- */
+  const pgListos = { productos:false, cursos:false, locales:false };
+  /** Los servicios usan el estado real del catálogo (cargando / error / listo), igual que el resto del sitio. */
+  function pgServiciosPendiente(cont, que){
+    if(catalogoEstado === 'listo') return false;
+    cont.innerHTML = catalogoEstado === 'error'
+      ? pgEstado('No pudimos cargar ' + que + '. Revisa tu conexión e inténtalo de nuevo.', 'Reintentar', '#') : pgEstado('Cargando ' + que + '…');
+    return true;
+  }
+  function paginaRefrescar(){
+    const v = document.getElementById('vistaPagina');
+    if(v && v.classList.contains('open')) pintarPagina();
+  }
+
+  /* ---- historial: ahora con direcciones limpias ---- */
+  /* (irHistorial / hashActual están definidas arriba y usan PATH_DE_VISTA y rutaWebActual) */
+
+  /** Títulos y descripciones de cada sección (pestaña del navegador). El HTML estático de cada carpeta lleva los suyos
+      para WhatsApp/Facebook/Google; esto mantiene la pestaña al día cuando se navega dentro del sitio. */
+  const META_SECCIONES = {
+    '':           ['MASTERLOOK — Barbería', 'Barbería y grooming studio. Reservas simples, resultados de maestro.'],
+    'tienda':     ['Tienda | MASTERLOOK', 'Productos de barbería y cuidado personal. Retiro en tienda con hora agendada.'],
+    'reservar':   ['Reservar hora | MASTERLOOK', 'Reserva tu hora online en MASTERLOOK: elige sucursal, servicio y profesional.'],
+    'academia':   ['Academy | MASTERLOOK', 'Cursos de barbería y técnicas profesionales, online y presenciales.'],
+    'servicios':  ['Servicios | MASTERLOOK', 'Cortes, barba y ondulaciones. Mira los servicios y reserva tu hora.'],
+    'locales':    ['Sucursales | MASTERLOOK', 'Nuestras sucursales: dirección, horario y reserva online.'],
+    'contacto':   ['Contacto | MASTERLOOK', 'Dirección, teléfono, correo y horarios de MASTERLOOK.'],
+  };
+  function aplicarMetaPagina(titulo, descripcion){
+    try{
+      document.title = titulo;
+      let m = document.querySelector('meta[name="description"]');
+      if(!m){ m = document.createElement('meta'); m.setAttribute('name', 'description'); document.head.appendChild(m); }
+      if(descripcion) m.setAttribute('content', descripcion);
+    }catch(e){}
+  }
+  function actualizarMetaRuta(){
+    const r = rutaWebActual();
+    const clave = ({ tienda:'tienda', reservar:'reservar', academia:'academia', servicios:'servicios', locales:'locales', contacto:'contacto' })[r.tipo] || '';
+    if(r.tipo === 'producto' || r.tipo === 'curso' || r.tipo === 'servicio' || r.tipo === 'local') return;   // lo fija la propia ficha
+    const m = META_SECCIONES[clave] || META_SECCIONES[''];
+    aplicarMetaPagina(m[0], m[1]);
+  }
+
+  /* ---- navegación interna a una ficha o página ---- */
+  function irAPagina(path){
+    try{ history.pushState({ vista:'pagina' }, '', path); }catch(e){ historialOk = false; }
+    abrirPagina();
+  }
+  function abrirPagina(){
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true);
+    try{ cerrarSelectorSucursal(); cerrarDetalleServicio(); cerrarGaleriaProducto(); cerrarMenu(); }catch(e){}
+    const v = document.getElementById('vistaPagina');
+    v.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    v.scrollTop = 0;
+    pintarPagina();
+  }
+  function cerrarPagina(){
+    const v = document.getElementById('vistaPagina');
+    if(!v || !v.classList.contains('open')) return;
+    v.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  /** "← Volver": una ficha vuelve a su sección; una sección vuelve al inicio. */
+  function paginaVolver(){
+    const t = rutaWebActual().tipo;
+    const padre = ({ producto:'/tienda/', curso:'/academy/', servicio:'/servicios/', local:'/locales/' })[t];
+    if(!padre){ irAInicio(); return; }
+    if(padre === '/tienda/' || padre === '/academy/'){
+      try{ history.pushState({ vista:(padre === '/tienda/' ? 'tienda' : 'academia') }, '', padre); }catch(e){ historialOk = false; }
+      cerrarPagina();
+      if(padre === '/tienda/') abrirTienda(true); else abrirAcademia(true);
+      actualizarMetaRuta();
+      return;
+    }
+    irAPagina(padre);
+  }
+  document.getElementById('pgVolver')?.addEventListener('click', paginaVolver);
+
+  /** Un clic normal en un enlace de las páginas navega sin recargar; con Ctrl/⌘/clic central o "abrir en pestaña nueva"
+      se abre la dirección real (que carga directo, sin pasar por el inicio). */
+  document.getElementById('vistaPagina')?.addEventListener('click', e=>{
+    const a = e.target.closest('a[data-pg]');
+    if(a){
+      if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      irAPagina(a.getAttribute('href'));
+      return;
+    }
+    const sh = e.target.closest('[data-pg-compartir]');
+    if(sh) compartirEnlace(sh.dataset.titulo || document.title, location.href);
+  });
+
+  /** Compartir: menú nativo del celular (WhatsApp, Instagram...) o, si no existe, copia el enlace. */
+  async function compartirEnlace(titulo, url){
+    try{
+      if(navigator.share){ await navigator.share({ title:titulo, url }); return; }
+    }catch(e){ if(e && e.name === 'AbortError') return; }
+    try{ await navigator.clipboard.writeText(url); toast('Enlace copiado'); }
+    catch(e){
+      try{ const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); toast('Enlace copiado'); }
+      catch(_){ toast(url); }
+    }
+  }
+
+  /* ---- construcción de cada página ---- */
+  function pgEstado(txt, accionTxt, accionHref){
+    return `<div class="pg-estado"><p>${escapeHTML(txt)}</p>${accionTxt ? `<a class="pg-btn-sec" data-pg href="${accionHref}">${escapeHTML(accionTxt)}</a>` : ''}</div>`;
+  }
+  function pgHorarioLocal(l){
+    if(Array.isArray(l.horario) && l.horario.length){
+      let t = chatHorarioDeLocal(l.horario);
+      if(l.colacion) t += ` · Colación: ${l.colacion}`;
+      return t;
+    }
+    return `Lun–Vie ${horarioNegocio.horarioSemana} · Sáb ${horarioNegocio.horarioSabado} · Dom ${horarioNegocio.horarioDomingo}`;
+  }
+  function pgGaleria(fotos, alt, icono){
+    if(!fotos.length) return `<div class="pg-media-vacio">${icono || ''}</div>`;
+    return `<div class="pg-media-in"><img class="pg-foto" id="pgFotoActual" src="${escapeHTML(fotos[0])}" alt="${escapeHTML(alt)}">` +
+      (fotos.length > 1 ? `<div class="pg-minis">${fotos.map((f,i)=> `<button type="button" class="pg-mini${i===0?' on':''}" data-pg-foto="${escapeHTML(f)}" aria-label="Foto ${i+1}"><img src="${escapeHTML(f)}" alt=""></button>`).join('')}</div>` : '') + `</div>`;
+  }
+
+  function paginaProducto(cont, r){
+    if(!pgListos.productos){ cont.innerHTML = pgEstado('Cargando producto…'); return; }
+    const p = resolverPorTramo(productosSiteCache, r.param, x=> x.name);
+    if(!p){
+      cont.innerHTML = pgEstado('Este producto ya no está disponible.', 'Ver la tienda', '/tienda/');
+      aplicarMetaPagina('Producto no disponible | MASTERLOOK', '');
+      return;
+    }
+    aplicarMetaPagina(p.name + ' | MASTERLOOK', (p.description || '').slice(0, 155));
+    try{ window.MLMeta && MLMeta.viewContent('Producto', p.id, p.name, p.priceClp); }catch(_){}
+    const fotos = fotosDeProducto(p);
+    cont.innerHTML = `
+      <div class="pg-ficha">
+        <div class="pg-media">${pgGaleria(fotos, p.name, '<span style="font-size:3rem;opacity:.5;">🧴</span>')}</div>
+        <div class="pg-info">
+          ${p.category ? `<p class="pg-cat">${escapeHTML(p.category)}</p>` : ''}
+          <h1>${escapeHTML(p.name)}</h1>
+          <div class="pg-precio">${money(p.priceClp)}</div>
+          ${p.description ? `<p class="pg-desc">${escapeHTML(p.description)}</p>` : ''}
+          <button type="button" class="pg-btn" data-buy="${escapeHTML(p.id)}" data-name="${escapeHTML(p.name)}" data-price="${p.priceClp}" data-kind="PRODUCT" ${p.soldOut ? 'disabled' : ''}>${p.soldOut ? 'Agotado' : 'Agregar al carrito'}</button>
+          <div class="pg-acciones">
+            <button type="button" class="pg-btn-sec" data-pg-compartir data-titulo="${escapeHTML(p.name)}">Compartir enlace</button>
+          </div>
+        </div>
+      </div>`;
+    conectarBotonesCompra();
+  }
+
+  function paginaCurso(cont, r){
+    if(!pgListos.cursos){ cont.innerHTML = pgEstado('Cargando curso…'); return; }
+    const c = resolverPorTramo(cursosCache, r.param, x=> x.name);
+    if(!c){
+      cont.innerHTML = pgEstado('Este curso ya no está disponible.', 'Ver los cursos', '/academy/');
+      aplicarMetaPagina('Curso no disponible | MASTERLOOK', '');
+      return;
+    }
+    aplicarMetaPagina(c.name + ' | Academy MASTERLOOK', (c.description || '').slice(0, 155));
+    try{ window.MLMeta && MLMeta.viewContent('Curso', c.id, c.name, c.priceClp); }catch(_){}
+    const clases = (c.lessons || []).filter(l=> l.active !== false);
+    const totalMin = clases.reduce((s,l)=> s + (l.durationMin || 0), 0);
+    const precio = c.priceUsd && c.currency === 'USD' ? 'US$' + c.priceUsd : money(c.priceClp);
+    const videoIdReal = (c.streamVideoId && c.streamStatus === 'ready') ? c.streamVideoId
+      : ((c.trailerStreamVideoId && c.trailerStreamStatus === 'ready') ? c.trailerStreamVideoId : '');
+    const img = videoIdReal ? bunnyThumbUrl(videoIdReal) : c.photoUrl;
+    cont.innerHTML = `
+      <div class="pg-ficha">
+        <div class="pg-media"><div class="pg-media-in pg-curso-media" id="pgCursoMedia">${videoIdReal
+          ? `<video muted loop playsinline autoplay data-src="${bunnyPlaylistUrl(videoIdReal)}"></video>`
+          : (img ? `<img class="pg-foto" src="${escapeHTML(img)}" alt="${escapeHTML(c.name)}">` : `<div class="pg-media-vacio">${iconoDeCurso(c)}</div>`)}</div></div>
+        <div class="pg-info">
+          <p class="pg-cat">Academy</p>
+          <h1>${escapeHTML(c.name)}</h1>
+          <div class="pg-meta"><span>${clases.length ? clases.length + ' clase' + (clases.length > 1 ? 's' : '') + ' en video' : 'Clases en video'}</span><span>${totalMin ? dur(totalMin) : 'Teoría + Práctica'}</span></div>
+          <div class="pg-precio">${escapeHTML(precio)}</div>
+          <p class="pg-desc">${escapeHTML(c.description || 'Curso online, a tu ritmo.')}</p>
+          <button type="button" class="pg-btn" id="pgComprarCurso">Comprar curso</button>
+          <div class="pg-acciones">
+            <button type="button" class="pg-btn-sec" data-pg-compartir data-titulo="${escapeHTML(c.name)}">Compartir enlace</button>
+          </div>
+        </div>
+      </div>`;
+    if(videoIdReal){ const v = cont.querySelector('#pgCursoMedia video'); if(v) adjuntarHls(v, bunnyPlaylistUrl(videoIdReal)); }
+    document.getElementById('pgComprarCurso').onclick = ()=> agregarAlCarrito(c.id, c.name, c.priceClp, 'COURSE');
+  }
+
+  function paginaServicios(cont){
+    if(pgServiciosPendiente(cont, 'los servicios')) return;
+    aplicarMetaPagina(META_SECCIONES.servicios[0], META_SECCIONES.servicios[1]);
+    const lista = (catalog.services || []);
+    if(!lista.length){ cont.innerHTML = pgEstado('Por ahora no hay servicios publicados.', 'Reservar hora', '/reservar/'); return; }
+    cont.innerHTML = `<div class="tv-title"><h1>Nuestros servicios</h1><p>Elige un servicio para ver su detalle y reservar tu hora.</p></div>
+      <div class="pg-grid">${lista.map(sv=> `
+        <a class="pg-card" data-pg href="${urlServicio(sv)}">
+          <b>${escapeHTML(sv.name)}</b>
+          ${sv.description ? `<span class="pg-card-desc">${escapeHTML(sv.description)}</span>` : ''}
+          <span class="pg-card-pie"><span class="pg-card-precio">${money(sv.priceClp)}</span>${sv.minutes ? `<span class="pg-card-min">${dur(sv.minutes)}</span>` : ''}</span>
+        </a>`).join('')}</div>`;
+  }
+  function paginaServicio(cont, r){
+    if(pgServiciosPendiente(cont, 'el servicio')) return;
+    const sv = resolverPorTramo(catalog.services || [], r.param, x=> x.name);
+    if(!sv){
+      cont.innerHTML = pgEstado('Este servicio ya no está disponible.', 'Ver los servicios', '/servicios/');
+      aplicarMetaPagina('Servicio no disponible | MASTERLOOK', '');
+      return;
+    }
+    aplicarMetaPagina(sv.name + ' | MASTERLOOK', (sv.description || '').slice(0, 155));
+    const fotos = [sv.photoUrl, ...(Array.isArray(sv.photos) ? sv.photos : [])].filter(Boolean);
+    cont.innerHTML = `
+      <div class="pg-ficha">
+        <div class="pg-media">${pgGaleria(fotos, sv.name, iconoDeServicio(sv))}</div>
+        <div class="pg-info">
+          <p class="pg-cat">${escapeHTML(categoriaDe(sv))}</p>
+          <h1>${escapeHTML(sv.name)}</h1>
+          <div class="pg-meta">${sv.minutes ? `<span>${dur(sv.minutes)}</span>` : ''}</div>
+          <div class="pg-precio">${money(sv.priceClp)}</div>
+          ${sv.description ? `<p class="pg-desc">${escapeHTML(sv.description)}</p>` : ''}
+          <button type="button" class="pg-btn" id="pgReservarSvc">Reservar</button>
+          <div class="pg-acciones">
+            <button type="button" class="pg-btn-sec" data-pg-compartir data-titulo="${escapeHTML(sv.name)}">Compartir enlace</button>
+            <a class="pg-btn-sec" data-pg href="/servicios/">Ver todos los servicios</a>
+          </div>
+        </div>
+      </div>`;
+    // "Reservar" hace exactamente lo mismo que la ficha de detalle de siempre (selectService + abrirReservas + avanzarAFechaHora).
+    document.getElementById('pgReservarSvc').onclick = ()=>{
+      selectService(sv.name, sv.priceClp, sv.id, Number(sv.minutes));
+      abrirReservas();
+      avanzarAFechaHora();
+    };
+  }
+
+  function pgBotonReservaLocal(l){
+    return l.agendaExterna === true
+      ? `<button type="button" class="pg-btn" data-pg-reservar="externa">Reservar en esta sucursal</button>`
+      : `<button type="button" class="pg-btn" data-pg-reservar="propia">Reservar en esta sucursal</button>`;
+  }
+  function paginaLocales(cont){
+    if(!pgListos.locales){ cont.innerHTML = pgEstado('Cargando sucursales…'); return; }
+    aplicarMetaPagina(META_SECCIONES.locales[0], META_SECCIONES.locales[1]);
+    if(!localesActivos.length){ cont.innerHTML = pgEstado('Por ahora no hay sucursales publicadas.'); return; }
+    cont.innerHTML = `<div class="tv-title"><h1>Nuestras sucursales</h1><p>Elige una sucursal para ver su dirección y horario.</p></div>
+      <div class="suc-grid">${localesActivos.map(l=> `
+        <a class="suc-card" data-pg href="${urlLocal(l)}">
+          <div class="suc-logo">MASTER LOOK<sup>®</sup></div>
+          <div class="suc-info"><b>${escapeHTML(l.nombre || '')}</b><span>${escapeHTML(l.direccionCompleta || '')}</span></div>
+        </a>`).join('')}</div>`;
+  }
+  function paginaLocal(cont, r){
+    if(!pgListos.locales){ cont.innerHTML = pgEstado('Cargando sucursal…'); return; }
+    const l = localesActivos.find(x=> slugLocal(x) === String(r.param).toLowerCase().replace(/\/+$/, ''));
+    if(!l){
+      cont.innerHTML = pgEstado('No encontramos esa sucursal.', 'Ver las sucursales', '/locales/');
+      aplicarMetaPagina('Sucursal | MASTERLOOK', '');
+      return;
+    }
+    aplicarMetaPagina((l.nombre || 'Sucursal') + ' | MASTERLOOK', (l.direccionCompleta || '') + ' · ' + pgHorarioLocal(l));
+    cont.innerHTML = `
+      <div class="pg-local">
+        <p class="pg-cat">Sucursal</p>
+        <h1>${escapeHTML(l.nombre || '')}</h1>
+        <dl class="pg-datos">
+          ${l.direccionCompleta ? `<dt>Dirección</dt><dd>${escapeHTML(l.direccionCompleta)}</dd>` : ''}
+          <dt>Horario</dt><dd>${escapeHTML(pgHorarioLocal(l))}</dd>
+          ${horarioNegocio.telefono ? `<dt>Teléfono</dt><dd>${escapeHTML(horarioNegocio.telefono)}</dd>` : ''}
+        </dl>
+        ${pgBotonReservaLocal(l)}
+        <div class="pg-acciones">
+          ${l.googleMapsUrl ? `<a class="pg-btn-sec" href="${escapeHTML(l.googleMapsUrl)}" target="_blank" rel="noopener">Cómo llegar</a>` : ''}
+          <button type="button" class="pg-btn-sec" data-pg-compartir data-titulo="${escapeHTML(l.nombre || '')}">Compartir enlace</button>
+          <a class="pg-btn-sec" data-pg href="/locales/">Ver todas las sucursales</a>
+        </div>
+      </div>`;
+  }
+  function paginaContacto(cont){
+    aplicarMetaPagina(META_SECCIONES.contacto[0], META_SECCIONES.contacto[1]);
+    const dirs = localesActivos.map(l=> `<dd><strong>${escapeHTML(l.nombre || '')}:</strong> ${escapeHTML(l.direccionCompleta || '')}</dd>`).join('');
+    const ig = String(horarioNegocio.instagram || '').replace(/^@/, '');
+    cont.innerHTML = `
+      <div class="pg-local">
+        <div class="tv-title"><h1>Contacto</h1><p>Escríbenos o visítanos.</p></div>
+        <dl class="pg-datos">
+          ${dirs ? `<dt>Dirección</dt>${dirs}` : ''}
+          ${horarioNegocio.telefono ? `<dt>Teléfono</dt><dd><a href="tel:${escapeHTML(String(horarioNegocio.telefono).replace(/[^+\d]/g, ''))}">${escapeHTML(horarioNegocio.telefono)}</a></dd>` : ''}
+          ${horarioNegocio.correo ? `<dt>Correo</dt><dd><a href="mailto:${escapeHTML(horarioNegocio.correo)}">${escapeHTML(horarioNegocio.correo)}</a></dd>` : ''}
+          ${ig ? `<dt>Instagram</dt><dd><a href="https://instagram.com/${escapeHTML(ig)}" target="_blank" rel="noopener">@${escapeHTML(ig)}</a></dd>` : ''}
+          <dt>Horario</dt><dd>Lun–Vie ${escapeHTML(horarioNegocio.horarioSemana || '')} · Sáb ${escapeHTML(horarioNegocio.horarioSabado || '')} · Dom ${escapeHTML(horarioNegocio.horarioDomingo || '')}</dd>
+        </dl>
+        <div class="pg-acciones"><a class="pg-btn" data-pg href="/reservar/">Reservar hora</a><a class="pg-btn-sec" data-pg href="/locales/">Ver sucursales</a></div>
+      </div>`;
+  }
+
+  function pintarPagina(){
+    const cont = document.getElementById('pgContenido');
+    if(!cont) return;
+    const r = rutaWebActual();
+    if(r.tipo === 'producto') paginaProducto(cont, r);
+    else if(r.tipo === 'curso') paginaCurso(cont, r);
+    else if(r.tipo === 'servicios') paginaServicios(cont);
+    else if(r.tipo === 'servicio') paginaServicio(cont, r);
+    else if(r.tipo === 'locales') paginaLocales(cont);
+    else if(r.tipo === 'local') paginaLocal(cont, r);
+    else if(r.tipo === 'contacto') paginaContacto(cont);
+    else cont.innerHTML = '';
+  }
+  // cambiar de foto en la galería de una ficha
+  document.getElementById('pgContenido')?.addEventListener('click', e=>{
+    const m = e.target.closest('[data-pg-foto]');
+    if(m){
+      const img = document.getElementById('pgFotoActual');
+      if(img) img.src = m.dataset.pgFoto;
+      document.querySelectorAll('#pgContenido .pg-mini').forEach(x=> x.classList.toggle('on', x === m));
+      return;
+    }
+    const rs = e.target.closest('[data-pg-reservar]');
+    if(rs){
+      if(rs.dataset.pgReservar === 'externa') elegirSucursalProvidencia();
+      else elegirSucursalNunoa();
+    }
+  });
+
+  /** El nombre de un producto, curso o servicio en las tarjetas es un enlace real a su ficha: clic normal = navega sin recargar
+      (y no dispara el clic de la tarjeta); Ctrl/⌘/clic central/"copiar enlace" = la dirección real, para compartir. */
+  document.addEventListener('click', e=>{
+    const a = e.target && e.target.closest ? e.target.closest('a[data-pg-nav]') : null;
+    if(!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); e.stopPropagation();
+    irAPagina(a.getAttribute('href'));
+  }, true);
+
+  /** Arranque: abre la vista que indica la URL (se llama cuando ya cargó el catálogo). */
+  function ocultarRutaCargando(){ document.documentElement.classList.remove('ml-boot-ruta'); }
 
   /* ---------- selector de sucursal (previo a la reserva real) ----------
      Se muestra UNA vez por sesión de navegación (sessionStorage, se olvida
@@ -11679,7 +12200,7 @@
     cerrarSelectorSucursal();
     abrirReservas(false, true);
   }
-  document.getElementById('sucVolver')?.addEventListener('click', cerrarSelectorSucursal);
+  document.getElementById('sucVolver')?.addEventListener('click', ()=>{ cerrarSelectorSucursal(); if(rutaWebActual().tipo === 'reservar') irHistorial('inicio'); });
 
   /** Botón "Cambiar sucursal", visible en cualquiera de los 4 pasos de la
    *  reserva real -- cierra la reserva (sin tocar el historial de más,
@@ -11700,6 +12221,7 @@
     // z-index:70, pero aparecen después en el DOM -- ver .tienda-vista).
     cerrarTienda(true);
     cerrarAcademia(true);
+    cerrarPagina();
     // Gate de sucursal -- ÚNICO punto de entrada real (los ~19 botones/
     // enlaces/chips de "Reservar" del sitio, incluido el chat Max, llaman
     // todos a esta misma función) -- así ninguno queda sin pasar por acá.
@@ -11746,6 +12268,7 @@
   function abrirTienda(desdeHistorial){
     cerrarReservas(true);
     cerrarAcademia(true);
+    cerrarPagina();
     document.getElementById('vistaTienda').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaTienda').scrollTop = 0;
@@ -11765,6 +12288,7 @@
   function abrirAcademia(desdeHistorial){
     cerrarTienda(true);
     cerrarReservas(true);
+    cerrarPagina();
     document.getElementById('vistaAcademia').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaAcademia').scrollTop = 0;
@@ -11853,7 +12377,7 @@
     const yaAbierta = vista.classList.contains('open');
 
     if(!yaAbierta){
-      cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true);
+      cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarPagina();
       vista.classList.add('open');
       document.body.style.overflow = 'hidden';
       vista.scrollTop = 0;
@@ -11912,7 +12436,7 @@
    *  pantalla en vez de salir del aula de golpe. */
   function mcEntrar(screen){
     const d = (mcState.histDepth || 1) + 1;
-    try{ history.pushState({ mcScreen: screen, mcDepth: d }, '', '#mis-cursos'); mcState.histDepth = d; }
+    try{ history.pushState({ mcScreen: screen, mcDepth: d }, '', PATH_DE_VISTA['mis-cursos']); mcState.histDepth = d; }
     catch(e){ /* sin history: navegación directa, funciona igual */ }
     mcMostrar(screen);
   }
@@ -11934,7 +12458,7 @@
   async function abrirMisProductos(desdeHistorial){
     const user = currentUser();
     if(!user){ toast('Inicia sesión para ver tus productos'); return; }
-    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true);
+    cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarPagina();
     document.getElementById('vistaMisProductos').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('vistaMisProductos').scrollTop = 0;
@@ -12353,7 +12877,7 @@
     mcState.leccionActiva = clase;
     if(yaEnPlayer){
       // anterior/siguiente: no apila otra entrada, solo actualiza la actual
-      try{ history.replaceState({ mcScreen:'player', mcDepth: mcState.histDepth }, '', '#mis-cursos'); }catch(e){}
+      try{ history.replaceState({ mcScreen:'player', mcDepth: mcState.histDepth }, '', PATH_DE_VISTA['mis-cursos']); }catch(e){}
       mcMostrar('player');
     } else {
       mcEntrar('player');
@@ -12693,6 +13217,7 @@
     cerrarReservas(true);
     cerrarTienda(true);
     cerrarAcademia(true);
+    cerrarPagina();
     // Aula: además de cerrar la vista, hay que sacar del historial las
     // entradas de pantalla (curso/clase) que empujó el alumno -- si no, el
     // botón atrás del navegador reabriría el aula.
@@ -12702,7 +13227,7 @@
     if(mcN > 0){ try{ history.go(-mcN); }catch(e){} }
     cerrarMisProductos(true);
     cerrarComprobante(true);
-    if(hashActual() !== '') irHistorial('limpiar');
+    if(hashActual() !== '' || location.pathname !== '/') irHistorial('inicio');
     window.scrollTo({ top:0, behavior:'smooth' });
   }
 
@@ -12712,6 +13237,7 @@
     if(document.getElementById('vistaTienda').classList.contains('open')) cerrarTienda();
     else if(document.getElementById('vistaAcademia').classList.contains('open')) cerrarAcademia();
     else if(document.getElementById('vistaReservas').classList.contains('open')) cerrarReservas();
+    else if(document.getElementById('vistaPagina').classList.contains('open')) paginaVolver();
     else if(document.getElementById('vistaMisCursos').classList.contains('open')) mcRetroceder();
     else if(document.getElementById('vistaMisProductos').classList.contains('open')) cerrarMisProductos();
     else if(document.getElementById('vistaComprobante').classList.contains('open')) cerrarComprobante();
@@ -12721,13 +13247,15 @@
   // el botón atrás del navegador cierra la vista abierta
   window.addEventListener('popstate', ()=>{
     const h = hashActual();
-    if(h === '#tienda'){ cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirTienda(true); }
-    else if(h === '#reservas'){ cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirReservas(true); }
-    else if(h === '#academia'){ cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirAcademia(true); }
-    else if(h === '#mis-cursos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisProductos(true); cerrarComprobante(true); abrirMisCursos(true); }
-    else if(h === '#mis-productos'){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); abrirMisProductos(true); }
-    else if(h.indexOf('#comprobante=') === 0){ cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); abrirComprobante(h.slice('#comprobante='.length), false, tokenComprobanteGuardado(h.slice('#comprobante='.length))); }
-    else { cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); }
+    actualizarMetaRuta();
+    if(h === '#pagina'){ abrirPagina(); }
+    else if(h === '#tienda'){ cerrarPagina(); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirTienda(true); }
+    else if(h === '#reservas'){ cerrarPagina(); cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirReservas(true); }
+    else if(h === '#academia'){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirAcademia(true); }
+    else if(h === '#mis-cursos'){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisProductos(true); cerrarComprobante(true); abrirMisCursos(true); }
+    else if(h === '#mis-productos'){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); abrirMisProductos(true); }
+    else if(h.indexOf('#comprobante=') === 0){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); abrirComprobante(h.slice('#comprobante='.length), false, tokenComprobanteGuardado(h.slice('#comprobante='.length))); }
+    else { cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); }
   });
 
   document.querySelectorAll('.tv-chip').forEach(c=>
@@ -12793,7 +13321,7 @@
           ${p.soldOut ? '<span class="st-card-tag agotado">Agotado</span>' : (p.featured ? '<span class="st-card-tag">Bestseller</span>' : '')}
           <button type="button" class="st-ver" data-ver-detalle="${p.id}">Ver detalles</button>
         </div>
-        <h4>${escapeHTML(p.name)}</h4>
+        <h4><a class="pg-lnk" data-pg-nav href="${urlProducto(p)}">${escapeHTML(p.name)}</a></h4>
         <div class="st-card-desc">${escapeHTML(p.description || '')}</div>
         <div class="st-card-row">
           <span class="st-card-price">${money(p.priceClp)}</span>
@@ -12996,11 +13524,27 @@
     cursosListos = true;
     await etapa('retorno de pago', revisarRetornoPago);
     await etapa('llegada desde correo de calificación', revisarLlegadaDesdeCalificacion);
+    // Enlaces antiguos (…/masterlook-sitio.html#tienda): se pasan a la dirección limpia sin recargar.
+    let desdeHashLegacy = false;
+    try{
+      const vLegacy = HASH_LEGACY_A_VISTA[location.hash];
+      if(vLegacy && !rutaWebActual().tipo){ history.replaceState({ vista:vLegacy }, '', PATH_DE_VISTA[vLegacy] + (location.search || '')); desdeHashLegacy = true; }
+    }catch(e){}
+    actualizarMetaRuta();
+    const rutaIni = rutaWebActual();
+    if(hashActual() === '#pagina') abrirPagina();
     if(hashActual() === '#tienda') abrirTienda(true);
-    if(hashActual() === '#reservas') abrirReservas(true);
-    if(hashActual() === '#academia') abrirAcademia(true);
-    if(hashActual() === '#mis-cursos') abrirMisCursos(true);
-    if(hashActual() === '#mis-productos') abrirMisProductos(true);
+    if(hashActual() === '#reservas'){
+      // /reservar/ muestra el selector de sucursal; /reservar/?sede=nunoa (y los enlaces antiguos #reservas) abren la agenda directo.
+      let sedeUrl = '';
+      try{ sedeUrl = String(new URLSearchParams(location.search).get('sede') || '').toLowerCase(); }catch(e){}
+      if(desdeHashLegacy || sedeUrl === 'nunoa') abrirReservas(true); else abrirReservas();
+    }
+    if(hashActual() === '#academia'){ abrirAcademia(true); if(rutaIni.ancla) setTimeout(()=> document.getElementById('acCursosAncla')?.scrollIntoView({ behavior:'smooth' }), 300); }
+    if(hashActual() === '#mis-cursos'){ abrirMisCursos(true); if(!currentUser()) onAccountChipClick(); }
+    if(hashActual() === '#mis-productos'){ abrirMisProductos(true); if(!currentUser()) onAccountChipClick(); }
+    if(rutaIni.desconocida) irHistorial('inicio');   // una dirección que no existe muestra el inicio con la URL corregida
+    ocultarRutaCargando();
     if(hashActual().indexOf('#comprobante=') === 0){ const _bo = hashActual().slice('#comprobante='.length); abrirComprobante(_bo, false, tokenComprobanteGuardado(_bo)); }
     window.addEventListener('storage', e=>{
       if(e.key === CART_KEY){ carrito = leerCarrito(); pintarCarrito(); }

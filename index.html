@@ -1,20 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
+<!-- GENERADO por scripts/generar-rutas.js -- NO editar a mano. Página de entrada de /:
+     lleva sus metadatos y carga /masterlook-sitio.html en este mismo lugar (sin redirigir). -->
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=masterlook-sitio.html">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MASTERLOOK — Barbería</title>
+<meta name="description" content="Barbería y grooming studio. Reservas simples, resultados de maestro.">
+<link rel="canonical" href="https://masterlook.cl/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MASTERLOOK">
+<meta property="og:title" content="MASTERLOOK — Barbería">
+<meta property="og:description" content="Barbería y grooming studio. Reservas simples, resultados de maestro.">
+<meta property="og:url" content="https://masterlook.cl/">
+<meta property="og:image" content="https://masterlook.cl/icons/icon-512.png">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MASTERLOOK — Barbería">
+<meta name="twitter:description" content="Barbería y grooming studio. Reservas simples, resultados de maestro.">
+<meta name="twitter:image" content="https://masterlook.cl/icons/icon-512.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<meta name="theme-color" content="#d0cfcd">
+<style>html{background:#0c0c0d}</style>
 <script>
-  // index.html es SOLO un redirect estable -- la única fuente de verdad
-  // del sitio es masterlook-sitio.html. No agregar contenido acá: así este
-  // archivo no vuelve a quedar desactualizado (ver el problema real que
-  // esto causó -- 4 commits de atraso, panel/email-marketing redirigen
-  // acá por nombre). Preserva query string y hash (?volverAPanel=1,
-  // ?rf=CODIGO, #tienda) para que esos enlaces sigan funcionando igual.
-  location.replace('masterlook-sitio.html' + location.search + location.hash);
+(function () {
+  var APP = '/masterlook-sitio.html';
+  function respaldo() { location.replace(APP + location.search + location.hash); }
+  function cargar() {
+    try {
+      fetch(APP, { credentials: 'same-origin', cache: 'no-cache' })   // revalida siempre (304 si no cambió): un despliegue nuevo se ve al tiro, sin esperar a que caduque la caché del navegador
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function (h) { document.open(); document.write(h); document.close(); })
+        .catch(respaldo);
+    } catch (e) { respaldo(); }
+  }
+  cargar();
+})();
 </script>
+<noscript><meta http-equiv="refresh" content="0; url=/masterlook-sitio.html"></noscript>
 </head>
 <body>
-  <p>Redirigiendo a <a href="masterlook-sitio.html">MASTERLOOK</a>...</p>
+<noscript><p><a href="/masterlook-sitio.html">Abrir MASTERLOOK</a></p></noscript>
 </body>
 </html>

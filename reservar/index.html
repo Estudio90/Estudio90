@@ -1,18 +1,28 @@
 <!doctype html>
-<!-- Enlaces de reserva por sucursal y por profesional.
-       /reservar?sede=nunoa                       reserva en la agenda de Masterlook (Ñuñoa), sin pasar por el selector
-       /reservar?sede=nunoa&profesional=<id>      lo mismo, con ese profesional ya elegido (el id estable del profesional)
-       /reservar?sede=providencia                 agenda de Providencia (el enlace vive en masterlook-enlaces.js)
-       /reservar                                  el selector de sucursales
-     Esta página no muestra nada que venga de la dirección: solo decide a dónde enviar a la persona. -->
+<!-- GENERADO por scripts/generar-rutas.js -- NO editar a mano. Página de entrada de /reservar/:
+     lleva sus metadatos y carga /masterlook-sitio.html en este mismo lugar (sin redirigir). -->
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
-<title>MASTERLOOK — Reservar</title>
-<!-- Valores de configuración únicos (enlace de Providencia). Ruta relativa: funciona igual desde la raíz del sitio. -->
-<script src="../masterlook-enlaces.js"></script>
+<title>Reservar hora | MASTERLOOK</title>
+<meta name="description" content="Reserva tu hora online en MASTERLOOK: elige sucursal, servicio y profesional.">
+<link rel="canonical" href="https://masterlook.cl/reservar/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MASTERLOOK">
+<meta property="og:title" content="Reservar hora | MASTERLOOK">
+<meta property="og:description" content="Reserva tu hora online en MASTERLOOK: elige sucursal, servicio y profesional.">
+<meta property="og:url" content="https://masterlook.cl/reservar/">
+<meta property="og:image" content="https://masterlook.cl/icons/icon-512.png">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Reservar hora | MASTERLOOK">
+<meta name="twitter:description" content="Reserva tu hora online en MASTERLOOK: elige sucursal, servicio y profesional.">
+<meta name="twitter:image" content="https://masterlook.cl/icons/icon-512.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<meta name="theme-color" content="#d0cfcd">
+<style>html{background:#0c0c0d}</style>
+<script src="/masterlook-enlaces.js"></script>
 <script>
 /*ML_ROUTER_INI*/
 function mlDestinoReserva(search, cfg, base) {
@@ -69,25 +79,27 @@ function mlDestinoReserva(search, cfg, base) {
   return { tipo: 'sitio', url: sitio + '?' + ['sede=elegir'].concat(fwd).join('&'), sede: 'elegir', profesional: '' };
 }
 /*ML_ROUTER_FIN*/
-
 (function () {
+  var APP = '/masterlook-sitio.html';
+  function respaldo() { location.replace(APP + location.search + location.hash); }
+  function cargar() {
+    try {
+      fetch(APP, { credentials: 'same-origin', cache: 'no-cache' })   // revalida siempre (304 si no cambió): un despliegue nuevo se ve al tiro, sin esperar a que caduque la caché del navegador
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function (h) { document.open(); document.write(h); document.close(); })
+        .catch(respaldo);
+    } catch (e) { respaldo(); }
+  }
   try {
-    var d = mlDestinoReserva(location.search, window.ML_ENLACES, '../');
-    location.replace(d.url);
-  } catch (e) { /* si algo falla, queda el enlace visible de abajo */ }
+    var d = mlDestinoReserva(location.search, window.ML_ENLACES, '/');
+    if (d && d.tipo === 'externo') { location.replace(d.url); return; }
+  } catch (e) { /* ante cualquier duda, se abre el sitio */ }
+  cargar();
 })();
 </script>
-<noscript><meta http-equiv="refresh" content="0; url=../masterlook-sitio.html"></noscript>
-<style>
-  html,body{margin:0;background:#fff;color:#1c1c1c;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  main{max-width:420px;margin:0 auto;padding:64px 16px;text-align:center}
-  a{color:#1c1c1c}
-</style>
+<noscript><meta http-equiv="refresh" content="0; url=/masterlook-sitio.html"></noscript>
 </head>
 <body>
-<main>
-  <p>Abriendo la reserva…</p>
-  <p><a href="../masterlook-sitio.html">Si no se abre sola, toca aquí</a></p>
-</main>
+<noscript><p><a href="/masterlook-sitio.html">Abrir MASTERLOOK</a></p></noscript>
 </body>
 </html>
