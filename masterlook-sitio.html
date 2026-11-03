@@ -6229,7 +6229,7 @@
       const citas = (state.plan && state.plan.length)
         ? state.plan.filter(x=> !x.sinCupo)
         : [{ servicio: state.svc, servicioId: state.serviceId, precio: state.price, minutos: state.duracion,
-             barbero: state.barber, min: state.startMin, label: '' }];
+             barbero: state.barber, min: state.startMin, label: (typeof hhmmDeMin === 'function' ? hhmmDeMin(state.startMin) : '') }];
 
       if(state.modoReserva === 'webpay'){
         // El backend vuelve a comprobar disponibilidad real y recien ahi
@@ -7506,6 +7506,34 @@
    *  servidor re-verifica el interruptor `reservasSinAnticipo` y la
    *  disponibilidad real dentro de la transacción del slotLock, así que
    *  nada de acá puede reservar una hora ocupada ni saltarse el modo. */
+  /* 3-nov-2026 (incidente «MAX confirma 17:00 y la agenda muestra 10:00»): la hora que se envía al servidor es un número (minutos desde medianoche, hora de Chile) y SIEMPRE va
+     también como texto «HH:MM» en `label` (antes iba vacío y el panel la dibujaba a las 10:00). Además, MAX ya no da la reserva por hecha con lo que él mismo pidió: la
+     confirma solo si, al preguntarle al servidor por la agenda real de ese día, la hora quedó ocupada exactamente a esa hora por ese profesional. */
+  function hhmmDeMin(min){
+    const m = Math.round(Number(min));
+    return Number.isFinite(m) && m >= 0 && m < 1440 ? String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0') : '';
+  }
+  function chatMinutosDeHora(horaTxt){
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(horaTxt || '').trim());
+    if(!m) return null;
+    const h = parseInt(m[1], 10), mi = parseInt(m[2], 10);
+    return h <= 23 && mi <= 59 ? h * 60 + mi : null;
+  }
+  /** Lee la agenda REAL del día (sin caché) y comprueba que el profesional tiene una reserva con ese inicio y ese término exactos. Devuelve 'confirmada' | 'no_coincide' | 'no_verificable'. */
+  async function chatVerificarReservaGuardada({ fecha, barberoNombre, startMin, minutos }){
+    try{
+      delete ocupacionPorFecha[fecha];   // nunca usar una ocupación vieja para confirmar
+      const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha), { cache: 'no-store' });
+      if(!resp.ok) return 'no_verificable';
+      const data = await resp.json().catch(() => null);
+      const lista = data && data.ocupacion && barberoNombre ? data.ocupacion[barberoNombre] : null;
+      if(!Array.isArray(lista)) return 'no_verificable';
+      // La reserva guardada ocupa EXACTAMENTE [inicio, inicio+duración]: se exige ese intervalo exacto (un tramo fuera de turno, un bloqueo o otra reserva que solo «cubra»
+      // o «empiece» a esa hora no cuentan). Si la duración guardada difiere de la pedida, no se confirma: se pide revisarla (nunca se da por buena una hora que no calza).
+      const fin = startMin + (Number(minutos) || 0);
+      return lista.some(iv => Array.isArray(iv) && iv[0] === startMin && iv[1] === fin) ? 'confirmada' : 'no_coincide';
+    }catch(e){ return 'no_verificable'; }
+  }
   let chatReservaIaEnCurso = false;
   async function chatConfirmarSinAnticipoIA(propuesta){
     if(chatReservaIaEnCurso) return;
@@ -7514,8 +7542,14 @@
     document.getElementById('chatChips').innerHTML = '';
     const msg = chatAgregar('bot', 'Confirmando tu reserva…');
 
-    const [hh, mm] = String(propuesta.horaInicio || '0:0').split(':').map(Number);
-    const startMin = (hh || 0) * 60 + (mm || 0);
+    const startMin = chatMinutosDeHora(propuesta.horaInicio);
+    if(startMin === null){
+      chatReservaIaEnCurso = false;
+      msg.textContent = 'No pude completar la reserva: la hora de la propuesta no es válida.';
+      chatAgregar('bot', '¿Buscamos otro horario?');
+      chatChips([{ label:'Ver otra hora', intent: propuesta.servicioNombre }]);
+      return;
+    }
 
     try{
       const headers = { 'Content-Type': 'text/plain' };
@@ -7531,7 +7565,7 @@
           comentarioCliente: 'Reserva realizada por el chat con IA.',
           citas: [{
             serviceId: propuesta.servicioId, servicio: propuesta.servicioNombre, price: propuesta.precioClp,
-            barberName: propuesta.barberoNombre, startMin, minutes: propuesta.duracionMin, label: '',
+            barberName: propuesta.barberoNombre, startMin, minutes: propuesta.duracionMin, label: hhmmDeMin(startMin),
           }],
         }),
       });
@@ -7546,9 +7580,24 @@
         }
       }catch(_){}
       chatPropuestaPendiente = null;   // reserva REAL creada -- nada que confirmar de nuevo
-      msg.textContent = '¡Listo! Tu hora quedó confirmada ✂️';
-      chatAgregar('bot', `${propuesta.servicioNombre} el ${fmtFechaLarga(propuesta.fecha)} a las ${propuesta.horaInicio}${propuesta.barberoNombre ? ' con ' + propuesta.barberoNombre : ''}. Te enviamos la confirmación a ${propuesta.correo}.`);
-      chatChips([{ label:'Gracias', intent:'gracias' }]);
+      // La confirmación NO se arma con lo que se pidió: primero se comprueba en la agenda real que quedó guardada a esa hora con ese profesional.
+      const horaTxt = hhmmDeMin(startMin);
+      const detalle = `${propuesta.servicioNombre} el ${fmtFechaLarga(propuesta.fecha)} a las ${horaTxt}${propuesta.barberoNombre ? ' con ' + propuesta.barberoNombre : ''}`;
+      const verif = await chatVerificarReservaGuardada({ fecha: propuesta.fecha, barberoNombre: propuesta.barberoNombre, startMin, minutos: propuesta.duracionMin });
+      const chipWa = { label:'Escríbenos por WhatsApp', accion: ()=> chatAbrirWhatsApp(`Hola, hice una reserva por el chat (${detalle}) y quiero confirmar que quedó bien guardada.`) };
+      if(verif === 'confirmada'){
+        msg.textContent = '¡Listo! Tu hora quedó confirmada ✂️';
+        chatAgregar('bot', `${detalle}. Lo verifiqué en nuestra agenda: quedó guardada exactamente a esa hora. Te enviamos la confirmación a ${propuesta.correo}.`);
+        chatChips([{ label:'Gracias', intent:'gracias' }]);
+      }else if(verif === 'no_coincide'){
+        msg.textContent = 'No pude confirmar tu reserva.';
+        chatAgregar('bot', `Recibí tu solicitud para ${detalle}, pero al revisar nuestra agenda no encontré esa hora guardada con ese profesional. Por favor no la des por reservada: escríbenos por WhatsApp y la revisamos de inmediato.`);
+        chatChips([chipWa]);
+      }else{
+        msg.textContent = 'Recibí tu reserva.';
+        chatAgregar('bot', `${detalle}. En este momento no pude verificar en nuestra agenda la hora guardada, así que revisa el correo de confirmación que te enviaremos a ${propuesta.correo}: si la hora no coincide, escríbenos por WhatsApp.`);
+        chatChips([chipWa, { label:'Gracias', intent:'gracias' }]);
+      }
     }catch(e){
       chatReservaIaEnCurso = false;
       msg.textContent = `No pude completar la reserva: ${e.message}`;
@@ -7582,8 +7631,14 @@
     document.getElementById('chatChips').innerHTML = '';
     const msg = chatAgregar('bot', 'Redirigiendo a Webpay…');
 
-    const [hh, mm] = String(propuesta.horaInicio || '0:0').split(':').map(Number);
-    const startMin = (hh || 0) * 60 + (mm || 0);
+    const startMin = chatMinutosDeHora(propuesta.horaInicio);
+    if(startMin === null){
+      chatPagoIaEnCurso = false;
+      msg.textContent = 'No pude completar la reserva: la hora de la propuesta no es válida.';
+      chatAgregar('bot', '¿Buscamos otro horario?');
+      chatChips([{ label:'Ver otra hora', intent: propuesta.servicioNombre }]);
+      return;
+    }
 
     try{
       const pagoHeaders = { 'Content-Type': 'text/plain' };
@@ -7600,7 +7655,7 @@
           comentarioCliente: 'Reserva realizada por el chat con IA.',
           citas: [{
             serviceId: propuesta.servicioId, servicio: propuesta.servicioNombre, price: propuesta.precioClp,
-            barberName: propuesta.barberoNombre, startMin, minutes: propuesta.duracionMin, label: '',
+            barberName: propuesta.barberoNombre, startMin, minutes: propuesta.duracionMin, label: hhmmDeMin(startMin),
           }],
           datos: { productos: [] },
           buyerName: propuesta.nombreCompleto, buyerEmail: propuesta.correo, buyerPhone: propuesta.telefono,
