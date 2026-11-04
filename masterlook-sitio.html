@@ -1397,6 +1397,8 @@
   .pg-acciones{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
   .pg-btn-sec{display:inline-block; padding:10px 16px; border-radius:99px; border:1px solid var(--border-strong,var(--border)); background:transparent; color:var(--text-hi); cursor:pointer; text-decoration:none; font-family:inherit; font-size:.8rem;}
   .pg-btn-sec:hover{background:var(--panel-2);}
+  .pg-compartir{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; margin:0 0 8px; padding:2px 0; background:none; border:0; color:inherit; opacity:.62; cursor:pointer; font-family:var(--font-body,inherit); font-size:.68rem; letter-spacing:.02em;}
+  .pg-compartir:hover, .pg-compartir:focus-visible{opacity:1;}
   .pg-estado{text-align:center; padding:70px 10px; color:var(--text-mid);}
   .pg-estado .pg-btn-sec{margin-top:14px;}
   .pg-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px; padding-bottom:50px; margin-top:26px;}
@@ -4180,6 +4182,8 @@
               <p id="rvSub1">Elige un servicio. Puedes ver la duración y el detalle de cada uno.</p>
             </div>
 
+            <div id="rvEnlaceAviso" class="rv-barbero-aviso" role="status" style="display:none; margin-bottom:12px;"></div>
+
             <div class="rv-modo">
               <button class="rv-modo-btn on" data-modo="servicio">
                 <span class="rv-modo-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></span>
@@ -5131,6 +5135,7 @@
   let catalog = { services: [], barbers: [] };
   /* 28-oct-2026: estado del catálogo REAL: 'cargando' (hasta que lleguen los servicios y profesionales de Firestore) | 'listo' | 'error' (no se pudo leer tras varios intentos). */
   let catalogoEstado = 'cargando';
+  let enlaceProfesional = leerProfesionalDeEnlace();   // enlace directo a un profesional (/reservar/?sede=nunoa&profesional=...): ver «ENLACE DIRECTO A UN PROFESIONAL»
 
   async function api(path, options = {}){
     const res = await fetch(API_BASE + path, {
@@ -5732,6 +5737,7 @@
     localesActivos = snap.docs.map(d=> d.data());
     pgListos.locales = true; paginaRefrescar();
     pintarDireccionesFooter();
+    aplicarProfesionalDeEnlace();
   });
   /**
    * Ventana real de reservas de un día, leída del horario del local
@@ -10092,11 +10098,16 @@
   let rvCatsCerradas = null;
 
   function paintServices(){
-    const lista = catalog.services;
-    if(catalogoEstado !== 'listo' || !lista.length){   // 28-oct: cargando / error / sin servicios: nunca datos inventados
+    const lista = serviciosVisibles();
+    if(catalogoEstado !== 'listo' || !catalog.services.length){   // 28-oct: cargando / error / sin servicios: nunca datos inventados
       const c = document.getElementById('svcCats'); if(c) c.innerHTML = '';
       const p = document.getElementById('svcPick'); if(p) p.innerHTML = estadoCatalogoHTML('servicios');
       const pop = document.getElementById('svcPopulares'); if(pop){ pop.innerHTML = ''; pop.style.display = 'none'; }
+      return;
+    }
+    if(!lista.length){   // enlace de un profesional que no tiene servicios reservables en línea
+      const c = document.getElementById('svcCats'); if(c) c.innerHTML = '';
+      const p = document.getElementById('svcPick'); if(p) p.innerHTML = '<div class="svc-vacio">Este profesional no tiene servicios disponibles para reservar en línea.</div>';
       return;
     }
 
@@ -10170,6 +10181,7 @@
   }
 
   function pintarListaServicios(lista){
+    lista = serviciosVisibles(lista);
     const q = (document.getElementById('svcBuscar')?.value || '').trim().toLowerCase();
     const cont = document.getElementById('svcPick');
 
@@ -10382,6 +10394,7 @@
         }
 
         updateSummary(); checkProfesional();
+        sincronizarUrlBarbero();
       }));
   }
 
@@ -11098,6 +11111,126 @@
   }
 
 
+  /* ========== ENLACE DIRECTO A UN PROFESIONAL ==========
+     /reservar/?sede=nunoa&profesional=<nombre>-<id>  abre la agenda de Ñuñoa con ese profesional YA elegido. No es un sistema
+     nuevo: usa exactamente el modo «Por barbero» que ya existía (cambiarModo + el clic de su tarjeta), así que la disponibilidad,
+     los horarios y la reserva son los de siempre. Reglas:
+       - El profesional se identifica por su id (el nombre del enlace es solo para que se lea bien; si el nombre cambia, el enlace sigue
+         sirviendo). El enlace pasa por minúsculas (el /reservar/ lo normaliza), así que el id se compara sin distinguir mayúsculas.
+       - Si no existe, está inactivo, no recibe reservas en línea o su sucursal es externa/inactiva: aviso claro y NUNCA se elige otro.
+       - Los servicios que se ofrecen son SOLO los que ese profesional realiza (mismo criterio barberoElegiblePara() del resto de la reserva). */
+  function claveEnlace(s){
+    s = String(s == null ? '' : s).trim().toLowerCase();
+    try{ s = s.normalize('NFD').replace(/[̀-ͯ]/g, ''); }catch(e){}
+    return s;
+  }
+  function leerProfesionalDeEnlace(){
+    try{
+      const rb = rutaWebActual().barbero;   // /reservar/barbero/<nombre>-<id>/
+      if(rb){ const vr = claveEnlace(rb); return { valor: /^[a-z0-9][a-z0-9_-]{0,79}$/.test(vr) ? vr : '', hecho:false }; }
+      const p = new URLSearchParams(location.search);   // enlace antiguo: /reservar/?sede=nunoa&profesional=...
+      if(!p.has('profesional')) return null;
+      const sede = claveEnlace(p.get('sede'));
+      if(sede && sede !== 'nunoa') return null;   // en Providencia (AgendaPro) no hay profesionales propios
+      if(!(/^\/reservar\/?$/.test(location.pathname) || location.hash === '#reservas')) return null;
+      const v = claveEnlace(p.get('profesional'));
+      return { valor: /^[a-z0-9][a-z0-9_-]{0,39}$/.test(v) ? v : '', hecho:false };
+    }catch(e){ return null; }
+  }
+  /** Dirección propia de la reserva con un profesional: /reservar/barbero/<nombre>/ (ej. /reservar/barbero/luis-barrios/). Es estable: si el nombre cambia, el enlace
+      viejo se reconoce por `nombresAnteriores`; solo si hay dos con el mismo nombre se agrega el id para distinguirlos. */
+  function slugBarbero(b){
+    const s = slugTexto(b && b.name);
+    const otros = (catalog.barbers || []).filter(x=> x.id !== b.id && slugTexto(x.name) === s);   // dos con el mismo nombre: el id desempata
+    return otros.length ? s + '-' + claveEnlace(b.id) : s;
+  }
+  function urlBarbero(b){ const c = slugBarbero(b); return c ? '/reservar/barbero/' + c + '/' : ''; }
+  /** La dirección del navegador refleja al profesional elegido en la reserva (y vuelve a /reservar/ si se quita). Solo cambia la URL
+      (replaceState): no toca el estado ni la lógica de la reserva. Con Atrás se sale de la reserva como siempre; con Adelante vuelve con el mismo profesional. */
+  function sincronizarUrlBarbero(){
+    try{
+      if(!historialOk) return;
+      const v = document.getElementById('vistaReservas');
+      if(!v || !v.classList.contains('open') || rutaWebActual().tipo !== 'reservar') return;
+      let destino = '/reservar/';
+      if(state.barberId && state.barberId !== 'any'){
+        const b = (catalog.barbers || []).find(x=> x.id === state.barberId);
+        destino = (b && urlBarbero(b)) || '/reservar/';
+      }
+      const q = new URLSearchParams(location.search); if(destino !== '/reservar/') q.delete('profesional');   // el enlace antiguo pasa a la dirección nueva; si no hay profesional elegido no se toca nada
+      const resto = q.toString() ? '?' + q.toString() : '';
+      if(location.pathname === destino && (location.search || '') === resto) return;
+      history.replaceState(history.state || { vista:'reservas' }, '', destino + resto);
+      actualizarMetaRuta();
+    }catch(e){}
+  }
+  /** Adelante/Atrás hacia una dirección /reservar/barbero/...: deja elegido al mismo profesional (si ya lo está, no hace nada). */
+  function aplicarBarberoDeRuta(){
+    const e = leerProfesionalDeEnlace();
+    if(!e) return;
+    const b = e.valor ? buscarProfesionalDeEnlace(e.valor) : null;
+    if(b && state.barberId === b.id) return;
+    enlaceProfesional = e;
+    aplicarProfesionalDeEnlace();
+  }
+  function buscarProfesionalDeEnlace(v){
+    const lista = catalog.barbers || [];
+    // 1) el nombre del enlace (luis-barrios), si identifica a UN solo profesional
+    const porNombre = lista.filter(b=> slugTexto(b.name) === v);
+    if(porNombre.length === 1) return porNombre[0];
+    // 2) el id (estable) solo, o «<nombre>-<id>» (enlaces ya compartidos y desempate de nombres repetidos)
+    let mejor = null;
+    for(const b of lista){
+      const id = claveEnlace(b.id);
+      if(!id) continue;
+      if(v === id) return b;
+      if(v.endsWith('-' + id) && (!mejor || id.length > claveEnlace(mejor.id).length)) mejor = b;
+    }
+    if(mejor) return mejor;
+    // 3) un nombre anterior (el profesional cambió de nombre: el enlace viejo sigue sirviendo), si es único
+    const previos = lista.filter(b=> Array.isArray(b.nombresAnteriores) && b.nombresAnteriores.some(n=> slugTexto(n) === v));
+    return previos.length === 1 ? previos[0] : null;
+  }
+  /** true = su sucursal es la agenda propia; false = no; null = todavía no llegaron las sucursales. Sin localId = la agenda propia de Ñuñoa. */
+  function sucursalDeProfesionalValida(b){
+    if(!b.localId) return true;
+    if(!pgListos.locales) return null;
+    const l = localesActivos.find(x=> String(x.id) === String(b.localId));
+    return !!l && l.agendaExterna !== true;
+  }
+  /** Con un profesional elegido por enlace, la lista de servicios solo trae los que ese profesional realiza. */
+  function serviciosVisibles(base){
+    const lista = base || catalog.services;
+    if(!state.barberDeEnlace || !state.barberId || state.barberId !== state.barberDeEnlace) return lista;
+    return lista.filter(sv=> barberoElegiblePara(state.barberId, [sv]));
+  }
+  function aplicarProfesionalDeEnlace(){
+    const e = enlaceProfesional;
+    if(!e || e.hecho) return;
+    if(catalogoEstado !== 'listo') return;   // cargando o con error: el propio catálogo muestra «Reintentar»; se aplica apenas llega
+    const b = e.valor ? buscarProfesionalDeEnlace(e.valor) : null;
+    let motivo = '';
+    if(!b) motivo = 'Este profesional ya no está disponible para reservas en línea.';
+    else if(b.acceptsOnline === false) motivo = 'Este profesional no está recibiendo reservas en línea por ahora.';
+    else{
+      const ok = sucursalDeProfesionalValida(b);
+      if(ok === null) return;   // espera a conocer las sucursales
+      if(!ok) motivo = 'Este profesional ya no atiende en esta sucursal.';
+    }
+    e.hecho = true;
+    cambiarModo('barbero');   // modo «Por barbero» de siempre; pinta los profesionales
+    const aviso = document.getElementById('rvEnlaceAviso');
+    const tarjeta2 = b && !motivo ? [...document.querySelectorAll('#barberPickTop .barber-opt')].find(x=> x.dataset.id === b.id) : null;
+    if(!tarjeta2){
+      if(aviso){ aviso.textContent = (motivo || 'Este profesional no está disponible por ahora.') + ' Elige otro profesional o reserva por servicio.'; aviso.style.display = ''; }
+      return;   // sin elegir a nadie por el cliente
+    }
+    if(aviso) aviso.style.display = 'none';
+    state.barberDeEnlace = b.id;
+    tarjeta2.click();   // el mismo clic de siempre: deja al profesional elegido y muestra sus servicios
+    paintServices();
+  }
+
   /* ---------- modo de reserva: por servicio o por barbero ---------- */
   let rvModo = 'servicio';
 
@@ -11168,10 +11301,12 @@
           document.getElementById('rvZonaServicios').style.display = 'none';
           row.querySelectorAll('.barber-opt').forEach(x=> x.classList.remove('selected'));
           updateSummary();
+          sincronizarUrlBarbero();
         });
 
         document.getElementById('rvZonaServicios').style.display = '';
         updateSummary();
+        sincronizarUrlBarbero();
         document.getElementById('rvZonaServicios').scrollIntoView({behavior:'smooth', block:'start'});
       }));
   }
@@ -11488,6 +11623,7 @@
         <div class="svc-body">
           <div class="svc-nombre"><a class="pg-lnk" data-pg-nav href="${urlProducto(p)}">${escapeHTML(p.name)}</a></div>
           <div class="svc-desc">${escapeHTML(p.description || '')}</div>
+          <button type="button" class="pg-compartir" data-compartir-producto="${escapeHTML(p.id)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>Compartir enlace</button>
           <div class="svc-pie">
             <span class="svc-precio">${money(p.priceClp)}</span>
             <button class="svc-add" data-buy="${p.id}" data-name="${escapeHTML(p.name)}" data-price="${p.priceClp}" data-kind="PRODUCT"
@@ -11742,6 +11878,7 @@
     pintarBarberosArriba();
     pintarDias();
     pintarPortada();
+    aplicarProfesionalDeEnlace();
   }
   async function loadCatalog(){
     catalogoEstado = 'cargando';
@@ -11847,7 +11984,7 @@
       if(b === 'producto' && seg[2]) return { tipo:'producto', hash:'#pagina', param:seg[2] };
       return { tipo:'tienda', hash:'#tienda', param:'' };
     }
-    if(a === 'reservar') return { tipo:'reservar', hash:'#reservas', param:'' };
+    if(a === 'reservar') return { tipo:'reservar', hash:'#reservas', param:'', barbero: (b === 'barbero' && seg[2]) ? seg[2] : '' };
     if(a === 'academy'){
       if(!b) return { tipo:'academia', hash:'#academia', param:'' };
       if(b === 'cursos') return { tipo:'academia', hash:'#academia', param:'', ancla:true };
@@ -11974,6 +12111,17 @@
     const sh = e.target.closest('[data-pg-compartir]');
     if(sh) compartirEnlace(sh.dataset.titulo || document.title, location.href);
   });
+
+  /** «Compartir enlace» en cada tarjeta de producto (inicio y tienda): comparte/copia la dirección de SU ficha. Se atiende en la fase de captura para que el
+      clic no abra además la tienda ni el visor de fotos (que escuchan el clic de la tarjeta). */
+  document.addEventListener('click', e=>{
+    const b = e.target && e.target.closest ? e.target.closest('[data-compartir-producto]') : null;
+    if(!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const id = b.dataset.compartirProducto;
+    const p = (typeof tvProductos !== 'undefined' && tvProductos.find(x=> x.id === id)) || productosSiteCache.find(x=> x.id === id);
+    if(p) compartirEnlace(p.name, location.origin + urlProducto(p));
+  }, true);
 
   /** Compartir: menú nativo del celular (WhatsApp, Instagram...) o, si no existe, copia el enlace. */
   async function compartirEnlace(titulo, url){
@@ -13305,7 +13453,7 @@
     actualizarMetaRuta();
     if(h === '#pagina'){ abrirPagina(); }
     else if(h === '#tienda'){ cerrarPagina(); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirTienda(true); }
-    else if(h === '#reservas'){ cerrarPagina(); cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirReservas(true); }
+    else if(h === '#reservas'){ cerrarPagina(); cerrarTienda(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirReservas(true); aplicarBarberoDeRuta(); }
     else if(h === '#academia'){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarMisCursos(true); cerrarMisProductos(true); cerrarComprobante(true); abrirAcademia(true); }
     else if(h === '#mis-cursos'){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisProductos(true); cerrarComprobante(true); abrirMisCursos(true); }
     else if(h === '#mis-productos'){ cerrarPagina(); cerrarTienda(true); cerrarReservas(true); cerrarAcademia(true); cerrarMisCursos(true); cerrarComprobante(true); abrirMisProductos(true); }
@@ -13378,6 +13526,7 @@
         </div>
         <h4><a class="pg-lnk" data-pg-nav href="${urlProducto(p)}">${escapeHTML(p.name)}</a></h4>
         <div class="st-card-desc">${escapeHTML(p.description || '')}</div>
+        <button type="button" class="pg-compartir" data-compartir-producto="${escapeHTML(p.id)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>Compartir enlace</button>
         <div class="st-card-row">
           <span class="st-card-price">${money(p.priceClp)}</span>
           <button class="st-add" data-buy="${p.id}" data-name="${escapeHTML(p.name)}" data-price="${p.priceClp}" data-kind="PRODUCT"
@@ -13593,7 +13742,8 @@
       // /reservar/ muestra el selector de sucursal; /reservar/?sede=nunoa (y los enlaces antiguos #reservas) abren la agenda directo.
       let sedeUrl = '';
       try{ sedeUrl = String(new URLSearchParams(location.search).get('sede') || '').toLowerCase(); }catch(e){}
-      if(desdeHashLegacy || sedeUrl === 'nunoa') abrirReservas(true); else abrirReservas();
+      if(desdeHashLegacy || sedeUrl === 'nunoa' || enlaceProfesional) abrirReservas(true); else abrirReservas();
+      sincronizarUrlBarbero();   // si el profesional del enlace ya quedó elegido (catálogo listo antes de abrir), la dirección pasa a /reservar/barbero/...
     }
     if(hashActual() === '#academia'){ abrirAcademia(true); if(rutaIni.ancla) setTimeout(()=> document.getElementById('acCursosAncla')?.scrollIntoView({ behavior:'smooth' }), 300); }
     if(hashActual() === '#mis-cursos'){ abrirMisCursos(true); if(!currentUser()) onAccountChipClick(); }

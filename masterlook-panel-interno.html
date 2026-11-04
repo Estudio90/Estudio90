@@ -14126,6 +14126,7 @@
         <div class="sv-opciones-wrap">
           <button type="button" class="sv-btn sv-btn-outline sv-opciones-btn" data-opciones="${escapeHTML(b.id)}">Opciones</button>
           <div class="sv-opciones-menu" data-opciones-menu="${escapeHTML(b.id)}">
+            <button type="button" data-op-copiar="${escapeHTML(b.id)}">Copiar enlace del profesional</button>
             <button type="button" data-op-toggle="${escapeHTML(b.id)}">${b.active ? 'Desactivar profesional' : 'Activar profesional'}</button>
           </div>
         </div>
@@ -14145,12 +14146,40 @@
         document.querySelectorAll('.sv-opciones-menu.open').forEach(m=> m.classList.remove('open'));
         if(!abierto) opMenu.classList.add('open');
       });
+      opMenu.querySelector('[data-op-copiar]').addEventListener('click', ()=>{
+        opMenu.classList.remove('open');
+        copiarEnlaceReservaProfesional(id);
+      });
       opMenu.querySelector('[data-op-toggle]').addEventListener('click', ()=>{
         opMenu.classList.remove('open');
         const actual = cfgBarberos.find(x=> x.id === id);
         (actual && actual.active) ? desactivarBarbero(id) : activarBarbero(id);
       });
     });
+  }
+
+  /** Enlace directo a la reserva con ESTE profesional ya elegido (sede Ñuñoa, la agenda propia): /reservar/barbero/<nombre>/ (ej. luis-barrios).
+   *  Si cambia de nombre, el enlace viejo sigue sirviendo (nombresAnteriores); si dos se llaman igual se agrega el id. */
+  function enlaceReservaProfesional(b){
+    const slug = (n)=> String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'item';
+    const base = slug(b.name);
+    const repetido = cfgBarberos.some(x=> x.id !== b.id && x.active !== false && slug(x.name) === base);   // dos con el mismo nombre: el id desempata
+    const id = String(b.id || '').toLowerCase();
+    if(repetido && !/^[a-z0-9][a-z0-9_-]*$/.test(id)) return '';
+    const origen = ES_STAGING ? location.origin : 'https://masterlook.cl';   // producción: siempre el dominio público
+    return origen + '/reservar/barbero/' + (repetido ? base + '-' + id : base) + '/';
+  }
+  async function copiarEnlaceReservaProfesional(barberoId){
+    const b = cfgBarberos.find(x=> x.id === barberoId);
+    const url = b ? enlaceReservaProfesional(b) : '';
+    if(!url) return showToast('Este profesional no tiene un identificador válido para el enlace');
+    let ok = false;
+    try{ await navigator.clipboard.writeText(url); ok = true; }
+    catch(e){
+      try{ const t = document.createElement('textarea'); t.value = url; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove(); }catch(_){}
+    }
+    if(!ok) return showToast('No se pudo copiar. Enlace: ' + url);
+    showToast(b.active === false ? 'Enlace copiado. Ojo: este profesional está inactivo, el enlace avisará que no está disponible' : 'Enlace del profesional copiado');
   }
 
   /** Sube (o reemplaza) la foto de un profesional. Actualiza CUALQUIER thumb
