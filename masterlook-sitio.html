@@ -3487,6 +3487,17 @@
     background:var(--bg,#0c0c0d); color:var(--text-mid,#9a9691); font:13px/1.4 system-ui,-apple-system,sans-serif; letter-spacing:.1em; text-transform:uppercase;}
   html.ml-boot-reagendar body > *:not(#rescheduleModal){display:none !important;}
   html.ml-boot-reagendar #rescheduleModal{display:block !important;}
+  /* iOS Safari amplía la página al enfocar un campo con letra menor a 16 px: se fija 16 px SOLO en pantallas de celular y solo la letra (el resto del diseño no cambia). */
+  @media (max-width:768px){
+    input[type=text], input[type=tel], input[type=email], input[type=search], input[type=password], input[type=number], input[type=date], input[type=time], textarea, select, .date-input, .rv-input, .rv-textarea, .cart-input, .rv-search-wrap input.rv-search, .st-news-form input{font-size:16px !important;}
+  }
+  /* Barras flotantes en celular: con el teclado abierto se ocultan la barra de reserva y la navegación; durante la reserva la navegación se oculta, la barra de reserva baja al borde y el contenido necesita menos espacio al final. Todo reaparece al cerrar el teclado o salir de la reserva. */
+  @media (max-width:899px){
+    body.ml-teclado .bottom-nav, body.ml-teclado .rv-barra{display:none !important;}
+    body.ml-reserva .bottom-nav{display:none !important;}
+    body.ml-reserva .rv-barra{bottom:calc(14px + env(safe-area-inset-bottom)) !important;}
+    body.ml-reserva .tv-body.reservas-vista{padding-bottom:calc(110px + env(safe-area-inset-bottom)) !important;}
+  }
 </style>
 <script>
 
@@ -5559,6 +5570,33 @@
   // en la ruta); staging usa su propia URL de Firebase Hosting. Nunca más
   // un literal de producción repetido en cada fetch().
   const FUNCTIONS_BASE = `https://us-central1-${(ES_STAGING?FIREBASE_CONFIG_STAGING:FIREBASE_CONFIG_PROD).projectId}.cloudfunctions.net`;
+  /** Lee la respuesta de una función del servidor como JSON. Si no es JSON (error de red intermedio, página de error, función ausente) lanza un mensaje claro en español en vez del texto en inglés de Safari. */
+  async function jsonSeguro(resp){
+    try{ return await resp.json(); }
+    catch(_){ throw new Error('No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo en unos minutos. Si el problema sigue, escríbenos por WhatsApp.'); }
+  }
+  /** Teclado abierto en celular: marca <body> para que el CSS oculte las barras flotantes (reaparecen al cerrar el teclado). No toca ningún dato ni la lógica de reserva. */
+  (function(){
+    const esCampo = (e)=> e && /^(INPUT|TEXTAREA|SELECT)$/.test(e.tagName) && !/^(checkbox|radio|button|submit|file|range)$/i.test(e.type || '');
+    document.addEventListener('focusin', (ev)=>{ if(esCampo(ev.target) && window.innerWidth <= 899 && document.body) document.body.classList.add('ml-teclado'); });
+    document.addEventListener('focusout', ()=>{ setTimeout(()=>{ if(document.body && !esCampo(document.activeElement)) document.body.classList.remove('ml-teclado'); }, 150); });
+  })();
+  /** Durante la reserva (#vistaSucursal / #vistaReservas abiertos) la navegación general se oculta; al salir reaparece. Solo marca <body>: no toca la lógica de reserva. */
+  (function(){
+    const ids = ['vistaSucursal', 'vistaReservas'];
+    const marcar = ()=>{ if(!document.body) return; const abierta = ids.some((i)=>{ const e = document.getElementById(i); return e && e.classList.contains('open'); }); document.body.classList.toggle('ml-reserva', abierta); };
+    const arrancar = ()=>{ ids.forEach((i)=>{ const e = document.getElementById(i); if(e) new MutationObserver(marcar).observe(e, { attributes:true, attributeFilter:['class'] }); }); marcar(); };
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arrancar); else arrancar();
+  })();
+  /** Sin conexión con las funciones del servidor: el navegador lanza textos técnicos en inglés («Load failed», «Failed to fetch»…); el cliente ve un mensaje claro en español. Solo afecta a las llamadas a FUNCTIONS_BASE; no cambia lo que se envía ni los errores del propio servidor (que ya vienen en español). */
+  (function(){
+    const original = window.fetch; if(typeof original !== 'function') return;
+    window.fetch = function(url){
+      const p = original.apply(this, arguments);
+      try{ if(typeof url === 'string' && url.indexOf(FUNCTIONS_BASE) === 0){ return p.catch(()=>{ throw new Error('No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.'); }); } }catch(_){}
+      return p;
+    };
+  })();
   const SITE_BASE = ES_STAGING ? 'https://estudio90-dev.web.app' : 'https://estudio90.github.io/Estudio90';
   /** Único paso obligatorio antes de escribir en la colección `mail` desde
    *  el navegador -- en producción no hace nada; en staging antepone
@@ -5618,7 +5656,7 @@
       let resultado = {};
       try{
         const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
-        const data = await resp.json().catch(() => ({}));
+        const data = await jsonSeguro(resp).catch(() => ({}));
         // SOLO se cachea una respuesta real (200 con ocupacion). Un error
         // transitorio (429/500/red) NO envenena la caché con "sin ocupación":
         // esta llamada devuelve {} pero la próxima vuelve a preguntar, para
@@ -6290,7 +6328,7 @@
               buyerName: datos.name, buyerEmail: datos.email, buyerPhone: datos.phone,
             }),
           });
-          const pago = await pagoResp.json();
+          const pago = await jsonSeguro(pagoResp);
           if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo reservar ni iniciar el pago. Intenta de nuevo.');
           redirectToWebpay(pago.url, pago.token);
         }catch(e){
@@ -6327,7 +6365,7 @@
               })),
             }),
           });
-          const res = await resp.json();
+          const res = await jsonSeguro(resp);
           if(!resp.ok) throw new Error(res.error || 'No se pudo reservar. Intenta de nuevo.');
           try{ window.MLMeta && MLMeta.reservaConfirmadaSinAnticipo({ ids: res.bookingIds, servicios: state.servicios }); }catch(_){}
           try{ window.MLGoogle && MLGoogle.reservaSinAnticipo({ ids: res.bookingIds, servicios: state.servicios, citas }); }catch(_){}
@@ -6359,7 +6397,7 @@
                 buyerName: datos.name, buyerEmail: datos.email, buyerPhone: datos.phone,
               }),
             });
-            const pagoProductos = await pagoProductosResp.json();
+            const pagoProductos = await jsonSeguro(pagoProductosResp);
             if(!pagoProductosResp.ok){
               throw new Error(pagoProductos.error || 'Tu reserva quedó confirmada, pero no pudimos iniciar el pago de los productos. Escríbenos para intentarlo de nuevo.');
             }
@@ -7531,7 +7569,7 @@
       delete ocupacionPorFecha[fecha];   // nunca usar una ocupación vieja para confirmar
       const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha), { cache: 'no-store' });
       if(!resp.ok) return 'no_verificable';
-      const data = await resp.json().catch(() => null);
+      const data = await jsonSeguro(resp).catch(() => null);
       const lista = data && data.ocupacion && barberoNombre ? data.ocupacion[barberoNombre] : null;
       if(!Array.isArray(lista)) return 'no_verificable';
       // La reserva guardada ocupa EXACTAMENTE [inicio, inicio+duración]: se exige ese intervalo exacto (un tramo fuera de turno, un bloqueo o otra reserva que solo «cubra»
@@ -7575,7 +7613,7 @@
           }],
         }),
       });
-      const res = await resp.json();
+      const res = await jsonSeguro(resp);
       if(!resp.ok) throw new Error(res.error || 'No se pudo reservar. Intenta de nuevo.');
       try{ window.MLMeta && MLMeta.reservaConfirmadaSinAnticipo({ ids: res.bookingIds, servicios: [propuesta.servicioNombre] }); }catch(_){}
       try{ window.MLGoogle && MLGoogle.reservaSinAnticipo({ ids: res.bookingIds, servicios: [propuesta.servicioNombre], citas: [{ servicio: propuesta.servicioNombre, precio: propuesta.precioClp, min: startMin, minutos: propuesta.duracionMin }] }); }catch(_){}
@@ -7667,7 +7705,7 @@
           buyerName: propuesta.nombreCompleto, buyerEmail: propuesta.correo, buyerPhone: propuesta.telefono,
         }),
       });
-      const pago = await pagoResp.json();
+      const pago = await jsonSeguro(pagoResp);
       if(!pagoResp.ok) throw new Error(pago.error || 'No se pudo reservar ni iniciar el pago. Intenta de nuevo.');
       chatPropuestaPendiente = null;   // sigue en Webpay -- la propuesta ya cumplió su rol
       redirectToWebpay(pago.url, pago.token);
@@ -8300,7 +8338,7 @@
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ bookingId, token }),
       });
-      const data = await resp.json();
+      const data = await jsonSeguro(resp);
       if(!resp.ok || !data.ok){
         // 'fuera_de_plazo' / 'ya_modificada' -- el backend ya validó que no
         // se puede reagendar; el mensaje se muestra FIJO en la pantalla de
@@ -8572,7 +8610,7 @@
     if(rsOcupacionCache[fecha]) return rsOcupacionCache[fecha];
     const resp = await fetch(FUNCTIONS_BASE + '/obtenerOcupacionDia?fecha=' + encodeURIComponent(fecha));
     if(!resp.ok) throw new Error('fail');
-    const data = await resp.json();
+    const data = await jsonSeguro(resp);
     rsOcupacionCache[fecha] = data;
     return data;
   }
@@ -8625,7 +8663,7 @@
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ ...datos, token: rsEstado.token }),
           });
-          const r = await resp.json();
+          const r = await jsonSeguro(resp);
           if(!resp.ok || !r.ok) throw new Error(r.error || 'No se pudo cambiar la hora.');
           rsxVerificarProfesionalGuardado(r, datos);
         } else {
@@ -8857,7 +8895,7 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: productos, codigo: texto }),
       });
-      const data = await resp.json();
+      const data = await jsonSeguro(resp);
       if(!resp.ok) throw new Error(data.error || 'No se pudo validar el código');
       if(!data.valido){
         cdCodigoAplicado = null; cdUltimoPreview = null;
@@ -9077,7 +9115,7 @@
       const resp = await fetch(FUNCTIONS_BASE + '/mpCrearPreferencia', {
         method: 'POST', headers, body: JSON.stringify(body),
       });
-      const data = await resp.json();
+      const data = await jsonSeguro(resp);
       if(!resp.ok){
         if(data.error === 'ACCOUNT_EXISTS'){
           restaurar();
@@ -9215,7 +9253,7 @@
       const resp = await fetch(FUNCTIONS_BASE + '/webpayCrearTransaccion', {
         method: 'POST', headers, body: JSON.stringify(body),
       });
-      const pago = await resp.json();
+      const pago = await jsonSeguro(resp);
       if(!resp.ok){
         if(pago.error === 'ACCOUNT_EXISTS'){
           restaurarBtnCheckout();
@@ -9341,7 +9379,7 @@
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ buyOrder, t: token }),
         });
-        const r = resp.ok ? await resp.json() : null;
+        const r = resp.ok ? await jsonSeguro(resp) : null;
         if(r && r.comprobante){
           pintarComprobante(r.comprobante);
           if(actualizarUrl !== false && hashActual() !== '#comprobante=' + buyOrder){
@@ -9429,7 +9467,7 @@
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ bookingId, t: token }),
       });
-      const r = resp.ok ? await resp.json() : null;
+      const r = resp.ok ? await jsonSeguro(resp) : null;
       if(r && r.comprobante){
         pintarComprobanteReserva(r.comprobante);
         return;
@@ -9490,7 +9528,7 @@
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ buyOrder: orden, t: token }),
         });
-        const p = resp.ok ? await resp.json() : null;
+        const p = resp.ok ? await jsonSeguro(resp) : null;
 
         // Regla de negocio: toda compra aprobada de producto/curso/carrito
         // mixto crea una cuenta automáticamente (ver plan/webpay.js). Si el
@@ -9609,7 +9647,7 @@
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ ref, t: token, paymentId: mpPaymentId || undefined }),
         });
-        return resp.ok ? await resp.json() : null;
+        return resp.ok ? await jsonSeguro(resp) : null;
       }catch(e){ return null; }
     };
 
@@ -13313,7 +13351,7 @@
         body: JSON.stringify({ courseId: item.id, lessonId: clase.id, resourceId }),
       });
       if(!resp.ok){
-        const j = await resp.json().catch(()=> ({}));
+        const j = await jsonSeguro(resp).catch(()=> ({}));
         toast(j.error || 'No se pudo descargar el material');
         return;
       }
@@ -13386,7 +13424,7 @@
         body: JSON.stringify({ courseId: item.id, resourceId }),
       });
       if(!resp.ok){
-        const j = await resp.json().catch(()=> ({}));
+        const j = await jsonSeguro(resp).catch(()=> ({}));
         toast(j.error || 'No se pudo descargar el material');
         return;
       }
