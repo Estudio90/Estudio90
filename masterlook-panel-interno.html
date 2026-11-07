@@ -3564,6 +3564,7 @@
                profesional), pero vive en el mismo grupo del menú para no
                ocupar una fila propia. -->
           <button class="menu-panel-item" id="btnComAbonos">Abonos</button>
+          <button class="menu-panel-item" id="btnComCanceladas">Reservas canceladas</button>
         </div>
       </div>
 
@@ -3789,6 +3790,48 @@
             </tr>
           </thead>
           <tbody id="abTablaBody"><tr><td colspan="10">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== VISTA: RESERVAS CANCELADAS (solo ADMIN, solo lectura). Historial de reservas eliminadas con su auditoría: quién, cuándo, motivo, pagos conservados y la comisión y
+         propina descontadas. Los datos vienen de `obtenerReservasCanceladas` (nunca lectura directa del cliente). ===== -->
+    <div id="vistaCanceladas" style="display:none;">
+      <div class="cx-head">
+        <div>
+          <h2 class="cx-title">Reservas canceladas</h2>
+          <p class="cx-sub">Historial de reservas eliminadas. El dinero recibido se conserva siempre; aquí se ve qué comisión y propina se descontaron al profesional.</p>
+        </div>
+        <button class="ctrl-btn" id="cnlVolver">← Volver a la agenda</button>
+      </div>
+      <div class="cx-filtros-box" style="align-items:flex-end;">
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Fecha de eliminación</label>
+          <div style="display:flex;gap:10px;">
+            <div class="cx-f" style="min-width:0;"><label>Desde</label><input type="date" class="mg-input" id="cnlDesde" style="width:100%;"></div>
+            <div class="cx-f" style="min-width:0;"><label>Hasta</label><input type="date" class="mg-input" id="cnlHasta" style="width:100%;"></div>
+          </div>
+        </div>
+        <div class="cx-filtros-col">
+          <label class="cx-flabel">Buscar por…</label>
+          <input type="text" class="mg-input" id="cnlBuscarTexto" placeholder="Cliente, profesional, servicio, motivo o quién eliminó">
+        </div>
+        <div class="cx-filtros-col" style="display:flex;align-items:flex-end;">
+          <label style="display:flex;gap:6px;align-items:center;font-size:13px;"><input type="checkbox" id="cnlSoloPend"> Solo pendientes de conciliación</label>
+        </div>
+        <div class="cx-filtros-col" style="display:flex;align-items:flex-end;">
+          <button class="ctrl-btn primary" id="cnlBuscar">Buscar</button>
+        </div>
+      </div>
+      <div class="cx-tablebox">
+        <table class="cx-table">
+          <thead>
+            <tr>
+              <th>Eliminada</th><th>Cliente</th><th>Profesional</th><th>Servicio</th><th>Reserva</th><th>Eliminada por</th><th>Motivo</th>
+              <th>Pagos y anticipos</th><th class="r">Comisión descontada</th><th class="r">Propina descontada</th><th>Aviso al cliente</th><th>Conciliación</th>
+            </tr>
+          </thead>
+          <tbody id="cnlTablaBody"><tr><td colspan="12">Cargando…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -7694,7 +7737,7 @@
    * mostrarX() tenía su propia lista a mano de qué ocultar, siempre distinta
    * e incompleta, lo que dejaba dos secciones visibles a la vez. */
   const VISTAS_PANEL = [
-    'vistaAgenda', 'vistaBarbero', 'vistaAbonos', 'vistaAccesosCursos',
+    'vistaAgenda', 'vistaBarbero', 'vistaAbonos', 'vistaCanceladas', 'vistaAccesosCursos',
     'vistaArchivosMultimedia', 'vistaCampanas', 'vistaClientes', 'vistaColores',
     'vistaComisiones', 'vistaCursos', 'vistaHorarios', 'vistaIntelligence',
     'vistaLocales', 'vistaProductos', 'vistaProfesionales', 'vistaPropinas', 'vistaResumenVentas',
@@ -8080,6 +8123,110 @@
   document.getElementById('btnComProductos').addEventListener('click', mostrarProductos);
   document.getElementById('btnComAbonos').addEventListener('click', mostrarAbonos);
 
+  document.getElementById('btnComCanceladas').addEventListener('click', mostrarCanceladas);
+
+  /* Reservas canceladas (solo ADMIN, solo lectura): historial con la auditoría de cada eliminación. */
+  const CNL_ROL = { RECEPTION: 'Recepción', ADMIN: 'Administración', borrado_directo: 'Borrado directo', desconocido: 'No identificado' };
+  function cnlEstado(estado, monto){
+    if(!(monto > 0)) return '—';
+    return money(monto) + (estado === 'liquidacion_cerrada_por_conciliar' ? ' · por conciliar' : (estado === 'descontada' ? ' · descontada' : ''));
+  }
+  function cnlPagos(p){
+    if(!p) return '—';
+    const partes = [];
+    if(p.anticipo > 0) partes.push('Anticipo ' + money(p.anticipo));
+    if(p.saldo > 0) partes.push('Pago ' + money(p.saldo));
+    if(p.productos > 0) partes.push('Productos ' + money(p.productos));
+    if(p.propina > 0) partes.push('Propina ' + money(p.propina));
+    const metodos = (p.metodos || []).join(' + ');
+    return (partes.join(' · ') || 'Sin pagos') + (metodos ? ' (' + metodos + ')' : '');
+  }
+  function cnlAviso(a){
+    const e = a && a.estado;
+    return e === 'enviado' ? 'Enviado' : (e === 'programado' || e === 'reintentando' ? 'Enviando…' : (e === 'fallido' || e === 'no_enviado' ? 'No se pudo enviar' : (e === 'sin_correo' ? 'Sin correo' : '—')));
+  }
+  function cnlFila(f){
+    const cuando = f.eliminadaEn ? new Date(f.eliminadaEn).toLocaleString('es-CL', { timeZone:'America/Santiago', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const quien = f.eliminadaPor || {};
+    const quienTxt = [quien.nombre, CNL_ROL[quien.rol] || quien.rol].filter(Boolean).join(' · ') || '—';
+    const concilTxt = f.estadoConciliacion === 'pendiente' ? 'Pendiente de conciliación' : (f.estadoConciliacion === 'conciliado' ? 'Conciliado' : '—');
+    const concil = f.estadoConciliacion === 'pendiente'
+      ? `${escapeHTML(concilTxt)}<br><button class="ctrl-btn" data-cnl-conciliar="${escapeHTML(f.bookingId)}" style="margin-top:4px;">Marcar como conciliado</button>`
+      : escapeHTML(concilTxt);
+    return `<tr>
+      <td>${escapeHTML(cuando)}</td>
+      <td>${escapeHTML(f.cliente || '—')}</td>
+      <td>${escapeHTML(f.profesional || '—')}</td>
+      <td>${escapeHTML(f.servicio || '—')}</td>
+      <td>${escapeHTML([f.fecha, f.hora].filter(Boolean).join(' ') || '—')}</td>
+      <td>${escapeHTML(quienTxt)}</td>
+      <td>${escapeHTML(f.motivo || '—')}</td>
+      <td>${escapeHTML(cnlPagos(f.pagos))}</td>
+      <td class="r">${escapeHTML(cnlEstado(f.comisionDescontada && f.comisionDescontada.estado, f.comisionDescontada && f.comisionDescontada.monto))}</td>
+      <td class="r">${escapeHTML(cnlEstado(f.propinaDescontada && f.propinaDescontada.estado, f.propinaDescontada && f.propinaDescontada.monto))}</td>
+      <td>${escapeHTML(cnlAviso(f.aviso))}</td>
+      <td>${concil}</td>
+    </tr>`;
+  }
+  function mostrarCanceladas(){
+    if(barberoBloqueado() || userRole !== 'ADMIN') return;   // la protección real está en el servidor (obtenerReservasCanceladas exige ADMIN)
+    ocultarVistasPanel();
+    sbCerrarVistaSemana();
+    document.getElementById('kpiRow').style.display = 'none';
+    document.getElementById('vistaCanceladas').style.display = '';
+    ocultarFlotante(true);
+    if(!document.getElementById('cnlHasta').value){
+      const hoy = TiempoSantiago.fechaSantiago();   // nunca toISOString() (día UTC)
+      document.getElementById('cnlDesde').value = hoy.slice(0, 7) + '-01';
+      document.getElementById('cnlHasta').value = hoy;
+    }
+    cnlCargar();
+  }
+  async function cnlCargar(){
+    const tbody = document.getElementById('cnlTablaBody');
+    tbody.innerHTML = '<tr><td colspan="12">Cargando…</td></tr>';
+    try{
+      const r = await functions.httpsCallable('obtenerReservasCanceladas')({
+        desde: document.getElementById('cnlDesde').value, hasta: document.getElementById('cnlHasta').value,
+        busqueda: (document.getElementById('cnlBuscarTexto').value || '').trim(),
+        soloPendientes: !!document.getElementById('cnlSoloPend').checked,
+      });
+      const filas = (r.data && r.data.items) || [];
+      tbody.innerHTML = filas.length ? filas.map(cnlFila).join('') : '<tr><td colspan="12">No hay reservas canceladas en el rango seleccionado.</td></tr>';
+    }catch(e){
+      console.error('cnlCargar', e);
+      tbody.innerHTML = '<tr><td colspan="12">No se pudo cargar. ' + escapeHTML((e && e.message) || '') + '</td></tr>';
+    }
+  }
+  document.getElementById('cnlBuscar').addEventListener('click', cnlCargar);
+  document.getElementById('cnlSoloPend').addEventListener('change', cnlCargar);
+  /* Conciliar: solo cambia el estado del ajuste; no modifica pagos, liquidaciones ni totales (lo garantiza el servidor). */
+  async function cnlConciliar(btn){
+    const id = btn.getAttribute('data-cnl-conciliar');
+    if(!(await mgConfirm('¿Marcar este ajuste como conciliado?\n\nNo se modifica ningún pago ni liquidación: solo queda registrado que ya lo revisaste.'))) return;
+    const nota = await mgPrompt('Nota opcional (por ejemplo, cómo se resolvió):', '', { titulo: 'Conciliar ajuste' });
+    if(nota === null) return;
+    btn.disabled = true;
+    try{
+      await functions.httpsCallable('conciliarAjusteReservaEliminada')({ bookingId: id, nota: nota });
+      await cnlCargar();
+    }catch(e){
+      console.error('conciliarAjusteReservaEliminada', e);
+      btn.disabled = false;
+      await mgAlert('No se pudo marcar como conciliado. ' + ((e && e.message) || ''));
+    }
+  }
+  document.getElementById('cnlTablaBody').addEventListener('click', (ev)=>{
+    const btn = ev.target.closest('[data-cnl-conciliar]');
+    if(btn) cnlConciliar(btn);
+  });
+  document.getElementById('cnlVolver').addEventListener('click', ()=>{
+    document.getElementById('vistaCanceladas').style.display = 'none';
+    document.getElementById('vistaAgenda').style.display = '';
+    document.getElementById('kpiRow').style.display = '';
+    ocultarFlotante(false);
+  });
+
   /**
    * Módulo Abonos -- TODOS los abonos reales de reserva, sin importar si
    * llegaron por Webpay o se registraron presencial desde el panel (antes
@@ -8275,7 +8422,7 @@
 
     try{
       const r = await functions.httpsCallable('obtenerResumenVentas')({ desde, hasta, metodo });
-      rvUltimoResultado = r.data;
+      rvUltimoResultado = r.data; rvRangoMostrado = { desde, hasta, metodo };   // el rango y el filtro de ESTA lista: con un filtro de medio de pago la fila muestra solo una parte de la venta
       rvPintarMetodosDisponibles(r.data.metodosDisponibles || []);
       rvPintarKpis(r.data);
       rvPintarDonutTipo(r.data);
@@ -8495,11 +8642,37 @@
         <td class="r">${money(f.total)}</td>
         <td class="r">$0</td>
         <td class="r">${money(f.total)}</td>
-        <td><button class="ctrl-btn rv-ver" data-saleid="${escapeHTML(f.saleId)}">👁 Ver</button></td>
+        <td style="white-space:nowrap;"><button class="ctrl-btn rv-ver" data-saleid="${escapeHTML(f.saleId)}">👁 Ver</button> ${rvBotonEliminar(f)}</td>
       </tr>`;
     }).join('');
     tbody.querySelectorAll('.rv-ver').forEach(btn=> btn.addEventListener('click', ()=> rvVerDetalle(btn.dataset.saleid)));
+    tbody.querySelectorAll('.rv-del').forEach(btn=> btn.addEventListener('click', ()=> rvEliminarVenta(btn.dataset.saleid)));
     rvReanimar(tbody);
+  }
+
+  /* Eliminar una venta de la caja desde esta lista (solo ADMIN). Ver optimizaciones/eliminar-reserva-recepcion. El servidor (eliminarVentaFacturada) hace TODO: reclasifica los movimientos a «anulado»
+     (historial completo), devuelve el stock una sola vez, y la comisión y la propina del profesional se recalculan solas. Solo ventas presenciales; las compras en línea y los cursos no se eliminan. */
+  let rvRangoMostrado = null, rvEliminando = false;
+  function rvEsEliminable(f){ return userRole === 'ADMIN' && f.esInterna === true && !(f.conceptos || []).includes('curso') && !(rvRangoMostrado && rvRangoMostrado.metodo); }   // con filtro de medio de pago la fila es solo una parte de la venta: no se elimina así
+  function rvBotonEliminar(f){
+    if(userRole !== 'ADMIN') return '';
+    const ok = rvEsEliminable(f);
+    return `<button class="ctrl-btn rv-del" data-saleid="${escapeHTML(f.saleId)}" type="button" style="color:#c0392b;" ${ok ? '' : 'disabled'} title="${escapeHTML(ok ? 'Eliminar esta venta de la caja' : (rvRangoMostrado && rvRangoMostrado.metodo ? 'Quita el filtro de medio de pago para eliminar una venta completa' : 'Las compras en línea y los cursos no se eliminan desde aquí'))}">Eliminar</button>`;
+  }
+  async function rvEliminarVenta(saleId){
+    if(rvEliminando || userRole !== 'ADMIN' || !rvRangoMostrado) return;
+    const f = (rvUltimoResultado?.filas || []).find(x=> x.saleId === saleId);
+    if(!f || !rvEsEliminable(f)) return;
+    rvEliminando = true;   // desde antes de preguntar: un segundo clic no abre otra pregunta ni manda otra llamada
+    try{
+      const txt = await mgPrompt(`Vas a eliminar de la caja la venta de ${f.cliente || 'cliente sin nombre'} por ${money(f.total)}${f.propina ? ' (más ' + money(f.propina) + ' de propina)' : ''}: ${f.detalle || 'venta'}. Se descuenta de los totales de ventas y de la caja y, si corresponde, de la comisión y la propina del profesional. Las demás ventas no se tocan y queda el historial.\n\nDebes escribir la palabra ELIMINAR para continuar.`, '', { titulo:'¿Estás seguro de realizar esta acción?' });
+      if(txt === null) return;
+      if(String(txt).trim() !== 'ELIMINAR') return showToast('No se eliminó: debes escribir ELIMINAR');
+      const r = await functions.httpsCallable('eliminarVentaFacturada')({ saleId, desde: rvRangoMostrado.desde, hasta: rvRangoMostrado.hasta, confirmacion:'ELIMINAR' });
+      showToast(r.data && r.data.yaEstabaEliminada ? 'Esa venta ya estaba eliminada' : (r.data && r.data.liquidacionPagada ? 'Venta eliminada de la caja. Atención: pertenece a una liquidación ya pagada al profesional; esa liquidación no se modificó y quedó un ajuste pendiente de conciliación en «Reservas canceladas»' : 'Venta eliminada de la caja'));
+      await rvCargar();
+    }catch(e){ showToast('No se pudo eliminar: ' + (e.message || e)); }
+    finally{ rvEliminando = false; }
   }
 
   function rvVerDetalle(saleId){
@@ -9645,7 +9818,7 @@
     // Comisiones (grupo administrativo): información financiera de todos los
     // profesionales -- únicamente administrador, nunca un barbero ni recepción,
     // igual que ya protege pagosWebpay/staff del lado del servidor.
-    ['btnComProfesionales','btnComBarberos','btnComPropinas','btnComProductos','btnComAbonos'].forEach(id=>{
+    ['btnComProfesionales','btnComBarberos','btnComPropinas','btnComProductos','btnComAbonos','btnComCanceladas'].forEach(id=>{
       const el = document.getElementById(id); if(el) el.style.display = soloAdmin;
     });
 
@@ -25520,16 +25693,32 @@
     }catch(e){ showToast('No se pudo guardar la nota: ' + e.message); }
   });
 
+  /* Eliminar reserva (Recepción y ADMIN): texto de confirmación y llamada al servidor. Ver optimizaciones/eliminar-reserva-recepcion. */
+  function textoEliminarReserva(a){
+    const base = `¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`;
+    if(userRole !== 'RECEPTION' || !(a.pagado || a.depositoPagado)) return base;
+    const asistida = a.status === 'asistio' || a.status === 'done';
+    return base + '\n\nLos pagos y abonos registrados NO se eliminan: el dinero queda en la caja y en el historial.'
+      + (asistida ? ' Como la reserva estaba asistida, la comisión (y la propina) del profesional dejan de contar y queda registrado el ajuste.' : '');
+  }
+  async function eliminarReservaServidor(bookingId, motivo){
+    try{ return await functions.httpsCallable('eliminarReservaPanel')({ bookingId, motivo: String(motivo || '').trim() }); }
+    catch(e){
+      // Sin camino alternativo (ni para ADMIN): si la función no está disponible, se DETIENE de forma segura sin modificar nada. Un borrado por otra vía no haría el procedimiento completo (aviso, historial, ajustes).
+      if(String((e && e.code) || '') === 'functions/not-found') throw new Error('La función de eliminación no está disponible en este momento. No se eliminó nada; inténtalo de nuevo más tarde.');
+      throw e;
+    }
+  }
   document.getElementById('btnEliminarCita').addEventListener('click', async ()=>{
     const a = currentAppt;
     if(!a) return;
-    if(!(await mgConfirm(`¿Eliminar la reserva de ${a.client}?\n\nEsta acción no se puede deshacer.`))) return;
+    if(!(await mgConfirm(textoEliminarReserva(a)))) return;
 
     // Reserva CON pagos: decidir el destino de la VENTA antes de borrar la
     // cita (corrección 10-2026: borrar la cita nunca toca el ledger por sí
     // solo -- la auditoría del 16-10 encontró un pago de prueba huérfano
     // inflando el Resumen de Ventas).
-    if(a.fromWeb && a.webId && (a.pagado || a.depositoPagado)){
+    if(userRole !== 'RECEPTION' && a.fromWeb && a.webId && (a.pagado || a.depositoPagado)){
       const esAsistida = a.status === 'asistio' || a.status === 'done';
       if(esAsistida){
         // Venta legítima (pagada y asistida): eliminar la cita NO la anula,
@@ -25550,21 +25739,24 @@
       }
     }
 
+    let motivoEliminar = '';
     if(a.fromWeb && a.webId){
+      const m = await mgPrompt('Motivo de la eliminación (queda en el historial):', 'Solicitud del cliente', { titulo: 'Eliminar reserva' });
+      if(m === null) return;
+      motivoEliminar = m;
       // El correo de cancelación se arma en el servidor (misma plantilla
       // maestra que confirmada/modificada/recordatorio) -- se manda ANTES
       // de cancelar, mientras la reserva todavía existe para que el backend
       // la lea fresca. Si el correo falla, igual se cancela: el envío nunca
       // bloquea la acción de eliminar.
-      try{ await functions.httpsCallable('enviarCorreoCancelacionReserva')({ bookingId: a.webId }); }
-      catch(e){ console.error('enviarCorreoCancelacionReserva', e); }
+      // (desde este cambio el servidor envía el correo de cancelación dentro de eliminarReservaPanel: una sola vez y con el mismo correo de siempre)
       // cancelarReserva (Cloud Function, Admin SDK) reemplaza el borrado
       // directo a Firestore: además de eliminar el documento, libera (o
       // transfiere a una cita hermana activa, si comparte horario en una
       // reserva combinada) el bloqueo de agenda -- el borrado directo NO
       // tocaba slotLocks, dejando el horario bloqueado hasta que vencía
       // solo. Todo corre en UNA transacción atómica del lado del servidor.
-      try{ await functions.httpsCallable('cancelarReserva')({ bookingId: a.webId }); }
+      try{ await eliminarReservaServidor(a.webId, motivoEliminar); }
       catch(e){ showToast('No se pudo eliminar: ' + e.message); return; }
     }
 
