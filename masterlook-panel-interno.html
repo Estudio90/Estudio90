@@ -3107,6 +3107,12 @@
   .rv-tablebox-wrap table.cx-table td,.rv-tablebox-wrap table.cx-table th{font-family:var(--font-body);}
   .rv-tablebox-wrap table.cx-table td.r{font-family:var(--font-primary);font-variant-numeric:tabular-nums;}
   .rv-tablebox-wrap table.cx-table{border:none;border-radius:0;}
+  /* Resumen de ventas: la columna Acciones (Ver / Eliminar) debe verse SIEMPRE. Si la tabla no cabe, se desplaza y Acciones queda fija a la derecha. */
+  .rv-tablebox-wrap .cx-tablebox{overflow-x:auto;}
+  .rv-tablebox-wrap table.cx-table th:last-child,.rv-tablebox-wrap table.cx-table td:last-child:not([colspan]){position:sticky;right:0;z-index:1;box-shadow:-8px 0 8px -8px rgba(0,0,0,.18);}
+  .rv-tablebox-wrap table.cx-table td:last-child:not([colspan]){background:#fff;}
+  .rv-tablebox-wrap table.cx-table th:last-child{background:#f8f8fa;}
+  .rv-tablebox-wrap table.cx-table tbody tr:hover td:last-child:not([colspan]){background:#fafafb;}
 
   .rv-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
   .rv-pill-servicio{background:var(--rv-pastel-red-soft);color:var(--rv-pastel-red-ink);}
