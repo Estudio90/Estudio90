@@ -5001,11 +5001,13 @@
           <button class="ctrl-btn" id="wmVolver" type="button">← Volver a la agenda</button>
         </div>
       </div>
+      <div class="wm-alertas" id="waAvisoSoloLectura" role="status" hidden><div class="wm-alerta"><span><b>Modo solo lectura.</b> WhatsApp todavía no está conectado. Puedes revisar todas las secciones, pero las acciones que envían mensajes, activan MAX, los avisos o la voz, o generan costos están bloqueadas hasta que la administración autorice la integración con Meta.</span></div></div>
       <div class="wm-tabs" role="tablist" aria-label="Secciones de WhatsApp·Max">
         <button class="wm-tab" type="button" role="tab" id="wmTabResumen" aria-selected="true" data-wm-accion="tab-resumen">Resumen</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabConv" aria-selected="false" data-wm-accion="tab-conversaciones">Conversaciones</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabConocimiento" aria-selected="false" data-wm-accion="tab-conocimiento">Conocimiento de MAX</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabVoz" aria-selected="false" data-wm-accion="tab-voz">Voz de MAX</button>
+        <span id="waChipSoloLectura" role="status" hidden style="margin-left:auto;align-self:center;font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;background:rgba(224,178,90,.18);color:#8a6a1f;white-space:nowrap;">Solo lectura</span>
       </div>
       <div id="wmContenido" aria-live="polite"></div>
       <div id="wmTopesWrap"></div>
@@ -7487,7 +7489,11 @@
   const ES_STAGING = !['estudio90.github.io','masterlook.cl','www.masterlook.cl'].includes(location.hostname);
   /* WhatsApp en el panel (WhatsApp·Max, Chats de WhatsApp y «Enviar aviso» de la ficha). En el sitio de pruebas siempre visible; en PRODUCCIÓN queda en false
      hasta la etapa de activación (cambiar a true y publicar el panel, solo con autorización expresa de la dueña). */
-  const WA_PANEL_ACTIVO = ES_STAGING;
+  const WA_PANEL_ACTIVO = true;
+  /* 10-nov-2026 (autorizado por la dueña): la sección WhatsApp es VISIBLE solo para ADMINISTRACIÓN y en SOLO LECTURA. WA_SOLO_ADMIN deja fuera a Recepción y a todo otro rol aunque tengan el permiso
+     «Atender chats de WhatsApp»; WA_SOLO_LECTURA bloquea toda acción que envíe, active, cambie datos o gaste (ver waCandadoSoloLectura). Vuelven a false SOLO con autorización expresa de la dueña (integración con Meta). */
+  const WA_SOLO_ADMIN = true;
+  const WA_SOLO_LECTURA = true;
   const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",
@@ -7534,6 +7540,23 @@
   const db = firebase.firestore();
   const storage = firebase.storage();
   const functions = firebase.app().functions('us-central1');
+  /* WA: candado de SOLO LECTURA. Solo estas acciones de lectura pueden llamar a las funciones de WhatsApp que escriben/envían/gastan; todo lo demás se rechaza aquí, ANTES de salir a la red.
+     whatsappPanelAccion (pausar, reanudar, topes, avisos, voz) y whatsappPanelIntervencion (tomar, responder, enviar, iniciar, plantilla, transcribir) no tienen acciones de lectura: bloqueadas por completo. */
+  (function waCandadoSoloLectura(){
+    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: [], whatsappPanelIntervencion: [] };
+    const original = functions.httpsCallable.bind(functions);
+    functions.httpsCallable = function(nombre, opciones){
+      const f = original(nombre, opciones);
+      if(!WA_SOLO_LECTURA || !Object.prototype.hasOwnProperty.call(LECTURA, nombre)) return f;
+      return function(datos){
+        const a = datos && typeof datos.accion === 'string' ? datos.accion : '';
+        if(LECTURA[nombre].indexOf(a) >= 0) return f(datos);
+        const e = new Error('WhatsApp está en modo solo lectura: esta acción se habilitará cuando la administración autorice la integración con Meta.');
+        e.code = 'functions/invalid-argument'; e.waSoloLectura = true;   // el panel muestra este mensaje tal cual (con permission-denied mostraría textos de «sin permiso»)
+        return Promise.reject(e);
+      };
+    };
+  })();
 
   /**
    * Crea una cuenta real de acceso (Firebase Auth) para un miembro del equipo,
@@ -15664,9 +15687,11 @@
   function wmHeroHTML(d){
     const c = d.control; const t = d.tecnico;
     const pausado = !!c.pausado;
+    const sinConexion = !!(d.conexionMeta && d.conexionMeta.estado === 'no_configurado');   // 10-nov-2026: sin número ni token no se puede decir «Activo». Solo etiqueta visual: no cambia el estado de Max
     const partes = [];
     let aviso = '';
     if(pausado){
+      if(sinConexion) partes.push('WhatsApp todavía no está conectado.');
       if(c.pausaPropia){
         partes.push('Pausado' + (c.pausadoPorNombre ? ' por ' + c.pausadoPorNombre : '') + (c.pausadoEl ? ' ' + wmHaceDesdeIso(c.pausadoEl, d.generadoEn) : '') + '.');
         if(c.pausaMotivo) partes.push('Motivo: ' + c.pausaMotivo.replace(/[.\s]+$/, '') + '.');
@@ -15674,18 +15699,19 @@
       }
       if(c.pausaWeb) partes.push('La pausa de emergencia de Max en la web también detiene a Max en WhatsApp; se quita desde la pantalla de Masterlook Intelligence.');
     }else{
-      if(!t.hayDatos) partes.push('Aún no ha llegado ningún mensaje. Cuando un cliente escriba, lo verás aquí.');
+      if(sinConexion) partes.push('WhatsApp todavía no está conectado, así que Max no atiende mensajes.');
+      else if(!t.hayDatos) partes.push('Aún no ha llegado ningún mensaje. Cuando un cliente escriba, lo verás aquí.');
       else if(t.ultimoEventoHaceMin != null) partes.push('Último mensaje recibido ' + wmHace(t.ultimoEventoHaceMin) + '.');
       if(t.hayDatos && !t.cronAlDia) aviso = 'La revisión automática se atrasó' + (t.reconciliarHaceMin != null ? ' (' + wmHace(t.reconciliarHaceMin) + ')' : '') + '.';
       else if(wmNum(c.fallosSeguidos) > 0) aviso = wmEntero(c.fallosSeguidos) + (wmNum(c.fallosSeguidos) === 1 ? ' fallo seguido' : ' fallos seguidos') + ' al responder.';
     }
     const reanudable = pausado && !!c.pausaPropia;
-    return `<section class="wm-hero" aria-label="${escapeHTML('Max en WhatsApp: ' + (pausado ? 'Pausado' : 'Activo'))}">
+    return `<section class="wm-hero" aria-label="${escapeHTML('Max en WhatsApp: ' + (sinConexion ? 'No configurado' : (pausado ? 'Pausado' : 'Activo')))}">
         <div class="wm-hero-main">
-          <span class="wm-dot ${pausado ? 'pausa' : 'on'}" aria-hidden="true"></span>
+          <span class="wm-dot ${sinConexion ? '' : (pausado ? 'pausa' : 'on')}" aria-hidden="true"></span>
           <div style="min-width:0;">
             <div class="wm-hero-label">Max en WhatsApp</div>
-            <div class="wm-hero-estado">${pausado ? 'Pausado' : 'Activo'}</div>
+            <div class="wm-hero-estado${sinConexion ? ' chico' : ''}">${sinConexion ? 'No configurado' : (pausado ? 'Pausado' : 'Activo')}</div>
             <p class="wm-hero-detalle">${escapeHTML(partes.join(' '))}</p>
             ${aviso ? `<span class="wm-hero-aviso">${escapeHTML(aviso)}</span>` : ''}
           </div>
@@ -16663,6 +16689,7 @@
     if(!wxToque()) ta.focus({ preventScroll:true });
   }
   function wxSubir(cuerpo, token, alAvanzar){
+    if(WA_SOLO_LECTURA) return Promise.reject(new Error('solo lectura'));   // 10-nov-2026: nada sale hacia WhatsApp desde el panel mientras esté en solo lectura
     return new Promise((resolve, reject)=>{
       const x = new XMLHttpRequest();
       x.open('POST', 'https://us-central1-' + firebase.app().options.projectId + '.cloudfunctions.net/whatsappPanelEnviarArchivo');
@@ -17093,6 +17120,7 @@
   /* ----- acceso para recepción con el permiso WHATSAPP_CHAT ----- */
   async function wxPuedeAtender(){
     if(rcClientes.admin()){ WX.permitido = true; return true; }
+    if(WA_SOLO_ADMIN){ WX.permitido = false; return false; }   // 10-nov-2026: por ahora solo administración (Recepción y demás roles, bloqueados aunque tengan el permiso)
     if(Date.now() - WX.permisoMs < 60000 && WX.permitido) return true;
     try{
       const u = auth.currentUser; if(!u) return false;
@@ -17126,6 +17154,8 @@
 
   function wmCambiarPestana(p){
     WC.pestana = p;
+    { const av = document.getElementById('waAvisoSoloLectura'), ch = document.getElementById('waChipSoloLectura');   // 10-nov-2026: aviso de solo lectura (el chat a pantalla completa solo lleva la etiqueta)
+      if(av) av.hidden = !WA_SOLO_LECTURA || p === 'conversaciones'; if(ch) ch.hidden = !WA_SOLO_LECTURA; }
     const conv = p === 'conversaciones';
     const con = p === 'conocimiento';
     const voz = p === 'voz';
