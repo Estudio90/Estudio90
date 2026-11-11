@@ -5122,13 +5122,13 @@
           <button class="ctrl-btn" id="wmVolver" type="button">← Volver a la agenda</button>
         </div>
       </div>
-      <div class="wm-alertas" id="waAvisoSoloLectura" role="status" hidden><div class="wm-alerta"><span><b>Modo solo lectura.</b> WhatsApp todavía no está conectado. Puedes revisar todas las secciones, pero las acciones que envían mensajes, activan MAX, los avisos o la voz, o generan costos están bloqueadas hasta que la administración autorice la integración con Meta.</span></div></div>
+      <div class="wm-alertas" id="waAvisoSoloLectura" role="status" hidden><div class="wm-alerta"><span><b>Modo atención.</b> Administración puede tomar chats, responder a mano, pausar y reanudar a MAX. Los ajustes (topes de gasto, avisos de reserva, voz, conocimiento, iniciar conversaciones y plantillas) siguen bloqueados hasta que la administración los habilite.</span></div></div>
       <div class="wm-tabs" role="tablist" aria-label="Secciones de WhatsApp·Max">
         <button class="wm-tab" type="button" role="tab" id="wmTabResumen" aria-selected="true" data-wm-accion="tab-resumen">Resumen</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabConv" aria-selected="false" data-wm-accion="tab-conversaciones">Conversaciones</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabConocimiento" aria-selected="false" data-wm-accion="tab-conocimiento">Conocimiento de MAX</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabVoz" aria-selected="false" data-wm-accion="tab-voz">Voz de MAX</button>
-        <span id="waChipSoloLectura" role="status" hidden style="margin-left:auto;align-self:center;font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;background:rgba(224,178,90,.18);color:#8a6a1f;white-space:nowrap;">Solo lectura</span>
+        <span id="waChipSoloLectura" role="status" hidden style="margin-left:auto;align-self:center;font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;background:rgba(0,168,132,.14);color:#00785f;white-space:nowrap;">Modo atención</span>
       </div>
       <div id="wmContenido" aria-live="polite"></div>
       <div id="wmTopesWrap"></div>
@@ -7617,8 +7617,9 @@
   const WA_SOLO_LECTURA = true;
   /* Fase A (10-nov-2026): los AVISOS (consulta periódica de chats, sonido, notificación y contador de la barra) quedan APAGADOS mientras WhatsApp no esté conectado: sin tráfico ni indicadores sin sentido.
      WA_PENDIENTES_ACTIVO: la llamada a whatsappPanelPendientes (contador numérico de no leídos) queda apagada hasta que esa función esté desplegada y autorizada. Se encienden SOLO con autorización expresa de la dueña. */
-  const WA_AVISOS_ACTIVOS = false;
-  const WA_PENDIENTES_ACTIVO = false;
+  /* Fase B-2 (modo atención): avisos (sonido, notificación, contador de la barra) y contador de mensajes sin leer ENCENDIDOS. Exige haber desplegado whatsappPanelPendientes ANTES de publicar este panel. */
+  const WA_AVISOS_ACTIVOS = true;
+  const WA_PENDIENTES_ACTIVO = true;
   const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",
@@ -7668,15 +7669,15 @@
   /* WA: candado de SOLO LECTURA. Solo estas acciones de lectura pueden llamar a las funciones de WhatsApp que escriben/envían/gastan; todo lo demás se rechaza aquí, ANTES de salir a la red.
      whatsappPanelAccion (pausar, reanudar, topes, avisos, voz) y whatsappPanelIntervencion (tomar, responder, enviar, iniciar, plantilla, transcribir) no tienen acciones de lectura: bloqueadas por completo. */
   (function waCandadoSoloLectura(){
-    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: [], whatsappPanelIntervencion: [] };
+    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: ['pausar','reanudar'], whatsappPanelIntervencion: ['tomar','devolver','responder','enviar','cancelarEnEspera'] };   // Fase B-2 (modo atención): solo estas acciones y solo ADMIN; el resto sigue bloqueado
     const original = functions.httpsCallable.bind(functions);
     functions.httpsCallable = function(nombre, opciones){
       const f = original(nombre, opciones);
       if(!WA_SOLO_LECTURA || !Object.prototype.hasOwnProperty.call(LECTURA, nombre)) return f;
       return function(datos){
         const a = datos && typeof datos.accion === 'string' ? datos.accion : '';
-        if(LECTURA[nombre].indexOf(a) >= 0) return f(datos);
-        const e = new Error('WhatsApp está en modo solo lectura: esta acción se habilitará cuando la administración autorice la integración con Meta.');
+        if(LECTURA[nombre].indexOf(a) >= 0 && (nombre === 'maxConocimientoPanel' || (typeof rcClientes !== 'undefined' && rcClientes.admin()))) return f(datos);   // acciones de atención solo si la sesión es de Administración
+        const e = new Error('Esta acción todavía no está habilitada en WhatsApp: se activará en una etapa posterior, con autorización de la administración.');
         e.code = 'functions/invalid-argument'; e.waSoloLectura = true;   // el panel muestra este mensaje tal cual (con permission-denied mostraría textos de «sin permiso»)
         return Promise.reject(e);
       };
@@ -16175,7 +16176,7 @@
     }
   }
   async function wmPausar(){
-    const prom = mgPrompt('Max dejará de responder en WhatsApp y los chats nuevos esperarán a una persona. Puedes dejar un motivo (opcional, hasta 120 letras).', '', { titulo:'Pausar Max en WhatsApp' });
+    const prom = mgPrompt('Max dejará de responder en WhatsApp: los clientes NO recibirán ningún mensaje automático y sus chats esperarán a una persona (Administración puede seguir atendiendo a mano). Puedes dejar un motivo (opcional, hasta 120 letras).', '', { titulo:'Pausar Max en WhatsApp' });
     const inp = wmEl('mgPromptInput'); if(inp) inp.maxLength = 120;
     const motivo = await prom;
     if(inp) inp.removeAttribute('maxlength');
