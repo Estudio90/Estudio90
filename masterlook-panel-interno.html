@@ -2876,6 +2876,115 @@
   .wv-err{margin:6px 0 0;font-size:12px;color:var(--rv-terracotta);line-height:1.4;}
   .wv-estado{display:block;margin:6px 0 2px;font-size:12px;line-height:1.4;color:var(--text-mid);}
   .wv-estado.malo{color:var(--rv-terracotta);}
+
+  /* ===== AVISO DE MENSAJES NUEVOS (3-nov-2026): botón «Avisos» + panelito. Solo estilos de esta sección. ===== */
+  #vistaWhatsappMax .wm-aviso{position:relative;display:inline-block;}
+  #vistaWhatsappMax .wm-aviso-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:270px;box-sizing:border-box;background:#fff;color:var(--rv-ink);border:1px solid rgba(0,0,0,.14);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:12px 14px;display:flex;flex-direction:column;gap:9px;font-size:13px;line-height:1.35;text-align:left;}
+  #vistaWhatsappMax .wm-aviso-pop[hidden]{display:none;}
+  #vistaWhatsappMax .wm-aviso-tit{margin:0;font-weight:600;font-size:13.5px;}
+  #vistaWhatsappMax .wm-aviso-fila{display:flex;align-items:center;gap:8px;cursor:pointer;}
+  #vistaWhatsappMax .wm-aviso-nota{margin:0;font-size:12px;opacity:.72;}
+  #vistaWhatsappMax .wm-aviso-nota:empty{display:none;}
+  #vistaWhatsappMax #wmAvisoBtn[data-activo="1"]{border-color:var(--rv-ink);}
+  /* ===== FIN AVISO DE MENSAJES NUEVOS ===== */
+
+  /* ===== WHATSAPP EN LA BARRA SUPERIOR (3-nov-2026): la entrada «WhatsApp·Max» del menú hamburguesa queda oculta (sigue en el DOM porque la barra y «recordar sección» la usan). ===== */
+  .menu-panel-item.wm-menu-oculto{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;border:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;opacity:0!important;pointer-events:none!important;}
+  /* ===== FIN WHATSAPP EN LA BARRA ===== */
+
+  /* ===== BOTÓN «ACTIVAR SONIDO» (3-nov-2026): aparece solo mientras el navegador mantiene el audio bloqueado y hay avisos con sonido. ===== */
+  .wav-chip{position:fixed;right:16px;bottom:16px;z-index:9000;border:0;border-radius:22px;padding:10px 16px;background:#00a884;color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(11,20,26,.28);}
+  .wav-chip:hover{background:#008069;}
+  .wav-chip:focus-visible{outline:2px solid #fff;outline-offset:-4px;box-shadow:0 0 0 3px #008069;}
+  /* ===== FIN BOTÓN ACTIVAR SONIDO ===== */
+
+  /* ===== NÚMEROS DE MENSAJES SIN LEER (3-nov-2026) ===== */
+  #vistaWhatsappMax .wx-cuenta{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#25d366;color:#fff;font-size:11.5px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;box-sizing:border-box;}
+  #vistaWhatsappMax .wm-aviso-pop select{font-family:inherit;font-size:13px;margin-left:6px;padding:3px 6px;border:1px solid rgba(0,0,0,.2);border-radius:6px;background:#fff;color:inherit;}
+  /* ===== FIN NÚMEROS DE MENSAJES SIN LEER ===== */
+
+  /* ===== AJUSTE «AVISOS» EN PANTALLAS ANGOSTAS (Fase A, 10-nov-2026): en el chat a pantalla completa el botón «Avisos» se superponía a la pestaña «Conocimiento» y su panelito se salía de la pantalla. Solo estilos de esta sección. ===== */
+  #vistaWhatsappMax.wx-modo-chat #wmAvisoBtn{display:inline-block;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}   /* el botón nunca crece y empuja a las pestañas */
+  @media (max-width:1100px){   /* el panelito se abre siempre dentro de la pantalla */
+    #vistaWhatsappMax.wx-modo-chat .wm-aviso-pop{position:fixed;right:12px;left:auto;top:60px;max-height:calc(100vh - 76px);max-height:calc(100dvh - 76px);overflow:auto;z-index:9500;}   /* chat a pantalla completa: fijo bajo la barra */
+    #vistaWhatsappMax:not(.wx-modo-chat) .wm-aviso-pop{left:0;right:auto;width:min(270px,calc(100vw - 48px));}   /* pantalla normal: anclado al borde izquierdo del botón (que aquí queda a la izquierda) */
+  }
+  @media (max-width:760px){
+    #vistaWhatsappMax.wx-modo-chat .wm-tabs{width:calc(100% - 196px);}   /* deja sitio a «Avisos» además de «← Agenda» */
+    #vistaWhatsappMax.wx-modo-chat .wm-aviso-pop{left:12px;width:auto;}
+  }
+  /* ===== FIN AJUSTE «AVISOS» ===== */
+
+  /* ===== COLORES DE WHATSAPP (3-nov-2026) -- pedido de la dueña: el chat con los colores del WhatsApp real. SOLO colores (tamaños, estructura y funciones intactos).
+     Para revertir: borrar este bloque. Alcance: la lista y el chat de Conversaciones (.wx-grid). ===== */
+  #vistaWhatsappMax .wx-grid{--wa-fondo:#efeae2;--wa-barra:#f0f2f5;--wa-verde:#00a884;--wa-verde-osc:#008069;--wa-saliente:#d9fdd3;--wa-texto:#111b21;--wa-sec:#667781;--wa-icono:#54656f;--wa-linea:#e9edef;--wa-avatar:#dfe5e7;--wa-sombra:0 1px .5px rgba(11,20,26,.13);border-color:var(--wa-linea);}
+  #vistaWhatsappMax .wx-grid .wx-lista{background:#fff;border-right:1px solid var(--wa-linea);}
+  #vistaWhatsappMax .wx-grid .wx-lista-cab{background:var(--wa-barra);border-bottom:1px solid var(--wa-linea);}
+  #vistaWhatsappMax .wx-grid .wx-lista-cab .wc-buscar .wm-input{background:#fff;border-color:transparent;border-radius:8px;color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wc-chip{background:var(--wa-barra);border-color:transparent;color:var(--wa-icono);}
+  #vistaWhatsappMax .wx-grid .wc-chip[aria-pressed="true"]{background:var(--wa-saliente);border-color:var(--wa-saliente);color:var(--wa-verde-osc);}
+  #vistaWhatsappMax .wx-grid .wx-item{background:#fff;border-bottom:1px solid var(--wa-linea);color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wx-item:hover{background:#f5f6f6;}
+  #vistaWhatsappMax .wx-grid .wx-item.sel{background:var(--wa-barra);}
+  #vistaWhatsappMax .wx-grid .wx-av{background:var(--wa-avatar);color:var(--wa-icono);}
+  #vistaWhatsappMax .wx-grid .wx-nom{color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wx-nom .wx-tel,#vistaWhatsappMax .wx-grid .wx-pre,#vistaWhatsappMax .wx-grid .wx-hora{color:var(--wa-sec);}
+  #vistaWhatsappMax .wx-grid .wx-hora.nuevo{color:var(--wa-verde);font-weight:600;}
+  #vistaWhatsappMax .wx-grid .wx-punto{background:#25d366;}
+  #vistaWhatsappMax .wx-grid .wx-pill.es{background:var(--wa-saliente);color:var(--wa-verde-osc);}
+  #vistaWhatsappMax .wx-grid .wx-pill.eq{background:var(--wa-verde);color:#fff;}
+  #vistaWhatsappMax .wx-grid .wx-chat{background-color:var(--wa-fondo);background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27420%27 height=%27420%27 viewBox=%270 0 420 420%27%3E%3Cg fill=%27none%27 stroke=%27%23d3cabc%27 stroke-width=%271.7%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 opacity=%27.62%27%3E%3Cg transform=%27translate(40 40) rotate(-12)%27%3E%3Cpath d=%27M-14 -10h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H2l-9 8v-8h-7a6 6 0 0 1-6-6v-14a6 6 0 0 1 6-6z%27/%3E%3Cpath d=%27M-10 0h20M-10 6h12%27/%3E%3C/g%3E%3Cg transform=%27translate(150 30) rotate(10)%27%3E%3Ccircle cx=%27-9%27 cy=%2713%27 r=%276%27/%3E%3Ccircle cx=%279%27 cy=%2713%27 r=%276%27/%3E%3Cpath d=%27M-5 8L8 -16M5 8L-8 -16%27/%3E%3C/g%3E%3Cg transform=%27translate(260 48) rotate(-8)%27%3E%3Cpath d=%27M0 14C-18 2 -14 -12 -4 -12c4 0 4 3 4 4 0-1 0-4 4-4 10 0 14 14-4 26z%27/%3E%3C/g%3E%3Cg transform=%27translate(370 36) rotate(14)%27%3E%3Crect x=%27-20%27 y=%27-6%27 width=%2740%27 height=%279%27 rx=%273%27/%3E%3Cpath d=%27M-16 3v9M-10 3v9M-4 3v9M2 3v9M8 3v9M14 3v9%27/%3E%3C/g%3E%3Cg transform=%27translate(90 120) rotate(8)%27%3E%3Crect x=%27-8%27 y=%27-20%27 width=%2716%27 height=%2740%27 rx=%276%27/%3E%3Cpath d=%27M-8 -8l16 -8M-8 4l16 -8M-8 16l16 -8%27/%3E%3Cpath d=%27M-10 -22h20M-10 22h20%27/%3E%3C/g%3E%3Cg transform=%27translate(205 118) rotate(-14)%27%3E%3Ccircle r=%2715%27/%3E%3Cpath d=%27M0 -8v8l6 4%27/%3E%3C/g%3E%3Cg transform=%27translate(320 125) rotate(6)%27%3E%3Crect x=%27-17%27 y=%27-10%27 width=%2734%27 height=%2724%27 rx=%275%27/%3E%3Ccircle cy=%272%27 r=%277%27/%3E%3Cpath d=%27M-8 -10l3 -5h10l3 5%27/%3E%3C/g%3E%3Cg transform=%27translate(30 205) rotate(12)%27%3E%3Cpath d=%27M-6 14V-12l16 -4v26%27/%3E%3Ccircle cx=%27-10%27 cy=%2714%27 r=%275%27/%3E%3Ccircle cx=%276%27 cy=%2710%27 r=%275%27/%3E%3C/g%3E%3Cg transform=%27translate(140 215) rotate(-6)%27%3E%3Cpath d=%27M0 -14l4.2 9.2 10 1.1-7.5 6.7 2.1 9.9L0 7.4l-8.8 5.5 2.1-9.9-7.5-6.7 10-1.1z%27/%3E%3C/g%3E%3Cg transform=%27translate(250 205) rotate(10)%27%3E%3Cpath d=%27M-14 -8h24v14a10 10 0 0 1-10 10h-4a10 10 0 0 1-10-10z%27/%3E%3Cpath d=%27M10 -4h4a5 5 0 0 1 0 10h-4M-8 -16c0-4 4-4 4-8M0 -16c0-4 4-4 4-8%27/%3E%3C/g%3E%3Cg transform=%27translate(365 215) rotate(-10)%27%3E%3Cpath d=%27M-18 4h24l8-8-8-4h-24z%27/%3E%3Cpath d=%27M-18 -4v12M8 4l12 6%27/%3E%3C/g%3E%3Cg transform=%27translate(75 300) rotate(-8)%27%3E%3Cpath d=%27M4 -18L-10 4h10l-4 16 16 -24H2z%27/%3E%3C/g%3E%3Cg transform=%27translate(180 310) rotate(12)%27%3E%3Ccircle r=%2715%27/%3E%3Cpath d=%27M-6 -4v3M6 -4v3M-8 5c4 6 12 6 16 0%27/%3E%3C/g%3E%3Cg transform=%27translate(290 300) rotate(-12)%27%3E%3Cellipse cy=%27-4%27 rx=%2711%27 ry=%2714%27/%3E%3Cpath d=%27M0 10v12M-6 22h12%27/%3E%3C/g%3E%3Cg transform=%27translate(385 310) rotate(8)%27%3E%3Cpath d=%27M-4 -18h8v16h-8z%27/%3E%3Cpath d=%27M-8 -2h16l-2 14h-12z%27/%3E%3Cpath d=%27M-3 4v6M0 4v6M3 4v6%27/%3E%3C/g%3E%3Cg transform=%27translate(40 385) rotate(10)%27%3E%3Crect x=%27-9%27 y=%27-17%27 width=%2718%27 height=%2734%27 rx=%274%27/%3E%3Cpath d=%27M-3 13h6%27/%3E%3C/g%3E%3Cg transform=%27translate(140 392) rotate(-10)%27%3E%3Cpath d=%27M0 14C-18 2 -14 -12 -4 -12c4 0 4 3 4 4 0-1 0-4 4-4 10 0 14 14-4 26z%27/%3E%3C/g%3E%3Cg transform=%27translate(250 388) rotate(8)%27%3E%3Ccircle cx=%27-9%27 cy=%2713%27 r=%276%27/%3E%3Ccircle cx=%279%27 cy=%2713%27 r=%276%27/%3E%3Cpath d=%27M-5 8L8 -16M5 8L-8 -16%27/%3E%3C/g%3E%3Cg transform=%27translate(350 395) rotate(-6)%27%3E%3Cpath d=%27M-14 -10h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H2l-9 8v-8h-7a6 6 0 0 1-6-6v-14a6 6 0 0 1 6-6z%27/%3E%3Cpath d=%27M-10 0h20M-10 6h12%27/%3E%3C/g%3E%3Cg transform=%27translate(210 260) rotate(0)%27%3E%3Cpath d=%27M-4 0h8M0 -4v8%27/%3E%3C/g%3E%3Cg transform=%27translate(110 170) rotate(0)%27%3E%3Cpath d=%27M-4 0h8M0 -4v8%27/%3E%3C/g%3E%3Cg transform=%27translate(330 170) rotate(0)%27%3E%3Cpath d=%27M-4 0h8M0 -4v8%27/%3E%3C/g%3E%3Cg transform=%27translate(15 130) rotate(0)%27%3E%3Ccircle r=%273%27/%3E%3C/g%3E%3Cg transform=%27translate(300 255) rotate(0)%27%3E%3Ccircle r=%273%27/%3E%3C/g%3E%3Cg transform=%27translate(400 100) rotate(0)%27%3E%3Ccircle r=%273%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");background-size:340px 340px;background-position:center top;}   /* fondo con dibujitos (propio, íconos de barbería), al estilo del chat de WhatsApp */
+  #vistaWhatsappMax .wx-grid .wx-cab{background:var(--wa-barra);border-bottom:1px solid var(--wa-linea);}
+  #vistaWhatsappMax .wx-grid .wx-cab-q b{color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wx-cab-q span{color:var(--wa-sec);}
+  #vistaWhatsappMax .wx-grid .wx-btn{background:#fff;border-color:var(--wa-linea);color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wx-btn.t{background:var(--wa-verde);border-color:var(--wa-verde);color:#fff;}
+  #vistaWhatsappMax .wx-grid .wx-btn.t:hover:not(:disabled){background:var(--wa-verde-osc);border-color:var(--wa-verde-osc);}
+  #vistaWhatsappMax .wx-grid .wx-dia{background:#fff;color:var(--wa-icono);box-shadow:var(--wa-sombra);border-radius:8px;}
+  #vistaWhatsappMax .wx-grid .wx-b{box-shadow:var(--wa-sombra);color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wx-b.cli{background:#fff;border:0;border-radius:8px;border-top-left-radius:0;}
+  #vistaWhatsappMax .wx-grid .wx-b.max,#vistaWhatsappMax .wx-grid .wx-b.per{background:var(--wa-saliente);color:var(--wa-texto);border-radius:8px;border-top-right-radius:0;}
+  #vistaWhatsappMax .wx-grid .wx-b.wx-sticker{background:transparent;box-shadow:none;}
+  #vistaWhatsappMax .wx-grid .wx-b .wx-et{color:var(--wa-verde-osc);opacity:1;}
+  #vistaWhatsappMax .wx-grid .wx-b .wx-t{color:var(--wa-sec);opacity:1;font-size:11px;}
+  #vistaWhatsappMax .wx-grid .wx-b.per .wx-t .malo{color:#d64545;}
+  #vistaWhatsappMax .wx-grid .wx-b.per .wc-media{background:rgba(11,20,26,.05);}
+  #vistaWhatsappMax .wx-grid .wx-b.per .wc-media small,#vistaWhatsappMax .wx-grid .wx-b.per .wc-media svg{color:var(--wa-sec);}
+  #vistaWhatsappMax .wx-grid .wx-bajar{background:var(--wa-verde);box-shadow:0 2px 8px rgba(11,20,26,.25);}
+  #vistaWhatsappMax .wx-grid .wx-nota{background:var(--wa-barra);color:var(--wa-sec);border-top:1px solid var(--wa-linea);}
+  #vistaWhatsappMax .wx-grid .wx-aviso,#vistaWhatsappMax .wx-grid .wx-aviso.info{background:#fff5c4;color:var(--wa-icono);border-bottom-color:#f0e3a0;}
+  #vistaWhatsappMax .wx-grid .wx-aviso.malo{background:var(--rv-rose-soft);color:var(--rv-rose);}
+  #vistaWhatsappMax .wx-grid .wx-comp,#vistaWhatsappMax .wx-grid .wx-voz{background:var(--wa-barra);border-top:0;}
+  #vistaWhatsappMax .wx-grid .wx-comp textarea{background:#fff;border:0;border-radius:8px;color:var(--wa-texto);}
+  #vistaWhatsappMax .wx-grid .wx-comp textarea:focus{border:0;background:#fff;outline:none;}
+  #vistaWhatsappMax .wx-grid .wx-env{background:var(--wa-verde);color:#fff;}
+  #vistaWhatsappMax .wx-grid .wx-env:hover:not(:disabled){background:var(--wa-verde-osc);}
+  #vistaWhatsappMax .wx-grid .wx-clip,#vistaWhatsappMax .wx-grid .wx-mic{background:transparent;border-color:transparent;color:var(--wa-icono);}
+  #vistaWhatsappMax .wx-grid .wx-clip:hover:not(:disabled),#vistaWhatsappMax .wx-grid .wx-mic:hover:not(:disabled){background:rgba(11,20,26,.06);border-color:transparent;}
+  #vistaWhatsappMax .wx-grid .wx-adj{background:var(--wa-barra);border-top:1px solid var(--wa-linea);}
+  #vistaWhatsappMax .wx-grid .wx-adj-barra i,#vistaWhatsappMax .wx-grid .wx-vbarra i{background:var(--wa-verde);}
+  #vistaWhatsappMax .wx-grid .wx-vacio-chat,#vistaWhatsappMax .wx-grid .wx-vacio-chat svg{color:var(--wa-sec);}
+  /* --- 2.ª pasada (3-nov): tildes, pestañas, avatares, campo de escribir y encabezado sobre el fondo --- */
+  #vistaWhatsappMax .wx-grid .wx-b .wx-t .ent-enviado::before,#vistaWhatsappMax .wx-grid .wx-b .wx-t .ent-enviando::before{content:"\2713\00a0";}
+  #vistaWhatsappMax .wx-grid .wx-b .wx-t .ent-entregado::before{content:"\2713\2713\00a0";letter-spacing:-3px;margin-right:3px;}
+  #vistaWhatsappMax .wx-grid .wx-b .wx-t .ent-leido{color:#53bdeb;}
+  #vistaWhatsappMax .wx-grid .wx-b .wx-t .ent-leido::before{content:"\2713\2713\00a0";letter-spacing:-3px;margin-right:3px;}
+  #vistaWhatsappMax.wx-modo-chat .wm-tabs{background:#fff;}
+  #vistaWhatsappMax .wm-tab[aria-selected="true"]{color:var(--wa-verde-osc,#008069);}
+  #vistaWhatsappMax.wx-modo-chat .wm-tab[aria-selected="true"]{color:#008069;border-bottom-color:#00a884;}
+  #vistaWhatsappMax .wx-grid .wx-item:nth-child(3n+1) .wx-av{background:#fde1ea;color:#d6336c;}
+  #vistaWhatsappMax .wx-grid .wx-item:nth-child(3n+2) .wx-av{background:#d9fdd3;color:#06a67d;}
+  #vistaWhatsappMax .wx-grid .wx-item:nth-child(3n) .wx-av{background:#e3eafd;color:#4c6ef5;}
+  #vistaWhatsappMax .wx-grid .wc-chip{background:#fff;border:1px solid #d1d7db;color:var(--wa-icono);}
+  #vistaWhatsappMax .wx-grid .wc-chip[aria-pressed="true"]{background:var(--wa-saliente);border-color:var(--wa-saliente);color:#0a6e57;}
+  #vistaWhatsappMax .wx-grid .wx-cab{background:rgba(247,245,241,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:0;}
+  #vistaWhatsappMax .wx-grid .wx-comp,#vistaWhatsappMax .wx-grid .wx-voz{background:transparent;}
+  #vistaWhatsappMax .wx-grid .wx-comp textarea{border-radius:24px;box-shadow:0 1px 2px rgba(11,20,26,.12);}
+  #vistaWhatsappMax .wx-grid .wx-clip,#vistaWhatsappMax .wx-grid .wx-mic{color:#54656f;}
+  #vistaWhatsappMax .wx-grid .wx-b a,#vistaWhatsappMax .wx-grid .wx-b .wc-ver{color:#027eb5;}
+  #vistaWhatsappMax .wx-grid .wx-b .wv-btn,#vistaWhatsappMax .wx-grid .wx-b .wvt-btn{border-color:rgba(11,20,26,.12);color:#008069;}
+  #vistaWhatsappMax .wx-grid ::selection{background:#b4e9c4;}
+  /* ===== FIN COLORES DE WHATSAPP ===== */
   .wm-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:4px 0 16px;}
   .wm-title{font-family:var(--font-primary);font-size:27px;font-weight:700;margin:0;letter-spacing:-.015em;color:var(--rv-ink);}
   .wm-av-fila{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-top:1px solid var(--rv-line);}
@@ -2987,7 +3096,7 @@
   .wm-campo small{display:block;margin-top:6px;font-size:12px;line-height:1.4;color:var(--rv-ink-soft);}
   .wm-campo small.err{color:var(--rv-rose);font-weight:600;}
   .wm-topes-pie{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
-  .wm-esq{border-radius:10px;background:linear-gradient(100deg,#efe9da 30%,#f7f2e6 50%,#efe9da 70%);background-size:200% 100%;animation:wmEsq 1.4s ease-in-out infinite;}
+  .wm-esq{border-radius:10px;background:linear-gradient(100deg,#e9ebee 30%,#f4f5f7 50%,#e9ebee 70%);background-size:200% 100%;animation:wmEsq 1.4s ease-in-out infinite;}
   .wm-estado-vacio{text-align:center;padding:34px 20px;}
   .wm-estado-vacio svg{width:34px;height:34px;color:var(--text-low);margin-bottom:10px;}
   .wm-estado-vacio h3{margin:0 0 6px;font-family:var(--font-primary);font-size:17px;font-weight:700;}
@@ -3517,7 +3626,7 @@
 
 
       <button class="menu-panel-item" id="btnLocales">Locales</button>
-      <button class="menu-panel-item" id="btnWhatsappMax" style="display:none;">WhatsApp·Max</button>
+      <button class="menu-panel-item wm-menu-oculto" id="btnWhatsappMax" style="display:none;" tabindex="-1" aria-hidden="true">WhatsApp·Max</button>
       <button class="menu-panel-item" id="btnWhatsappChat" style="display:none;">Chats de WhatsApp</button>
 
       <div class="nav-group" id="grupoServicios" style="display:none;">
@@ -4997,6 +5106,18 @@
           <p class="wm-sub">Cómo va el asistente que atiende los chats de WhatsApp.</p>
         </div>
         <div class="cx-nav">
+          <div class="wm-aviso" id="wmAviso">
+            <button class="ctrl-btn" id="wmAvisoBtn" type="button" aria-expanded="false" aria-controls="wmAvisoPop">Avisos</button>
+            <div class="wm-aviso-pop" id="wmAvisoPop" hidden>
+              <p class="wm-aviso-tit">Avisos de mensajes nuevos</p>
+              <label class="wm-aviso-fila"><input type="checkbox" id="wmAvisoSonido"> Sonido cuando llega un mensaje</label>
+              <label class="wm-aviso-fila" for="wmAvisoTono">Sonido
+                <select id="wmAvisoTono"><option value="wa">Estilo WhatsApp</option><option value="pop">Burbuja</option><option value="campana">Campanita</option></select></label>
+              <button class="ctrl-btn" id="wmAvisoProbar" type="button">Probar sonido</button>
+              <label class="wm-aviso-fila"><input type="checkbox" id="wmAvisoNotif"> Notificación en la pantalla</label>
+              <p class="wm-aviso-nota" id="wmAvisoEstado"></p>
+            </div>
+          </div>
           <button class="ctrl-btn" id="wmActualizar" type="button">Actualizar</button>
           <button class="ctrl-btn" id="wmVolver" type="button">← Volver a la agenda</button>
         </div>
@@ -7494,6 +7615,10 @@
      «Atender chats de WhatsApp»; WA_SOLO_LECTURA bloquea toda acción que envíe, active, cambie datos o gaste (ver waCandadoSoloLectura). Vuelven a false SOLO con autorización expresa de la dueña (integración con Meta). */
   const WA_SOLO_ADMIN = true;
   const WA_SOLO_LECTURA = true;
+  /* Fase A (10-nov-2026): los AVISOS (consulta periódica de chats, sonido, notificación y contador de la barra) quedan APAGADOS mientras WhatsApp no esté conectado: sin tráfico ni indicadores sin sentido.
+     WA_PENDIENTES_ACTIVO: la llamada a whatsappPanelPendientes (contador numérico de no leídos) queda apagada hasta que esa función esté desplegada y autorizada. Se encienden SOLO con autorización expresa de la dueña. */
+  const WA_AVISOS_ACTIVOS = false;
+  const WA_PENDIENTES_ACTIVO = false;
   const FIREBASE_CONFIG_PROD = {
     apiKey: "AIzaSyBvhhYbKGXW6n-tTLKjfbvSF-LXpcAeWSc",
     authDomain: "estudio90.firebaseapp.com",
@@ -8959,6 +9084,7 @@
       reportes: conActivo('reportes', mostrarIntelligence),
       administracion: conActivo('administracion', abrirMenuLateral),
       'email-marketing': ()=>{ location.href = 'masterlook-email-marketing.html'; },
+      whatsapp: conActivo('whatsapp', ()=>{ const b = document.getElementById('btnWhatsappMax'); if(b) b.click(); }),   // 3-nov: WhatsApp en la barra (el botón del menú sigue existiendo pero oculto; la sección y su permiso son los mismos)
     };
     MLNav.render({ contenedor:document.getElementById('mlNavBar'), activo, rol:userRole, enPanel:true, callbacks:mlNavCallbacks });
   }
@@ -16171,7 +16297,7 @@
         <span class="wx-nom">${escapeHTML(wcNombre(c))} <span class="wx-tel">${escapeHTML('· ' + c.telefonoMasc)}</span></span>
         <span class="wx-hora${nuevo ? ' nuevo' : ''}">${escapeHTML(wxHoraLista(c.ultimaActividadEl))}</span>
         <span class="wx-pre">${escapeHTML(c.ultimoTexto || 'Sin mensajes de texto')}</span>
-        <span class="wx-ind">${nuevo ? '<i class="wx-punto" aria-hidden="true"></i>' : ''}${wxEstadoHTML(c)}</span>
+        <span class="wx-ind">${nuevo ? wxNumeroHTML(c.id) : ''}${wxEstadoHTML(c)}</span>
       </button>`;
     }).join('') + (WC.siguiente ? `<div class="wx-mas-fila"><button class="wx-btn" type="button" data-wm-accion="wc-mas"${WC.cargandoMas ? ' disabled' : ''}>${escapeHTML(WC.cargandoMas ? 'Cargando…' : (WC.busqueda ? 'Buscar en chats anteriores' : 'Ver más chats'))}</button></div>` : '');
   }
@@ -16227,6 +16353,7 @@
   function wxMarcarVisto(id){
     if(!id) return;
     WX.visto[id] = Date.now();
+    try{ if(WAV.cuentas.delete(id)) wavRecalcular(); }catch(e){}
     const k = Object.keys(WX.visto).filter(x=> x !== '_');
     if(k.length > 400){ k.sort((a, b)=> WX.visto[a] - WX.visto[b]).slice(0, k.length - 400).forEach(x=> delete WX.visto[x]); }
     wxGuardarVisto();
@@ -16254,8 +16381,13 @@
     if(ahora.getTime() - t < 6 * 86400000) return d.toLocaleDateString('es-CL', { weekday:'short', timeZone:wcZona }).replace('.', '');
     return d.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'2-digit', timeZone:wcZona });
   }
+  /** Círculo verde con la cantidad de mensajes sin leer (como WhatsApp); si aún no se contó, el punto de siempre. */
+  function wxNumeroHTML(id){
+    let n = 0; try{ const q = WAV.cuentas.get(id); n = q ? q.n : 0; }catch(e){}
+    return n > 0 ? `<span class="wx-cuenta" aria-label="${n} mensajes sin leer">${n > 99 ? '99+' : n}</span>` : '<i class="wx-punto" aria-hidden="true"></i>';
+  }
   function wxSinLeer(c){
-    if(!c || c.ultimoDe !== 'cliente') return false;
+    if(!c) return false;   // 3-nov: ya no exige «lo último lo escribió el cliente» (MAX contesta en segundos y ocultaba el aviso)
     if(c.id === WC.idAbierto && WC.abierta) return false;
     const t = Date.parse(c.ultimoEntranteEl);
     return Number.isFinite(t) && t > Math.max(WX.visto[c.id] || 0, WX.visto._ || 0);
@@ -16359,7 +16491,7 @@
     const esFoto = !!(m.media && m.media.tipo === 'imagen');
     const mediaVista = esFoto ? wvVisorHTML(m) : media;
     const textoVista = (esFoto && /^\[el cliente envió una imagen\]$/.test(String(m.texto || '').trim())) ? (m.media.leyenda ? `<span class="wx-tx">${escapeHTML(m.media.leyenda)}</span>` : '') : texto;
-    return { dia, html:`${sep}<div class="wx-b ${clase}${esFoto ? ' wx-foto' : ''}" data-wx-k="${escapeHTML(m.k)}">${etiqueta ? `<span class="wx-et">${escapeHTML(etiqueta)}</span>` : ''}${tipo}${mediaVista}${textoVista}<span class="wx-t">${escapeHTML(wcHora(m.ts))}${m.entrega ? ` · <span class="${m.entrega === 'fallido' ? 'malo' : ''}">${escapeHTML(WC_ENTREGA[m.entrega] || '')}</span>` : ''}</span></div>` };
+    return { dia, html:`${sep}<div class="wx-b ${clase}${esFoto ? ' wx-foto' : ''}" data-wx-k="${escapeHTML(m.k)}">${etiqueta ? `<span class="wx-et">${escapeHTML(etiqueta)}</span>` : ''}${tipo}${mediaVista}${textoVista}<span class="wx-t">${escapeHTML(wcHora(m.ts))}${m.entrega ? ` · <span class="${m.entrega === 'fallido' ? 'malo' : 'ent-' + m.entrega}">${escapeHTML(WC_ENTREGA[m.entrega] || '')}</span>` : ''}</span></div>` };
   }
   function wxMensajesHTML(){
     const h = WC.hilo;
@@ -16548,7 +16680,7 @@
           const k = el.getAttribute('data-wx-k'); const m = WC.hilo.mensajes.find(x=> x.k === k); if(!m) return;
           if(cambiosMedia.includes(k)){ el.outerHTML = wxBurbujaHTML(m, wcDia(m.ts)).html; return; }   // solo cuando cambió el archivo: no se toca un video que se está viendo
           if(cambiosEntrega.includes(k)){
-            const t = el.querySelector('.wx-t'); if(t) t.innerHTML = escapeHTML(wcHora(m.ts)) + (m.entrega ? ' · <span class="' + (m.entrega === 'fallido' ? 'malo' : '') + '">' + escapeHTML(WC_ENTREGA[m.entrega] || '') + '</span>' : '');
+            const t = el.querySelector('.wx-t'); if(t) t.innerHTML = escapeHTML(wcHora(m.ts)) + (m.entrega ? ' · <span class="' + (m.entrega === 'fallido' ? 'malo' : 'ent-' + m.entrega) + '">' + escapeHTML(WC_ENTREGA[m.entrega] || '') + '</span>' : '');
           }
         });
       }
@@ -17171,6 +17303,212 @@
     if(con) wkAbrir();
     if(voz) wvzAbrir();
   }
+  /* ===== AVISO DE MENSAJES NUEVOS (3-nov-2026) =====
+     Cada vez que un CLIENTE escribe: sonido (Web Audio, sin archivos) + notificación del navegador + aviso en la pestaña. Funciona desde cualquier pantalla del panel
+     mientras la pestaña esté abierta. Solo LEE (misma llamada de solo lectura que la lista de conversaciones); no envía ni cambia nada. Preferencias por dispositivo (localStorage). */
+  const WAV = { prefs:{ sonido:true, notif:false, tono:'wa' }, ctx:null, prev:null, maxPrev:0, detenido:false, motivo:'', enCurso:false, sinLeer:0, tituloBase:null, timer:null, ultimaOkMs:0, pend:0, cuentas:new Map() };
+  try{ const p = JSON.parse(localStorage.getItem('wmAviso') || 'null'); if(p && typeof p === 'object'){ WAV.prefs.sonido = p.sonido !== false; WAV.prefs.notif = p.notif === true; if(['wa', 'pop', 'campana'].indexOf(p.tono) >= 0) WAV.prefs.tono = p.tono; } }catch(e){}
+  function wavGuardar(){ try{ localStorage.setItem('wmAviso', JSON.stringify(WAV.prefs)); }catch(e){} }
+  /** PURA: compara la lista actual con lo ya visto y devuelve los chats con mensaje NUEVO de un cliente. previo: Map id -> ms del último mensaje del cliente (o null en la primera lectura: no avisa). */
+  function wavDetectar(previo, maxPrevio, lista){
+    const nuevos = []; const vistos = new Map(); let maxAhora = maxPrevio || 0;
+    (Array.isArray(lista) ? lista : []).forEach(c=>{
+      if(!c || !c.id) return;
+      const t = Date.parse(c.ultimoEntranteEl); if(!Number.isFinite(t)) return;
+      vistos.set(c.id, t); if(t > maxAhora) maxAhora = t;
+      if(!previo) return;   // `ultimoEntranteEl` solo avanza cuando ESCRIBE EL CLIENTE (lo que envía el equipo o MAX no lo cambia): así avisa aunque MAX ya haya respondido en segundos
+      const antes = previo.get(c.id);
+      if(antes === undefined ? t > (maxPrevio || 0) : t > antes) nuevos.push(c);
+    });
+    return { nuevos, vistos, maxAhora };
+  }
+  function wavNombre(c){
+    const f = c && c.ficha; const n = f && f.nombre ? (f.nombre + (f.apellido ? ' ' + f.apellido : '')) : '';
+    return (n || (c && c.nombrePerfil) || (c && c.telefonoMasc) || 'Un cliente').toString().slice(0, 60);
+  }
+  /** Tres sonidos propios (sintetizados en el navegador, no son archivos de WhatsApp): «wa» = dos notas rápidas tipo marimba, «pop» = burbuja, «campana» = ting-ting. */
+  function wavNota(x, t0, hz, dur, vol, tipo, hasta){
+    const o = x.createOscillator(); const g = x.createGain();
+    o.type = tipo || 'sine'; o.frequency.setValueAtTime(hz, t0); if(hasta) o.frequency.exponentialRampToValueAtTime(hasta, t0 + Math.min(0.08, dur));
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(x.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function wavSonar(tono){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return false;
+      if(!WAV.ctx) WAV.ctx = new AC();
+      const x = WAV.ctx; if(x.state === 'suspended') x.resume();
+      const t0 = x.currentTime + 0.02; const t = tono || WAV.prefs.tono;
+      if(t === 'pop'){
+        wavNota(x, t0, 520, 0.16, 0.7, 'sine', 1040);
+        wavNota(x, t0 + 0.005, 1040, 0.09, 0.18, 'sine', 2080);
+      }else if(t === 'campana'){
+        [[1318.5, 0, 0.16], [1760, 0.11, 0.3]].forEach(([hz, dt, dur])=>{ wavNota(x, t0 + dt, hz, dur, 0.5, 'sine'); wavNota(x, t0 + dt, hz * 2, dur, 0.16, 'sine'); });
+      }else{
+        wavNota(x, t0, 987.8, 0.14, 0.55, 'triangle'); wavNota(x, t0, 1975.6, 0.08, 0.12, 'sine');
+        wavNota(x, t0 + 0.095, 1318.5, 0.26, 0.6, 'triangle'); wavNota(x, t0 + 0.095, 2637, 0.12, 0.12, 'sine');
+      }
+      return x.state !== 'suspended';
+    }catch(e){ return false; }
+  }
+  /* Chrome no deja sonar audio hasta que la persona interactúa con la página (política de reproducción automática). Por eso: (1) cualquier clic/tecla/toque en el panel
+     desbloquea el audio (se siguen escuchando hasta que queda activo); (2) mientras siga bloqueado y haya avisos de sonido, se muestra un botón «Activar sonido de WhatsApp». */
+  function wavDesbloquear(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+      if(!WAV.ctx) WAV.ctx = new AC();
+      if(WAV.ctx.state === 'suspended'){ const p = WAV.ctx.resume(); if(p && p.then) p.then(wavChip, ()=>{}); }
+      setTimeout(wavChip, 150);
+    }catch(e){}
+  }
+  const WAV_EVENTOS_DESBLOQUEO = ['pointerdown', 'keydown', 'touchstart', 'click'];
+  function wavDesbloqueoEvento(){
+    wavDesbloquear();
+    if(WAV.ctx && WAV.ctx.state === 'running') WAV_EVENTOS_DESBLOQUEO.forEach(ev=> document.removeEventListener(ev, wavDesbloqueoEvento, true));
+  }
+  WAV_EVENTOS_DESBLOQUEO.forEach(ev=> document.addEventListener(ev, wavDesbloqueoEvento, true));
+  function wavChip(){
+    let c = document.getElementById('wavChip');
+    const necesita = WAV.prefs.sonido && WAV.ultimaOkMs > 0 && !WAV.detenido && (!WAV.ctx || WAV.ctx.state !== 'running');
+    if(!necesita){ if(c) c.remove(); return; }
+    if(c) return;
+    c = document.createElement('button'); c.id = 'wavChip'; c.type = 'button'; c.className = 'wav-chip';
+    c.textContent = 'Activar sonido de WhatsApp';
+    c.addEventListener('click', ()=>{ wavDesbloquear(); wavSonar(); setTimeout(wavChip, 250); });
+    document.body.appendChild(c);
+  }
+  function wavPermisoNotif(){ return ('Notification' in window) ? Notification.permission : 'unsupported'; }
+  function wavPintar(){
+    const b = wmEl('wmAvisoBtn'); if(!b) return;
+    if(!WA_AVISOS_ACTIVOS){
+      b.textContent = 'Avisos'; b.title = 'Los avisos se activan cuando WhatsApp esté conectado'; b.setAttribute('data-activo', '0');   // neutro y verdadero: no dice «activados»
+      ['wmAvisoSonido', 'wmAvisoTono', 'wmAvisoNotif', 'wmAvisoProbar'].forEach(id=>{ const x = wmEl(id); if(x){ x.disabled = true; if(x.type === 'checkbox') x.checked = false; } });
+      const e0 = wmEl('wmAvisoEstado'); if(e0) e0.textContent = 'Los avisos de mensajes nuevos (sonido y notificación) se activarán cuando WhatsApp esté conectado y la administración lo autorice. Por ahora no hay nada que avisar.';
+      return;
+    }
+    const act = WAV.prefs.sonido || (WAV.prefs.notif && wavPermisoNotif() === 'granted');
+    b.textContent = act ? 'Avisos: activados' : 'Avisos: apagados'; b.setAttribute('data-activo', act ? '1' : '0');
+    const s = wmEl('wmAvisoSonido'); if(s) s.checked = WAV.prefs.sonido;
+    const tn = wmEl('wmAvisoTono'); if(tn) tn.value = WAV.prefs.tono;
+    const n = wmEl('wmAvisoNotif'); if(n) n.checked = WAV.prefs.notif && wavPermisoNotif() === 'granted';
+    const e = wmEl('wmAvisoEstado'); if(!e) return;
+    const p = wavPermisoNotif();
+    e.textContent = p === 'unsupported' ? 'Este navegador no permite notificaciones; solo sonará el aviso.'
+      : p === 'denied' ? 'Las notificaciones están bloqueadas en el navegador: actívalas desde el candado de la barra de direcciones.'
+      : 'Avisa mientras esta pestaña del panel esté abierta (aunque estés en otra pantalla del panel).';
+    const hh = (ms)=> new Date(ms).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    e.textContent += WAV.detenido ? ' Detenido: ' + (WAV.motivo || 'sin permiso o WhatsApp no activado') + '.' : (WAV.ultimaOkMs ? ' Última revisión: ' + hh(WAV.ultimaOkMs) + '.' : ' Aún no se ha revisado.');
+  }
+  function wavTitulo(){
+    if(WAV.tituloBase === null) WAV.tituloBase = document.title.replace(/^\(\d+\+?\)\s*/, '');
+    document.title = (WAV.pend > 0 ? '(' + (WAV.pend > 99 ? '99+' : WAV.pend) + ') ' : '') + WAV.tituloBase;
+  }
+  function wavAbrirChat(){
+    try{ window.focus(); }catch(e){}
+    try{
+      if(rcClientes.admin()) mostrarVistaWhatsappMax().then(()=> wmCambiarPestana('conversaciones'));
+      else mostrarVistaWhatsappChat();
+    }catch(e){}
+  }
+  /** Contador verde junto a «WhatsApp» en la barra superior: chats con mensajes nuevos desde la última vez que se abrió la sección. Se repinta solo si la barra se vuelve a dibujar. */
+  function wavBadge(){
+    const bar = document.getElementById('mlNavBar'); if(!bar) return;
+    const b = bar.querySelector('[data-mlnav="whatsapp"]'); if(!b) return;
+    const prev = b.querySelector('.mlnav-badge');
+    if(WAV.pend > 0){
+      const txt = WAV.pend > 99 ? '99+' : String(WAV.pend);
+      if(prev){ if(prev.textContent !== txt) prev.textContent = txt; }
+      else b.insertAdjacentHTML('beforeend', '<span class="mlnav-badge" aria-label="mensajes nuevos">' + txt + '</span>');
+    }else if(prev) prev.remove();
+  }
+  (function(){ const bar = document.getElementById('mlNavBar'); if(bar && window.MutationObserver) new MutationObserver(()=> wavBadge()).observe(bar, { childList:true }); })();
+  /** Suma lo pendiente, repinta el contador de la barra, el título de la pestaña y la lista de chats (si está en pantalla). */
+  function wavRecalcular(){
+    let total = 0; WAV.cuentas.forEach(v=>{ total += v.n; });
+    const cambio = total !== WAV.pend; WAV.pend = total; wavBadge(); wavTitulo();
+    if(cambio && typeof WX !== 'undefined' && WX.activo && WC.cargadaLista && !WC.cargando){ const el = wmEl('wcLista'); const top = el ? el.scrollTop : 0; wcPintarLista(); if(el) el.scrollTop = top; }
+  }
+  /** Cuántos mensajes sin leer tiene cada chat: pide el número SOLO de los chats cuyo último mensaje del cliente cambió desde la última cuenta (no repite lecturas). */
+  async function wavContar(lista){
+    const pedir = []; const vivos = new Set();
+    lista.forEach(c=>{
+      const t = Date.parse(c.ultimoEntranteEl); if(!Number.isFinite(t)) return;
+      const visto = Math.max(WX.visto[c.id] || 0, WX.visto._ || 0);
+      const abierto = WC.abierta && WC.idAbierto === c.id && wavVisto();
+      if(t <= visto || abierto){ WAV.cuentas.delete(c.id); return; }
+      vivos.add(c.id);
+      const q = WAV.cuentas.get(c.id);
+      if(!q || q.firma !== c.ultimoEntranteEl || q.desde !== visto) pedir.push({ id:c.id, desde:visto, firma:c.ultimoEntranteEl });
+    });
+    WAV.cuentas.forEach((v, id)=>{ if(!vivos.has(id)) WAV.cuentas.delete(id); });
+    if(pedir.length && WA_PENDIENTES_ACTIVO){
+      try{
+        const d = await wmLlamar('whatsappPanelPendientes', { chats: pedir.slice(0, 20).map(p=> ({ id:p.id, desde:p.desde })) });
+        if(d && d.ok === true && d.cuentas) pedir.slice(0, 20).forEach(p=>{ const n = Math.max(0, Math.min(99, Number(d.cuentas[p.id]) || 0)); if(n > 0) WAV.cuentas.set(p.id, { n, firma:p.firma, desde:p.desde }); else WAV.cuentas.delete(p.id); });
+      }catch(e){ /* sin número: queda el punto de «nuevo» y se reintenta en la próxima revisión */ }
+    }
+    wavRecalcular();
+  }
+  function wavVisto(){ const v = wmEl('vistaWhatsappMax'); return !document.hidden && !!v && v.style.display !== 'none'; }
+  function wavAvisar(nuevos){
+    const viendo = !document.hidden && wxVisible() && WC.abierta && nuevos.length === 1 && nuevos[0].id === WC.idAbierto;
+    if(WAV.prefs.sonido) wavSonar();
+    if(viendo) return;
+    const una = nuevos.length === 1;
+    const titulo = una ? 'Mensaje nuevo de ' + wavNombre(nuevos[0]) : nuevos.length + ' mensajes nuevos en WhatsApp';
+    const cuerpo = una ? String(nuevos[0].ultimoTexto || 'Escribió por WhatsApp').slice(0, 110) : nuevos.slice(0, 3).map(wavNombre).join(', ');
+    if(!document.hidden) showToast(titulo);
+    if(WAV.prefs.notif && wavPermisoNotif() === 'granted'){
+      try{
+        const nt = new Notification(titulo, { body: cuerpo, tag: 'masterlook-whatsapp', renotify: true, silent: WAV.prefs.sonido });
+        nt.onclick = ()=>{ try{ nt.close(); }catch(e){} wavAbrirChat(); };
+      }catch(e){}
+    }
+  }
+  async function wavTick(){
+    if(!WA_AVISOS_ACTIVOS) return;   // Fase A: avisos apagados (WhatsApp sin conectar)
+    if(WAV.detenido || WAV.enCurso || !auth.currentUser) return;
+    if(!WAV.prefs.sonido && !(WAV.prefs.notif && wavPermisoNotif() === 'granted')) return;   // nada que avisar: no consulta
+    WAV.enCurso = true;
+    try{
+      if(typeof barberoBloqueado === 'function' && barberoBloqueado()) return;
+      if(!(await wxPuedeAtender())){ WAV.detenido = true; WAV.motivo = 'tu cuenta no tiene permiso para atender chats'; return; }   // sin permiso de WhatsApp en esta sesión: no insiste
+      const d = await wmLlamar('whatsappPanelConversaciones', { limite:20 });
+      if(!d || d.ok !== true || !Array.isArray(d.lista)) return;
+      WAV.ultimaOkMs = Date.now(); wavChip();
+      const r = wavDetectar(WAV.prev, WAV.maxPrev, d.lista);
+      const mapa = WAV.prev || new Map(); r.vistos.forEach((t, id)=>{ if(!(mapa.get(id) >= t)) mapa.set(id, t); });
+      WAV.prev = mapa; WAV.maxPrev = r.maxAhora;
+      if(r.nuevos.length) wavAvisar(r.nuevos);
+      await wavContar(d.lista);
+    }catch(e){
+      const c = String((e && e.code) || '');
+      if(c.indexOf('not-found') >= 0 || c.indexOf('unimplemented') >= 0 || c.indexOf('permission-denied') >= 0 || c.indexOf('unauthenticated') >= 0 || c.indexOf('failed-precondition') >= 0){ WAV.detenido = true; WAV.motivo = c.indexOf('not-found') >= 0 || c.indexOf('unimplemented') >= 0 ? 'WhatsApp no está activado en este entorno' : 'sin permiso o sesión vencida (recarga la página)'; }   // WhatsApp no activado o sin permiso: no insiste
+    }finally{ WAV.enCurso = false; }
+  }
+  WAV.timer = WA_AVISOS_ACTIVOS ? setInterval(wavTick, 15000) : null;
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) wavTick(); });
+  document.addEventListener('click', (ev)=>{
+    const t = ev.target; if(!t || !t.closest) return;
+    const pop = wmEl('wmAvisoPop'); const btn = wmEl('wmAvisoBtn'); if(!pop || !btn) return;
+    if(t.closest('#wmAvisoBtn')){ const abrir = pop.hidden; pop.hidden = !abrir; btn.setAttribute('aria-expanded', abrir ? 'true' : 'false'); wavPintar(); return; }
+    if(t.closest('#wmAvisoProbar')){ wavDesbloquear(); if(!wavSonar()) showToast('Si no oyes nada, toca de nuevo "Probar sonido" o revisa el volumen del equipo.'); return; }
+    if(!t.closest('#wmAvisoPop') && !pop.hidden){ pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
+  });
+  document.addEventListener('change', async (ev)=>{
+    const t = ev.target; if(!t) return;
+    if(t.id === 'wmAvisoTono'){ if(['wa', 'pop', 'campana'].indexOf(t.value) >= 0){ WAV.prefs.tono = t.value; wavGuardar(); wavDesbloquear(); wavSonar(); } }
+    if(t.id === 'wmAvisoSonido'){ WAV.prefs.sonido = !!t.checked; wavGuardar(); if(t.checked){ wavDesbloquear(); wavSonar(); } wavPintar(); }
+    if(t.id === 'wmAvisoNotif'){
+      if(!t.checked){ WAV.prefs.notif = false; wavGuardar(); wavPintar(); return; }
+      if(!('Notification' in window)){ WAV.prefs.notif = false; t.checked = false; wavPintar(); return; }
+      let p = Notification.permission;
+      if(p === 'default'){ try{ p = await Notification.requestPermission(); }catch(e){ p = 'denied'; } }
+      WAV.prefs.notif = p === 'granted'; wavGuardar(); wavPintar();
+      if(p === 'granted') showToast('Listo: te avisaremos con una notificación.');
+    }
+  });
+  /* ===== FIN AVISO DE MENSAJES NUEVOS ===== */
   function wcFiltrar(){
     if(WC.abierta) wcVolverALista();
     wcCargarLista(false);
