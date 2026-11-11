@@ -45,6 +45,7 @@
     { key: 'reportes', label: 'Reportes', roles: ['ADMIN'], boton: 'btnIntelligence' },
     { key: 'administracion', label: 'Administración', roles: ['ADMIN', 'RECEPTION'] },
     { key: 'email-marketing', label: 'Email Marketing', roles: ['ADMIN'] },
+    { key: 'whatsapp', label: 'WhatsApp', roles: ['ADMIN'], boton: 'btnWhatsappMax' },   // 3-nov: antes solo estaba en el menú hamburguesa (WhatsApp·Max, solo ADMIN)
   ];
 
   var CSS_ID = 'mlnav-estilos';
@@ -64,6 +65,7 @@
       'display:flex;align-items:center;cursor:pointer;white-space:nowrap;margin-right:24px;}' +
       '.mlnav-item:hover{color:var(--text-hi,#2c3941);}' +
       '.mlnav-item.on{color:var(--accent,#8046ce);border-bottom-color:var(--accent,#8046ce);font-weight:500;}' +
+      '.mlnav-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:9px;background:#25d366;color:#fff;font-size:11px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;}' +
       '@media (max-width:760px){.mlnav{padding:0 14px;}.mlnav-item{margin-right:16px;font-size:13px;}}';
     document.head.appendChild(s);
   }
