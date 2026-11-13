@@ -7612,9 +7612,12 @@
      hasta la etapa de activación (cambiar a true y publicar el panel, solo con autorización expresa de la dueña). */
   const WA_PANEL_ACTIVO = true;
   /* 10-nov-2026 (autorizado por la dueña): la sección WhatsApp es VISIBLE solo para ADMINISTRACIÓN y en SOLO LECTURA. WA_SOLO_ADMIN deja fuera a Recepción y a todo otro rol aunque tengan el permiso
-     «Atender chats de WhatsApp»; WA_SOLO_LECTURA bloquea toda acción que envíe, active, cambie datos o gaste (ver waCandadoSoloLectura). Vuelven a false SOLO con autorización expresa de la dueña (integración con Meta). */
-  const WA_SOLO_ADMIN = true;
+     «Atender chats de WhatsApp»; WA_SOLO_LECTURA bloquea toda acción que envíe, active, cambie datos o gaste (ver waCandadoSoloLectura). Vuelven a false SOLO con autorización expresa de la dueña (integración con Meta).
+     13-nov-2026, la dueña: «abramos recepcion hoy». WA_SOLO_ADMIN = false: entra SOLO Recepción activa a la que un ADMIN dio «Atender chats de WhatsApp» (WHATSAPP_CHAT, cuenta por cuenta); Barbero, nunca.
+     Puede ver los chats, tomar uno libre, escribir, devolver a MAX solo el chat que ella tomó y cancelar su mensaje en espera; además (la dueña, 13-nov): «las plantillas todas debe poder ocuparlas recepcion» y «el envío de archivos también» -> plantillas (avisos de reserva y reapertura fuera de 24 h) y archivos/notas de voz. Siguen solo de Administración: iniciar con un número nuevo, transcribir, pausar/reanudar, topes, avisos automáticos, voz y conocimiento. WA_SOLO_LECTURA sigue en true. */
+  const WA_SOLO_ADMIN = false;
   const WA_SOLO_LECTURA = true;
+  const WA_ARCHIVOS_EQUIPO = true;   // 13-nov-2026 (dueña: «el envío de archivos también»): Administración y Recepción con permiso envían fotos, videos, documentos y notas de voz (el servidor exige además WHATSAPP_SOLO_ADMIN=0 en whatsappPanelEnviarArchivo para Recepción)
   /* Fase A (10-nov-2026): los AVISOS (consulta periódica de chats, sonido, notificación y contador de la barra) quedan APAGADOS mientras WhatsApp no esté conectado: sin tráfico ni indicadores sin sentido.
      WA_PENDIENTES_ACTIVO: la llamada a whatsappPanelPendientes (contador numérico de no leídos) queda apagada hasta que esa función esté desplegada y autorizada. Se encienden SOLO con autorización expresa de la dueña. */
   /* Fase B-2 (modo atención): avisos (sonido, notificación, contador de la barra) y contador de mensajes sin leer ENCENDIDOS. Exige haber desplegado whatsappPanelPendientes ANTES de publicar este panel. */
@@ -7666,17 +7669,18 @@
   const db = firebase.firestore();
   const storage = firebase.storage();
   const functions = firebase.app().functions('us-central1');
-  /* WA: candado de SOLO LECTURA. Solo estas acciones de lectura pueden llamar a las funciones de WhatsApp que escriben/envían/gastan; todo lo demás se rechaza aquí, ANTES de salir a la red.
-     whatsappPanelAccion (pausar, reanudar, topes, avisos, voz) y whatsappPanelIntervencion (tomar, responder, enviar, iniciar, plantilla, transcribir) no tienen acciones de lectura: bloqueadas por completo. */
+  /* WA: candado del panel mientras WA_SOLO_LECTURA sea true (ayuda de pantalla, NO es la barrera de seguridad: esa es el servidor). De estas 3 funciones solo pasan las acciones de LECTURA; todo lo demás se rechaza aquí, ANTES de salir a la red.
+     maxConocimientoPanel: solo sus lecturas, cualquier sesión. whatsappPanelAccion (pausar, reanudar): solo Administración. whatsappPanelIntervencion (tomar, devolver, responder, enviar, cancelarEnEspera): Administración y, desde el 13-nov-2026,
+     Recepción con el permiso WHATSAPP_CHAT ya comprobado en esta sesión (WX.permitido, ver wxPuedeAtender). Desde el 13-nov-2026 también 'plantilla' (avisos de reserva con plantilla). Siguen bloqueados para TODOS: topes, avisos automáticos, voz, conocimiento, iniciar y transcribir (archivos: ver wxSubir y WA_ARCHIVOS_EQUIPO). */
   (function waCandadoSoloLectura(){
-    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: ['pausar','reanudar'], whatsappPanelIntervencion: ['tomar','devolver','responder','enviar','cancelarEnEspera'] };   // Fase B-2 (modo atención): solo estas acciones y solo ADMIN; el resto sigue bloqueado
+    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: ['pausar','reanudar'], whatsappPanelIntervencion: ['tomar','devolver','responder','enviar','cancelarEnEspera','plantilla'] };   // Fase B-2 (modo atención) + 13-nov-2026 'plantilla' (avisos de reserva): solo estas acciones (quién puede usarlas: ver la compuerta de abajo); el resto sigue bloqueado
     const original = functions.httpsCallable.bind(functions);
     functions.httpsCallable = function(nombre, opciones){
       const f = original(nombre, opciones);
       if(!WA_SOLO_LECTURA || !Object.prototype.hasOwnProperty.call(LECTURA, nombre)) return f;
       return function(datos){
         const a = datos && typeof datos.accion === 'string' ? datos.accion : '';
-        if(LECTURA[nombre].indexOf(a) >= 0 && (nombre === 'maxConocimientoPanel' || (typeof rcClientes !== 'undefined' && rcClientes.admin()))) return f(datos);   // acciones de atención solo si la sesión es de Administración
+        if(LECTURA[nombre].indexOf(a) >= 0 && (nombre === 'maxConocimientoPanel' || (typeof rcClientes !== 'undefined' && rcClientes.admin()) || (nombre === 'whatsappPanelIntervencion' && typeof WX !== 'undefined' && WX.permitido === true))) return f(datos);   // acciones de atención: Administración, o (13-nov-2026) Recepción con WHATSAPP_CHAT comprobado (WX.permitido) solo en Intervención; pausar/reanudar siguen solo de Administración
         const e = new Error('Esta acción todavía no está habilitada en WhatsApp: se activará en una etapa posterior, con autorización de la administración.');
         e.code = 'functions/invalid-argument'; e.waSoloLectura = true;   // el panel muestra este mensaje tal cual (con permission-denied mostraría textos de «sin permiso»)
         return Promise.reject(e);
@@ -16418,7 +16422,7 @@
       estado = `<span class="wx-pill eq">${escapeHTML('La atiende ' + (i.nombre || 'el equipo') + (i.rol ? ' (' + (WK_ROL[i.rol] || i.rol) + ')' : ''))}</span>`;
       accion = WX.esAdmin ? `<button class="wx-btn" type="button" data-wm-accion="wi-tomar"${dis}>Tomarla yo</button>` : '';
     }
-    else if(c.estado === 'persona' || c.estado === 'pausado'){ estado = '<span class="wx-pill eq">Con el equipo</span>'; accion = tomar + devolver; }
+    else if(c.estado === 'persona' || c.estado === 'pausado'){ estado = '<span class="wx-pill eq">Con el equipo</span>'; accion = tomar + (WX.esAdmin ? devolver : ''); }   // 13-nov-2026: quien no es ADMIN solo devuelve a MAX el chat que tomó ella (rama «mia»); el servidor también lo exige (S1b)
     else { estado = '<span class="wx-pill">Atiende Max</span>'; accion = tomar; }
     const ini = wxIniciales(c);
     return `<button class="wx-volver" type="button" data-wm-accion="wc-volver" aria-label="Volver a los chats">${WC_ICONS.atras}</button>
@@ -16822,7 +16826,7 @@
     if(!wxToque()) ta.focus({ preventScroll:true });
   }
   function wxSubir(cuerpo, token, alAvanzar){
-    if(WA_SOLO_LECTURA) return Promise.reject(new Error('solo lectura'));   // 10-nov-2026: nada sale hacia WhatsApp desde el panel mientras esté en solo lectura
+    if(WA_SOLO_LECTURA && !WA_ARCHIVOS_EQUIPO) return Promise.reject(new Error('solo lectura'));   // 10-nov-2026: nada sale hacia WhatsApp desde el panel mientras esté en solo lectura; 13-nov-2026: salvo archivos (WA_ARCHIVOS_EQUIPO, decisión de la dueña)
     return new Promise((resolve, reject)=>{
       const x = new XMLHttpRequest();
       x.open('POST', 'https://us-central1-' + firebase.app().options.projectId + '.cloudfunctions.net/whatsappPanelEnviarArchivo');
@@ -16843,6 +16847,7 @@
     const id = WC.idAbierto; const c = WC.hilo.conv;
     const leyenda = String(ta.value || '').trim();
     if(c.intervencion && c.intervencion.activa && !c.intervencion.esMia && !WX.esAdmin){ showToast('La atiende otra persona del equipo'); return; }
+    if(!WA_ARCHIVOS_EQUIPO && (WA_SOLO_LECTURA || !WX.esAdmin)){ showToast(WA_SOLO_LECTURA ? 'Esta acción todavía no está habilitada en WhatsApp: se activará en una etapa posterior, con autorización de la administración.' : 'Por ahora, enviar archivos y notas de voz lo hace solo Administración.'); return; }   // 13-nov-2026: ANTES de «tomar» (si no, el chat quedaba tomado, MAX en silencio, y el archivo igual se rechazaba)
     WX.enviando = true; a.progreso = 0; wxPintarComposer();
     let enviado = false; let incierto = false;
     try{
@@ -17123,6 +17128,7 @@
     if(WXV.estado !== 'listo' || WX.enviando || !WC.abierta || !WC.hilo || WXV.conv !== WC.idAbierto) return;
     const id = WC.idAbierto; const c = WC.hilo.conv;
     if(c.intervencion && c.intervencion.activa && !c.intervencion.esMia && !WX.esAdmin){ showToast('La atiende otra persona del equipo'); return; }
+    if(!WA_ARCHIVOS_EQUIPO && (WA_SOLO_LECTURA || !WX.esAdmin)){ showToast(WA_SOLO_LECTURA ? 'Esta acción todavía no está habilitada en WhatsApp: se activará en una etapa posterior, con autorización de la administración.' : 'Por ahora, enviar archivos y notas de voz lo hace solo Administración.'); return; }   // 13-nov-2026: ANTES de «tomar» (si no, el chat quedaba tomado, MAX en silencio, y el archivo igual se rechazaba)
     WX.enviando = true; WXV.estado = 'enviando'; WXV.progreso = 0; wxPintarComposer();
     let enviado = false; let incierto = false;
     try{
@@ -17734,7 +17740,7 @@
   }
   function wiTextoError(e){
     const c = String((e && e.code) || '');
-    if(c.indexOf('permission-denied') >= 0) return 'Tu cuenta no tiene permiso para atender conversaciones.';
+    if(c.indexOf('permission-denied') >= 0){ const m = String((e && e.message) || ''); return /\s/.test(m) ? m.slice(0, 220) : 'Tu cuenta no tiene permiso para atender conversaciones.'; }   // 13-nov-2026: el motivo del servidor (p. ej. «Esta acción es solo para Administración.»)
     if(c.indexOf('unauthenticated') >= 0) return 'Tu sesión venció. Vuelve a iniciar sesión.';
     if(c.indexOf('unavailable') >= 0 || c.indexOf('deadline') >= 0) return 'No hubo conexión con el servidor. Revisa tu internet e intenta de nuevo.';
     if(c.indexOf('failed-precondition') >= 0 || c.indexOf('invalid-argument') >= 0) return String((e && e.message) || 'No se pudo completar la acción.').slice(0, 220);
@@ -25956,7 +25962,7 @@
       const puede = ()=> WA_PANEL_ACTIVO && verContacto && !!(a.fromWeb && a.webId);
       if(filaApi){
         filaApi.style.display = (puede() && rcClientes.admin()) ? '' : 'none';
-        if(puede() && !rcClientes.admin() && typeof wxPuedeAtender === 'function') wxPuedeAtender().then(ok=>{ if(currentAppt === a) filaApi.style.display = (ok && puede()) ? '' : 'none'; });
+        if(puede() && !rcClientes.admin() && typeof wxPuedeAtender === 'function') wxPuedeAtender().then(ok=>{ if(currentAppt === a) filaApi.style.display = (ok && puede()) ? '' : 'none'; });   // 13-nov-2026: Recepción con permiso también envía los avisos de reserva
       } }
     document.getElementById('btnFicha').style.display = verContacto ? '' : 'none';
     document.getElementById('menuWa').style.display = verContacto ? '' : 'none';
