@@ -17472,7 +17472,7 @@
     if(!WAV.prefs.sonido && !(WAV.prefs.notif && wavPermisoNotif() === 'granted')) return;   // nada que avisar: no consulta
     WAV.enCurso = true;
     try{
-      if(typeof barberoBloqueado === 'function' && barberoBloqueado()) return;
+      if(userRole === 'BARBER'){ WAV.detenido = true; WAV.motivo = 'tu cuenta no atiende chats'; return; }   // 13-nov-2026: en silencio (barberoBloqueado() mostraba un aviso y devolvía al barbero a su calendario cada 15 s)
       if(!(await wxPuedeAtender())){ WAV.detenido = true; WAV.motivo = 'tu cuenta no tiene permiso para atender chats'; return; }   // sin permiso de WhatsApp en esta sesión: no insiste
       const d = await wmLlamar('whatsappPanelConversaciones', { limite:20 });
       if(!d || d.ok !== true || !Array.isArray(d.lista)) return;
