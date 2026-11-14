@@ -5128,6 +5128,7 @@
         <button class="wm-tab" type="button" role="tab" id="wmTabConv" aria-selected="false" data-wm-accion="tab-conversaciones">Conversaciones</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabConocimiento" aria-selected="false" data-wm-accion="tab-conocimiento">Conocimiento de MAX</button>
         <button class="wm-tab" type="button" role="tab" id="wmTabVoz" aria-selected="false" data-wm-accion="tab-voz">Voz de MAX</button>
+        <button class="wm-tab" type="button" role="tab" id="wmTabAcademy" aria-selected="false" data-wm-accion="tab-academy">Academy</button>
         <span id="waChipSoloLectura" role="status" hidden style="margin-left:auto;align-self:center;font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;background:rgba(0,168,132,.14);color:#00785f;white-space:nowrap;">Modo atención</span>
       </div>
       <div id="wmContenido" aria-live="polite"></div>
@@ -5153,6 +5154,7 @@
       </div>
       <div id="wkConocimiento" hidden></div>
       <div id="wvzVoz" hidden></div>
+      <div id="waAcademy" hidden></div>
     </div>
 
     <div id="vistaProfesionales" style="display:none;">
@@ -17298,18 +17300,172 @@
     const conv = p === 'conversaciones';
     const con = p === 'conocimiento';
     const voz = p === 'voz';
-    wmEl('wmContenido').hidden = conv || con || voz; wmEl('wmTopesWrap').hidden = conv || con || voz; wmEl('wmConversaciones').hidden = !conv;
+    const aca = p === 'academy';
+    wmEl('wmContenido').hidden = conv || con || voz || aca; wmEl('wmTopesWrap').hidden = conv || con || voz || aca; wmEl('wmConversaciones').hidden = !conv;
     const wkc = wmEl('wkConocimiento'); if(wkc) wkc.hidden = !con;
     const wvz = wmEl('wvzVoz'); if(wvz) wvz.hidden = !voz;
+    const wac = wmEl('waAcademy'); if(wac) wac.hidden = !aca;
+    const tac = wmEl('wmTabAcademy'); if(tac) tac.setAttribute('aria-selected', aca ? 'true' : 'false');
     const tvz = wmEl('wmTabVoz'); if(tvz) tvz.setAttribute('aria-selected', voz ? 'true' : 'false');
-    wmEl('wmTabResumen').setAttribute('aria-selected', (conv || con || voz) ? 'false' : 'true');
+    wmEl('wmTabResumen').setAttribute('aria-selected', (conv || con || voz || aca) ? 'false' : 'true');
     wmEl('wmTabConv').setAttribute('aria-selected', conv ? 'true' : 'false');
     const tk = wmEl('wmTabConocimiento'); if(tk) tk.setAttribute('aria-selected', con ? 'true' : 'false');
-    const act = wmEl('wmActualizar'); if(act) act.style.display = (conv || con || voz) ? 'none' : '';
+    const act = wmEl('wmActualizar'); if(act) act.style.display = (conv || con || voz || aca) ? 'none' : '';
     if(conv) wxEntrar(); else wxSalir();
     if(con) wkAbrir();
     if(voz) wvzAbrir();
+    if(aca) waAbrir();
   }
+  /* ----- WhatsApp·Max · «Academy» (solo ADMIN, 31-oct-2026): plantillas comerciales de MASTERLOOK ACADEMY que MAX envía tal cual (bienvenida, planes, presencial, abono...) -----
+     Se editan aquí SIN tocar el código. El servidor (maxAcademyPanel) es la defensa real: solo ADMIN/dueña, valida precios, abonos y enlaces oficiales, guarda cada versión y deja auditoría.
+     Todo texto entra al DOM con escapeHTML. MAX nunca confirma pagos, cupos ni accesos y nunca pide datos de tarjeta: eso no depende de lo que se escriba aquí. */
+  const WA_MENSAJES = [
+    ['bienvenida', 'Bienvenida', 'Primer mensaje a quien llega desde el anuncio (termina preguntando si prefiere online o presencial).', false],
+    ['ayuda_elegir', 'Ayuda para elegir', 'Cuando el cliente no sabe qué modalidad le conviene.', false],
+    ['presupuesto', 'Objeción de presupuesto', 'Cuando el cliente dice que es caro o que tiene poco presupuesto.', false],
+    ['basico', 'Plan Online Básico', 'Cuando elige el plan básico. El enlace de compra es el que MAX envía si el cliente dice que sí.', true],
+    ['basico_incluye', 'Plan Básico: qué incluye', 'Cuando el cliente pregunta qué incluye el básico (curso completo, 30 días, grupo de WhatsApp). Termina con «¿Te envío el enlace de inscripción?»; si dice que sí, MAX envía el enlace oficial del Plan Básico.', false],
+    ['premium', 'Plan Online Premium', 'Cuando elige el premium (termina con «¿Te comparto el enlace?»). El enlace de compra es el que MAX envía si dice que sí.', true],
+    ['presencial', 'Curso Presencial Completo', 'Cuando elige el presencial (termina con «¿Te comparto las próximas fechas?»).', false],
+    ['fechas', 'Próximas fechas', 'Se envía cuando el cliente acepta ver las fechas. Si lo dejas vacío, MAX pasa a una persona (nunca inventa fechas).', false],
+    ['abono', 'Abono del presencial', 'Se envía cuando el cliente elige fecha o quiere inscribirse (termina con «¿Te comparto los datos para el abono?»).', false],
+    ['datos_abono', 'Datos para el abono', 'Cuenta de transferencia o enlace de pago del abono. Se envía cuando el cliente acepta. Si lo dejas vacío, MAX pasa a una persona.', false],
+  ];
+  const WA = { cargado:false, cargando:false, error:'', plantillas:[], editando:null, enCurso:false, seq:0, dominios:[] };
+  function waLlamar(datos){ return functions.httpsCallable('maxAcademyPanel')(datos).then(r=> r.data); }
+  function waError(e){
+    const c = String((e && e.code) || '');
+    if(c.indexOf('permission-denied') >= 0) return 'Tu cuenta no tiene permiso: las plantillas de Academy solo las administra un ADMIN.';
+    if(c.indexOf('unauthenticated') >= 0) return 'Tu sesión venció. Vuelve a iniciar sesión.';
+    if(c.indexOf('unavailable') >= 0 || c.indexOf('deadline') >= 0) return 'No hubo conexión con el servidor. Revisa tu internet e intenta de nuevo.';
+    if(c.indexOf('not-found') >= 0 || c.indexOf('unimplemented') >= 0) return 'Las plantillas de Academy aún no están activadas en este proyecto.';
+    if(c.indexOf('invalid-argument') >= 0 || c.indexOf('failed-precondition') >= 0) return String((e && e.message) || 'No se pudo completar la acción.').slice(0, 240);
+    return 'No se pudo completar la acción en este momento.';
+  }
+  async function waAbrir(){ if(!WA.cargado && !WA.cargando) await waCargar(); else waPintar(); }
+  async function waCargar(){
+    const mio = ++WA.seq; WA.cargando = true; WA.error = ''; waPintar();
+    try{
+      const r = await waLlamar({ accion:'listar' });
+      if(mio !== WA.seq) return;
+      if(!r || r.ok !== true || !Array.isArray(r.plantillas)) throw new Error('respuesta');
+      WA.plantillas = r.plantillas; WA.dominios = r.dominios || []; WA.cargado = true;
+    }catch(e){ if(mio !== WA.seq) return; WA.error = waError(e); }
+    finally{ if(mio === WA.seq) WA.cargando = false; }
+    waPintar();
+  }
+  const waF = (id)=> { const x = document.getElementById(id); return x ? x.value : ''; };
+  function waListaHTML(){
+    if(!WA.plantillas.length) return `<div class="wm-vacio">${WM_ICONS.info}<span>Aún no hay plantillas de Academy. Crea la primera con «Nueva plantilla».</span></div>`;
+    return WA.plantillas.map(p=> `<article class="wk-item">
+      <div class="wk-item-cab"><b>${escapeHTML(p.nombre)}</b> <span class="wm-pill ${p.activa ? 'ok' : 'aviso'}">${p.activa ? 'Activa' : 'Inactiva'}</span></div>
+      <p class="wi-nota">${escapeHTML((p.modalidades || []).map(m=> m.nombre + ' $' + Number(m.precioClp).toLocaleString('es-CL') + (m.abonoClp != null ? ' (abono $' + Number(m.abonoClp).toLocaleString('es-CL') + ')' : '')).join(' · ') || 'Sin modalidades')}</p>
+      <p class="wi-nota">Versión ${escapeHTML(String(p.version))}${p.actualizadoPorNombre ? ' · última edición de ' + escapeHTML(p.actualizadoPorNombre) : ''}${p.actualizadoEl ? ' · ' + escapeHTML(wkFecha(p.actualizadoEl)) : ''} · Anuncios enlazados: ${escapeHTML(String((p.anuncios || []).filter(a=> a.tipo !== 'palabra').length))}</p>
+      <div class="wk-acc">
+        <button class="wm-btn wm-btn-tinta" type="button" data-wm-accion="wa-editar" data-wa-id="${escapeHTML(p.id)}"${WA.enCurso ? ' disabled' : ''}>Editar</button>
+        <button class="wm-btn wm-btn-suave" type="button" data-wm-accion="wa-activar" data-wa-id="${escapeHTML(p.id)}" data-wa-activa="${p.activa ? '0' : '1'}"${WA.enCurso ? ' disabled' : ''}>${p.activa ? 'Desactivar' : 'Activar'}</button>
+      </div></article>`).join('');
+  }
+  function waModalidadHTML(m, i){
+    return `<fieldset class="wa-mod" data-wa-mod="${i}" style="border:1px solid var(--rv-line);border-radius:12px;padding:10px 12px;margin:8px 0;">
+      <legend style="font-size:12px;padding:0 6px;">Modalidad ${i + 1}</legend>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;">
+        <div><label>Clave (sin espacios)</label><input type="text" data-f="clave" maxlength="30" value="${escapeHTML(m.clave || '')}"></div>
+        <div><label>Nombre</label><input type="text" data-f="nombre" maxlength="60" value="${escapeHTML(m.nombre || '')}"></div>
+        <div><label>Precio (pesos)</label><input type="number" data-f="precioClp" min="0" step="1" value="${escapeHTML(m.precioClp != null ? String(m.precioClp) : '')}"></div>
+        <div><label>Abono (pesos, opcional)</label><input type="number" data-f="abonoClp" min="0" step="1" value="${escapeHTML(m.abonoClp != null ? String(m.abonoClp) : '')}"></div>
+      </div>
+      <div><label>Enlace oficial de compra (https, dominio de MASTERLOOK; opcional)</label><input type="url" data-f="enlaceCompra" maxlength="300" value="${escapeHTML(m.enlaceCompra || '')}"></div>
+      <div><label>Resumen para MAX (qué incluye, condiciones)</label><textarea data-f="resumen" rows="2" maxlength="400">${escapeHTML(m.resumen || '')}</textarea></div>
+      <button class="wm-btn wm-btn-suave" type="button" data-wm-accion="wa-quitar-mod" data-wa-i="${i}">Quitar esta modalidad</button></fieldset>`;
+  }
+  function waFormHTML(p){
+    const dis = WA.enCurso ? ' disabled' : '';
+    const anuncios = (p.anuncios || []).map(a=> a.tipo + ':' + a.valor).join('\n');
+    const faq = (p.faq || []).map(f=> f.pregunta + '\n' + f.respuesta).join('\n\n');
+    return `<div class="wk-form">
+      <div><label for="waNombre">Nombre de la plantilla</label><input id="waNombre" type="text" maxlength="80" value="${escapeHTML(p.nombre || '')}"></div>
+      <div><label for="waId">Identificador (letras minúsculas, números y guiones; no se puede cambiar después)</label><input id="waId" type="text" maxlength="40" value="${escapeHTML(p.id || '')}"${p._nueva ? '' : ' readonly'}></div>
+      <div><label><input id="waActiva" type="checkbox"${p.activa ? ' checked' : ''}> Plantilla activa (MAX la usa)</label></div>
+      <div><label for="waAnuncios">Anuncios que la activan (uno por línea: <code>id:123456789</code>, <code>url:fb.me/abc</code> o <code>palabra:ondulación permanente</code>). El id del anuncio lo muestra Meta en el administrador de anuncios.</label><textarea id="waAnuncios" rows="3">${escapeHTML(anuncios)}</textarea></div>
+      <div><label for="waClaves">Palabras que también la activan en una consulta directa (separadas por coma)</label><input id="waClaves" type="text" value="${escapeHTML((p.palabrasClave || []).join(', '))}"></div>
+      <h4 style="margin:14px 0 4px;">Modalidades y precios</h4>
+      <div id="waMods">${(p.modalidades || []).map(waModalidadHTML).join('')}</div>
+      <button class="wm-btn wm-btn-suave" type="button" data-wm-accion="wa-agregar-mod"${dis}>Agregar modalidad</button>
+      <div><label for="waMedios">Medios de pago aceptados (lo dice MAX tal cual)</label><input id="waMedios" type="text" maxlength="600" value="${escapeHTML(p.mediosPago || '')}"></div>
+      <h4 style="margin:14px 0 4px;">Mensajes oficiales (MAX los envía exactamente como están escritos)</h4>
+      <p class="wi-nota">Si dejas un mensaje vacío, MAX no lo inventa: conversa con los datos oficiales o pasa a una persona. Puedes usar emojis y saltos de línea.</p>
+      ${WA_MENSAJES.map(m=> { const v = (p.mensajes || {})[m[0]] || {}; return `<div><label for="waMsg_${m[0]}"><b>${escapeHTML(m[1])}</b> — ${escapeHTML(m[2])}</label><textarea id="waMsg_${m[0]}" data-wa-msg="${m[0]}" rows="5" maxlength="1600">${escapeHTML(v.texto || '')}</textarea>${m[3] ? `<input type="url" id="waEnl_${m[0]}" data-wa-enl="${m[0]}" maxlength="300" placeholder="Enlace oficial de compra (opcional)" value="${escapeHTML(v.enlace || '')}">` : ''}</div>`; }).join('')}
+      <div><label for="waFechas">Próximas fechas del presencial (referencia para MAX)</label><textarea id="waFechas" rows="2" maxlength="600">${escapeHTML(p.proximasFechas || '')}</textarea></div>
+      <div><label for="waFaq">Preguntas frecuentes (una por bloque separado por una línea en blanco: primera línea la pregunta, las siguientes la respuesta)</label><textarea id="waFaq" rows="5">${escapeHTML(faq)}</textarea></div>
+      <div><label for="waNotas">Notas para MAX (indicaciones de la administración)</label><textarea id="waNotas" rows="2" maxlength="800">${escapeHTML(p.notasParaMax || '')}</textarea></div>
+      <div><label><input id="waPromos" type="checkbox"${p.permitePromos ? ' checked' : ''}> Permitir que MAX hable de promociones o descuentos (déjalo apagado salvo que exista una promoción real)</label></div>
+      <p class="wi-nota">MAX nunca confirma pagos, cupos ni accesos (siempre los verifica una persona) y nunca pide datos de tarjeta. Los enlaces solo pueden ser https de: ${escapeHTML((WA.dominios || []).join(', '))}.</p>
+      <div class="wk-acc">
+        <button class="wm-btn wm-btn-tinta" type="button" data-wm-accion="wa-guardar"${dis}>Guardar plantilla</button>
+        <button class="wm-btn wm-btn-suave" type="button" data-wm-accion="wa-cancelar"${dis}>Cancelar</button>
+      </div></div>`;
+  }
+  function waPintar(){
+    const el = wmEl('waAcademy'); if(!el) return;
+    let cuerpo;
+    if(WA.error && !WA.cargado) cuerpo = `<div class="wm-estado-vacio">${WM_ICONS.info}<h3>No se pudo abrir</h3><p>${escapeHTML(WA.error)}</p><button class="wm-btn wm-btn-tinta" type="button" data-wm-accion="wa-recargar">Reintentar</button></div>`;
+    else if(WA.cargando && !WA.cargado) cuerpo = '<div aria-hidden="true"><div class="wm-esq" style="height:70px;margin:10px 0;"></div></div>';
+    else if(WA.editando) cuerpo = `<article class="wk-item">${waFormHTML(WA.editando)}</article>`;
+    else cuerpo = waListaHTML();
+    el.innerHTML = `<section class="wm-card" aria-label="Academy">
+      <p class="wk-intro"><b>Academy.</b> Aquí editas lo que MAX responde a quienes llegan desde los anuncios de MASTERLOOK ACADEMY: precios, planes, beneficios y condiciones. Los mensajes se envían <b>exactamente como los escribas</b>; los cambios aplican al instante, sin tocar el código, y cada versión queda guardada.</p>
+      ${WA.editando ? '' : '<div class="wk-barra"><div></div><div><button class="wm-btn wm-btn-tinta" type="button" data-wm-accion="wa-nueva"' + (WA.enCurso ? ' disabled' : '') + '>Nueva plantilla</button> <button class="wm-btn wm-btn-suave" type="button" data-wm-accion="wa-recargar">Actualizar</button></div></div>'}
+      ${cuerpo}</section>`;
+  }
+  function waLeerForm(){
+    const mods = [...document.querySelectorAll('#waMods .wa-mod')].map(f=> {
+      const g = (k)=> (f.querySelector('[data-f="' + k + '"]') || {}).value || '';
+      const ab = g('abonoClp').trim();
+      return { clave:g('clave').trim().toLowerCase(), nombre:g('nombre').trim(), precioClp:g('precioClp').trim() === '' ? NaN : Number(g('precioClp')), abonoClp: ab === '' ? null : Number(ab), enlaceCompra:g('enlaceCompra').trim() || null, resumen:g('resumen').trim() };
+    });
+    const mensajes = {};
+    WA_MENSAJES.forEach(m=> { const t = waF('waMsg_' + m[0]).trim(); const en = m[3] ? waF('waEnl_' + m[0]).trim() : ''; if(t || en) mensajes[m[0]] = { texto:t, enlace:en || null }; });
+    const anuncios = waF('waAnuncios').split('\n').map(l=> l.trim()).filter(Boolean).map(l=> { const i = l.indexOf(':'); const t = i > 0 ? l.slice(0, i).trim().toLowerCase() : ''; if(['id','url','palabra'].indexOf(t) >= 0) return { tipo:t, valor:l.slice(i + 1).trim() }; return /^[0-9]{6,}$/.test(l) ? { tipo:'id', valor:l } : { tipo:'palabra', valor:l }; });
+    const faq = waF('waFaq').split(/\n\s*\n/).map(b=> b.trim().split('\n')).filter(a=> a.length >= 2 && a[0].trim()).map(a=> ({ pregunta:a[0].trim(), respuesta:a.slice(1).join('\n').trim() }));
+    return { id:waF('waId').trim().toLowerCase(), nombre:waF('waNombre').trim(), activa:!!(document.getElementById('waActiva') || {}).checked, permitePromos:!!(document.getElementById('waPromos') || {}).checked,
+      anuncios, palabrasClave:waF('waClaves').split(',').map(x=> x.trim()).filter(Boolean), modalidades:mods, mensajes, proximasFechas:waF('waFechas').trim(), mediosPago:waF('waMedios').trim(), notasParaMax:waF('waNotas').trim(), faq };
+  }
+  async function waGuardar(){
+    if(WA.enCurso) return;
+    const p = waLeerForm();
+    if(p.modalidades.some(m=> isNaN(m.precioClp))){ showToast('Cada modalidad necesita un precio en pesos.'); return; }
+    WA.enCurso = true; waPintar();
+    try{
+      const r = await waLlamar({ accion:'guardar', plantilla:p });
+      showToast('Plantilla guardada (versión ' + r.version + ').');
+      WA.editando = null; WA.cargado = false; await waCargar();
+    }catch(e){
+      const msg = waError(e);
+      try{ await mgAlert(msg, { titulo:'No se guardó la plantilla', textoConfirmar:'Entendido' }); }catch(e2){ showToast(msg); }
+    }finally{ WA.enCurso = false; waPintar(); }
+  }
+  async function waActivar(id, activa){
+    if(WA.enCurso) return;
+    const ok = await mgConfirm(activa ? 'MAX empezará a usar esta plantilla con quienes lleguen desde sus anuncios o pregunten por el curso. ¿Activarla?' : 'MAX dejará de usar esta plantilla: volverá a responder de forma general. ¿Desactivarla?', { titulo: activa ? 'Activar plantilla' : 'Desactivar plantilla', textoConfirmar: activa ? 'Activar' : 'Desactivar' });
+    if(!ok) return;
+    WA.enCurso = true; waPintar();
+    try{ await waLlamar({ accion:'activar', id, activa }); showToast(activa ? 'Plantilla activada.' : 'Plantilla desactivada.'); WA.cargado = false; await waCargar(); }
+    catch(e){ const msg = waError(e); try{ await mgAlert(msg, { titulo:'No se hizo el cambio', textoConfirmar:'Entendido' }); }catch(e2){ showToast(msg); } }
+    finally{ WA.enCurso = false; waPintar(); }
+  }
+  function waAccion(a, b){
+    if(a === 'wa-nueva'){ WA.editando = { _nueva:true, id:'', nombre:'', activa:false, anuncios:[], palabrasClave:[], modalidades:[{ clave:'basico', nombre:'Online Básico', precioClp:null, abonoClp:null }, { clave:'premium', nombre:'Online Premium', precioClp:null, abonoClp:null }, { clave:'presencial', nombre:'Presencial Completo', precioClp:null, abonoClp:null }], mensajes:{}, mediosPago:'Webpay, Mercado Pago y transferencia bancaria', faq:[] }; waPintar(); }
+    else if(a === 'wa-editar'){ const p = WA.plantillas.find(x=> x.id === b.getAttribute('data-wa-id')); if(p){ WA.editando = JSON.parse(JSON.stringify(p)); waPintar(); } }
+    else if(a === 'wa-cancelar'){ WA.editando = null; waPintar(); }
+    else if(a === 'wa-guardar') waGuardar();
+    else if(a === 'wa-activar') waActivar(b.getAttribute('data-wa-id'), b.getAttribute('data-wa-activa') === '1');
+    else if(a === 'wa-recargar'){ WA.cargado = false; waCargar(); }
+    else if(a === 'wa-agregar-mod'){ const p = waLeerForm(); WA.editando = { ...WA.editando, ...p, modalidades:[...p.modalidades.map(m=> ({ ...m, precioClp: isNaN(m.precioClp) ? null : m.precioClp })), { clave:'', nombre:'', precioClp:null, abonoClp:null }] }; waPintar(); }
+    else if(a === 'wa-quitar-mod'){ const p = waLeerForm(); const i = Number(b.getAttribute('data-wa-i')); p.modalidades.splice(i, 1); WA.editando = { ...WA.editando, ...p, modalidades:p.modalidades.map(m=> ({ ...m, precioClp: isNaN(m.precioClp) ? null : m.precioClp })) }; waPintar(); }
+  }
+
+
   /* ===== AVISO DE MENSAJES NUEVOS (3-nov-2026) =====
      Cada vez que un CLIENTE escribe: sonido (Web Audio, sin archivos) + notificación del navegador + aviso en la pestaña. Funciona desde cualquier pantalla del panel
      mientras la pestaña esté abierta. Solo LEE (misma llamada de solo lectura que la lista de conversaciones); no envía ni cambia nada. Preferencias por dispositivo (localStorage). */
@@ -17897,6 +18053,8 @@
     else if(a === 'tab-conversaciones') wmCambiarPestana('conversaciones');
     else if(a === 'tab-conocimiento') wmCambiarPestana('conocimiento');
     else if(a === 'tab-voz') wmCambiarPestana('voz');
+    else if(a === 'tab-academy') wmCambiarPestana('academy');
+    else if(a.indexOf('wa-') === 0) waAccion(a, b);   // 14-nov: plantillas de Academy (solo ADMIN; el servidor maxAcademyPanel es la defensa real)
     else if(a === 'wvz-recargar') wvzCargar();
     else if(a === 'wvz-generar') wvzGenerar(b.getAttribute('data-wvz-prov'), b.getAttribute('data-wvz-voz'));
     else if(a === 'wvz-todas') wvzGenerarTodas(b.getAttribute('data-wvz-prov'));
