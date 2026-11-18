@@ -2059,6 +2059,10 @@
   .wa-link svg{width:12px;height:12px;}
   /* Aviso oficial por WhatsApp (plantilla de la API): mismo aspecto de píldora que «Hablar por WhatsApp», en el color de acento del panel */
   .wa-api-row{position:relative;}
+  /* 18-nov-2026: «Contactar por WhatsApp» (abre el chat del cliente dentro del panel) */
+  .wa-contactar-btn{border:0;cursor:pointer;font-family:inherit;}
+  .wa-contactar-btn:disabled{opacity:.55;cursor:default;}
+  .wa-contactar-btn:focus-visible{outline:2px solid var(--ok);outline-offset:2px;}
   .wa-api-btn{border:0;cursor:pointer;font-family:inherit;color:var(--accent);background:var(--accent-tint);}
   .wa-api-btn:disabled{opacity:.55;cursor:default;}
   .wa-api-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
@@ -2666,6 +2670,11 @@
   .wx-aviso.info{background:var(--panel-2);color:var(--rv-ink-soft);}
   .wx-aviso[hidden]{display:none;}
   .wx-espera{display:flex;flex-direction:column;gap:6px;}
+  /* 18-nov-2026: reserva desde la que se escribe (cabecera del chat) y alternativa lista cuando el texto no cabe en una plantilla */
+  .wx-cab-res{display:block;font-size:11.5px;color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wx-alt{display:flex;flex-direction:column;gap:8px;}
+  .wx-alt q{display:block;quotes:none;padding:7px 9px;border:1px solid var(--rv-line);border-radius:8px;background:var(--panel);color:var(--text-hi);font-size:12.5px;line-height:1.45;}
+  .wx-alt-b{display:flex;gap:8px;flex-wrap:wrap;}
   .wx-espera-i{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px;border:1px solid var(--rv-line);border-radius:8px;background:var(--panel);}
   .wx-espera-i span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .wx-bajar[hidden],.wx-nota[hidden]{display:none;}
@@ -7329,6 +7338,13 @@
           Hablar por WhatsApp
         </a>
       </div>
+      <div class="contact-row wa-contactar-row" id="dWaContactarRow" style="display:none;">
+        <div class="left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 21l2.1-5.6A8.5 8.5 0 1 1 21 11.5z"/></svg>
+          <span>Escribirle desde el panel</span>
+        </div>
+        <button type="button" class="wa-link wa-contactar-btn" id="dWaContactarBtn">Contactar por WhatsApp</button>
+      </div>
       <div class="contact-row wa-api-row" id="dWaApiRow" style="display:none;">
         <div class="left">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
@@ -7675,7 +7691,7 @@
      maxConocimientoPanel: solo sus lecturas, cualquier sesión. whatsappPanelAccion (pausar, reanudar): solo Administración. whatsappPanelIntervencion (tomar, devolver, responder, enviar, cancelarEnEspera): Administración y, desde el 13-nov-2026,
      Recepción con el permiso WHATSAPP_CHAT ya comprobado en esta sesión (WX.permitido, ver wxPuedeAtender). Desde el 13-nov-2026 también 'plantilla' (avisos de reserva con plantilla). Siguen bloqueados para TODOS: topes, avisos automáticos, voz, conocimiento, iniciar y transcribir (archivos: ver wxSubir y WA_ARCHIVOS_EQUIPO). */
   (function waCandadoSoloLectura(){
-    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: ['pausar','reanudar'], whatsappPanelIntervencion: ['tomar','devolver','responder','enviar','cancelarEnEspera','plantilla'] };   // Fase B-2 (modo atención) + 13-nov-2026 'plantilla' (avisos de reserva): solo estas acciones (quién puede usarlas: ver la compuerta de abajo); el resto sigue bloqueado
+    const LECTURA = { maxConocimientoPanel: ['resumen','listar','frecuentes','vozConfig','vozMuestras','vozMuestraAudio'], whatsappPanelAccion: ['pausar','reanudar'], whatsappPanelIntervencion: ['tomar','devolver','responder','enviar','cancelarEnEspera','plantilla','abrirReserva'] };   /* 18-nov-2026: 'abrirReserva' (Contactar por WhatsApp desde la reserva; solo lectura en el servidor) */   // Fase B-2 (modo atención) + 13-nov-2026 'plantilla' (avisos de reserva): solo estas acciones (quién puede usarlas: ver la compuerta de abajo); el resto sigue bloqueado
     const original = functions.httpsCallable.bind(functions);
     functions.httpsCallable = function(nombre, opciones){
       const f = original(nombre, opciones);
@@ -16254,7 +16270,7 @@
   const WC = { expandidos:new Set(), pestana:'resumen', cargadaLista:false, siguienteCursor:null, idAbierto:null, estado:'todos', busqueda:'', lista:[], siguiente:null, ventana:300, cargando:false, cargandoMas:false, errorLista:'', noActivado:false, seq:0, temporizador:null,
     abierta:false, hilo:null, hiloCargando:false, hiloError:'', hiloSeq:0, cargandoPrevios:false };
   const WC_ESTADOS = { max:['ok', 'Con Max'], persona:['info', 'Con una persona'], pausado:['aviso', 'En pausa'], optout:['', 'No contactar'] };
-  const WC_TIPOS = { interactive:'Botones o lista', image:'Imagen', video:'Video', audio:'Audio', document:'Documento', sticker:'Sticker', button:'Botón', location:'Ubicación', contacts:'Contacto' };
+  const WC_TIPOS = { template:'Mensaje oficial de WhatsApp', interactive:'Botones o lista', image:'Imagen', video:'Video', audio:'Audio', document:'Documento', sticker:'Sticker', button:'Botón', location:'Ubicación', contacts:'Contacto' };
   const WC_ENTREGA = { enviando:'Enviando…', enviado:'Enviado', entregado:'Entregado', leido:'Leído', fallido:'No entregado', eliminado:'Eliminado por el cliente' };
   const WC_MEDIA = { imagen:'Imagen recibida', video:'Video recibido', audio:'Audio', documento:'Documento' };
   const wcZona = 'America/Santiago';
@@ -16429,8 +16445,15 @@
     const ini = wxIniciales(c);
     return `<button class="wx-volver" type="button" data-wm-accion="wc-volver" aria-label="Volver a los chats">${WC_ICONS.atras}</button>
       <span class="wx-av">${ini ? escapeHTML(ini) : WM_ICONS.persona}</span>
-      <div class="wx-cab-q"><b>${escapeHTML(wcNombre(c))}</b><span>${escapeHTML((c.telefonoCompleto || c.telefonoMasc) + (c.pendiente ? ' · ' + (wmMotivoEspecial(c.motivo) ? wmMotivoTexto(c.motivo) : 'esperando respuesta') : ''))}</span></div>
+      <div class="wx-cab-q"><b>${escapeHTML(wcNombre(c))}</b><span>${escapeHTML((c.telefonoCompleto || c.telefonoMasc) + (c.pendiente ? ' · ' + (wmMotivoEspecial(c.motivo) ? wmMotivoTexto(c.motivo) : 'esperando respuesta') : ''))}</span>${wxReservaCabHTML()}</div>
       <div class="wx-cab-r">${estado}${accion}</div>`;
+  }
+  /** 18-nov-2026: la reserva desde la que se abrió el chat («Contactar por WhatsApp»), en una línea discreta bajo el nombre. */
+  function wxReservaCabHTML(){
+    const x = WX.contacto; if(!x || x.id !== WC.idAbierto || !x.reserva) return '';
+    const r = x.reserva; const f = /^\d{4}-\d{2}-\d{2}$/.test(String(r.fecha || '')) ? r.fecha.slice(8, 10) + '-' + r.fecha.slice(5, 7) : '';
+    const partes = [r.servicio, [f, r.hora].filter(Boolean).join(' '), r.sucursal, r.profesional].filter(Boolean);
+    return partes.length ? `<span class="wx-cab-res">${escapeHTML((x.nombre ? 'Reserva de ' + x.nombre : 'Reserva') + ': ' + partes.join(' · '))}</span>` : '';
   }
   function wxTelFormato(d){
     const t = String(d || '').replace(/\D/g, '');
@@ -16578,7 +16601,7 @@
     env.disabled = !!bloqueo || WX.enviando;
     /* 30-oct: bandeja simple. Fuera de las 24 h ya no se bloquea: el servidor abre la conversación con una plantilla aprobada y el texto sale cuando el cliente responde. */
     const fuera = !!(c && (!c.ultimoEntranteEl || Date.now() - Date.parse(c.ultimoEntranteEl) > 24 * 3600 * 1000));
-    ta.placeholder = bloqueo && bloqueo !== 'cargando' ? 'No puedes escribir en este chat' : (fuera ? 'Escribe un mensaje (fuera de las 24 h se abre con una plantilla)' : (mia ? 'Escribe un mensaje' : 'Escribe un mensaje (Max se silencia al enviar)'));
+    ta.placeholder = bloqueo && bloqueo !== 'cargando' ? 'No puedes escribir en este chat' : (fuera ? 'Escribe tu mensaje (pasaron más de 24 h: saldrá como mensaje oficial de WhatsApp)' : (mia ? 'Escribe un mensaje' : 'Escribe un mensaje (Max se silencia al enviar)'));
     const clip = wmEl('wxClip'); if(clip) clip.disabled = !!bloqueo || WX.enviando;
     if(bloqueo && WX.menu) wxMenu(false);
     if(!bloqueo && WX.adjunto && WX.adjunto.conv === WC.idAbierto) ta.placeholder = 'Añade un mensaje (opcional)';
@@ -16587,7 +16610,13 @@
     wxvPintar();
     if(nota){
       const espera = (!bloqueo && c && Array.isArray(c.enEspera)) ? c.enEspera : [];
+      const alt = WX.alternativa && WX.alternativa.id === WC.idAbierto ? WX.alternativa : null;
       if(bloqueo && bloqueo !== 'cargando'){ nota.hidden = false; nota.textContent = bloqueo; }
+      else if(alt){
+        nota.hidden = false;
+        nota.innerHTML = '<div class="wx-alt"><span>' + escapeHTML(alt.motivo) + ' Puedes enviarlo así: le llega este aviso oficial y tu mensaje completo sale apenas responda.</span><q>' + escapeHTML(alt.avisoTexto || '') + '</q>' +
+          '<div class="wx-alt-b"><button type="button" class="wm-btn wm-btn-tinta" data-wm-accion="wx-alt-enviar"' + (WX.enviando ? ' disabled' : '') + '>Enviar así</button><button type="button" class="wm-btn wm-btn-suave" data-wm-accion="wx-alt-editar">Editar mensaje</button></div></div>';
+      }
       else if(c && c.estado === 'optout' && c.consultaPosBaja){ nota.hidden = false; nota.textContent = 'Pidió no recibir mensajes de MASTERLOOK, pero volvió a escribir: puedes responderle durante 24 horas desde su último mensaje. Su baja sigue vigente para mensajes que iniciemos nosotros.'; }
       else if(espera.length){
         nota.hidden = false;
@@ -16627,6 +16656,26 @@
     wxMarcarVisto(c.id); wcPintarLista(); wxAjustar();
     await wcCargarHilo(false);
     if(WC.idAbierto === c.id && !wxToque()){ const t = wmEl('wxTexto'); if(t && !t.disabled) t.focus({ preventScroll:true }); }
+  }
+  /** 18-nov-2026: abre el chat de un cliente por su id (desde «Contactar por WhatsApp»). Si nunca conversó, se abre vacío y listo para escribir:
+      la conversación se crea recién al enviar (una sola, por su número). */
+  async function wcAbrirPorId(id, ctx){
+    if(!/^[A-Za-z0-9_-]{1,64}$/.test(String(id || ''))) return;
+    WX.contacto = ctx ? { id, bookingId:ctx.bookingId, reserva:ctx.reserva || null, nombre:ctx.nombre || null } : null; WX.alternativa = null;
+    wvLimpiar(); wxLimpiarAdjunto(); wxvLimpiar(true);
+    WC.abierta = true; WC.hilo = null; WC.hiloError = ''; WC.expandidos = new Set(); WC.hiloCargando = true; WC.idAbierto = id; WX.nuevos = 0;
+    wmEl('wmConversaciones').classList.add('wx-abierto');
+    wmEl('wcVistaHilo').innerHTML = wcHiloHTML();
+    wxPintarCabecera(); wxPintarMensajes('abajo'); wxPintarComposer();
+    const ta = wmEl('wxTexto'); if(ta){ ta.value = WX.borradores.get(id) || ''; wxAutoAltura(ta); }
+    wxAjustar();
+    if(ctx && ctx.existe){ wxMarcarVisto(id); await wcCargarHilo(false); }
+    else {
+      WC.hiloSeq++; WC.hiloCargando = false;
+      WC.hilo = { conv:{ id, nombre:(ctx && ctx.nombre) || 'Cliente', nombrePerfil:(ctx && ctx.nombre) || null, telefonoMasc:(ctx && ctx.telefono) || '', estado:'max', intervencion:null, ultimoEntranteEl:null, enEspera:[], pendiente:false }, mensajes:[], anteriores:false, cursor:null, nuevo:true };
+      wxPintarCabecera(); wxPintarMensajes('abajo'); wxPintarComposer();
+    }
+    if(WC.idAbierto === id && !wxToque()){ const t = wmEl('wxTexto'); if(t && !t.disabled) t.focus({ preventScroll:true }); }
   }
   async function wcCargarHilo(previos){
     const mio = ++WC.hiloSeq;
@@ -16722,14 +16771,16 @@
     finally{ WX.refrescandoLista = false; }
   }
   function wcVolverALista(){
+    WX.contacto = null; WX.alternativa = null;
     WC.abierta = false; WC.hilo = null; WC.hiloSeq++; WC.idAbierto = null; WX.nuevos = 0;
     wvLimpiar();
     const cont = wmEl('wmConversaciones'); if(cont) cont.classList.remove('wx-abierto');
     const h = wmEl('wcVistaHilo'); if(h) h.innerHTML = wcHiloHTML();
     wcPintarLista();
   }
-  async function wxEnviar(){
+  async function wxEnviar(opts){
     if(WX.enviando || !WC.abierta || !WC.hilo) return;
+    const opcion = opts && opts.opcion === 'aviso' ? 'aviso' : null;
     if(WX.adjunto && WX.adjunto.conv === WC.idAbierto) return wxEnviarArchivo();
     const ta = wmEl('wxTexto'); if(!ta || ta.disabled) return;
     const texto = String(ta.value || '').trim(); if(!texto) return;
@@ -16740,18 +16791,25 @@
     try{
       /* 30-oct: UNA sola llamada. El servidor decide con lo que ya sabe del cliente: dentro de las 24 h sale directo; fuera, abre con una plantilla aprobada y el texto espera la respuesta; sin autorización no envía y explica. */
       if(!WX.claveEnvio || WX.claveEnvio.id !== id || WX.claveEnvio.texto !== texto) WX.claveEnvio = { id, texto, clave: wxClave() };
-      const r = await llamar({ accion:'enviar', id, texto, clave: WX.claveEnvio.clave });
+      /* 18-nov-2026: desde «Contactar por WhatsApp» viaja la reserva: el servidor usa SU celular y SUS datos (nunca otra reserva) */
+      const ctxRes = WX.contacto && WX.contacto.id === id && WX.contacto.bookingId ? WX.contacto.bookingId : null;
+      const era = !!WC.hilo.nuevo;
+      const r = await llamar({ accion:'enviar', id, texto, clave: WX.claveEnvio.clave, ...(ctxRes ? { bookingId:ctxRes } : {}), ...(opcion ? { opcion } : {}) });
       if(!r || r.ok !== true) throw new Error('respuesta');
-      WX.claveEnvio = null;
-      if(r.modo === 'plantilla' || r.modo === 'en_espera') showToast(r.mensaje || 'Se abrió la conversación; tu mensaje saldrá cuando el cliente responda.');
+      WX.claveEnvio = null; WX.alternativa = null;
+      if(r.modo !== 'directo') showToast(r.mensaje || 'Mensaje enviado.');
+      if(era && id === WC.idAbierto){ WC.hilo = null; WC.hiloCargando = true; wxPintarMensajes('abajo'); await wcCargarHilo(false); try{ wxRefrescarLista(); }catch(e2){ /* la lista se actualiza sola */ } }
       if(id === WC.idAbierto){ ta.value = ''; wxAutoAltura(ta); }
       WX.borradores.delete(id); wxGuardarBorradores();
       WX.enviando = false;
       await wxRefrescarHilo(true);
       const cont = wmEl('wxMsgs'); if(cont && id === WC.idAbierto){ cont.scrollTop = cont.scrollHeight; WX.nuevos = 0; wxPintarNuevos(); }
     }catch(e){
-      showToast(wiTextoError(e));   // el texto escrito se conserva en el campo
-      await wxRefrescarHilo(true);
+      const det = e && e.details && typeof e.details === 'object' ? e.details : null;
+      if(det && det.codigo === 'no_cabe_en_plantilla' && det.alternativa === 'aviso'){
+        WX.alternativa = { id, motivo:String(e.message || '').slice(0, 300), avisoTexto:String(det.avisoTexto || '').slice(0, 600) };   // se muestra en la nota del chat, sin ventanas emergentes
+      } else showToast(wiTextoError(e));   // el texto escrito se conserva en el campo
+      if(!WC.hilo || !WC.hilo.nuevo) await wxRefrescarHilo(true);
     }finally{
       WX.enviando = false; wxPintarComposer();
       if(id === WC.idAbierto && !wxToque()){ const t = wmEl('wxTexto'); if(t && !t.disabled) t.focus({ preventScroll:true }); }
@@ -18115,6 +18173,8 @@
         }finally{ b.disabled = false; b.textContent = txt; }
       })();
     }
+    else if(a === 'wx-alt-enviar'){ if(WX.alternativa && WX.alternativa.id === WC.idAbierto) wxEnviar({ opcion:'aviso' }); }
+    else if(a === 'wx-alt-editar'){ WX.alternativa = null; wxPintarComposer(); const t = wmEl('wxTexto'); if(t && !t.disabled) t.focus(); }
     else if(a === 'wx-cancelar-espera'){
       const k = String(b.getAttribute('data-k') || ''); const id = WC.idAbierto;
       if(!k || !id) return;
@@ -26122,6 +26182,12 @@
         filaApi.style.display = (puede() && rcClientes.admin()) ? '' : 'none';
         if(puede() && !rcClientes.admin() && typeof wxPuedeAtender === 'function') wxPuedeAtender().then(ok=>{ if(currentAppt === a) filaApi.style.display = (ok && puede()) ? '' : 'none'; });   // 13-nov-2026: Recepción con permiso también envía los avisos de reserva
       } }
+    { const filaC = document.getElementById('dWaContactarRow');   // 18-nov-2026: «Contactar por WhatsApp» desde CADA reserva (ADMIN y Recepción con permiso)
+      const puedeC = ()=> WA_PANEL_ACTIVO && verContacto && !!a.webId;
+      if(filaC){
+        filaC.style.display = (puedeC() && rcClientes.admin()) ? '' : 'none';
+        if(puedeC() && !rcClientes.admin() && typeof wxPuedeAtender === 'function') wxPuedeAtender().then(ok=>{ if(currentAppt === a) filaC.style.display = (ok && puedeC()) ? '' : 'none'; });
+      } }
     document.getElementById('btnFicha').style.display = verContacto ? '' : 'none';
     document.getElementById('menuWa').style.display = verContacto ? '' : 'none';
 
@@ -27434,6 +27500,24 @@
       actualizarAbonoGuardarDisabled();
     }
   });
+
+  /* 18-nov-2026 (dueña): «Contactar por WhatsApp» -> se abre el chat del cliente de ESTA reserva dentro del panel; recepción solo escribe y presiona Enviar.
+     El servidor identifica al cliente, su celular y su reserva, y decide solo cómo enviar (dentro de 24 h directo; fuera, mensaje oficial de WhatsApp). */
+  (function(){
+    const btn = document.getElementById('dWaContactarBtn'); if(!btn) return;
+    btn.addEventListener('click', async ()=>{
+      const a = currentAppt; if(!a || !a.webId || btn.disabled) return;
+      const txt = btn.textContent; btn.disabled = true; btn.textContent = 'Abriendo…';
+      try{
+        const r = await functions.httpsCallable('whatsappPanelIntervencion')({ accion:'abrirReserva', bookingId:a.webId }).then(x=> x.data);
+        if(!r || r.ok !== true || !r.id) throw new Error('respuesta');
+        closeDrawer();
+        await mostrarVistaWhatsappChat();
+        await wcAbrirPorId(r.id, { bookingId:a.webId, nombre:r.nombre, telefono:r.telefono, reserva:r.reserva, existe:r.existe });
+      }catch(e){ showToast(wiTextoError(e)); }
+      finally{ btn.disabled = false; btn.textContent = txt; }
+    });
+  })();
 
   /* Aviso oficial por WhatsApp (plantilla de la API) -- el servidor lee todos los datos de la reserva; acá solo se manda QUÉ aviso y de QUÉ reserva. */
   (function(){
